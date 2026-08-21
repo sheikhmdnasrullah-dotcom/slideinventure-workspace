@@ -120,7 +120,7 @@ export async function GET() {
 
   const response: DashboardResponse = {
     kpis,
-    chart: buildChart(7, runs),
+    chart: buildChart(90, runs),
     activity,
     syncedAt: new Date().toISOString(),
   };
