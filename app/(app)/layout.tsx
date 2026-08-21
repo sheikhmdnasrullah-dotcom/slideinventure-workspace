@@ -12,7 +12,14 @@ export default async function AppLayout({
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 64)",
+            "--header-height": "calc(var(--spacing) * 12 + 1px)",
+          } as React.CSSProperties
+        }
+      >
         <AppSidebar userEmail={user.email ?? "unknown"} />
         {children}
         <Toaster />
@@ -20,7 +27,7 @@ export default async function AppLayout({
             one command surface for navigation, search, ask, and actions,
             reachable from the sidebar trigger, the header, or ⌘K anywhere. */}
         <CommandMenu />
-      </SidebarProvider>
-    </TooltipProvider>
+     </SidebarProvider>
+   </TooltipProvider>
   );
 }
