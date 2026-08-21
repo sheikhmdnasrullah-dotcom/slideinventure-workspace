@@ -1,0 +1,190 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDEIN VENTURE OS — THEME LAYER
+   Macro contrast via ONE axis: THEME (day | night). A user choice, persisted
+   by next-themes and applied as a `.dark` class on <html>.
+
+   THE CONTRACT — the only colour names a new component may consume. Components
+   write `text-[var(--text-muted)]`, never `dark:text-neutral-400`.
+
+     --page-fill      what the document is painted with under/around surfaces
+     --surface        raised card fill sitting on this page
+     --surface-2      inset / nested fill (a well INSIDE a card)
+     --text-strong    headings — darkest ink on this theme
+     --text-default   body text
+     --text-muted     secondary text (≥4.5:1 on --surface)
+     --text-faint     NOT TEXT. Icons, ticks, disabled, decorative hairlines
+     --on-surface     alias of --text-default (primary text + hairline ink)
+     --rule           hairline divider (between rows, inside cards)
+     --rule-strong    visible divider, card border
+     --text-accent    the orange that clears 4.5:1 AS TEXT on this surface
+     --accent-vivid   the orange for fills, strokes and graphics
+     --accent-wash    low-alpha orange fill (selected backgrounds)
+     --accent-ring    mid-alpha orange border (focus/selected rings)
+     --on-accent      text sitting on a solid orange fill
+     --surface-glass  translucent --surface, for backdrop-blur chrome
+     --status-live   green legible here        (system running)
+     --status-info   blue legible here          (asset ready)
+     --status-warn   amber legible here         (needs attention)
+     --status-danger red legible here           (failed)
+     --scrim         the veil behind a modal
+
+   RULE 1 HOLDS ON BOTH THEMES. --text-accent and --accent-vivid are always
+   hue 42.28. A dark surface does not get a second orange — it gets the same
+   orange read at the lightness that clears AA against it (brand-hi, 6.47:1 on
+   graphite-900). Never #FFFFFF or #000000 anywhere: paper-25 is the lightest
+   value; ink-deep the darkest.
+
+   LEGACY ALIASES — the shadcn primitives (built on @base-ui/react) ship
+   `dark:` variants and read `--background / --foreground / --card / --muted /
+   --accent / --border / --primary` etc. We point every one at the semantic
+   contract so the stock components pick the theme up for free, WITHOUT
+   colliding with our text/surface split (shadcn's --muted and --accent are
+   SURFACES — `bg-muted`, `bg-accent` hover states — not text colors, so they
+   map to --surface-2, not to the text contract).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DAY — paper surfaces, ink type, orange accent.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  --page-fill:       var(--color-paper-50);
+
+  --surface:         var(--color-paper-25);
+  --surface-2:       var(--color-paper-100);
+
+  --text-strong:     var(--color-ink);
+  --text-default:    var(--color-ink);
+  --text-muted:      var(--color-slate-600);
+  --text-faint:      var(--color-bone-400);
+  --on-surface:      var(--text-default);
+
+  --rule:            var(--color-bone-300);
+  --rule-strong:     color-mix(in oklch, var(--color-ink) 14%, transparent);
+
+  --text-accent:     var(--color-signal-deep);
+  --accent-vivid:    var(--color-brand);
+  --accent-wash:     color-mix(in oklch, var(--color-brand) 8%, transparent);
+  --accent-ring:     color-mix(in oklch, var(--color-brand) 35%, transparent);
+  --on-accent:       var(--color-paper-25);
+
+  --surface-glass:   color-mix(in oklch, var(--color-paper-25) 80%, transparent);
+
+  --status-live:     var(--color-live-deep);
+  --status-info:     var(--color-info-deep);
+  --status-warn:     var(--color-warn-deep);
+  --status-danger:   var(--color-danger);
+  --scrim:           color-mix(in oklch, var(--color-ink) 50%, transparent);
+
+  /* shadcn legacy surface tokens → semantic contract (surfaces, not text) */
+  --background:        var(--page-fill);
+  --foreground:        var(--text-default);
+  --card:              var(--surface);
+  --card-foreground:   var(--text-default);
+  --popover:           var(--surface);
+  --popover-foreground: var(--text-default);
+  --primary:           var(--color-ink);
+  --primary-foreground: var(--color-paper-25);
+  --secondary:         var(--surface-2);
+  --secondary-foreground: var(--text-default);
+  /* shadcn's --muted / --accent are HOVER SURFACES, not text. Keep them as
+     surfaces; the text roles are --text-muted / --text-accent above. */
+  --muted:             var(--surface-2);
+  --muted-foreground:  var(--text-muted);
+  --accent:            var(--surface-2);
+  --accent-foreground:  var(--text-default);
+  --destructive:       var(--color-danger);
+  --border:            var(--rule);
+  --input:             var(--rule-strong);
+  --ring:              var(--text-accent);
+  --chart-1:           var(--color-graphite-900);
+  --chart-2:           var(--color-slate-500);
+  --chart-3:           var(--color-slate-600);
+  --chart-4:           var(--color-signal-deep);
+  --chart-5:           var(--color-brand);
+
+  /* sidebar reuses shadcn sidebar-* tokens; point at the same contract */
+  --sidebar:                   var(--color-paper-50);
+  --sidebar-foreground:        var(--text-default);
+  --sidebar-primary:            var(--text-accent);
+  --sidebar-primary-foreground: var(--on-accent);
+  --sidebar-accent:             var(--surface-2);
+  --sidebar-accent-foreground:  var(--text-default);
+  --sidebar-border:             var(--rule);
+  --sidebar-ring:               var(--text-accent);
+
+  color-scheme: light;
+}
+
+html {
+  background-color: var(--page-fill);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   NIGHT — graphite surfaces, ash type, the same orange read up.
+   A console gets a dark mode because long sessions deserve one. The marketing
+   site deliberately has none — the two apps are different products.
+   ───────────────────────────────────────────────────────────────────────── */
+.dark {
+  --page-fill:       var(--color-graphite-900);
+
+  --surface:         var(--color-graphite-800);
+  --surface-2:       var(--color-graphite-900);
+
+  --text-strong:     var(--color-ash-200);
+  --text-default:     var(--color-ash-200);
+  --text-muted:      var(--color-ash-400);
+  --text-faint:      var(--color-ash-500);
+  --on-surface:      var(--text-default);
+
+  --rule:            color-mix(in oklch, var(--color-ash-200) 12%, transparent);
+  --rule-strong:     color-mix(in oklch, var(--color-ash-200) 20%, transparent);
+
+  --text-accent:     var(--color-brand-hi);
+  --accent-vivid:    var(--color-brand);
+  --accent-wash:     color-mix(in oklch, var(--color-brand) 16%, transparent);
+  --accent-ring:     color-mix(in oklch, var(--color-brand) 42%, transparent);
+  --on-accent:       var(--color-paper-25);
+
+  --surface-glass:   color-mix(in oklch, var(--color-graphite-800) 80%, transparent);
+
+  --status-live:     var(--color-live-hi);
+  --status-info:     var(--color-info-hi);
+  --status-warn:     var(--color-warn);
+  --status-danger:   var(--color-danger-hi);
+  --scrim:           color-mix(in oklch, var(--color-ink-deep) 72%, transparent);
+
+  --background:        var(--page-fill);
+  --foreground:        var(--text-default);
+  --card:              var(--surface);
+  --card-foreground:   var(--text-default);
+  --popover:           var(--surface);
+  --popover-foreground: var(--text-default);
+  --primary:           var(--color-paper-25);
+  --primary-foreground: var(--color-ink);
+  --secondary:         var(--surface-2);
+  --secondary-foreground: var(--text-default);
+  --muted:             var(--surface-2);
+  --muted-foreground:  var(--text-muted);
+  --accent:            var(--surface-2);
+  --accent-foreground:  var(--text-default);
+  --destructive:       var(--color-danger-hi);
+  --border:            var(--rule);
+  --input:             var(--rule-strong);
+  --ring:              var(--text-accent);
+  --chart-1:           var(--color-ash-300);
+  --chart-2:           var(--color-ash-400);
+  --chart-3:           var(--color-ash-500);
+  --chart-4:           var(--color-brand);
+  --chart-5:           var(--color-brand-lift);
+
+  --sidebar:                   var(--color-graphite-900);
+  --sidebar-foreground:        var(--text-default);
+  --sidebar-primary:            var(--text-accent);
+  --sidebar-primary-foreground: var(--on-accent);
+  --sidebar-accent:             var(--surface-2);
+  --sidebar-accent-foreground:  var(--text-default);
+  --sidebar-border:             var(--rule);
+  --sidebar-ring:               var(--text-accent);
+
+  color-scheme: dark;
+}

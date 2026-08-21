@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDEIN VENTURE OS — TYPE LAYER
+   ---------------------------------------------------------------------------
+   Roles, not sizes. A component picks a role class; every number resolves to
+   a token in tokens.css. Geist Sans (body/UI) + Geist Mono (labels, figures).
+   Geist is a variable font with a `wght` axis only — no Fraunces opsz/SOFT/WONK
+   axes to dial here, so this is simpler than the marketing type.css.
+
+   The five things that separate print typography from web typography:
+     1. inverse tracking — negative at display, positive at body, wide at labels
+     2. text-wrap balance on headings, pretty on paragraphs
+     3. tabular figures anywhere a number can change
+     4. a deliberate leading ladder
+     5. role classes so a call site never picks a size and a tracking value
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  font-optical-sizing: auto;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'cv01' 1, 'cv11' 1;
+}
+
+/* ── 1 · DISPLAY ──────────────────────────────────────────────────────────
+   Used sparingly in a console — page titles and the empty-state headline. */
+.font-display {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--tracking-display-tight);
+  line-height: var(--leading-display);
+  text-wrap: balance;
+}
+
+.font-display-soft {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-display);
+  text-wrap: balance;
+}
+
+/* ── 2 · BODY ─────────────────────────────────────────────────────────────
+   Positive tracking at small sizes — the opposite of display. Default UI
+   face for everything that isn't a label or a number. */
+.font-body {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-body, 400);
+  letter-spacing: var(--tracking-body);
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+}
+
+.font-body-tight {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-body, 400);
+  letter-spacing: var(--tracking-body);
+  line-height: var(--heading-tight);
+  text-wrap: pretty;
+}
+
+/* ── 3 · LABEL ─────────────────────────────────────────────────────────────
+   Mono, uppercase, small, widely tracked. The ONE place wide tracking
+   belongs. This is the console's signature register — section eyebrows,
+   column headers, metadata coordinates, status legends. */
+.font-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: var(--font-weight-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  line-height: var(--heading-tight);
+  font-feature-settings: 'tnum' 1, 'zero' 1;   /* slashed zero */
+}
+
+.font-label-wide {
+  letter-spacing: var(--tracking-label-wide);
+}
+
+/* A label kept in the sans face (sentence-case metadata that still reads as a
+   label because of weight + size, not because of the mono + caps treatment). */
+.font-eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--text-micro);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  line-height: var(--heading-tight);
+}
+
+/* ── 4 · FIGURES ──────────────────────────────────────────────────────────
+   Any number that can change: counts, durations, offsets, KPI values. Without
+   this the digits jitter in width and the panel reads unpolished. Geist Mono's
+   digits are tabular by default; belt-and-braces for the fallback stack. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Distinct value role for KPI/metric numbers: mono, semibold, tight tracking,
+   tabular figures. This is the strongest typographic moment on any page. */
+.font-value {
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-display-tight);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+}
+
+/* ── 5 · WIDOWS AND ORPHANS ─────────────────────────────────────────────── */
+h1, h2, h3, h4 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* ── 6 · REDUCED MOTION (backstop lives in tokens.css; this scoping rule is
+   still needed so a role class never introduces motion it can't collapse) ─ */
+@media (prefers-reduced-motion: reduce) {
+  .font-display, .font-body, .font-label {
+    transition: none;
+  }
+}
