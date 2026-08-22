@@ -300,7 +300,7 @@ export function Mail({
             document.cookie = `mail-panel-collapsed=${nowCollapsed}`
           }}
           className={cn(
-            isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
+            isCollapsed && "w-full transition-all duration-300 ease-in-out"
           )}
         >
           <div className={cn(
@@ -316,34 +316,19 @@ export function Mail({
               onRemoveAccount={removeAccount}
             />
           </div>
-          <Separator />
-          {/* Compose button */}
-          {!isCollapsed && (
-            <div className="px-2 py-2">
-              <Button
-                className="w-full justify-start gap-2"
-                size="sm"
-                onClick={() => setComposeOpen(true)}
-              >
-                <Pencil className="h-4 w-4" />
-                Compose
-              </Button>
-            </div>
-          )}
-          {isCollapsed && (
-            <div className="flex justify-center py-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => setComposeOpen(true)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <Separator className="mx-0" />
+          <div className="m-3">
+            <Button
+              className="w-full"
+              onClick={() => setComposeOpen(true)}
+            >
+              {isCollapsed ? "" : "Compose"}
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
+          <Separator className="mx-0" />
           <Nav isCollapsed={isCollapsed} links={folderLinks} />
-          <Separator />
+          <Separator className="mx-0" />
           <Nav
             isCollapsed={isCollapsed}
             links={[
