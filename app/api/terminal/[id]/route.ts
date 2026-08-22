@@ -36,9 +36,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const supabase = createServiceClient();
   const now = new Date().toISOString();
 
+  const { triggeredBy, exitCode, durationMs, ...rest } = validated.data;
+  const payload: any = { ...rest, updated_at: now };
+  if (triggeredBy !== undefined) payload.triggered_by = triggeredBy;
+  if (exitCode !== undefined) payload.exit_code = exitCode;
+  if (durationMs !== undefined) payload.duration_ms = durationMs;
+
   const { error } = await supabase
     .from("terminal_commands")
-    .update({ ...validated.data, updated_at: now })
+    .update(payload)
     .eq("id", id);
 
   if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();

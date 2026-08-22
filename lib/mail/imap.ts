@@ -3,8 +3,8 @@ import { ImapFlow, type FetchMessageObject } from 'imapflow'
 import type { MailMessage, MailFolder, MailAttachment } from './types'
 import { getAccount } from './accounts'
 
-function createClient(email: string): ImapFlow {
-  const account = getAccount(email)
+async function createClient(email: string): Promise<ImapFlow> {
+  const account = await getAccount(email)
   if (!account) throw new Error(`Mail account not configured: ${email}`)
 
   return new ImapFlow({
@@ -20,7 +20,7 @@ function createClient(email: string): ImapFlow {
 }
 
 async function withClient<T>(email: string, fn: (client: ImapFlow) => Promise<T>): Promise<T> {
-  const client = createClient(email)
+  const client = await createClient(email)
   await client.connect()
   try {
     return await fn(client)

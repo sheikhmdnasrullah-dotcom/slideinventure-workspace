@@ -3,8 +3,8 @@ import nodemailer from 'nodemailer'
 import type { SendMailInput } from './types'
 import { getAccount } from './accounts'
 
-function createTransport(email: string) {
-  const account = getAccount(email)
+async function createTransport(email: string) {
+  const account = await getAccount(email)
   if (!account) throw new Error(`Mail account not configured: ${email}`)
 
   return nodemailer.createTransport({
@@ -22,8 +22,8 @@ function createTransport(email: string) {
 }
 
 export async function sendMail(email: string, input: SendMailInput): Promise<{ messageId: string }> {
-  const transport = createTransport(email)
-  const account = getAccount(email)
+  const transport = await createTransport(email)
+  const account = await getAccount(email)
   const from = `${account?.name ?? 'User'} <${email}>`
 
   const info = await transport.sendMail({

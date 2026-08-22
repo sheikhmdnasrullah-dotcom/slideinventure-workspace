@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Plus, Trash2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import {
@@ -11,15 +12,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+const ADD_ACCOUNT_VALUE = "__add_account__"
+const REMOVE_ACCOUNT_VALUE = "__remove_account__"
+
 interface AccountSwitcherProps {
   isCollapsed: boolean
   accounts: {
     label: string
     email: string
     icon: React.ReactNode
+    id?: string
   }[]
   account: string | null
   setAccount: (account: string) => void
+  onAddAccount: () => void
+  onRemoveAccount: (id: string) => void
 }
 
 export function AccountSwitcher({
@@ -27,13 +34,20 @@ export function AccountSwitcher({
   accounts,
   account,
   setAccount,
+  onAddAccount,
+  onRemoveAccount,
 }: AccountSwitcherProps) {
-  if (accounts.length === 0) return null
+  const current = accounts.find((a) => a.email === account)
 
   return (
     <Select
       value={account ?? undefined}
-      onValueChange={(value) => value && setAccount(value)}
+      onValueChange={(value) => {
+        if (!value) return
+        if (value === ADD_ACCOUNT_VALUE) { onAddAccount(); return }
+        if (value === REMOVE_ACCOUNT_VALUE) { if (current?.id) onRemoveAccount(current.id); return }
+        setAccount(value)
+      }}
     >
       <SelectTrigger
         className={cn(
@@ -44,9 +58,9 @@ export function AccountSwitcher({
         aria-label="Select account"
       >
         <SelectValue placeholder="Select an account">
-          {accounts.find((a) => a.email === account)?.icon}
+          {current?.icon}
           <span className={cn("ml-2", isCollapsed && "hidden")}>
-            {accounts.find((a) => a.email === account)?.label}
+            {current?.label}
           </span>
         </SelectValue>
       </SelectTrigger>
@@ -59,6 +73,20 @@ export function AccountSwitcher({
             </div>
           </SelectItem>
         ))}
+        <SelectItem value={ADD_ACCOUNT_VALUE}>
+          <div className="flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:text-foreground">
+            <Plus />
+            Add account
+          </div>
+        </SelectItem>
+        {current?.id && (
+          <SelectItem value={REMOVE_ACCOUNT_VALUE}>
+            <div className="flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 text-destructive">
+              <Trash2 />
+              Remove account
+            </div>
+          </SelectItem>
+        )}
       </SelectContent>
     </Select>
   )

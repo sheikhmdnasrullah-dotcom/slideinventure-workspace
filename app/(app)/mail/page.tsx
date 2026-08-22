@@ -18,10 +18,7 @@ export default async function MailPage() {
   return (
     <>
       <SiteHeader crumbs={[{ label: "Mail" }]} />
-      <div className="md:hidden p-8 text-center text-muted-foreground">
-        Mail isn&apos;t available on small screens yet.
-      </div>
-      <div className="hidden flex-1 flex-col md:flex">
+      <div className="flex flex-1 flex-col">
         <MailProvider>
           <Mail
             defaultLayout={defaultLayout}

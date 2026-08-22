@@ -7,6 +7,7 @@ import {
   ArchiveX,
   File,
   Inbox,
+  Menu,
   MessagesSquare,
   Pencil,
   RefreshCw,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -33,6 +35,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Tabs,
@@ -44,6 +47,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 
 import { AccountSwitcher } from "./account-switcher"
+import { AddAccountDialog } from "./add-account-dialog"
 import { MailDisplay } from "./mail-display"
 import { MailList } from "./mail-list"
 import { Nav } from "./nav"
@@ -71,16 +75,28 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
+  const isMobile = useIsMobile()
   const {
     accounts, account, setAccount,
-    selected, folders, loading, search, setSearch,
+    selected, setSelected, folders, loading, search, setSearch,
     setFolder, folder, refresh, composeOpen, setComposeOpen, sendMessage,
+    refreshAccounts, removeAccount,
   } = useMail()
+
+  const [addAccountOpen, setAddAccountOpen] = React.useState(false)
+  const [mobileView, setMobileView] = React.useState<"list" | "detail">("list")
+  const [folderSheetOpen, setFolderSheetOpen] = React.useState(false)
+
+  // Selecting a message switches the mobile view to the detail screen
+  React.useEffect(() => {
+    if (isMobile && selected) setMobileView("detail")
+  }, [selected, isMobile])
 
   // Mapped accounts for the switcher (reusing the same icon for all)
   const switcherAccounts = React.useMemo(() => accounts.map(a => ({
     label: a.name,
     email: a.email,
+    id: a.id,
     icon: (
       <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <title>Mail</title>
@@ -129,6 +145,136 @@ export function Mail({
     }
   }
 
+  const folderLinks = [
+    { title: "Inbox",   label: getUnread("Inbox"),   icon: Inbox,    variant: getVariant("Inbox"),   onClick: () => { setFolder("INBOX"); setFolderSheetOpen(false) } },
+    { title: "Drafts",  label: getUnread("Drafts"),  icon: File,     variant: getVariant("Drafts"),  onClick: () => { setFolder("Drafts"); setFolderSheetOpen(false) } },
+    { title: "Sent",    label: getUnread("Sent"),    icon: Send,     variant: getVariant("Sent"),    onClick: () => { setFolder("Sent"); setFolderSheetOpen(false) } },
+    { title: "Junk",    label: getUnread("Junk"),    icon: ArchiveX, variant: getVariant("Junk"),    onClick: () => { setFolder("Junk"); setFolderSheetOpen(false) } },
+    { title: "Trash",   label: getUnread("Trash"),   icon: Trash2,   variant: getVariant("Trash"),   onClick: () => { setFolder("Trash"); setFolderSheetOpen(false) } },
+    { title: "Archive", label: getUnread("Archive"), icon: Archive,  variant: getVariant("Archive"), onClick: () => { setFolder("Archive"); setFolderSheetOpen(false) } },
+  ]
+
+  if (isMobile) {
+    return (
+      <TooltipProvider delay={0}>
+        <div className="flex h-full flex-col">
+          {mobileView === "list" ? (
+            <>
+              <div className="flex items-center gap-1 px-2 py-2">
+                <Button variant="ghost" size="icon" className="p-1" onClick={() => setFolderSheetOpen(true)}>
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Folders</span>
+                </Button>
+                <h1 className="flex-1 truncate text-xl font-bold capitalize">
+                  {Object.entries(FOLDER_MAP).find(([, v]) => v === folder)?.[0] ?? folder}
+                </h1>
+                <Button variant="ghost" size="icon" className="p-1" onClick={refresh} disabled={loading} title="Refresh">
+                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                </Button>
+                <Button variant="ghost" size="icon" className="p-1" onClick={() => setComposeOpen(true)}>
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Compose</span>
+                </Button>
+              </div>
+              <Separator />
+              <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search"
+                      className="pl-8 text-base md:text-sm"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                </form>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <MailList />
+              </div>
+            </>
+          ) : (
+            <MailDisplay onBack={() => { setSelected(null); setMobileView("list") }} />
+          )}
+        </div>
+
+        <Sheet open={folderSheetOpen} onOpenChange={setFolderSheetOpen}>
+          <SheetContent side="left" className="w-3/4 p-0">
+            <SheetHeader>
+              <SheetTitle>Mail</SheetTitle>
+            </SheetHeader>
+            <div className="flex h-[52px] items-center px-2">
+              <AccountSwitcher
+                isCollapsed={false}
+                accounts={switcherAccounts}
+                account={account}
+                setAccount={setAccount}
+                onAddAccount={() => { setFolderSheetOpen(false); setAddAccountOpen(true) }}
+                onRemoveAccount={removeAccount}
+              />
+            </div>
+            <Separator />
+            <Nav isCollapsed={false} links={folderLinks} />
+          </SheetContent>
+        </Sheet>
+
+        {/* ─── COMPOSE DIALOG ─── */}
+        <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>New Message</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-1">
+                <Label htmlFor="compose-to-m" className="text-xs font-medium">To</Label>
+                <Input
+                  id="compose-to-m"
+                  placeholder="recipient@example.com"
+                  className="text-base md:text-sm"
+                  value={composeTo}
+                  onChange={(e) => setComposeTo(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="compose-subject-m" className="text-xs font-medium">Subject</Label>
+                <Input
+                  id="compose-subject-m"
+                  placeholder="Subject"
+                  className="text-base md:text-sm"
+                  value={composeSubject}
+                  onChange={(e) => setComposeSubject(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="compose-body-m" className="text-xs font-medium">Message</Label>
+                <Textarea
+                  id="compose-body-m"
+                  placeholder="Write your message..."
+                  className="min-h-[200px] text-base md:text-sm"
+                  value={composeBody}
+                  onChange={(e) => setComposeBody(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end pb-[env(safe-area-inset-bottom)]">
+                <Button onClick={handleComposeSend} disabled={composeSending}>
+                  {composeSending ? "Sending…" : "Send"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ─── ADD ACCOUNT DIALOG ─── */}
+        <AddAccountDialog
+          open={addAccountOpen}
+          onOpenChange={setAddAccountOpen}
+          onCreated={() => { refreshAccounts() }}
+        />
+      </TooltipProvider>
+    )
+  }
+
   return (
     <TooltipProvider delay={0}>
       <ResizablePanelGroup
@@ -161,11 +307,13 @@ export function Mail({
             "flex h-[52px] items-center justify-center",
             isCollapsed ? "h-[52px]" : "px-2"
           )}>
-            <AccountSwitcher 
-              isCollapsed={isCollapsed} 
-              accounts={switcherAccounts} 
+            <AccountSwitcher
+              isCollapsed={isCollapsed}
+              accounts={switcherAccounts}
               account={account}
               setAccount={setAccount}
+              onAddAccount={() => setAddAccountOpen(true)}
+              onRemoveAccount={removeAccount}
             />
           </div>
           <Separator />
@@ -194,17 +342,7 @@ export function Mail({
               </Button>
             </div>
           )}
-          <Nav
-            isCollapsed={isCollapsed}
-            links={[
-              { title: "Inbox",   label: getUnread("Inbox"),   icon: Inbox,    variant: getVariant("Inbox"),   onClick: () => setFolder("INBOX") },
-              { title: "Drafts",  label: getUnread("Drafts"),  icon: File,     variant: getVariant("Drafts"),  onClick: () => setFolder("Drafts") },
-              { title: "Sent",    label: getUnread("Sent"),    icon: Send,     variant: getVariant("Sent"),    onClick: () => setFolder("Sent") },
-              { title: "Junk",    label: getUnread("Junk"),    icon: ArchiveX, variant: getVariant("Junk"),    onClick: () => setFolder("Junk") },
-              { title: "Trash",   label: getUnread("Trash"),   icon: Trash2,   variant: getVariant("Trash"),   onClick: () => setFolder("Trash") },
-              { title: "Archive", label: getUnread("Archive"), icon: Archive,  variant: getVariant("Archive"), onClick: () => setFolder("Archive") },
-            ]}
-          />
+          <Nav isCollapsed={isCollapsed} links={folderLinks} />
           <Separator />
           <Nav
             isCollapsed={isCollapsed}
@@ -320,6 +458,13 @@ export function Mail({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ─── ADD ACCOUNT DIALOG ─── */}
+      <AddAccountDialog
+        open={addAccountOpen}
+        onOpenChange={setAddAccountOpen}
+        onCreated={() => { refreshAccounts() }}
+      />
     </TooltipProvider>
   )
 }

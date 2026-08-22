@@ -40,6 +40,8 @@ type MailContextValue = {
   deleteMessage: (id: string) => Promise<void>
   archiveMessage: (id: string) => Promise<void>
   sendMessage: (to: string, subject: string, body: string, inReplyTo?: string, references?: string) => Promise<void>
+  refreshAccounts: () => Promise<PublicAccount[]>
+  removeAccount: (id: string) => Promise<void>
 }
 
 const MailContext = React.createContext<MailContextValue | null>(null)
@@ -64,18 +66,25 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
   const [search, setSearchState] = React.useState("")
   const [composeOpen, setComposeOpen] = React.useState(false)
 
+  const refreshAccounts = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/mail/accounts')
+      const data: PublicAccount[] = res.ok ? await res.json() : []
+      setAccounts(data)
+      return data
+    } catch {
+      return []
+    }
+  }, [])
+
   // Fetch accounts on mount
   React.useEffect(() => {
-    fetch('/api/mail/accounts')
-      .then((r) => r.ok ? r.json() : [])
-      .then((data: PublicAccount[]) => {
-        setAccounts(data)
-        if (data.length > 0) {
-          setAccountState(data[0].email)
-        }
-      })
-      .catch(console.error)
-  }, [])
+    refreshAccounts().then((data) => {
+      if (data.length > 0) {
+        setAccountState((prev) => prev ?? data[0].email)
+      }
+    })
+  }, [refreshAccounts])
 
   const fetchMessages = React.useCallback(async (acc: string | null, f: string, q: string, cached = false) => {
     if (!acc) return
@@ -224,6 +233,17 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
     toast.success("Message sent")
   }, [account])
 
+  const removeAccount = React.useCallback(async (id: string) => {
+    const res = await fetch(`/api/mail/accounts/${encodeURIComponent(id)}`, { method: "DELETE" })
+    if (!res.ok) { toast.error("Failed to remove account"); return }
+    const removed = accounts.find((a) => a.id === id)
+    const data = await refreshAccounts()
+    if (removed && removed.email === account) {
+      setAccount(data[0]?.email ?? "")
+    }
+    toast.success("Account removed")
+  }, [accounts, account, refreshAccounts, setAccount])
+
   return (
     <MailContext.Provider value={{
       accounts, account, setAccount,
@@ -236,6 +256,7 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
       composeOpen, setComposeOpen,
       refresh,
       markRead, deleteMessage, archiveMessage, sendMessage,
+      refreshAccounts, removeAccount,
     }}>
       {children}
     </MailContext.Provider>

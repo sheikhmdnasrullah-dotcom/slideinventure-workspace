@@ -5,6 +5,7 @@ import { addDays, addHours, format, nextSaturday } from "date-fns"
 import {
   Archive,
   ArchiveX,
+  ChevronLeft,
   Clock,
   Forward,
   MoreVertical,
@@ -46,7 +47,11 @@ import { useMail } from "./use-mail"
 
 type ReplyMode = "reply" | "replyAll" | "forward" | null
 
-export function MailDisplay() {
+interface MailDisplayProps {
+  onBack?: () => void
+}
+
+export function MailDisplay({ onBack }: MailDisplayProps = {}) {
   const today = new Date()
   const { selectedMessage: mail, deleteMessage, archiveMessage, markRead, sendMessage } = useMail()
 
@@ -117,6 +122,12 @@ export function MailDisplay() {
     <div className="flex h-full flex-col">
       {/* ─── TOOLBAR ─── */}
       <div className="flex items-center p-2">
+        {onBack && (
+          <Button variant="ghost" size="icon" className="mr-1 p-1" onClick={onBack}>
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Back</span>
+          </Button>
+        )}
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger
@@ -367,7 +378,7 @@ export function MailDisplay() {
           <Separator className="mt-auto" />
 
           {/* ─── REPLY / FORWARD PANEL ─── */}
-          <div className="p-4">
+          <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             {replyMode ? (
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="grid gap-4">
@@ -375,13 +386,13 @@ export function MailDisplay() {
                     <input
                       type="email"
                       placeholder="Forward to..."
-                      className="rounded border px-3 py-2 text-sm focus:outline-none"
+                      className="rounded border px-3 py-2 text-base focus:outline-none md:text-sm"
                       value={forwardTo}
                       onChange={(e) => setForwardTo(e.target.value)}
                     />
                   )}
                   <Textarea
-                    className="p-4"
+                    className="p-4 text-base md:text-sm"
                     placeholder={
                       replyMode === "forward"
                         ? "Add a note..."

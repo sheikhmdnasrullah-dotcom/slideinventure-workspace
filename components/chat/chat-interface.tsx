@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { format, isToday, isYesterday } from "date-fns";
-import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink, Lock } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EvidenceBlock } from "@/components/system";
 
@@ -25,16 +28,6 @@ interface EvidenceChunk {
   similarity: number;
 }
 
-interface Message {
-  id: string;
-  role: MessageRole;
-  content: string;
-  evidence?: EvidenceChunk[];
-  filters?: Record<string, unknown>;
-  retrievalResults?: RetrievalResult[];
-  createdAt: string;
-}
-
 interface RetrievalResult {
   source: string;
   title: string;
@@ -42,6 +35,26 @@ interface RetrievalResult {
   path?: string;
   url?: string;
   score: number;
+}
+
+interface SourceGroup {
+  source: string;
+  label: string;
+  results: RetrievalResult[];
+  matchCount: number;
+}
+
+interface Message {
+  id: string;
+  role: MessageRole;
+  content: string;
+  evidence?: EvidenceChunk[];
+  filters?: Record<string, unknown>;
+  retrievalSources?: SourceGroup[];
+  retrievalQuery?: string;
+  retrievalElapsedMs?: number;
+  secretQuery?: boolean;
+  createdAt: string;
 }
 
 interface Session {
@@ -77,6 +90,14 @@ function groupMessagesByDay(messages: Message[]) {
   }
   return groups;
 }
+
+const SOURCE_ICONS: Record<string, string> = {
+  knowledge: "📚",
+  leads: "👤",
+  terminal: "💻",
+  apps: "🧩",
+  links: "🔗",
+};
 
 async function loadSessions(
   setSessions: (s: Session[]) => void,
@@ -168,26 +189,46 @@ export function ChatInterface() {
         body: JSON.stringify({ message: text }),
       });
 
-      let retrievalResults: RetrievalResult[] = [];
-      let isRetrieval = false;
+      let retrievalSources: SourceGroup[] | undefined;
+      let secretQuery = false;
 
       if (retrieveRes.ok) {
         const retrieveData = await retrieveRes.json();
-        if (retrieveData.type === "retrieval" && retrieveData.results?.length > 0) {
-          isRetrieval = true;
-          retrievalResults = retrieveData.results;
+        if (retrieveData.type === "retrieval") {
+          retrievalSources = retrieveData.sources;
+        } else if (retrieveData.type === "secret_query") {
+          secretQuery = true;
         }
       }
 
-      if (isRetrieval) {
-        setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
+      // Remove temp user message
+      setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
+
+      if (secretQuery) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `secret-${Date.now()}`,
+            role: "assistant",
+            content: "This looks like a secret query. Please use the Vault section with step-up authentication to access credentials.",
+            secretQuery: true,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+        setStreaming(false);
+        textareaRef.current?.focus();
+        return;
+      }
+
+      if (retrievalSources && retrievalSources.some((s) => s.matchCount > 0)) {
         setMessages((prev) => [
           ...prev,
           {
             id: `retrieval-${Date.now()}`,
             role: "assistant",
-            content: "Found results from your data:",
-            retrievalResults,
+            content: `Found matches across ${retrievalSources.filter((s) => s.matchCount > 0).length} source${retrievalSources.filter((s) => s.matchCount > 0).length !== 1 ? "s" : ""} for "${text}"`,
+            retrievalSources,
+            retrievalQuery: text,
             createdAt: new Date().toISOString(),
           },
         ]);
@@ -214,9 +255,6 @@ export function ChatInterface() {
       let currentMessageId: string | null = null;
       let assistantContent = "";
 
-      // Remove temp user message
-      setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -231,7 +269,6 @@ export function ChatInterface() {
             const event = JSON.parse(line.slice(6));
             switch (event.type) {
               case "session":
-                // Session created, will be picked up by loadSessions effect
                 break;
               case "delta":
                 assistantContent += event.content;
@@ -392,47 +429,88 @@ export function ChatInterface() {
                           <div
                             className={cn(
                               "rounded-lg px-3 py-2 text-sm break-words",
-                              msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                              msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
+                              msg.secretQuery && "border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950"
                             )}
                           >
+                            {msg.secretQuery && (
+                              <div className="mb-2 flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                                <Lock className="size-4" />
+                                <span className="text-xs font-medium">Vault access required</span>
+                              </div>
+                            )}
                             <p className="whitespace-pre-wrap">{msg.content}</p>
                           </div>
 
-                           {msg.evidence && msg.evidence.length > 0 && msg.role === "assistant" && (
-                             <div className="mt-2 w-full space-y-2">
-                               {msg.evidence.map((ev) => (
-                                 <EvidenceBlock
-                                   key={ev.chunk_id}
-                                   query=""
-                                   text={ev.text}
-                                   type={ev.heading || undefined}
-                                   source={`${ev.knowledge_item_id} · chunk ${ev.chunk_index}`}
-                                   position={`similarity ${(ev.similarity * 100).toFixed(0)}%`}
-                                   href={`/knowledge/${ev.knowledge_item_id}?chunk=${ev.chunk_index}`}
-                                 />
-                               ))}
-                             </div>
-                           )}
+                          {msg.retrievalSources && (
+                            <Card className="mt-2 w-full overflow-hidden">
+                              <div className="border-b bg-muted/30 px-3 py-2">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  From your data
+                                  {msg.retrievalElapsedMs !== undefined && (
+                                    <span className="ml-2 text-[10px] text-muted-foreground/70">
+                                      ({msg.retrievalElapsedMs}ms)
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="divide-y">
+                                {msg.retrievalSources.map((group) => (
+                                  <div key={group.source} className="p-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm">{SOURCE_ICONS[group.source] || "📄"}</span>
+                                      <span className="text-xs font-medium">{group.label}</span>
+                                      <Badge variant="secondary" className="text-[10px]">
+                                        {group.matchCount} match{group.matchCount !== 1 ? "es" : ""}
+                                      </Badge>
+                                    </div>
+                                    {group.results.length === 0 ? (
+                                      <p className="mt-1.5 text-xs text-muted-foreground italic">No matches in this source</p>
+                                    ) : (
+                                      <div className="mt-2 space-y-2">
+                                        {group.results.map((result, idx) => (
+                                          <div key={idx} className="rounded-md border bg-background p-2">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs font-medium">{result.title}</span>
+                                            </div>
+                                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{result.snippet}</p>
+                                            <div className="mt-1.5 flex items-center gap-3">
+                                              {result.path && (
+                                                <a href={result.path} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                                  Open <ExternalLink className="size-3" />
+                                                </a>
+                                              )}
+                                              {result.url && (
+                                                <a href={result.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                                  Visit <ExternalLink className="size-3" />
+                                                </a>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </Card>
+                          )}
 
-                           {msg.retrievalResults && msg.retrievalResults.length > 0 && (
-                             <div className="mt-2 w-full space-y-2 rounded-lg border border-dashed bg-muted/30 p-3">
-                               <p className="text-xs font-medium text-muted-foreground">From your data</p>
-                               {msg.retrievalResults.map((result, idx) => (
-                                 <div key={idx} className="rounded-md border bg-background p-2">
-                                   <div className="flex items-center gap-2">
-                                     <Badge variant="outline" className="text-[10px] uppercase">{result.source}</Badge>
-                                     <span className="text-xs font-medium">{result.title}</span>
-                                   </div>
-                                   <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{result.snippet}</p>
-                                   {result.path && (
-                                     <a href={result.path} className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                                       Open <ExternalLink className="size-3" />
-                                     </a>
-                                   )}
-                                 </div>
-                               ))}
-                             </div>
-                           )}
+                          {msg.evidence && msg.evidence.length > 0 && msg.role === "assistant" && (
+                            <div className="mt-2 w-full space-y-2">
+                              {msg.evidence.map((ev) => (
+                                <EvidenceBlock
+                                  key={ev.chunk_id}
+                                  query=""
+                                  text={ev.text}
+                                  type={ev.heading || undefined}
+                                  source={`${ev.knowledge_item_id} · chunk ${ev.chunk_index}`}
+                                  position={`similarity ${(ev.similarity * 100).toFixed(0)}%`}
+                                  href={`/knowledge/${ev.knowledge_item_id}?chunk=${ev.chunk_index}`}
+                                />
+                              ))}
+                            </div>
+                          )}
 
                           <div className="mt-1 text-xs text-muted-foreground">
                             {formatMessageTime(msg.createdAt)}

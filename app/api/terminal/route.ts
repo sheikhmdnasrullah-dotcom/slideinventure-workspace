@@ -69,10 +69,14 @@ export async function POST(request: NextRequest) {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
+  const { triggeredBy, exitCode, durationMs, ...rest } = validated.data;
+
   const { error } = await supabase.from("terminal_commands").insert({
     id,
-    ...validated.data,
-    triggeredBy: user.email ?? validated.data.triggeredBy ?? null,
+    ...rest,
+    triggered_by: user.email ?? triggeredBy ?? null,
+    exit_code: exitCode ?? null,
+    duration_ms: durationMs ?? null,
     created_at: now,
     updated_at: now,
   });

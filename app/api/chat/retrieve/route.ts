@@ -12,31 +12,37 @@ interface RetrievalResult {
   score: number
 }
 
-const RETRIEVAL_PATTERNS = [
-  /\b(get me|find me|pull up|what'?s the .+ for|show me the .+ about|look up|search for|find)\b/i,
-  /\b(lead|contact|person|people|user|customer|client)\b/i,
-  /\b(command|terminal|history|script)\b/i,
-  /\b(knowledge|doc|document|note|article|guide|sop)\b/i,
-  /\b(app|integration|tool|service|link)\b/i,
-]
+interface SourceGroup {
+  source: string
+  label: string
+  results: RetrievalResult[]
+  matchCount: number
+}
 
 const SECRET_PATTERNS = [
   /\b(password|secret|credential|api key|apikey|token|private key|vault)\b/i,
 ]
 
-function isRetrievalQuery(message: string): boolean {
-  return RETRIEVAL_PATTERNS.some((pattern) => pattern.test(message));
-}
-
 function isSecretQuery(message: string): boolean {
   return SECRET_PATTERNS.some((pattern) => pattern.test(message));
 }
 
+function escapeTsQuery(input: string): string {
+  return input
+    .replace(/[&|!<>():*]/g, " ")
+    .trim()
+    .split(/\s+/)
+    .map((w) => `${w}:*`)
+    .join(" & ");
+}
+
 async function searchKnowledgeChunks(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const { data, error } = await supabase.rpc("match_knowledge_chunks", {
-    query_embedding: null,
+  const sanitized = escapeTsQuery(query);
+  if (!sanitized) return [];
+
+  const { data, error } = await supabase.rpc("match_knowledge_chunks_fts", {
+    query_tsquery: sanitized,
     match_count: 5,
-    filter_item_ids: null,
   });
 
   if (error || !data) return [];
@@ -46,90 +52,96 @@ async function searchKnowledgeChunks(supabase: ReturnType<typeof createServiceCl
     title: row.heading || "Knowledge",
     snippet: row.text,
     path: `/knowledge/${row.knowledge_item_id}?chunk=${row.chunk_index}`,
-    score: row.similarity || 0,
+    score: row.rank || 0,
   }));
 }
 
 async function searchLeads(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const q = query.toLowerCase();
-  const { data, error } = await supabase
-    .from("leads")
-    .select("id, first_name, last_name, email, company, job_title, notes, tags")
-    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,company.ilike.%${query}%,job_title.ilike.%${query}%,notes.ilike.%${query}%`)
-    .limit(10);
+  const sanitized = escapeTsQuery(query);
+  if (!sanitized) return [];
+
+  const { data, error } = await supabase.rpc("search_leads_fts", {
+    query_tsquery: sanitized,
+    match_count: 10,
+  });
 
   if (error || !data) return [];
 
-  return data.map((lead: any) => {
-    const name = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "Unnamed";
-    const snippet = [lead.email, lead.company, lead.job_title, lead.notes].filter(Boolean).join(" · ") || name;
+  return data.map((row: any) => {
+    const name = [row.first_name, row.last_name].filter(Boolean).join(" ") || "Unnamed";
+    const snippet = [row.email, row.company, row.job_title, row.notes].filter(Boolean).join(" · ") || name;
     return {
       source: "leads",
       title: name,
       snippet,
-      path: `/leads?id=${lead.id}`,
-      score: 0.8,
+      path: `/leads?id=${row.id}`,
+      score: row.rank || 0,
     };
   });
 }
 
 async function searchTerminalCommands(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const { data, error } = await supabase
-    .from("terminal_commands")
-    .select("id, command, cwd, exit_code, stdout, stderr, created_at")
-    .or(`command.ilike.%${query}%,stdout.ilike.%${query}%,stderr.ilike.%${query}%`)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const sanitized = escapeTsQuery(query);
+  if (!sanitized) return [];
+
+  const { data, error } = await supabase.rpc("search_terminal_commands_fts", {
+    query_tsquery: sanitized,
+    match_count: 10,
+  });
 
   if (error || !data) return [];
 
-  return data.map((cmd: any) => {
-    const snippet = [cmd.command, cmd.stdout, cmd.stderr].filter(Boolean).join("\n") || cmd.command;
+  return data.map((row: any) => {
+    const snippet = [row.command, row.stdout, row.stderr].filter(Boolean).join("\n") || row.command;
     return {
       source: "terminal",
-      title: cmd.command,
-      snippet: snippet.slice(0, 300),
-      path: `/terminal?command=${encodeURIComponent(cmd.id)}`,
-      score: 0.7,
+      title: row.command,
+      snippet: snippet.slice(0, 500),
+      path: `/terminal?command=${encodeURIComponent(row.id)}`,
+      score: row.rank || 0,
     };
   });
 }
 
 async function searchApps(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const { data, error } = await supabase
-    .from("apps")
-    .select("id, name, description, url, category")
-    .or(`name.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
-    .limit(10);
+  const sanitized = escapeTsQuery(query);
+  if (!sanitized) return [];
+
+  const { data, error } = await supabase.rpc("search_apps_fts", {
+    query_tsquery: sanitized,
+    match_count: 10,
+  });
 
   if (error || !data) return [];
 
-  return data.map((app: any) => ({
+  return data.map((row: any) => ({
     source: "apps",
-    title: app.name,
-    snippet: app.description || app.url || "",
-    url: app.url,
-    path: `/apps?id=${app.id}`,
-    score: 0.6,
+    title: row.name,
+    snippet: row.description || row.url || "",
+    url: row.url,
+    path: `/apps?id=${row.id}`,
+    score: row.rank || 0,
   }));
 }
 
 async function searchUsefulLinks(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const { data, error } = await supabase
-    .from("useful_links")
-    .select("id, title, url, description, tags")
-    .or(`title.ilike.%${query}%,description.ilike.%${query}%,url.ilike.%${query}%`)
-    .limit(10);
+  const sanitized = escapeTsQuery(query);
+  if (!sanitized) return [];
+
+  const { data, error } = await supabase.rpc("search_useful_links_fts", {
+    query_tsquery: sanitized,
+    match_count: 10,
+  });
 
   if (error || !data) return [];
 
-  return data.map((link: any) => ({
+  return data.map((row: any) => ({
     source: "links",
-    title: link.title,
-    snippet: link.description || link.url,
-    url: link.url,
-    path: `/useful-links?id=${link.id}`,
-    score: 0.5,
+    title: row.title,
+    snippet: row.description || row.url,
+    url: row.url,
+    path: `/useful-links?id=${row.id}`,
+    score: row.rank || 0,
   }));
 }
 
@@ -150,10 +162,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ type: "secret_query", message: "Secret queries require step-up authentication." }, { status: 403 });
   }
 
-  if (!isRetrievalQuery(message)) {
-    return Response.json({ type: "not_retrieval" });
-  }
-
+  const start = Date.now();
   const supabase = createServiceClient();
 
   const [knowledge, leads, terminal, apps, links] = await Promise.all([
@@ -164,14 +173,20 @@ export async function POST(request: NextRequest) {
     searchUsefulLinks(supabase, message),
   ]);
 
-  const allResults = [...knowledge, ...leads, ...terminal, ...apps, ...links];
-  allResults.sort((a, b) => b.score - a.score);
+  const sources: SourceGroup[] = [
+    { source: "knowledge", label: "Knowledge base", results: knowledge, matchCount: knowledge.length },
+    { source: "leads", label: "Leads", results: leads, matchCount: leads.length },
+    { source: "terminal", label: "Terminal history", results: terminal, matchCount: terminal.length },
+    { source: "apps", label: "Apps", results: apps, matchCount: apps.length },
+    { source: "links", label: "Useful links", results: links, matchCount: links.length },
+  ];
 
-  const topResults = allResults.slice(0, 5);
+  const elapsed = Date.now() - start;
 
   return Response.json({
     type: "retrieval",
     query: message,
-    results: topResults,
+    elapsedMs: elapsed,
+    sources,
   });
 }
