@@ -6,8 +6,6 @@ import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { CalendarRange, Plus, RefreshCw, Search } from "lucide-react"
 
-import { MailPopupTrigger } from "@/components/dashboard/mail-popup/trigger"
-
 import {
   Breadcrumb,
   BreadcrumbItem,
