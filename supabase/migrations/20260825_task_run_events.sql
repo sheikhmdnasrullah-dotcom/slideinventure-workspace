@@ -4,8 +4,8 @@
 -- Consumed via Supabase Realtime for live "43/100" updates.
 
 create table if not exists public.task_run_events (
-  id uuid primary key default gen_random_uuid(),
-  task_run_id uuid not null references public.task_runs(id) on delete cascade,
+  id text primary key default gen_random_uuid()::text,
+  task_run_id text not null references public.task_runs(id) on delete cascade,
   sequence int not null, -- monotonically increasing per task_run
   current int not null default 0,
   total int not null default 0,

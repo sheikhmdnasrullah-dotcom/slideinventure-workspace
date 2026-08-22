@@ -483,7 +483,7 @@ export function TodoistContent() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">Project</Label>
-                <Select value={form.projectId} onValueChange={(val) => setForm({ ...form, projectId: val })}>
+                <Select value={form.projectId ?? ""} onValueChange={(val) => setForm({ ...form, projectId: val ?? "" })}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>

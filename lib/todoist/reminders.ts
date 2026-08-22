@@ -12,6 +12,7 @@ export interface TaskReminder {
   completed: boolean
   assignee?: string
   reminderSentAt?: string
+  metadata?: Record<string, unknown>
 }
 
 const REMINDER_LEAD_MINUTES = 60

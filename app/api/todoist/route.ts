@@ -108,7 +108,7 @@ export async function PUT(request: NextRequest) {
 
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean)
-  const id = segments[segments.length - 1]
+  const id = (segments[segments.length - 1] ?? "") as string
 
   if (!id || id === "api" || id === "todoist") {
     return ApiError.badRequest("VALIDATION_ERROR", "Task ID is required").toResponse();
@@ -120,7 +120,7 @@ export async function PUT(request: NextRequest) {
   try {
     const task = await updateTask(id, {
       content: validated.data.content,
-      description: validated.data.description,
+      description: validated.data.description ?? undefined,
       project_id: validated.data.projectId ?? undefined,
       labels: validated.data.labels,
       priority: validated.data.priority,
@@ -143,7 +143,7 @@ export async function DELETE(request: NextRequest) {
 
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean)
-  const id = segments[segments.length - 1]
+  const id = (segments[segments.length - 1] ?? "") as string
 
   if (!id || id === "api" || id === "todoist") {
     return ApiError.badRequest("VALIDATION_ERROR", "Task ID is required").toResponse();
@@ -166,7 +166,7 @@ export async function PATCH(request: NextRequest) {
 
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean)
-  const id = segments[segments.length - 1]
+  const id = (segments[segments.length - 1] ?? "") as string
 
   if (!id || id === "api" || id === "todoist") {
     return ApiError.badRequest("VALIDATION_ERROR", "Task ID is required").toResponse();
@@ -183,7 +183,7 @@ export async function PATCH(request: NextRequest) {
     const validated = validate(UpdateSchema, body);
     const task = await updateTask(id, {
       content: validated.data.content,
-      description: validated.data.description,
+      description: validated.data.description ?? undefined,
       project_id: validated.data.projectId ?? undefined,
       labels: validated.data.labels,
       priority: validated.data.priority,
