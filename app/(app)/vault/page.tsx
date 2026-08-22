@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/supabase/server";
+import { VaultEntries } from "@/components/dashboard/vault/vault-entries";
 
 export default async function VaultPage() {
   await requireUser();
@@ -9,9 +10,10 @@ export default async function VaultPage() {
           Vault
         </h1>
         <p className="text-xs text-foreground/40">
-          Secure storage and secrets.
+          Encrypted secrets. Copy and reveal are audited.
         </p>
       </div>
+      <VaultEntries />
     </div>
   );
 }
