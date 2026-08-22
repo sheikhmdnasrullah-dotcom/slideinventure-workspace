@@ -44,9 +44,15 @@ const NAV_MAIN = [
 
 const NAV_SECONDARY = [
   { title: "Useful Links", url: "/useful-links", icon: Send },
-  { title: "Apps", url: "/apps", icon: Cable },
-  { title: "Mailgo", url: "https://admin.tanim.tech", icon: Mail, external: true },
-  { title: "SOGo mail", url: "https://mail.nasrullahtanim.me/admin", icon: Mail, external: true },
+  {
+    title: "Mail Apps",
+    url: "/apps",
+    icon: Cable,
+    items: [
+      { title: "Mailgo", url: "https://admin.tanim.tech", icon: Mail, external: true },
+      { title: "SOGo mail", url: "https://mail.nasrullahtanim.me/admin", icon: Mail, external: true },
+    ],
+  },
   { title: "Vault", url: "/vault", icon: FileText },
 ]
 
