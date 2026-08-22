@@ -298,7 +298,7 @@ export function TodoistContent() {
               className="pl-9"
             />
           </div>
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
+          <Select value={projectFilter} onValueChange={(val) => val && setProjectFilter(val)}>
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue placeholder="All projects" />
             </SelectTrigger>
@@ -311,7 +311,7 @@ export function TodoistContent() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={labelFilter} onValueChange={setLabelFilter}>
+          <Select value={labelFilter} onValueChange={(val) => val && setLabelFilter(val)}>
             <SelectTrigger className="h-9 w-[140px]">
               <SelectValue placeholder="All labels" />
             </SelectTrigger>

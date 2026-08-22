@@ -107,7 +107,8 @@ export async function PUT(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const url = new URL(request.url);
-  const id = url.pathname.split("/").pop();
+  const segments = url.pathname.split("/").filter(Boolean)
+  const id = segments[segments.length - 1]
 
   if (!id || id === "api" || id === "todoist") {
     return ApiError.badRequest("VALIDATION_ERROR", "Task ID is required").toResponse();
@@ -141,7 +142,8 @@ export async function DELETE(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const url = new URL(request.url);
-  const id = url.pathname.split("/").pop();
+  const segments = url.pathname.split("/").filter(Boolean)
+  const id = segments[segments.length - 1]
 
   if (!id || id === "api" || id === "todoist") {
     return ApiError.badRequest("VALIDATION_ERROR", "Task ID is required").toResponse();
@@ -163,7 +165,8 @@ export async function PATCH(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const url = new URL(request.url);
-  const id = url.pathname.split("/").pop();
+  const segments = url.pathname.split("/").filter(Boolean)
+  const id = segments[segments.length - 1]
 
   if (!id || id === "api" || id === "todoist") {
     return ApiError.badRequest("VALIDATION_ERROR", "Task ID is required").toResponse();

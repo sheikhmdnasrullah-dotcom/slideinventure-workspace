@@ -96,7 +96,7 @@ create index if not exists integrations_status_idx on public.integrations (statu
 create table if not exists public.email_drafts (
   id text primary key default gen_random_uuid()::text,
   account_id text not null,
-  to text[] not null default '{}',
+  "to" text[] not null default '{}',
   cc text[] default '{}',
   bcc text[] default '{}',
   subject text,
