@@ -339,7 +339,14 @@ export type TodoistTask = z.infer<typeof TodoistTaskSchema>;
 // ---------------------------------------------------------------
 export const TerminalCommandSchema = z.object({
   id: z.string().uuid(),
+  title: z.string().min(1),
   command: z.string().min(1),
+  description: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  tags: z.array(z.string()).default([]),
+  notes: z.string().optional().nullable(),
+  variables: z.record(z.string(), z.unknown()).default({}),
+  favorite: z.boolean().default(false),
   cwd: z.string().optional().nullable(),
   exitCode: z.number().int().optional().nullable(),
   stdout: z.string().optional().nullable(),
@@ -348,6 +355,7 @@ export const TerminalCommandSchema = z.object({
   triggeredBy: z.string().email().optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export type TerminalCommand = z.infer<typeof TerminalCommandSchema>;

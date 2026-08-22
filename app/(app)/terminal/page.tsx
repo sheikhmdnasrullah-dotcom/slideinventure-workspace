@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/supabase/server";
+import { TerminalCommands } from "@/components/dashboard/terminal/terminal-commands";
 
 export default async function TerminalPage() {
   await requireUser();
@@ -9,9 +10,10 @@ export default async function TerminalPage() {
           Terminal
         </h1>
         <p className="text-xs text-foreground/40">
-          Command line and tools.
+          Reusable bash and terminal commands.
         </p>
       </div>
+      <TerminalCommands />
     </div>
   );
 }

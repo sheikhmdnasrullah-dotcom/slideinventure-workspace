@@ -1,5 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { ApiError } from "@/lib/api/errors";
 import { verifyInternalSecret } from "@/lib/auth/verify-internal-secret";
 import { recordVersion } from "@/lib/knowledge/versioning";
 import { reindexChunks } from "@/lib/knowledge/reindex";
@@ -17,9 +17,9 @@ export async function POST(request: Request) {
   const validated = PublishSchema.safeParse(body);
 
   if (!validated.success) {
-    return toJson(ApiError.badRequest("VALIDATION_ERROR", "Invalid request body", {
+    return ApiError.badRequest("VALIDATION_ERROR", "Invalid request body", {
       issues: validated.error.issues,
-    }));
+    }).toResponse();
   }
 
   const { id, type, title, body: content, status = "proposed", source = "terminal", author = "terminal", tags = [] } = validated.data;
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   try {
     await reindexChunks(supabase, id, content ?? "");
   } catch (err) {
-    return toJson(ApiError.internal("REINDEX_ERROR", (err as Error).message));
+    return ApiError.internal("REINDEX_ERROR", (err as Error).message).toResponse();
   }
 
   return Response.json({ id, status: "created" }, { status: 201 });

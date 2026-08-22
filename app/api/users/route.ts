@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000)));
+  if (!limit.allowed) return ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000)).toResponse();
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
   const supabase = createServiceClient();
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000)));
+  if (!limit.allowed) return ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000)).toResponse();
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(UserSchema.omit({ id: true, createdAt: true, updatedAt: true }), body);

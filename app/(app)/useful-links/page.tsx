@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/supabase/server";
+import { LinksClient } from "./links-client";
 
 export default async function UsefulLinksPage() {
   await requireUser();
@@ -9,9 +10,11 @@ export default async function UsefulLinksPage() {
           Useful Links
         </h1>
         <p className="text-xs text-foreground/40">
-          Curated links and resources.
+          Curated bookmarks, tools, and resources.
         </p>
       </div>
+      
+      <LinksClient />
     </div>
   );
 }

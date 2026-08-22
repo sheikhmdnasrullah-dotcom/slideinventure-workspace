@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/supabase/server";
+import { AppsClient } from "./apps-client";
 
 export default async function AppsPage() {
   await requireUser();
@@ -9,9 +10,11 @@ export default async function AppsPage() {
           Apps
         </h1>
         <p className="text-xs text-foreground/40">
-          Integrated applications.
+          Application launcher for connected workspace tools.
         </p>
       </div>
+      
+      <AppsClient />
     </div>
   );
 }
