@@ -9,6 +9,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import type { LucideIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function NavSecondary({
   items,
@@ -20,22 +21,22 @@ export function NavSecondary({
     icon: LucideIcon
   }[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+  const router = useRouter()
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton render={<a href={item.url} />}>
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-               </a>
-             </SidebarMenuButton>
-           </SidebarMenuItem>
+              <SidebarMenuButton onClick={() => router.push(item.url)}>
+                <item.icon />
+                <span>{item.title}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           ))}
-       </SidebarMenu>
-     </SidebarGroupContent>
-   </SidebarGroup>
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   )
 }

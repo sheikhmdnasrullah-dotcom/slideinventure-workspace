@@ -259,6 +259,9 @@ function VaultCard({
   const [secretValue, setSecretValue] = useState<string | null>(null)
   const [loadingSecret, setLoadingSecret] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [reauthPassword, setReauthPassword] = useState("")
+  const [reauthRequired, setReauthRequired] = useState(false)
+  const [reauthLoading, setReauthLoading] = useState(false)
 
   const handleReveal = async () => {
     if (revealed) {
@@ -270,6 +273,13 @@ function VaultCard({
     setLoadingSecret(true)
     try {
       const res = await fetch(`/api/vault/${entry.id}/reveal`, { method: "POST" })
+      if (res.status === 400) {
+        const json = await res.json().catch(() => ({}))
+        if (json.error === "REAUTH_REQUIRED") {
+          setReauthRequired(true)
+          return
+        }
+      }
       if (!res.ok) {
         toast.error("Failed to reveal secret")
         return
@@ -286,6 +296,29 @@ function VaultCard({
       toast.error("Failed to reveal secret")
     } finally {
       setLoadingSecret(false)
+    }
+  }
+
+  const handleReauth = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setReauthLoading(true)
+    try {
+      const res = await fetch("/api/vault/reauth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: reauthPassword }),
+      })
+      if (!res.ok) {
+        toast.error("Re-authentication failed")
+        return
+      }
+      setReauthRequired(false)
+      setReauthPassword("")
+      handleReveal()
+    } catch {
+      toast.error("Re-authentication failed")
+    } finally {
+      setReauthLoading(false)
     }
   }
 
@@ -365,6 +398,24 @@ function VaultCard({
           </Button>
         </div>
       </CardHeader>
+      {reauthRequired && (
+        <CardContent className="flex flex-col gap-3 border-t">
+          <p className="text-xs font-medium">Re-authentication required</p>
+          <form onSubmit={handleReauth} className="flex flex-col gap-2">
+            <Input
+              type="password"
+              placeholder="Enter your password"
+              value={reauthPassword}
+              onChange={(e) => setReauthPassword(e.target.value)}
+              className="h-9"
+              autoFocus
+            />
+            <Button type="submit" size="sm" disabled={reauthLoading}>
+              {reauthLoading ? "Verifying..." : "Verify"}
+            </Button>
+          </form>
+        </CardContent>
+      )}
       <CardContent className="flex flex-1 flex-col gap-3">
         <div className="rounded-lg bg-muted/50 p-3">
           <code className="whitespace-pre-wrap break-all font-mono text-xs leading-relaxed">

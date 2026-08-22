@@ -23,7 +23,7 @@ const CreateSchema = SecretVaultEntrySchema.omit({
 });
 
 export async function GET(request: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
 
   let q = supabase
     .from("secret_vault_entries")
-    .select("id, name, category, service_name, username, secret_type, url, notes, tags, expires_at, created_by, created_at, updated_at", { count: "exact" });
+    .select("id, name, category, service_name, username, secret_type, url, notes, tags, expires_at, created_by, created_at, updated_at", { count: "exact" })
+    .eq("created_by", user.email ?? "");
 
   if (query.data.category) q = q.eq("category", query.data.category);
   if (query.data.search) q = q.or(`name.ilike.%${query.data.search}%,service_name.ilike.%${query.data.search}%,username.ilike.%${query.data.search}%`);

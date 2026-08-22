@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { format, isToday, isYesterday } from "date-fns";
-import { Send, Loader2, Sparkles, MessageSquarePlus } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,17 @@ interface Message {
   content: string;
   evidence?: EvidenceChunk[];
   filters?: Record<string, unknown>;
+  retrievalResults?: RetrievalResult[];
   createdAt: string;
+}
+
+interface RetrievalResult {
+  source: string;
+  title: string;
+  snippet: string;
+  path?: string;
+  url?: string;
+  score: number;
 }
 
 interface Session {
@@ -148,9 +158,44 @@ export function ChatInterface() {
     setStreaming(true);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    setMessages((prev) => [...prev, { id: `temp-${Date.now()}`, role: "user", content: text, createdAt: new Date().toISOString() }]);
+    const userMessageId = `temp-${Date.now()}`;
+    setMessages((prev) => [...prev, { id: userMessageId, role: "user", content: text, createdAt: new Date().toISOString() }]);
 
     try {
+      const retrieveRes = await fetch("/api/chat/retrieve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+
+      let retrievalResults: RetrievalResult[] = [];
+      let isRetrieval = false;
+
+      if (retrieveRes.ok) {
+        const retrieveData = await retrieveRes.json();
+        if (retrieveData.type === "retrieval" && retrieveData.results?.length > 0) {
+          isRetrieval = true;
+          retrievalResults = retrieveData.results;
+        }
+      }
+
+      if (isRetrieval) {
+        setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `retrieval-${Date.now()}`,
+            role: "assistant",
+            content: "Found results from your data:",
+            retrievalResults,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+        setStreaming(false);
+        textareaRef.current?.focus();
+        return;
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -353,21 +398,41 @@ export function ChatInterface() {
                             <p className="whitespace-pre-wrap">{msg.content}</p>
                           </div>
 
-                          {msg.evidence && msg.evidence.length > 0 && msg.role === "assistant" && (
-                            <div className="mt-2 w-full space-y-2">
-                              {msg.evidence.map((ev) => (
-                                <EvidenceBlock
-                                  key={ev.chunk_id}
-                                  query=""
-                                  text={ev.text}
-                                  type={ev.heading || undefined}
-                                  source={`${ev.knowledge_item_id} · chunk ${ev.chunk_index}`}
-                                  position={`similarity ${(ev.similarity * 100).toFixed(0)}%`}
-                                  href={`/knowledge/${ev.knowledge_item_id}?chunk=${ev.chunk_index}`}
-                                />
-                              ))}
-                            </div>
-                          )}
+                           {msg.evidence && msg.evidence.length > 0 && msg.role === "assistant" && (
+                             <div className="mt-2 w-full space-y-2">
+                               {msg.evidence.map((ev) => (
+                                 <EvidenceBlock
+                                   key={ev.chunk_id}
+                                   query=""
+                                   text={ev.text}
+                                   type={ev.heading || undefined}
+                                   source={`${ev.knowledge_item_id} · chunk ${ev.chunk_index}`}
+                                   position={`similarity ${(ev.similarity * 100).toFixed(0)}%`}
+                                   href={`/knowledge/${ev.knowledge_item_id}?chunk=${ev.chunk_index}`}
+                                 />
+                               ))}
+                             </div>
+                           )}
+
+                           {msg.retrievalResults && msg.retrievalResults.length > 0 && (
+                             <div className="mt-2 w-full space-y-2 rounded-lg border border-dashed bg-muted/30 p-3">
+                               <p className="text-xs font-medium text-muted-foreground">From your data</p>
+                               {msg.retrievalResults.map((result, idx) => (
+                                 <div key={idx} className="rounded-md border bg-background p-2">
+                                   <div className="flex items-center gap-2">
+                                     <Badge variant="outline" className="text-[10px] uppercase">{result.source}</Badge>
+                                     <span className="text-xs font-medium">{result.title}</span>
+                                   </div>
+                                   <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{result.snippet}</p>
+                                   {result.path && (
+                                     <a href={result.path} className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                       Open <ExternalLink className="size-3" />
+                                     </a>
+                                   )}
+                                 </div>
+                               ))}
+                             </div>
+                           )}
 
                           <div className="mt-1 text-xs text-muted-foreground">
                             {formatMessageTime(msg.createdAt)}

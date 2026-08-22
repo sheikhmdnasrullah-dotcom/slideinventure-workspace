@@ -6,9 +6,24 @@ import { z } from "zod";
 import { SecretVaultEntrySchema } from "@/lib/api/schemas";
 import { encryptSecret, decryptSecret } from "@/lib/vault/crypto";
 import { recordAudit } from "@/lib/api/audit";
+import { getClientIp, getUserAgent } from "@/lib/api/request";
 import { NextRequest } from "next/server";
 
 const UpdateSchema = SecretVaultEntrySchema.partial().omit({ id: true, createdAt: true, updatedAt: true, iv: true, keyVersion: true });
+
+async function assertOwnership(supabase: ReturnType<typeof createServiceClient>, id: string, userEmail: string) {
+  const { data, error } = await supabase
+    .from("secret_vault_entries")
+    .select("id")
+    .eq("id", id)
+    .eq("created_by", userEmail)
+    .single();
+
+  if (error || !data) {
+    return false;
+  }
+  return true;
+}
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -16,6 +31,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { id } = await params;
   const supabase = createServiceClient();
+
+  if (!(await assertOwnership(supabase, id, user.email ?? ""))) {
+    return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
+  }
 
   const { data, error } = await supabase
     .from("secret_vault_entries")
@@ -36,10 +55,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const { id } = await params;
+  const supabase = createServiceClient();
+
+  if (!(await assertOwnership(supabase, id, user.email ?? ""))) {
+    return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
+  }
+
   const body = await request.json().catch(() => ({}));
   const validated = validate(UpdateSchema, body);
 
-  const supabase = createServiceClient();
   const now = new Date().toISOString();
 
   const updateData: Record<string, unknown> = {
@@ -78,6 +102,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { id } = await params;
   const supabase = createServiceClient();
+
+  if (!(await assertOwnership(supabase, id, user.email ?? ""))) {
+    return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
+  }
 
   const { error } = await supabase.from("secret_vault_entries").delete().eq("id", id);
 

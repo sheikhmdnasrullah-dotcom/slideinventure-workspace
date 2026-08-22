@@ -1,23 +1,22 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
 import {
   BookOpen,
   Cable,
   FileText,
   Inbox,
   LayoutDashboard,
-  Lightbulb,
   MessageSquare,
   Send,
   Settings,
   Sparkles,
   Terminal,
-  Users,
   type LucideIcon,
 } from "lucide-react"
 
+import { NavMain } from "@/components/dashboard/v3/nav-main"
+import { NavSecondary } from "@/components/dashboard/v3/nav-secondary"
+import { NavUser } from "@/components/dashboard/v3/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -26,31 +25,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar"
-import { NavUser } from "@/components/dashboard/v3/nav-user"
+import { useRouter } from "next/navigation"
 
-function useIsActive() {
-  const pathname = usePathname()
-  return (url: string) => {
-    if (url === "/") return pathname === "/"
-    const seg = url.split("/")[1] ?? ""
-    const pathSeg = pathname.split("/")[1] ?? ""
-    return seg !== "" && seg === pathSeg
-  }
-}
-
-type NavItem = {
-  title: string
-  url: string
-  icon: LucideIcon
-  isActive?: boolean
-  external?: boolean
-}
-
-const NAV: NavItem[] = [
+const NAV_MAIN = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Leads", url: "/leads", icon: Users },
+  { title: "Leads", url: "/leads", icon: FileText },
   { title: "Mail", url: "/mail", icon: Inbox },
   { title: "Chat", url: "/chat", icon: MessageSquare },
   { title: "Todoist", url: "/todoist", icon: Sparkles },
@@ -59,54 +39,61 @@ const NAV: NavItem[] = [
   { title: "Notion", url: "/notion", icon: Sparkles },
   { title: "Miro", url: "/miro", icon: Sparkles },
   { title: "Terminal", url: "/terminal", icon: Terminal },
+]
+
+const NAV_SECONDARY = [
   { title: "Useful Links", url: "/useful-links", icon: Send },
   { title: "Apps", url: "/apps", icon: Cable },
   { title: "Vault", url: "/vault", icon: FileText },
-  { title: "Settings", url: "/settings", icon: Settings },
+]
+
+const SETTINGS_ITEMS = [
+  { title: "General", url: "/settings" },
+  { title: "Integrations", url: "/settings/integrations" },
+  { title: "Mail", url: "/settings/mail" },
+  { title: "Knowledge", url: "/settings/knowledge" },
 ]
 
 export function AppSidebar({
   userEmail,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { userEmail: string }) {
-  const isActive = useIsActive()
-
-  const navItems = NAV.map((item) => ({
-    title: item.title,
-    url: item.url,
-    icon: item.icon,
-  }))
+  const router = useRouter()
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-foreground font-mono text-xs font-semibold text-background">
+            <SidebarMenuButton size="lg" onClick={() => router.push("/")}>
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-foreground font-mono text-xs font-semibold text-background">
                 SV
-             </div>
-              <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-base font-semibold">SlideIn Venture</span>
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">SlideIn Venture</span>
                 <span className="truncate text-xs text-muted-foreground">Ops console</span>
-             </div>
-           </SidebarMenuButton>
+              </div>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        <nav>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-             </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </nav>
-       </SidebarContent>
+        <NavMain label="Main" items={NAV_MAIN} />
+        <NavSecondary items={NAV_SECONDARY} />
+        <NavMain
+          label="Settings"
+          items={[
+            {
+              title: "Settings",
+              url: "/settings",
+              icon: Settings,
+              isActive: false,
+              items: SETTINGS_ITEMS,
+            },
+          ]}
+        />
+      </SidebarContent>
 
       <SidebarFooter>
         <NavUser
@@ -116,8 +103,7 @@ export function AppSidebar({
             avatar: "",
           }}
         />
-     </SidebarFooter>
-      <SidebarRail />
-   </Sidebar>
+      </SidebarFooter>
+    </Sidebar>
   )
 }
