@@ -21,7 +21,7 @@ const CreateSchema = LeadSchema.omit({ id: true, createdAt: true, updatedAt: tru
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
   if (!limit.allowed) return toJson(ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000)));
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     .order(query.data.sortBy, { ascending: query.data.sortOrder === "asc" })
     .range(from, to);
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json({
     data: (data ?? []) as Lead[],
@@ -62,10 +62,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(CreateSchema, body);
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     created_at: now,
   });
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   await recordAudit({
     table: "leads",

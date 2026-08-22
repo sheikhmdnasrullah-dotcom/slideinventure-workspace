@@ -10,7 +10,7 @@ const PublishSchema = KnowledgeItemSchema.omit({ createdAt: true, updatedAt: tru
 
 export async function POST(request: Request) {
   if (!verifyInternalSecret(request)) {
-    return toJson(ApiError.unauthorized("UNAUTHORIZED", "Invalid internal secret"));
+    return ApiError.unauthorized("UNAUTHORIZED", "Invalid internal secret").toResponse();
   }
 
   const body = await request.json().catch(() => ({}));
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   });
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   try {
     await reindexChunks(supabase, id, content ?? "");

@@ -43,10 +43,10 @@ async function cacheMessages(messages: MailMessage[]) {
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
   const supabase = createServiceClient();
@@ -127,6 +127,6 @@ export async function GET(request: NextRequest) {
     cacheMessages(messages).catch(console.error);
     return NextResponse.json(messages);
   } catch (err) {
-    return toJson(ApiError.internal("FETCH_ERROR", err instanceof Error ? err.message : "Failed to fetch messages"));
+    return ApiError.internal("FETCH_ERROR", err instanceof Error ? err.message : "Failed to fetch messages").toResponse();
   }
 }

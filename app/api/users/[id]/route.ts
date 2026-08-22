@@ -11,21 +11,21 @@ const UpdateSchema = UserSchema.partial().omit({ id: true, createdAt: true, upda
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const { id } = await params;
   const supabase = createServiceClient();
 
   const { data, error } = await supabase.from("users").select("*").eq("id", id).single();
 
-  if (error || !data) return toJson(ApiError.notFound("USER_NOT_FOUND", "User not found"));
+  if (error || !data) return ApiError.notFound("USER_NOT_FOUND", "User not found").toResponse();
 
   return Response.json(data as User);
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
   if (!limit.allowed) return toJson(ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000)));
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .update({ ...validated.data, updated_at: now })
     .eq("id", id);
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   await recordAudit({
     table: "users",
@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
   if (!limit.allowed) return toJson(ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000)));
@@ -76,7 +76,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { error } = await supabase.from("users").delete().eq("id", id);
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json({ id, status: "deleted" });
 }
