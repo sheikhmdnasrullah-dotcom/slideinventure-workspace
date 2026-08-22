@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/tooltip"
 
 interface NavProps {
-  isCollapsed: boolean
+  isCollapsed?: boolean
   links: {
     title: string
     label?: string
@@ -21,7 +21,7 @@ interface NavProps {
   }[]
 }
 
-export function Nav({ links, isCollapsed }: NavProps) {
+export function Nav({ links, isCollapsed = false }: NavProps) {
   return (
     <div
       data-collapsed={isCollapsed}

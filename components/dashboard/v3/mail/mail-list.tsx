@@ -22,7 +22,7 @@ export function MailList({ unreadOnly = false }: MailListProps) {
 
   if (loading && items.length === 0) {
     return (
-      <ScrollArea className="h-screen">
+      <ScrollArea className="h-full">
         <div className="flex flex-col gap-2 p-4 pt-0">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">

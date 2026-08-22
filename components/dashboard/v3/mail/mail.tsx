@@ -55,8 +55,7 @@ import { useMail } from "./use-mail"
 
 interface MailProps {
   defaultLayout?: number[]
-  defaultCollapsed?: boolean
-  navCollapsedSize: number
+  navCollapsedSize?: number
 }
 
 // Map display names → IMAP folder paths (common Mailcow/Dovecot structure)
@@ -71,10 +70,8 @@ const FOLDER_MAP: Record<string, string> = {
 
 export function Mail({
   defaultLayout = [20, 32, 48],
-  defaultCollapsed = false,
-  navCollapsedSize,
+  navCollapsedSize = 0,
 }: MailProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const isMobile = useIsMobile()
   const {
     accounts, account, setAccount,
@@ -290,25 +287,13 @@ export function Mail({
         <ResizablePanel
           id="nav"
           defaultSize={defaultLayout[0]}
-          collapsedSize={navCollapsedSize}
-          collapsible={true}
           minSize={15}
           maxSize={20}
-          onResize={(panelSize) => {
-            const nowCollapsed = panelSize.asPercentage <= navCollapsedSize
-            setIsCollapsed(nowCollapsed)
-            document.cookie = `mail-panel-collapsed=${nowCollapsed}`
-          }}
-          className={cn(
-            isCollapsed && "w-full transition-all duration-300 ease-in-out"
-          )}
+          className="items-stretch"
         >
-          <div className={cn(
-            "flex h-[52px] items-center justify-center",
-            isCollapsed ? "h-[52px]" : "px-2"
-          )}>
+          <div className="flex h-[52px] items-center px-2">
             <AccountSwitcher
-              isCollapsed={isCollapsed}
+              isCollapsed={false}
               accounts={switcherAccounts}
               account={account}
               setAccount={setAccount}
@@ -322,15 +307,14 @@ export function Mail({
               className="w-full"
               onClick={() => setComposeOpen(true)}
             >
-              {isCollapsed ? "" : "Compose"}
+              "Compose"
               <Pencil className="h-4 w-4" />
             </Button>
           </div>
           <Separator className="mx-0" />
-          <Nav isCollapsed={isCollapsed} links={folderLinks} />
+          <Nav links={folderLinks} />
           <Separator className="mx-0" />
           <Nav
-            isCollapsed={isCollapsed}
             links={[
               { title: "Social",     label: "", icon: Users2,        variant: "ghost" },
               { title: "Updates",    label: "", icon: AlertCircle,   variant: "ghost" },

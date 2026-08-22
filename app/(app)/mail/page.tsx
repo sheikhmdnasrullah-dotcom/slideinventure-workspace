@@ -13,7 +13,6 @@ export default async function MailPage() {
   const collapsed = cookieStore.get("mail-panel-collapsed")
 
   const defaultLayout = tryParseLayout(layout?.value)
-  const defaultCollapsed = collapsed ? collapsed.value === "true" : undefined
 
   return (
     <>
@@ -22,8 +21,7 @@ export default async function MailPage() {
         <MailProvider>
           <Mail
             defaultLayout={defaultLayout}
-            defaultCollapsed={defaultCollapsed}
-            navCollapsedSize={4}
+            navCollapsedSize={0}
           />
         </MailProvider>
       </div>
