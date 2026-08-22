@@ -55,10 +55,10 @@ import { useMail } from "./use-mail"
 
 interface MailProps {
   defaultLayout?: number[]
-  navCollapsedSize?: number
+  defaultCollapsed?: boolean
+  navCollapsedSize: number
 }
 
-// Map display names → IMAP folder paths (common Mailcow/Dovecot structure)
 const FOLDER_MAP: Record<string, string> = {
   Inbox: "INBOX",
   Drafts: "Drafts",
@@ -70,8 +70,10 @@ const FOLDER_MAP: Record<string, string> = {
 
 export function Mail({
   defaultLayout = [20, 32, 48],
-  navCollapsedSize = 0,
+  defaultCollapsed = false,
+  navCollapsedSize,
 }: MailProps) {
+  const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const isMobile = useIsMobile()
   const {
     accounts, account, setAccount,
@@ -84,12 +86,10 @@ export function Mail({
   const [mobileView, setMobileView] = React.useState<"list" | "detail">("list")
   const [folderSheetOpen, setFolderSheetOpen] = React.useState(false)
 
-  // Selecting a message switches the mobile view to the detail screen
   React.useEffect(() => {
     if (isMobile && selected) setMobileView("detail")
   }, [selected, isMobile])
 
-  // Mapped accounts for the switcher (reusing the same icon for all)
   const switcherAccounts = React.useMemo(() => accounts.map(a => ({
     label: a.name,
     email: a.email,
@@ -105,13 +105,11 @@ export function Mail({
     ),
   })), [accounts])
 
-  // Compose form state
   const [composeTo, setComposeTo] = React.useState("")
   const [composeSubject, setComposeSubject] = React.useState("")
   const [composeBody, setComposeBody] = React.useState("")
   const [composeSending, setComposeSending] = React.useState(false)
 
-  // Build nav links with live unread counts from folders API
   function getUnread(name: string): string {
     const path = FOLDER_MAP[name] ?? name
     const f = folders.find((f) => f.path === path || f.name === name)
@@ -216,7 +214,6 @@ export function Mail({
           </SheetContent>
         </Sheet>
 
-        {/* ─── COMPOSE DIALOG ─── */}
         <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -262,7 +259,6 @@ export function Mail({
           </DialogContent>
         </Dialog>
 
-        {/* ─── ADD ACCOUNT DIALOG ─── */}
         <AddAccountDialog
           open={addAccountOpen}
           onOpenChange={setAddAccountOpen}
@@ -283,17 +279,28 @@ export function Mail({
         }}
         className="h-full items-stretch rounded-lg border overflow-hidden"
       >
-        {/* ─── LEFT NAV ─── */}
         <ResizablePanel
           id="nav"
           defaultSize={defaultLayout[0]}
+          collapsedSize={navCollapsedSize}
+          collapsible={true}
           minSize={15}
           maxSize={20}
-          className="items-stretch"
+          onResize={(panelSize) => {
+            const collapsed = panelSize.asPercentage <= navCollapsedSize
+            setIsCollapsed(collapsed)
+            document.cookie = `mail-panel-collapsed=${JSON.stringify(collapsed)}`
+          }}
+          className={cn(isCollapsed && "w-full transition-all duration-300 ease-in-out")}
         >
-          <div className="flex h-[52px] items-center px-2">
+          <div
+            className={cn(
+              "flex h-[52px] items-center",
+              isCollapsed ? "justify-center" : "px-2"
+            )}
+          >
             <AccountSwitcher
-              isCollapsed={false}
+              isCollapsed={isCollapsed}
               accounts={switcherAccounts}
               account={account}
               setAccount={setAccount}
@@ -304,17 +311,18 @@ export function Mail({
           <Separator className="mx-0" />
           <div className="m-3">
             <Button
-              className="w-full"
+              className="w-full cursor-pointer"
               onClick={() => setComposeOpen(true)}
             >
-              "Compose"
-              <Pencil className="h-4 w-4" />
+              {isCollapsed ? "" : "Compose"}
+              <Send className="size-4" />
             </Button>
           </div>
           <Separator className="mx-0" />
-          <Nav links={folderLinks} />
+          <Nav isCollapsed={isCollapsed} links={folderLinks} />
           <Separator className="mx-0" />
           <Nav
+            isCollapsed={isCollapsed}
             links={[
               { title: "Social",     label: "", icon: Users2,        variant: "ghost" },
               { title: "Updates",    label: "", icon: AlertCircle,   variant: "ghost" },
@@ -327,7 +335,6 @@ export function Mail({
 
         <ResizableHandle withHandle />
 
-        {/* ─── MESSAGE LIST ─── */}
         <ResizablePanel id="list" defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
@@ -378,13 +385,11 @@ export function Mail({
 
         <ResizableHandle withHandle />
 
-        {/* ─── MESSAGE DISPLAY ─── */}
         <ResizablePanel id="display" defaultSize={defaultLayout[2]} minSize={30}>
           <MailDisplay />
         </ResizablePanel>
       </ResizablePanelGroup>
 
-      {/* ─── COMPOSE DIALOG ─── */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -428,7 +433,6 @@ export function Mail({
         </DialogContent>
       </Dialog>
 
-      {/* ─── ADD ACCOUNT DIALOG ─── */}
       <AddAccountDialog
         open={addAccountOpen}
         onOpenChange={setAddAccountOpen}

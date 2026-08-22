@@ -9,6 +9,7 @@ export default function AuthLayout({
     <ThemeProvider
       attribute="class"
       defaultTheme="light"
+      forcedTheme="light"
       enableSystem={false}
       disableTransitionOnChange
     >

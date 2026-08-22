@@ -21,7 +21,8 @@ export default async function MailPage() {
         <MailProvider>
           <Mail
             defaultLayout={defaultLayout}
-            navCollapsedSize={0}
+            defaultCollapsed={collapsed?.value === "true"}
+            navCollapsedSize={4}
           />
         </MailProvider>
       </div>
