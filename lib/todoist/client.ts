@@ -10,6 +10,7 @@ export interface TodoistTask {
   due_date?: string
   completed: boolean
   assignee?: string
+  labels?: string[]
   metadata: Record<string, unknown>
   created_at: string
   updated_at: string
@@ -49,7 +50,7 @@ export interface TodoistUpdateTaskInput {
   completed?: boolean
 }
 
-const TODOIST_API_BASE = "https://api.todoist.com/rest/v2"
+const TODOIST_API_BASE = "https://api.todoist.com/api/v1"
 
 function getToken(): string {
   const token = process.env.TODOIST_API_TOKEN
@@ -77,11 +78,13 @@ async function todoistFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function listProjects(): Promise<TodoistProject[]> {
-  return todoistFetch<TodoistProject[]>("/projects")
+  const data = await todoistFetch<{ results: TodoistProject[] }>("/projects")
+  return data.results ?? []
 }
 
 export async function listLabels(): Promise<TodoistLabel[]> {
-  return todoistFetch<TodoistLabel[]>("/labels")
+  const data = await todoistFetch<{ results: TodoistLabel[] }>("/labels")
+  return data.results ?? []
 }
 
 export async function listTasks(filters?: { project_id?: string; label?: string; completed?: boolean }): Promise<TodoistTask[]> {
@@ -90,32 +93,52 @@ export async function listTasks(filters?: { project_id?: string; label?: string;
   if (filters?.label) params.set("label", filters.label)
   if (filters?.completed !== undefined) params.set("completed", String(filters.completed))
   const qs = params.toString()
-  return todoistFetch<TodoistTask[]>(`/tasks${qs ? `?${qs}` : ""}`)
+  const data = await todoistFetch<{ results: TodoistTask[] }>(`/tasks${qs ? `?${qs}` : ""}`)
+  return data.results ?? []
 }
 
 export async function getTask(id: string): Promise<TodoistTask> {
-  return todoistFetch<TodoistTask>(`/tasks/${id}`)
+  const data = await todoistFetch<{ results: TodoistTask[] }>(`/tasks/${id}`)
+  return data.results[0] as TodoistTask
 }
 
 export async function createTask(input: TodoistCreateTaskInput): Promise<TodoistTask> {
-  return todoistFetch<TodoistTask>("/tasks", {
+  const body: Record<string, unknown> = {
+    content: input.content,
+    description: input.description,
+    project_id: input.project_id,
+    labels: input.labels,
+    priority: input.priority ?? 1,
+    due_date: input.due_date,
+  }
+
+  Object.keys(body).forEach(key => body[key] === undefined && delete body[key])
+
+  const data = await todoistFetch<{ results: TodoistTask[] }>("/tasks", {
     method: "POST",
-    body: JSON.stringify({
-      content: input.content,
-      description: input.description,
-      project_id: input.project_id,
-      labels: input.labels,
-      priority: input.priority ?? 1,
-      due_date: input.due_date,
-    }),
+    body: JSON.stringify(body),
   })
+  return data.results[0] as TodoistTask
 }
 
 export async function updateTask(id: string, input: TodoistUpdateTaskInput): Promise<TodoistTask> {
-  return todoistFetch<TodoistTask>(`/tasks/${id}`, {
+  const body: Record<string, unknown> = {
+    content: input.content,
+    description: input.description,
+    project_id: input.project_id,
+    labels: input.labels,
+    priority: input.priority,
+    due_date: input.due_date,
+    completed: input.completed,
+  }
+
+  Object.keys(body).forEach(key => body[key] === undefined && delete body[key])
+
+  const data = await todoistFetch<{ results: TodoistTask[] }>(`/tasks/${id}`, {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify(body),
   })
+  return data.results[0] as TodoistTask
 }
 
 export async function completeTask(id: string): Promise<void> {
