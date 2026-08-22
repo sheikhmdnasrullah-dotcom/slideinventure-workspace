@@ -6,15 +6,15 @@ import { NextRequest } from "next/server";
 
 export async function GET(_request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(_request, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   try {
     const accounts = getPublicAccounts();
     return Response.json(accounts);
   } catch {
-    return toJson(ApiError.internal("ACCOUNTS_ERROR", "Failed to load mail accounts"));
+    return ApiError.internal("ACCOUNTS_ERROR", "Failed to load mail accounts").toResponse();
   }
 }

@@ -17,10 +17,10 @@ function slugify(text: string): string {
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(CreateSchema, body);
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     created_at: now,
   });
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   await reindexChunks(supabase, id, validated.data.body ?? "");
 

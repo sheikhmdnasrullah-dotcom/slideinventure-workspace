@@ -12,10 +12,10 @@ const BulkSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(BulkSchema, body);
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   if (validated.data.action === "delete") {
     const { error } = await supabase.from("leads").delete().in("id", validated.data.ids);
 
-    if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+    if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
     return Response.json({ deleted: validated.data.ids.length });
   }
@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
       .update({ ...rest, updated_at: new Date().toISOString() })
       .in("id", validated.data.ids);
 
-    if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+    if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
     return Response.json({ updated: validated.data.ids.length });
   }
 
-  return toJson(ApiError.badRequest("UNSUPPORTED_ACTION", "Action must be 'delete' or 'update'"));
+  return ApiError.badRequest("UNSUPPORTED_ACTION", "Action must be 'delete' or 'update'").toResponse();
 }

@@ -12,7 +12,7 @@ const ColumnSchema = z.object({
 
 export async function GET() {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const supabase = createServiceClient();
 
@@ -31,10 +31,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(ColumnSchema, body);
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       { onConflict: "user_id" }
     );
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json({ columns: validated.data.columns });
 }

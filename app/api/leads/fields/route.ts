@@ -11,10 +11,10 @@ const UpdateSchema = CustomLeadFieldSchema.partial().omit({ id: true, createdAt:
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -22,17 +22,17 @@ export async function GET(request: NextRequest) {
     .select("*")
     .order("\"order\"", { ascending: true });
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json(data ?? []);
 }
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(CreateSchema, body);
@@ -48,17 +48,17 @@ export async function POST(request: NextRequest) {
     updated_at: now,
   });
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json({ id }, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(z.object({ id: z.string(), changes: UpdateSchema }), body);
@@ -71,27 +71,27 @@ export async function PUT(request: NextRequest) {
     .update({ ...validated.data.changes, updated_at: now })
     .eq("id", validated.data.id);
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json({ id: validated.data.id, status: "updated" });
 }
 
 export async function DELETE(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
   const { id } = body as { id?: string };
 
-  if (!id) return toJson(ApiError.badRequest("ID_REQUIRED", "Field id is required"));
+  if (!id) return ApiError.badRequest("ID_REQUIRED", "Field id is required").toResponse();
 
   const supabase = createServiceClient();
   const { error } = await supabase.from("custom_lead_fields").delete().eq("id", id);
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json({ id, status: "deleted" });
 }

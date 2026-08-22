@@ -5,10 +5,10 @@ import { NextRequest } from "next/server";
 
 export async function GET(_request: NextRequest) {
   const user = await getSessionUser();
-  if (!user?.email) return toJson(ApiError.unauthorized());
+  if (!user?.email) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(_request, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -18,16 +18,16 @@ export async function GET(_request: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
   return Response.json(data ?? []);
 }
 
 export async function DELETE(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user?.email) return toJson(ApiError.unauthorized());
+  if (!user?.email) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const supabase = createServiceClient();
   const { searchParams } = new URL(request.url);
@@ -37,7 +37,7 @@ export async function DELETE(request: NextRequest) {
   if (id) query = query.eq("id", id);
 
   const { error } = await query;
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
+  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
 
   return Response.json({ status: "deleted" });
 }

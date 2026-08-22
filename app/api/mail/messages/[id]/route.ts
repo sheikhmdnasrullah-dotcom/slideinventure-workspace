@@ -18,18 +18,18 @@ function parseId(id: string): { uid: number; folder: string; email: string } | n
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(_req, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const { id } = await params;
   const parsed = parseId(id);
-  if (!parsed) return toJson(ApiError.badRequest("INVALID_ID", "Invalid message id format"));
+  if (!parsed) return ApiError.badRequest("INVALID_ID", "Invalid message id format").toResponse();
 
   try {
     const message = await getMessage(parsed.email, parsed.folder, parsed.uid);
-    if (!message) return toJson(ApiError.notFound("MESSAGE_NOT_FOUND", "Message not found"));
+    if (!message) return ApiError.notFound("MESSAGE_NOT_FOUND", "Message not found").toResponse();
 
     const supabase = createServiceClient();
     await supabase.from("mail_messages").upsert(
@@ -57,20 +57,20 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     return NextResponse.json(message);
   } catch (err) {
-    return toJson(ApiError.internal("FETCH_ERROR", err instanceof Error ? err.message : "Failed to fetch message"));
+    return ApiError.internal("FETCH_ERROR", err instanceof Error ? err.message : "Failed to fetch message").toResponse();
   }
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(req, { limit: 50, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const { id } = await params;
   const parsed = parseId(id);
-  if (!parsed) return toJson(ApiError.badRequest("INVALID_ID", "Invalid message id format"));
+  if (!parsed) return ApiError.badRequest("INVALID_ID", "Invalid message id format").toResponse();
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const read = Boolean(body.read);
@@ -83,20 +83,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return toJson(ApiError.internal("UPDATE_ERROR", err instanceof Error ? err.message : "Failed to update message"));
+    return ApiError.internal("UPDATE_ERROR", err instanceof Error ? err.message : "Failed to update message").toResponse();
   }
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const user = await getSessionUser();
-  if (!user) return toJson(ApiError.unauthorized());
+  if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(_req, { limit: 30, windowMs: 60_000 });
-  if (!limit.allowed) return toJson(ApiError.rateLimited());
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const { id } = await params;
   const parsed = parseId(id);
-  if (!parsed) return toJson(ApiError.badRequest("INVALID_ID", "Invalid message id format"));
+  if (!parsed) return ApiError.badRequest("INVALID_ID", "Invalid message id format").toResponse();
 
   try {
     await deleteMessage(parsed.email, parsed.folder, parsed.uid);
@@ -106,6 +106,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return toJson(ApiError.internal("DELETE_ERROR", err instanceof Error ? err.message : "Failed to delete message"));
+    return ApiError.internal("DELETE_ERROR", err instanceof Error ? err.message : "Failed to delete message").toResponse();
   }
 }
