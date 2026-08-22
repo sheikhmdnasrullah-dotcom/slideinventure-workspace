@@ -9,11 +9,11 @@ export default async function MailPage() {
   await requireUser()
 
   const cookieStore = await cookies()
-  const layout = cookieStore.get("react-resizable-panels:layout:mail")
-  const collapsed = cookieStore.get("react-resizable-panels:collapsed")
+  const layout = cookieStore.get("mail-panel-layout")
+  const collapsed = cookieStore.get("mail-panel-collapsed")
 
-  const defaultLayout = layout ? JSON.parse(layout.value) : undefined
-  const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
+  const defaultLayout = tryParseLayout(layout?.value)
+  const defaultCollapsed = collapsed ? collapsed.value === "true" : undefined
 
   return (
     <>
@@ -29,4 +29,17 @@ export default async function MailPage() {
       </div>
     </>
   )
+}
+
+function tryParseLayout(value: string | undefined): number[] | undefined {
+  if (!value) return undefined
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed) && parsed.length === 3 && parsed.every((n) => Number.isFinite(n))) {
+      return parsed
+    }
+  } catch {
+    // corrupted cookie — fall back to the component's own default
+  }
+  return undefined
 }

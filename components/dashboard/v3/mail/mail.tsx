@@ -280,7 +280,7 @@ export function Mail({
       <ResizablePanelGroup
         orientation="horizontal"
         onLayoutChanged={(layout) => {
-          document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
+          document.cookie = `mail-panel-layout=${JSON.stringify(
             [layout.nav, layout.list, layout.display]
           )}`
         }}
@@ -297,7 +297,7 @@ export function Mail({
           onResize={(panelSize) => {
             const nowCollapsed = panelSize.asPercentage <= navCollapsedSize
             setIsCollapsed(nowCollapsed)
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(nowCollapsed)}`
+            document.cookie = `mail-panel-collapsed=${nowCollapsed}`
           }}
           className={cn(
             isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
