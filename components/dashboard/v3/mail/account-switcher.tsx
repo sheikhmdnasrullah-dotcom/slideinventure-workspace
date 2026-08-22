@@ -18,20 +18,22 @@ interface AccountSwitcherProps {
     email: string
     icon: React.ReactNode
   }[]
+  account: string | null
+  setAccount: (account: string) => void
 }
 
 export function AccountSwitcher({
   isCollapsed,
   accounts,
+  account,
+  setAccount,
 }: AccountSwitcherProps) {
-  const [selectedAccount, setSelectedAccount] = React.useState<string>(
-    accounts[0].email
-  )
+  if (accounts.length === 0) return null
 
   return (
     <Select
-      defaultValue={selectedAccount}
-      onValueChange={(value) => value && setSelectedAccount(value)}
+      value={account ?? undefined}
+      onValueChange={(value) => value && setAccount(value)}
     >
       <SelectTrigger
         className={cn(
@@ -42,22 +44,18 @@ export function AccountSwitcher({
         aria-label="Select account"
       >
         <SelectValue placeholder="Select an account">
-          {accounts.find((account) => account.email === selectedAccount)
-            ?.icon}
+          {accounts.find((a) => a.email === account)?.icon}
           <span className={cn("ml-2", isCollapsed && "hidden")}>
-            {
-              accounts.find((account) => account.email === selectedAccount)
-                ?.label
-            }
+            {accounts.find((a) => a.email === account)?.label}
           </span>
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {accounts.map((account) => (
-          <SelectItem key={account.email} value={account.email}>
+        {accounts.map((a) => (
+          <SelectItem key={a.email} value={a.email}>
             <div className="flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:text-foreground">
-              {account.icon}
-              {account.email}
+              {a.icon}
+              {a.email}
             </div>
           </SelectItem>
         ))}

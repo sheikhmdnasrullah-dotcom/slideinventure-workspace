@@ -64,13 +64,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         custom_fields: custom_fields ?? {},
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id);
+      .eq("id", id)
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
     }
 
-    return Response.json({ id: params.id, status: "updated" });
+    return Response.json({ id, status: "updated" });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
@@ -79,7 +79,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: pathId } = await params
   try {
     const body = await request.json().catch(() => ({}));
     const { id } = body as { id?: string };

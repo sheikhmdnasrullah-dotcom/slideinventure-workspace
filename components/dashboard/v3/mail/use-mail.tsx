@@ -3,8 +3,14 @@
 import * as React from "react"
 import { toast } from "sonner"
 import type { MailMessage, MailFolder } from "@/lib/mail/types"
+import type { PublicAccount } from "@/lib/mail/accounts"
 
 type MailContextValue = {
+  // Accounts
+  accounts: PublicAccount[]
+  account: string | null
+  setAccount: (account: string) => void
+
   // Selection
   selected: string | null
   setSelected: (id: string | null) => void
@@ -45,6 +51,9 @@ export function useMail() {
 }
 
 export function MailProvider({ children }: { children: React.ReactNode }) {
+  const [accounts, setAccounts] = React.useState<PublicAccount[]>([])
+  const [account, setAccountState] = React.useState<string | null>(null)
+  
   const [selected, setSelected] = React.useState<string | null>(null)
   const [selectedMessage, setSelectedMessage] = React.useState<MailMessage | null>(null)
   const [folder, setFolderState] = React.useState("INBOX")
@@ -55,11 +64,26 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
   const [search, setSearchState] = React.useState("")
   const [composeOpen, setComposeOpen] = React.useState(false)
 
-  const fetchMessages = React.useCallback(async (f: string, q: string, cached = false) => {
+  // Fetch accounts on mount
+  React.useEffect(() => {
+    fetch('/api/mail/accounts')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: PublicAccount[]) => {
+        setAccounts(data)
+        if (data.length > 0) {
+          setAccountState(data[0].email)
+        }
+      })
+      .catch(console.error)
+  }, [])
+
+  const fetchMessages = React.useCallback(async (acc: string | null, f: string, q: string, cached = false) => {
+    if (!acc) return
     setLoading(true)
     setError(null)
     try {
       const params = new URLSearchParams({
+        account: acc,
         folder: f,
         limit: "50",
         ...(q ? { search: q } : {}),
@@ -76,9 +100,10 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const fetchFolders = React.useCallback(async () => {
+  const fetchFolders = React.useCallback(async (acc: string | null) => {
+    if (!acc) return
     try {
-      const res = await fetch("/api/mail/folders")
+      const res = await fetch(`/api/mail/folders?account=${encodeURIComponent(acc)}`)
       if (!res.ok) return
       const data: MailFolder[] = await res.json()
       setFolders(data)
@@ -87,28 +112,40 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Initial load
+  // Initial load when account is ready
   React.useEffect(() => {
-    fetchMessages(folder, search)
-    fetchFolders()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (account) {
+      fetchMessages(account, folder, search)
+      fetchFolders(account)
+    }
+  }, [account]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reload on account change
+  const setAccount = React.useCallback((acc: string) => {
+    setAccountState(acc)
+    setFolderState("INBOX")
+    setSelected(null)
+    setSelectedMessage(null)
+    setMessages([])
+    setFolders([])
+  }, [])
 
   // Reload on folder/search change
   const setFolder = React.useCallback((f: string) => {
     setFolderState(f)
     setSelected(null)
     setSelectedMessage(null)
-    fetchMessages(f, search)
-  }, [fetchMessages, search])
+    fetchMessages(account, f, search)
+  }, [fetchMessages, search, account])
 
   const setSearch = React.useCallback((q: string) => {
     setSearchState(q)
-    fetchMessages(folder, q, true)
-  }, [fetchMessages, folder])
+    fetchMessages(account, folder, q, true)
+  }, [fetchMessages, folder, account])
 
   // Load full message when selection changes
   React.useEffect(() => {
-    if (!selected) {
+    if (!selected || !account) {
       setSelectedMessage(null)
       return
     }
@@ -121,12 +158,12 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setSelectedMessage(data) })
       .catch(console.error)
-  }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selected, account]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const refresh = React.useCallback(() => {
-    fetchMessages(folder, search)
-    fetchFolders()
-  }, [fetchMessages, fetchFolders, folder, search])
+    fetchMessages(account, folder, search)
+    fetchFolders(account)
+  }, [fetchMessages, fetchFolders, folder, search, account])
 
   const markRead = React.useCallback(async (id: string, read: boolean) => {
     await fetch(`/api/mail/messages/${encodeURIComponent(id)}`, {
@@ -154,11 +191,9 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
 
   const archiveMessage = React.useCallback(async (id: string) => {
     // Move to Archive folder via PATCH with destination
-    const parts = id.split("@")
-    if (parts.length < 2) return
-    const uid = Number(parts[0])
-    const srcFolder = parts.slice(1).join("@")
-
+    const parts = id.split("|")
+    if (parts.length < 3) return
+    
     const res = await fetch(`/api/mail/messages/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -176,20 +211,22 @@ export function MailProvider({ children }: { children: React.ReactNode }) {
     to: string, subject: string, body: string,
     inReplyTo?: string, references?: string
   ) => {
+    if (!account) throw new Error("No account selected")
     const res = await fetch("/api/mail/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to, subject, body, inReplyTo, references }),
+      body: JSON.stringify({ account, to, subject, body, inReplyTo, references }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: "Unknown error" })) as { error?: string }
       throw new Error(err.error ?? "Failed to send")
     }
     toast.success("Message sent")
-  }, [])
+  }, [account])
 
   return (
     <MailContext.Provider value={{
+      accounts, account, setAccount,
       selected, setSelected,
       selectedMessage,
       folder, setFolder,

@@ -4,14 +4,15 @@ import { getMessage, markRead, deleteMessage } from '@/lib/mail/imap'
 
 type Params = { params: Promise<{ id: string }> }
 
-// id format: "{uid}@{folder}" e.g. "42@INBOX"
-function parseId(id: string): { uid: number; folder: string } | null {
-  const at = id.lastIndexOf('@')
-  if (at === -1) return null
-  const uid = Number(id.slice(0, at))
-  const folder = decodeURIComponent(id.slice(at + 1))
-  if (isNaN(uid)) return null
-  return { uid, folder }
+// id format: "{uid}|{folder}|{email}" e.g. "42|INBOX|hello@nasrullahtanim.me"
+function parseId(id: string): { uid: number; folder: string; email: string } | null {
+  const parts = decodeURIComponent(id).split('|')
+  if (parts.length < 3) return null
+  const uid = Number(parts[0])
+  const folder = parts[1]
+  const email = parts.slice(2).join('|')
+  if (isNaN(uid) || !folder || !email) return null
+  return { uid, folder, email }
 }
 
 // GET /api/mail/messages/[id] — full message
@@ -24,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!parsed) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   try {
-    const message = await getMessage(parsed.folder, parsed.uid)
+    const message = await getMessage(parsed.email, parsed.folder, parsed.uid)
     if (!message) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     // Update cache
@@ -69,7 +70,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const read = Boolean(body.read)
 
   try {
-    await markRead(parsed.folder, parsed.uid, read)
+    await markRead(parsed.email, parsed.folder, parsed.uid, read)
 
     // Update cache
     const supabase = createServiceClient()
@@ -92,7 +93,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!parsed) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   try {
-    await deleteMessage(parsed.folder, parsed.uid)
+    await deleteMessage(parsed.email, parsed.folder, parsed.uid)
 
     // Remove from cache
     const supabase = createServiceClient()

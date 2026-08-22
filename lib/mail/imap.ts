@@ -1,22 +1,26 @@
 import 'server-only'
 import { ImapFlow, type FetchMessageObject } from 'imapflow'
 import type { MailMessage, MailFolder, MailAttachment } from './types'
+import { getAccount } from './accounts'
 
-function createClient(): ImapFlow {
+function createClient(email: string): ImapFlow {
+  const account = getAccount(email)
+  if (!account) throw new Error(`Mail account not configured: ${email}`)
+
   return new ImapFlow({
-    host: process.env.MAIL_IMAP_HOST ?? 'mail.nasrullahtanim.me',
-    port: Number(process.env.MAIL_IMAP_PORT ?? 143),
+    host: account.imapHost,
+    port: account.imapPort,
     secure: false, // STARTTLS
     auth: {
-      user: process.env.MAIL_USER ?? '',
-      pass: process.env.MAIL_PASSWORD ?? '',
+      user: account.email,
+      pass: account.password,
     },
     logger: false,
   })
 }
 
-async function withClient<T>(fn: (client: ImapFlow) => Promise<T>): Promise<T> {
-  const client = createClient()
+async function withClient<T>(email: string, fn: (client: ImapFlow) => Promise<T>): Promise<T> {
+  const client = createClient(email)
   await client.connect()
   try {
     return await fn(client)
@@ -33,7 +37,7 @@ function parseAddress(addr: { name?: string; address?: string } | undefined): { 
   }
 }
 
-function msgToMail(msg: FetchMessageObject, folderPath: string): MailMessage {
+function msgToMail(msg: FetchMessageObject, folderPath: string, accountEmail: string): MailMessage {
   const env = msg.envelope!
   const from = parseAddress(env.from?.[0])
   const toList = (env.to ?? []).map((a) => a.address ?? '').filter(Boolean)
@@ -47,7 +51,7 @@ function msgToMail(msg: FetchMessageObject, folderPath: string): MailMessage {
   )
 
   return {
-    id: `${msg.uid}@${folderPath}`,
+    id: `${msg.uid}|${folderPath}|${accountEmail}`,
     uid: msg.uid,
     folder: folderPath,
     from: from.email,
@@ -64,8 +68,8 @@ function msgToMail(msg: FetchMessageObject, folderPath: string): MailMessage {
   }
 }
 
-export async function listFolders(): Promise<MailFolder[]> {
-  return withClient(async (client) => {
+export async function listFolders(email: string): Promise<MailFolder[]> {
+  return withClient(email, async (client) => {
     const list = await client.list()
     const result: MailFolder[] = []
     for (const folder of list) {
@@ -86,11 +90,12 @@ export async function listFolders(): Promise<MailFolder[]> {
 }
 
 export async function listMessages(
+  email: string,
   folderPath: string,
   limit = 50,
   search?: string
 ): Promise<MailMessage[]> {
-  return withClient(async (client) => {
+  return withClient(email, async (client) => {
     await client.mailboxOpen(folderPath, { readOnly: true })
 
     let uidRange: number[] | string
@@ -113,7 +118,7 @@ export async function listMessages(
       { envelope: true, flags: true, bodyStructure: true, uid: true },
       { uid: typeof uidRange === 'object' }
     )) {
-      messages.push(msgToMail(msg, folderPath))
+      messages.push(msgToMail(msg, folderPath, email))
     }
 
     // Return newest first
@@ -122,10 +127,11 @@ export async function listMessages(
 }
 
 export async function getMessage(
+  email: string,
   folderPath: string,
   uid: number
 ): Promise<MailMessage | null> {
-  return withClient(async (client) => {
+  return withClient(email, async (client) => {
     await client.mailboxOpen(folderPath)
 
     const msg = await client.fetchOne(
@@ -135,7 +141,7 @@ export async function getMessage(
     )
     if (!msg) return null
 
-    const base = msgToMail(msg, folderPath)
+    const base = msgToMail(msg, folderPath, email)
 
     // Parse attachments
     const attachments: MailAttachment[] = []
@@ -174,8 +180,8 @@ export async function getMessage(
   })
 }
 
-export async function markRead(folderPath: string, uid: number, read: boolean): Promise<void> {
-  return withClient(async (client) => {
+export async function markRead(email: string, folderPath: string, uid: number, read: boolean): Promise<void> {
+  return withClient(email, async (client) => {
     await client.mailboxOpen(folderPath)
     if (read) {
       await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true })
@@ -186,24 +192,25 @@ export async function markRead(folderPath: string, uid: number, read: boolean): 
 }
 
 export async function moveMessage(
+  email: string,
   srcFolder: string,
   uid: number,
   destFolder: string
 ): Promise<void> {
-  return withClient(async (client) => {
+  return withClient(email, async (client) => {
     await client.mailboxOpen(srcFolder)
     await client.messageMove(String(uid), destFolder, { uid: true })
   })
 }
 
-export async function deleteMessage(folderPath: string, uid: number): Promise<void> {
+export async function deleteMessage(email: string, folderPath: string, uid: number): Promise<void> {
   const trashFolder = 'Trash'
   if (folderPath === trashFolder) {
     // Permanently delete if already in Trash
-    return withClient(async (client) => {
+    return withClient(email, async (client) => {
       await client.mailboxOpen(folderPath)
       await client.messageDelete(String(uid), { uid: true })
     })
   }
-  return moveMessage(folderPath, uid, trashFolder)
+  return moveMessage(email, folderPath, uid, trashFolder)
 }

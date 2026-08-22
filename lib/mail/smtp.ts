@@ -1,15 +1,19 @@
 import 'server-only'
 import nodemailer from 'nodemailer'
 import type { SendMailInput } from './types'
+import { getAccount } from './accounts'
 
-function createTransport() {
+function createTransport(email: string) {
+  const account = getAccount(email)
+  if (!account) throw new Error(`Mail account not configured: ${email}`)
+
   return nodemailer.createTransport({
-    host: process.env.MAIL_SMTP_HOST ?? 'mail.nasrullahtanim.me',
-    port: Number(process.env.MAIL_SMTP_PORT ?? 587),
+    host: account.smtpHost,
+    port: account.smtpPort,
     secure: false, // STARTTLS
     auth: {
-      user: process.env.MAIL_USER ?? '',
-      pass: process.env.MAIL_PASSWORD ?? '',
+      user: account.email,
+      pass: account.password,
     },
     tls: {
       rejectUnauthorized: false, // Self-hosted mail server may use self-signed cert
@@ -17,9 +21,10 @@ function createTransport() {
   })
 }
 
-export async function sendMail(input: SendMailInput): Promise<{ messageId: string }> {
-  const transport = createTransport()
-  const from = `${process.env.MAIL_FROM_NAME ?? 'Nasrullah'} <${process.env.MAIL_USER}>`
+export async function sendMail(email: string, input: SendMailInput): Promise<{ messageId: string }> {
+  const transport = createTransport(email)
+  const account = getAccount(email)
+  const from = `${account?.name ?? 'User'} <${email}>`
 
   const info = await transport.sendMail({
     from,

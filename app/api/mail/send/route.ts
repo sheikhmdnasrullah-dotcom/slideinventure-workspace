@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
 
-  const { to, subject, body: messageBody, inReplyTo, references } = body as {
+  const { account, to, subject, body: messageBody, inReplyTo, references } = body as {
+    account: string
     to: string
     subject: string
     body: string
@@ -17,12 +18,12 @@ export async function POST(req: NextRequest) {
     references?: string
   }
 
-  if (!to || !subject || !messageBody) {
-    return NextResponse.json({ error: 'Missing required fields: to, subject, body' }, { status: 400 })
+  if (!account || !to || !subject || !messageBody) {
+    return NextResponse.json({ error: 'Missing required fields: account, to, subject, body' }, { status: 400 })
   }
 
   try {
-    const result = await sendMail({ to, subject, body: messageBody, inReplyTo, references })
+    const result = await sendMail(account, { to, subject, body: messageBody, inReplyTo, references })
     return NextResponse.json({ ok: true, messageId: result.messageId })
   } catch (err) {
     console.error('[mail/send]', err)

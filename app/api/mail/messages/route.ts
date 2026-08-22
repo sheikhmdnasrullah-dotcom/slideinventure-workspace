@@ -8,7 +8,7 @@ async function cacheMessages(messages: MailMessage[]) {
   if (messages.length === 0) return
   const supabase = createServiceClient()
   const rows = messages.map((m) => ({
-    id: `${m.uid}@${m.folder}`,
+    id: m.id,
     uid: m.uid,
     folder: m.folder,
     from: m.from,
@@ -37,10 +37,13 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
+  const account = searchParams.get('account')
   const folder = searchParams.get('folder') ?? 'INBOX'
   const search = searchParams.get('search') ?? ''
   const limit = Math.min(Number(searchParams.get('limit') ?? 50), 200)
   const cached = searchParams.get('cached') === 'true'
+
+  if (!account) return NextResponse.json({ error: 'Missing account' }, { status: 400 })
 
   // If caller wants cached (subsequent loads), query Supabase
   if (cached && !search) {
@@ -49,6 +52,7 @@ export async function GET(req: NextRequest) {
       .from('mail_messages')
       .select('*')
       .eq('folder', folder)
+      .like('id', `%|${account}`)
       .order('sent_at', { ascending: false })
       .limit(limit)
 
@@ -87,6 +91,7 @@ export async function GET(req: NextRequest) {
       .from('mail_messages')
       .select('*')
       .eq('folder', folder)
+      .like('id', `%|${account}`)
       .textSearch('fts', search, { type: 'plain' })
       .order('sent_at', { ascending: false })
       .limit(limit)
@@ -116,7 +121,7 @@ export async function GET(req: NextRequest) {
 
   // Live fetch from IMAP
   try {
-    const messages = await listMessages(folder, limit, search || undefined)
+    const messages = await listMessages(account, folder, limit, search || undefined)
     // Fire-and-forget cache write
     cacheMessages(messages).catch(console.error)
     return NextResponse.json(messages)

@@ -10,6 +10,7 @@ import {
   getSortedRowModel,
   useLegacyTable as useReactTable,
 } from "@tanstack/react-table/legacy"
+import { type SortingState, type ColumnFiltersState, flexRender } from "@tanstack/react-table"
 import {
   ChevronDown,
   ChevronLeft,
@@ -92,7 +93,22 @@ export type Lead = {
   updated_at: string
 }
 
-const emptyForm: Omit<Lead, "id" | "created_at" | "updated_at"> & { id?: string } = {
+type LeadFormValues = {
+  id?: string
+  first_name: string
+  last_name: string
+  email: string
+  company: string
+  job_title: string
+  phone: string
+  source: string
+  status: string
+  notes: string
+  tags: string[]
+  custom_fields: Record<string, unknown>
+}
+
+const emptyForm: LeadFormValues = {
   first_name: "",
   last_name: "",
   email: "",
@@ -138,7 +154,7 @@ export function LeadsTable() {
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState<LeadFormValues>(emptyForm)
   const [globalFilter, setGlobalFilter] = useState("")
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -401,13 +417,14 @@ export function LeadsTable() {
         return {
           id: "select",
           header: ({ table }: { table: { getIsAllPageRowsSelected: () => boolean; getIsSomePageRowsSelected: () => boolean; toggleAllPageRowsSelected: (v: boolean) => void } }) => (
-            <div className="flex items-center justify-center px-2">
-              <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-              />
-            </div>
+          <div className="flex items-center justify-center px-2">
+            <Checkbox
+              checked={table.getIsAllPageRowsSelected()}
+              indeterminate={table.getIsSomePageRowsSelected()}
+              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              aria-label="Select all"
+            />
+          </div>
           ),
           cell: ({ row }: { row: Row<Lead> }) => (
             <div className="flex items-center justify-center px-2">
@@ -587,11 +604,11 @@ export function LeadsTable() {
   })
 
   const statuses = useMemo(
-    () => Array.from(new Set(leads.map((l) => l.status))).filter(Boolean),
+    () => Array.from(new Set(leads.map((l) => l.status))).filter((s): s is string => Boolean(s)),
     [leads]
   )
   const sources = useMemo(
-    () => Array.from(new Set(leads.map((l) => l.source))).filter(Boolean),
+    () => Array.from(new Set(leads.map((l) => l.source))).filter((s): s is string => Boolean(s)),
     [leads]
   )
 
@@ -668,7 +685,7 @@ export function LeadsTable() {
             Status
           </Label>
           <Select
-            value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("status")?.getFilterValue() as string | undefined) ?? ""}
             onValueChange={(value) => {
               table.getColumn("status")?.setFilterValue(value === "all" ? "" : value)
             }}
@@ -691,7 +708,7 @@ export function LeadsTable() {
             Source
           </Label>
           <Select
-            value={(table.getColumn("source")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("source")?.getFilterValue() as string | undefined) ?? ""}
             onValueChange={(value) => {
               table.getColumn("source")?.setFilterValue(value === "all" ? "" : value)
             }}
@@ -955,10 +972,10 @@ export function LeadsTable() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">Source</Label>
-                <Select
-                  value={form.source}
-                  onValueChange={(value) => setForm({ ...form, source: value })}
-                >
+              <Select
+                value={form.source}
+                onValueChange={(value) => value && setForm({ ...form, source: value })}
+              >
                   <SelectTrigger className="h-9 w-full">
                     <SelectValue placeholder="Source" />
                   </SelectTrigger>
@@ -977,7 +994,7 @@ export function LeadsTable() {
               <Label className="text-xs">Status</Label>
               <Select
                 value={form.status}
-                onValueChange={(value) => setForm({ ...form, status: value })}
+                onValueChange={(value) => value && setForm({ ...form, status: value })}
               >
                 <SelectTrigger className="h-9 w-full">
                   <SelectValue placeholder="Status" />

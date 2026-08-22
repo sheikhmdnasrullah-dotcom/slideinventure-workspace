@@ -37,6 +37,7 @@ export async function GET() {
 
   let knowledgeItems: any[] = [];
   let taskRuns: any[] = [];
+  let activeLeads = 0;
 
   try {
     const { data: knowledgeItemsData } = await supabase
@@ -60,6 +61,16 @@ export async function GET() {
     // Supabase unreachable; degrade gracefully with empty data
   }
 
+  try {
+    const { count } = await supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .neq("status", "lost");
+    activeLeads = count ?? 0;
+  } catch {
+    // Supabase unreachable; degrade gracefully with empty data
+  }
+
   const items = knowledgeItems;
   const runs = taskRuns;
 
@@ -74,11 +85,11 @@ export async function GET() {
     },
     {
       id: "active-prospects",
-      label: "Active Prospects",
-      value: String(items.filter((i) => i.type === "prospects").length),
-      trend: { direction: "flat", label: "from knowledge base" },
-      context: "Prospect entries in knowledge_items",
-      subline: "Live from knowledge base",
+      label: "Active Leads",
+      value: String(activeLeads),
+      trend: { direction: "flat", label: "from leads table" },
+      context: "Active leads in the leads table",
+      subline: "Live from leads",
     },
     {
       id: "knowledge-items",

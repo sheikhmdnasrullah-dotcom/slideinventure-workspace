@@ -210,9 +210,11 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
                     <Label className="text-xs text-muted-foreground">{header}</Label>
                     <Select
                       value={mapping[header] || ""}
-                      onValueChange={(value) =>
-                        setMapping((prev) => ({ ...prev, [header]: value }))
-                      }
+                      onValueChange={(value) => {
+                        if (value) {
+                          setMapping((prev) => ({ ...prev, [header]: value }))
+                        }
+                      }}
                     >
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Map to..." />

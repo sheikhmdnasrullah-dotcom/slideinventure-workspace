@@ -47,7 +47,6 @@ import { AccountSwitcher } from "./account-switcher"
 import { MailDisplay } from "./mail-display"
 import { MailList } from "./mail-list"
 import { Nav } from "./nav"
-import { accounts } from "./data"
 import { useMail } from "./use-mail"
 
 interface MailProps {
@@ -73,9 +72,25 @@ export function Mail({
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const {
+    accounts, account, setAccount,
     selected, folders, loading, search, setSearch,
     setFolder, folder, refresh, composeOpen, setComposeOpen, sendMessage,
   } = useMail()
+
+  // Mapped accounts for the switcher (reusing the same icon for all)
+  const switcherAccounts = React.useMemo(() => accounts.map(a => ({
+    label: a.name,
+    email: a.email,
+    icon: (
+      <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <title>Mail</title>
+        <path
+          d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
+  })), [accounts])
 
   // Compose form state
   const [composeTo, setComposeTo] = React.useState("")
@@ -146,7 +161,12 @@ export function Mail({
             "flex h-[52px] items-center justify-center",
             isCollapsed ? "h-[52px]" : "px-2"
           )}>
-            <AccountSwitcher isCollapsed={isCollapsed} accounts={accounts} />
+            <AccountSwitcher 
+              isCollapsed={isCollapsed} 
+              accounts={switcherAccounts} 
+              account={account}
+              setAccount={setAccount}
+            />
           </div>
           <Separator />
           {/* Compose button */}
