@@ -9,6 +9,8 @@ import {
   Inbox,
   Menu,
   MessagesSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   RefreshCw,
   Search,
@@ -85,6 +87,13 @@ export function Mail({
   const [addAccountOpen, setAddAccountOpen] = React.useState(false)
   const [mobileView, setMobileView] = React.useState<"list" | "detail">("list")
   const [folderSheetOpen, setFolderSheetOpen] = React.useState(false)
+  const [navSize, setNavSize] = React.useState(defaultLayout[0])
+
+  const toggleCollapsed = React.useCallback(() => {
+    const next = !isCollapsed
+    setIsCollapsed(next)
+    setNavSize(next ? navCollapsedSize : defaultLayout[0])
+  }, [isCollapsed, navCollapsedSize, defaultLayout])
 
   React.useEffect(() => {
     if (isMobile && selected) setMobileView("detail")
@@ -280,8 +289,9 @@ export function Mail({
         className="h-full items-stretch rounded-lg border overflow-hidden"
       >
         <ResizablePanel
+          key={navSize}
           id="nav"
-          defaultSize={defaultLayout[0]}
+          defaultSize={navSize}
           collapsedSize={navCollapsedSize}
           collapsible={true}
           minSize={15}
@@ -291,14 +301,26 @@ export function Mail({
             setIsCollapsed(collapsed)
             document.cookie = `mail-panel-collapsed=${JSON.stringify(collapsed)}`
           }}
-          className={cn(isCollapsed && "w-full transition-all duration-300 ease-in-out")}
+          className="items-stretch"
         >
           <div
             className={cn(
-              "flex h-[52px] items-center",
+              "flex h-[52px] items-center gap-1",
               isCollapsed ? "justify-center" : "px-2"
             )}
           >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 cursor-pointer"
+              onClick={toggleCollapsed}
+            >
+              {isCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </Button>
             <AccountSwitcher
               isCollapsed={isCollapsed}
               accounts={switcherAccounts}
