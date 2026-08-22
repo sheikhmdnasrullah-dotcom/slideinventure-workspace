@@ -19,6 +19,7 @@ export function NavSecondary({
     title: string
     url: string
     icon: LucideIcon
+    external?: boolean
   }[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   const router = useRouter()
@@ -29,10 +30,17 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton onClick={() => router.push(item.url)}>
-                <item.icon />
-                <span>{item.title}</span>
-              </SidebarMenuButton>
+              {item.external ? (
+                <SidebarMenuButton render={<a href={item.url} target="_blank" rel="noopener noreferrer" />}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton onClick={() => router.push(item.url)}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

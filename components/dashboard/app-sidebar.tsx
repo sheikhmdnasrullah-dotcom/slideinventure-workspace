@@ -6,6 +6,7 @@ import {
   FileText,
   Inbox,
   LayoutDashboard,
+  Mail,
   MessageSquare,
   Send,
   Settings,
@@ -44,6 +45,7 @@ const NAV_MAIN = [
 const NAV_SECONDARY = [
   { title: "Useful Links", url: "/useful-links", icon: Send },
   { title: "Apps", url: "/apps", icon: Cable },
+  { title: "Mailgo", url: "https://admin.tanim.tech", icon: Mail, external: true },
   { title: "Vault", url: "/vault", icon: FileText },
 ]
 
