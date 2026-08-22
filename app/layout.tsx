@@ -41,10 +41,9 @@ export default function RootLayout({
             acknowledges that the class is set on the client). */}
         <ThemeProvider
           attribute="class"
-          defaultTheme="day"
+          defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
-          value={{ day: "light", night: "dark" }}
         >
           {children}
         </ThemeProvider>

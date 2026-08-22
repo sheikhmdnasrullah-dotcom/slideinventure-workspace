@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandMenu } from "@/components/system/command-menu";
@@ -21,13 +21,12 @@ export default async function AppLayout({
         }
       >
         <AppSidebar userEmail={user.email ?? "unknown"} />
-        {children}
+        <SidebarInset>
+          {children}
+        </SidebarInset>
         <Toaster />
-        {/* ⌘K global surface. Replaces the floating KnowledgeChatWidget FAB —
-            one command surface for navigation, search, ask, and actions,
-            reachable from the sidebar trigger, the header, or ⌘K anywhere. */}
         <CommandMenu />
-     </SidebarProvider>
-   </TooltipProvider>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

@@ -8,10 +8,9 @@ export default function AuthLayout({
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="day"
+      defaultTheme="light"
       enableSystem={false}
       disableTransitionOnChange
-      value={{ day: "light", night: "dark" }}
     >
       {children}
     </ThemeProvider>
