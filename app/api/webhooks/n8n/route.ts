@@ -1,10 +1,12 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import {  ApiError , toJson } from "@/lib/api/errors";
 import { verifyInternalSecret } from "@/lib/auth/verify-internal-secret";
 import { randomUUID } from "node:crypto";
+import { NextRequest } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   if (!verifyInternalSecret(request)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return toJson(ApiError.unauthorized("UNAUTHORIZED", "Invalid internal secret"));
   }
 
   const supabase = createServiceClient();
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
       },
     });
   } catch {
-    return Response.json({ error: "Database unavailable" }, { status: 503 });
+    return toJson(ApiError.badRequest("WEBHOOK_ERROR", "Invalid payload"));
   }
 
   return Response.json({ id: runId, status: "accepted" }, { status: 202 });

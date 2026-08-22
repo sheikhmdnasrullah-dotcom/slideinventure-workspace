@@ -1,16 +1,20 @@
-import { NextResponse } from 'next/server'
-import { getSessionUser } from '@/lib/supabase/server'
-import { getPublicAccounts } from '@/lib/mail/accounts'
+import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import {  ApiError , toJson } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { getPublicAccounts } from "@/lib/mail/accounts";
+import { NextRequest } from "next/server";
 
-export async function GET() {
-  const user = await getSessionUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function GET(_request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return toJson(ApiError.unauthorized());
+
+  const limit = checkRateLimit(_request, { limit: 100, windowMs: 60_000 });
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   try {
-    const accounts = getPublicAccounts()
-    return NextResponse.json(accounts)
-  } catch (err) {
-    console.error('[mail/accounts]', err)
-    return NextResponse.json({ error: 'Failed to list accounts' }, { status: 500 })
+    const accounts = getPublicAccounts();
+    return Response.json(accounts);
+  } catch {
+    return toJson(ApiError.internal("ACCOUNTS_ERROR", "Failed to load mail accounts"));
   }
 }

@@ -1,32 +1,52 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getSessionUser } from '@/lib/supabase/server'
-import { sendMail } from '@/lib/mail/smtp'
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/supabase/server";
+import {  ApiError , toJson } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { validate } from "@/lib/api/validation";
+import { z } from "zod";
+import { sendMail } from "@/lib/mail/smtp";
+import { recordAudit } from "@/lib/api/audit";
 
-export async function POST(req: NextRequest) {
-  const user = await getSessionUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+const SendSchema = z.object({
+  account: z.string().min(1),
+  to: z.string().email(),
+  subject: z.string().min(1),
+  body: z.string().min(1),
+  inReplyTo: z.string().optional(),
+  references: z.string().optional(),
+});
 
-  const body = await req.json().catch(() => null)
-  if (!body) return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
+export async function POST(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return toJson(ApiError.unauthorized());
 
-  const { account, to, subject, body: messageBody, inReplyTo, references } = body as {
-    account: string
-    to: string
-    subject: string
-    body: string
-    inReplyTo?: string
-    references?: string
-  }
+  const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000 });
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
-  if (!account || !to || !subject || !messageBody) {
-    return NextResponse.json({ error: 'Missing required fields: account, to, subject, body' }, { status: 400 })
-  }
+  const body = await request.json().catch(() => null);
+  if (!body) return toJson(ApiError.badRequest("INVALID_BODY", "Invalid JSON body"));
+
+  const validated = validate(SendSchema, body);
 
   try {
-    const result = await sendMail(account, { to, subject, body: messageBody, inReplyTo, references })
-    return NextResponse.json({ ok: true, messageId: result.messageId })
+    const result = await sendMail(validated.data.account, {
+      to: validated.data.to,
+      subject: validated.data.subject,
+      body: validated.data.body,
+      inReplyTo: validated.data.inReplyTo,
+      references: validated.data.references,
+    });
+
+    await recordAudit({
+      table: "emails",
+      recordId: result.messageId,
+      action: "send",
+      metadata: { to: validated.data.to, subject: validated.data.subject, account: validated.data.account },
+      actor: { userEmail: user.email ?? undefined, userId: user.id },
+    });
+
+    return NextResponse.json({ ok: true, messageId: result.messageId });
   } catch (err) {
-    console.error('[mail/send]', err)
-    return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
+    return toJson(ApiError.internal("SEND_ERROR", err instanceof Error ? err.message : "Failed to send message"));
   }
 }

@@ -1,4 +1,3 @@
-"use server";
 
 import { z } from "zod";
 
@@ -32,7 +31,7 @@ export const LeadSchema = z.object({
   status: z.string().default("new"),
   notes: z.string().optional().nullable(),
   tags: z.array(z.string()).default([]),
-  customFields: z.record(z.unknown()).default({}),
+  customFields: z.record(z.string(), z.unknown()).default({}),
   lastContactedAt: z.string().datetime().optional().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -87,7 +86,7 @@ export const ImportedFileSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   storagePath: z.string(),
   url: z.string().url().optional(),
-  mapping: z.record(z.string()).optional(),
+  mapping: z.record(z.string(), z.string()).optional(),
   rowCount: z.number().int().nonnegative().optional(),
   importedCount: z.number().int().nonnegative().optional(),
   errorCount: z.number().int().nonnegative().optional(),
@@ -175,7 +174,7 @@ export const AppSchema = z.object({
   url: z.string().url().optional().nullable(),
   category: z.string().optional().nullable(),
   enabled: z.boolean().default(true),
-  config: z.record(z.unknown()).default({}),
+  config: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -191,7 +190,7 @@ export const IntegrationSchema = z.object({
   provider: z.string().min(1),
   type: z.enum(["oauth", "api_key", "webhook", "imap", "smtp"]),
   status: z.enum(["active", "inactive", "error"]).default("inactive"),
-  config: z.record(z.unknown()).default({}),
+  config: z.record(z.string(), z.unknown()).default({}),
   lastSyncAt: z.string().datetime().optional().nullable(),
   lastError: z.string().optional().nullable(),
   createdBy: z.string().email().optional(),
@@ -292,7 +291,7 @@ export const MiroActivitySchema = z.object({
   userId: z.string().optional().nullable(),
   userName: z.string().optional().nullable(),
   action: z.string().optional().nullable(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string().datetime(),
 });
 
@@ -309,7 +308,7 @@ export const NotionActivitySchema = z.object({
   userId: z.string().optional().nullable(),
   userName: z.string().optional().nullable(),
   action: z.string().optional().nullable(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string().datetime(),
 });
 
@@ -328,7 +327,7 @@ export const TodoistTaskSchema = z.object({
   dueDate: z.string().datetime().optional().nullable(),
   completed: z.boolean().default(false),
   assignee: z.string().email().optional().nullable(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -347,7 +346,7 @@ export const TerminalCommandSchema = z.object({
   stderr: z.string().optional().nullable(),
   durationMs: z.number().int().nonnegative().optional().nullable(),
   triggeredBy: z.string().email().optional().nullable(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
   createdAt: z.string().datetime(),
 });
 
@@ -379,13 +378,19 @@ export const AuditLogSchema = z.object({
   tableName: z.string(),
   recordId: z.string(),
   action: z.enum(["insert", "update", "delete", "read", "export", "import", "login", "logout", "send", "configure"]),
-  diff: z.record(z.unknown()).optional().nullable(),
-  metadata: z.record(z.unknown()).optional().nullable(),
+  diff: z.record(z.string(), z.unknown()).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
   actorEmail: z.string().email().optional().nullable(),
   actorId: z.string().optional().nullable(),
-  ip: z.string().ip().optional().nullable(),
+  ip: z.string().optional().nullable(),
   userAgent: z.string().optional().nullable(),
   createdAt: z.string().datetime(),
 });
 
 export type AuditLog = z.infer<typeof AuditLogSchema>;
+
+export const DEFAULT_COLUMNS: LeadColumnConfig[] = [
+  { id: "name", key: "name", label: "Name", visible: true, sortable: true, filterable: true, type: "composite" },
+  { id: "email", key: "email", label: "Email", visible: true, sortable: true, filterable: true, type: "text" },
+  { id: "status", key: "status", label: "Status", visible: true, sortable: true, filterable: true, type: "status" },
+];

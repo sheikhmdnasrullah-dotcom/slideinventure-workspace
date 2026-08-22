@@ -1,5 +1,5 @@
 import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import { ApiError } from "@/lib/api/errors";
+import {  ApiError , toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
@@ -16,11 +16,11 @@ const ListSchema = z.object({
 const CreateSchema = TerminalCommandSchema.omit({ id: true, createdAt: true });
 
 export async function GET(request: NextRequest) {
-  const user = getSessionUser();
-  if (!user) return ApiError.unauthorized();
+  const user = await getSessionUser();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
   const supabase = createServiceClient();
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error, count } = await q.order("created_at", { ascending: false }).range(from, to);
 
-  if (error) return ApiError.internal("DB_ERROR", error.message);
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
   return Response.json({
     data: data ?? [],
@@ -50,11 +50,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const user = getSessionUser();
-  if (!user) return ApiError.unauthorized();
+  const user = await getSessionUser();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(CreateSchema, body);
@@ -66,11 +66,11 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase.from("terminal_commands").insert({
     id,
     ...validated.data,
-    triggered_by: user.email ?? validated.data.triggered_by ?? null,
+    triggeredBy: user.email ?? validated.data.triggeredBy ?? null,
     created_at: now,
   });
 
-  if (error) return ApiError.internal("DB_ERROR", error.message);
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
   return Response.json({ id }, { status: 201 });
 }

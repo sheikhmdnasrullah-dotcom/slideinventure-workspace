@@ -1,30 +1,30 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import {  ApiError , toJson } from "@/lib/api/errors";
 import { verifyInternalSecret } from "@/lib/auth/verify-internal-secret";
 import { recordVersion } from "@/lib/knowledge/versioning";
 import { reindexChunks } from "@/lib/knowledge/reindex";
+import { z } from "zod";
+import { KnowledgeItemSchema } from "@/lib/api/schemas";
+
+const PublishSchema = KnowledgeItemSchema.omit({ createdAt: true, updatedAt: true, searchVector: true, embedding: true });
 
 export async function POST(request: Request) {
   if (!verifyInternalSecret(request)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return toJson(ApiError.unauthorized("UNAUTHORIZED", "Invalid internal secret"));
   }
+
+  const body = await request.json().catch(() => ({}));
+  const validated = PublishSchema.safeParse(body);
+
+  if (!validated.success) {
+    return toJson(ApiError.badRequest("VALIDATION_ERROR", "Invalid request body", {
+      issues: validated.error.issues,
+    }));
+  }
+
+  const { id, type, title, body: content, status = "proposed", source = "terminal", author = "terminal", tags = [] } = validated.data;
 
   const supabase = createServiceClient();
-  const body = await request.json().catch(() => ({}));
-
-  const { id, type, title, body: content, status = "proposed", source = "terminal", author = "terminal", tags = [] } = body as {
-    id?: string;
-    type?: string;
-    title?: string;
-    body?: string;
-    status?: string;
-    source?: string;
-    author?: string;
-    tags?: string[];
-  };
-
-  if (!id || !type || !title) {
-    return Response.json({ error: "id, type, and title are required" }, { status: 400 });
-  }
 
   const { data: existing } = await supabase
     .from("knowledge_items")
@@ -50,14 +50,12 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   });
 
-  if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
   try {
     await reindexChunks(supabase, id, content ?? "");
   } catch (err) {
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return toJson(ApiError.internal("REINDEX_ERROR", (err as Error).message));
   }
 
   return Response.json({ id, status: "created" }, { status: 201 });

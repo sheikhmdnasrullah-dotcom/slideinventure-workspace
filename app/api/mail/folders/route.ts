@@ -1,20 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getSessionUser } from '@/lib/supabase/server'
-import { listFolders } from '@/lib/mail/imap'
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/supabase/server";
+import {  ApiError , toJson } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { validateQuery } from "@/lib/api/validation";
+import { z } from "zod";
+import { listFolders } from "@/lib/mail/imap";
 
-export async function GET(req: NextRequest) {
-  const user = await getSessionUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+const ListSchema = z.object({
+  account: z.string().min(1, "account is required"),
+});
 
-  const { searchParams } = new URL(req.url)
-  const account = searchParams.get('account')
-  if (!account) return NextResponse.json({ error: 'Missing account' }, { status: 400 })
+export async function GET(request: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return toJson(ApiError.unauthorized());
+
+  const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
+
+  const query = validateQuery(ListSchema, request.nextUrl.searchParams);
 
   try {
-    const folders = await listFolders(account)
-    return NextResponse.json(folders)
+    const folders = await listFolders(query.data.account);
+    return NextResponse.json(folders);
   } catch (err) {
-    console.error('[mail/folders]', err)
-    return NextResponse.json({ error: 'Failed to list folders' }, { status: 500 })
+    return toJson(ApiError.internal("FOLDERS_ERROR", err instanceof Error ? err.message : "Failed to list folders"));
   }
 }

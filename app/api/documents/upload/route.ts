@@ -1,5 +1,5 @@
 import { createServiceClient, requireUser } from "@/lib/supabase/server";
-import { ApiError } from "@/lib/api/errors";
+import {  ApiError , toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
@@ -8,10 +8,10 @@ import { recordAudit } from "@/lib/api/audit";
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  if (!user) return ApiError.unauthorized();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 5, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   try {
     const formData = await request.formData();
@@ -21,17 +21,17 @@ export async function POST(request: NextRequest) {
     const author = user.email || "user";
 
     if (!file) {
-      return ApiError.badRequest("FILE_REQUIRED", "File is required");
+      return toJson(ApiError.badRequest("FILE_REQUIRED", "File is required"));
     }
 
     const MAX_SIZE = 50 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      return ApiError.badRequest("FILE_TOO_LARGE", "File exceeds 50MB limit");
+      return toJson(ApiError.badRequest("FILE_TOO_LARGE", "File exceeds 50MB limit"));
     }
 
     const allowedTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "text/markdown"];
     if (file.type && !allowedTypes.includes(file.type) && !file.name.endsWith(".pdf") && !file.name.endsWith(".docx") && !file.name.endsWith(".txt") && !file.name.endsWith(".md")) {
-      return ApiError.badRequest("UNSUPPORTED_TYPE", "Unsupported file type");
+      return toJson(ApiError.badRequest("UNSUPPORTED_TYPE", "Unsupported file type"));
     }
 
     const id = randomUUID();
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      return ApiError.internal("STORAGE_ERROR", "Failed to upload file to storage");
+      return toJson(ApiError.internal("STORAGE_ERROR", "Failed to upload file to storage"));
     }
 
     const { data: { publicUrl } } = supabase.storage.from("documents").getPublicUrl(storageFilename);
@@ -69,11 +69,11 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       await supabase.storage.from("documents").remove([storageFilename]);
-      return ApiError.internal("DB_ERROR", "Failed to save metadata");
+      return toJson(ApiError.internal("DB_ERROR", "Failed to save metadata"));
     }
 
     return Response.json({ id, url: publicUrl, title, filename: file.name }, { status: 201 });
   } catch (error) {
-    return ApiError.internal("UPLOAD_ERROR", error instanceof Error ? error.message : "Upload failed");
+    return toJson(ApiError.internal("UPLOAD_ERROR", error instanceof Error ? error.message : "Upload failed"));
   }
 }

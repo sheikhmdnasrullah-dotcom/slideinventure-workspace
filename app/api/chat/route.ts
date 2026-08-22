@@ -1,4 +1,7 @@
 import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import {  ApiError , toJson } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { NextRequest } from "next/server";
 
 const EMBED_MODEL = "nvidia/nv-embedqa-e5-v5"; // NVIDIA embedding model
 const RERANK_MODEL = "nvidia/nv-rerankqa-mistral-4b"; // NVIDIA reranker
@@ -166,11 +169,12 @@ async function retrieveEvidence(
   return reranked;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) return toJson(ApiError.unauthorized());
+
+  const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000 });
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const supabase = createServiceClient();
   const body = await request.json();

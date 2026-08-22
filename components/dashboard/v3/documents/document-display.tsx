@@ -42,24 +42,13 @@ export function DocumentDisplay() {
       <Separator />
       <div className="flex items-center p-4">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <a href={selectedDocument.url} target="_blank" rel="noopener noreferrer" title="Open in new tab">
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </Button>
-          <Button variant="ghost" size="icon" asChild>
-            <a href={selectedDocument.url} download={selectedDocument.filename} title="Download">
-              <Download className="h-4 w-4" />
-            </a>
-          </Button>
+          <a  href={selectedDocument.url} target="_blank" rel="noopener noreferrer" title="Open in new tab" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><ExternalLink className="h-4 w-4" /></a>
+          <a  href={selectedDocument.url} download={selectedDocument.filename} title="Download" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><Download className="h-4 w-4" /></a>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!selectedDocument}>
-                <MoreVertical className="h-4 w-4" />
-                <span className="sr-only">More</span>
-              </Button>
+            <DropdownMenuTrigger>
+              <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><MoreVertical className="h-4 w-4" /><span className="sr-only">More</span></div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem

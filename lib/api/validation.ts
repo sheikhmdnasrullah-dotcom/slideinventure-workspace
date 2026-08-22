@@ -1,4 +1,3 @@
-"use server";
 
 import { z } from "zod";
 import { ApiError } from "./errors";
@@ -15,7 +14,7 @@ export function validate<T extends z.ZodType>(schema: T, raw: unknown): Validate
 
   const details = result.error.flatten();
   throw ApiError.badRequest("VALIDATION_ERROR", "Invalid request body", {
-    issues: details.issues,
+    issues: details.fieldErrors,
   });
 }
 

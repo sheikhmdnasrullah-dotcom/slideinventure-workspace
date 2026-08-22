@@ -1,10 +1,10 @@
 import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import { ApiError } from "@/lib/api/errors";
+import {  ApiError , toJson } from "@/lib/api/errors";
 import { NextRequest } from "next/server";
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = getSessionUser();
-  if (!user) return ApiError.unauthorized();
+  const user = await getSessionUser();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const { id } = await params;
   const supabase = createServiceClient();
@@ -13,7 +13,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
   const { error } = await supabase.from("documents").delete().eq("id", id);
 
-  if (error) return ApiError.internal("DB_ERROR", error.message);
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
   if (doc?.storage_path) {
     try {

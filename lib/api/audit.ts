@@ -1,4 +1,3 @@
-"use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
 

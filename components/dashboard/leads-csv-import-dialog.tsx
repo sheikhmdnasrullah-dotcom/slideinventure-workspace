@@ -128,13 +128,6 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
       headers.forEach((header, index) => {
         const field = mapping[header]
         if (field && field !== "ignore") {
-          row[field] = preview[i][index]
-        }
-      })
-      result.push(row)
-    }
-    return result
-  }, [preview, mapping, headers]) {
           const value = preview[i][index]?.trim() || ""
           if (field === "tags") {
             row[field] = value ? value.split(",").map((s) => s.trim()) : []
@@ -146,9 +139,9 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
       result.push(row)
     }
     return result
-  }, [preview, headers, mapping])
+  }, [preview, mapping, headers])
 
-  const handleImport = useCallback(async () => {
+  const handleImport = async () => {
     if (!file || mappedLeads.length === 0) {
       toast.error("No data to import")
       return
@@ -175,7 +168,7 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
     } finally {
       setImporting(false)
     }
-  }, [file, mappedLeads, onImported, onOpenChange])
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

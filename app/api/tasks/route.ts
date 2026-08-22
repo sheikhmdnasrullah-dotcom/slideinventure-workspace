@@ -1,13 +1,17 @@
 import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import {  ApiError , toJson } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { NextRequest } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) return toJson(ApiError.unauthorized());
+
+  const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const supabase = createServiceClient();
-  let data: any[] = [];
+  let data: unknown[] = [];
 
   try {
     const result = await supabase

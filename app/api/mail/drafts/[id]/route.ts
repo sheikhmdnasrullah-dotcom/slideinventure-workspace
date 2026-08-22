@@ -3,10 +3,10 @@ import {  ApiError , toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { z } from "zod";
-import { UsefulLinkSchema } from "@/lib/api/schemas";
+import { EmailDraftSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 
-const UpdateSchema = UsefulLinkSchema.partial().omit({ id: true, createdAt: true, updatedAt: true });
+const UpdateSchema = EmailDraftSchema.partial().omit({ id: true, createdAt: true, updatedAt: true });
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -15,9 +15,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   const supabase = createServiceClient();
 
-  const { data, error } = await supabase.from("useful_links").select("*").eq("id", id).single();
+  const { data, error } = await supabase.from("email_drafts").select("*").eq("id", id).single();
 
-  if (error || !data) return toJson(ApiError.notFound("LINK_NOT_FOUND", "Link not found"));
+  if (error || !data) return toJson(ApiError.notFound("DRAFT_NOT_FOUND", "Draft not found"));
 
   return Response.json(data);
 }
@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const now = new Date().toISOString();
 
   const { error } = await supabase
-    .from("useful_links")
+    .from("email_drafts")
     .update({ ...validated.data, updated_at: now })
     .eq("id", id);
 
@@ -56,7 +56,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { id } = await params;
   const supabase = createServiceClient();
 
-  const { error } = await supabase.from("useful_links").delete().eq("id", id);
+  const { error } = await supabase.from("email_drafts").delete().eq("id", id);
 
   if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 

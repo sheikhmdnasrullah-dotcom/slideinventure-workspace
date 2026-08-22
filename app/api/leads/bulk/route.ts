@@ -1,5 +1,5 @@
 import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import { ApiError } from "@/lib/api/errors";
+import {  ApiError , toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { z } from "zod";
@@ -11,11 +11,11 @@ const BulkSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const user = getSessionUser();
-  if (!user) return ApiError.unauthorized();
+  const user = await getSessionUser();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(BulkSchema, body);
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   if (validated.data.action === "delete") {
     const { error } = await supabase.from("leads").delete().in("id", validated.data.ids);
 
-    if (error) return ApiError.internal("DB_ERROR", error.message);
+    if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
     return Response.json({ deleted: validated.data.ids.length });
   }
@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
       .update({ ...rest, updated_at: new Date().toISOString() })
       .in("id", validated.data.ids);
 
-    if (error) return ApiError.internal("DB_ERROR", error.message);
+    if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
     return Response.json({ updated: validated.data.ids.length });
   }
 
-  return ApiError.badRequest("UNSUPPORTED_ACTION", "Action must be 'delete' or 'update'");
+  return toJson(ApiError.badRequest("UNSUPPORTED_ACTION", "Action must be 'delete' or 'update'"));
 }
