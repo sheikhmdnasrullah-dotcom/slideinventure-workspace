@@ -1,17 +1,11 @@
-import { requireUser } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server"
+import NotionSection from "@/components/dashboard/integrations/notion/section"
 
 export default async function NotionPage() {
-  await requireUser();
+  await requireUser()
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">
-          Notion
-        </h1>
-        <p className="text-xs text-foreground/40">
-          Knowledge base and documentation.
-        </p>
-      </div>
+      <NotionSection />
     </div>
-  );
+  )
 }

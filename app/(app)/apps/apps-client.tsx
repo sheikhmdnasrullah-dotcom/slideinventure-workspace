@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, MoreVertical, LayoutGrid, Search, Trash, Edit, ExternalLink } from "lucide-react";
+import { Plus, MoreVertical, LayoutGrid, Search, Trash, Edit, ExternalLink, Mail } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -32,10 +32,41 @@ export function AppsClient() {
       const res = await fetch("/api/apps?pageSize=100");
       if (res.ok) {
         const json = await res.json();
-        setApps(json.data || []);
+        const apiApps = json.data || [];
+        
+        // Add hardcoded Mailgo app
+        const mailgoApp: App = {
+          id: "hardcoded-mailgo",
+          name: "Mailgo",
+          slug: "mailgo",
+          description: "Admin Ops Console and Email",
+          icon: "lucide:Mail",
+          url: "https://admin.tanim.tech",
+          category: "Admin",
+          enabled: true,
+          config: {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        setApps([mailgoApp, ...apiApps]);
       }
     } catch (e) {
       toast.error("Failed to fetch apps");
+      // Fallback if API fails (e.g. missing migrations)
+      setApps([{
+        id: "hardcoded-mailgo",
+        name: "Mailgo",
+        slug: "mailgo",
+        description: "Admin Ops Console and Email",
+        icon: "lucide:Mail",
+        url: "https://admin.tanim.tech",
+        category: "Admin",
+        enabled: true,
+        config: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }]);
     } finally {
       setLoading(false);
     }
@@ -153,7 +184,9 @@ export function AppsClient() {
                       <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
                         <div className="flex items-center gap-3">
                           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary overflow-hidden">
-                            {app.icon ? (
+                            {app.icon === "lucide:Mail" ? (
+                              <Mail className="h-6 w-6" />
+                            ) : app.icon ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={app.icon} alt="" className="h-full w-full object-cover" />
                             ) : (
