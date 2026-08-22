@@ -3,11 +3,10 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { z } from "zod";
-import { LeadSchema, type Lead } from "@/lib/api/schemas";
-import { recordAudit } from "@/lib/api/audit";
+import { IntegrationSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 
-const UpdateSchema = LeadSchema.partial().omit({ id: true, createdAt: true, updatedAt: true });
+const UpdateSchema = IntegrationSchema.partial().omit({ id: true, createdAt: true, updatedAt: true });
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = getSessionUser();
@@ -16,11 +15,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   const supabase = createServiceClient();
 
-  const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
+  const { data, error } = await supabase.from("integrations").select("*").eq("id", id).single();
 
-  if (error || !data) return ApiError.notFound("LEAD_NOT_FOUND", "Lead not found");
+  if (error || !data) return ApiError.notFound("INTEGRATION_NOT_FOUND", "Integration not found");
 
-  return Response.json(data as Lead);
+  return Response.json(data);
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -37,22 +36,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const supabase = createServiceClient();
   const now = new Date().toISOString();
 
-  const { data: existing } = await supabase.from("leads").select("*").eq("id", id).single();
-
   const { error } = await supabase
-    .from("leads")
+    .from("integrations")
     .update({ ...validated.data, updated_at: now })
     .eq("id", id);
 
   if (error) return ApiError.internal("DB_ERROR", error.message);
-
-  await recordAudit({
-    table: "leads",
-    recordId: id,
-    action: "update",
-    diff: { before: existing, after: validated.data },
-    actor: { userEmail: user.email ?? undefined, userId: user.id },
-  });
 
   return Response.json({ id, status: "updated" });
 }
@@ -67,14 +56,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { id } = await params;
   const supabase = createServiceClient();
 
-  await recordAudit({
-    table: "leads",
-    recordId: id,
-    action: "delete",
-    actor: { userEmail: user.email ?? undefined, userId: user.id },
-  });
-
-  const { error } = await supabase.from("leads").delete().eq("id", id);
+  const { error } = await supabase.from("integrations").delete().eq("id", id);
 
   if (error) return ApiError.internal("DB_ERROR", error.message);
 

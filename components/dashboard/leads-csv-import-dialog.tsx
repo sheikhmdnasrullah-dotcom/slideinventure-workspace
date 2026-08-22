@@ -46,6 +46,12 @@ const FIELD_MAP: Record<string, string> = {
   "Tags": "tags",
 }
 
+const DUPLICATE_ACTIONS = {
+  skip: "skip",
+  update: "update",
+  create: "create",
+}
+
 interface CsvImportDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -112,6 +118,8 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
     })
   }, [])
 
+  
+
   const mappedLeads = useMemo(() => {
     if (preview.length < 2) return []
     const result: Record<string, unknown>[] = []
@@ -120,6 +128,13 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
       headers.forEach((header, index) => {
         const field = mapping[header]
         if (field && field !== "ignore") {
+          row[field] = preview[i][index]
+        }
+      })
+      result.push(row)
+    }
+    return result
+  }, [preview, mapping, headers]) {
           const value = preview[i][index]?.trim() || ""
           if (field === "tags") {
             row[field] = value ? value.split(",").map((s) => s.trim()) : []

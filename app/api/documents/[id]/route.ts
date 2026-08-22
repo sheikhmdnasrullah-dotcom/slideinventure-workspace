@@ -1,55 +1,27 @@
-import { createServiceClient } from "@/lib/supabase/server";
-import { randomUUID } from "node:crypto";
-import { writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
-import { unlink } from "node:fs/promises";
+import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { ApiError } from "@/lib/api/errors";
+import { NextRequest } from "next/server";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "documents");
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = getSessionUser();
+  if (!user) return ApiError.unauthorized();
 
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+  const { id } = await params;
+  const supabase = createServiceClient();
 
-    if (!id) {
-      return Response.json({ error: "Document id is required" }, { status: 400 });
-    }
+  const { data: doc } = await supabase.from("documents").select("storage_path").eq("id", id).single();
 
-    const supabase = createServiceClient();
-    const { data: existing, error: fetchError } = await supabase
-      .from("documents")
-      .select("storage_path, filename")
-      .eq("id", id)
-      .maybeSingle();
+  const { error } = await supabase.from("documents").delete().eq("id", id);
 
-    if (fetchError) {
-      return Response.json({ error: fetchError.message }, { status: 500 });
-    }
+  if (error) return ApiError.internal("DB_ERROR", error.message);
 
-    if (!existing) {
-      return Response.json({ error: "Document not found" }, { status: 404 });
-    }
-
-    const { error: deleteError } = await supabase
-      .from("documents")
-      .delete()
-      .eq("id", id);
-
-    if (deleteError) {
-      return Response.json({ error: deleteError.message }, { status: 500 });
-    }
-
+  if (doc?.storage_path) {
     try {
-      await unlink(existing.storage_path);
+      await supabase.storage.from("documents").remove([doc.storage_path]);
     } catch {
-      // ignore file-system cleanup errors
+      // best-effort cleanup
     }
-
-    return Response.json({ id, status: "deleted" });
-  } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : "Delete failed" },
-      { status: 500 }
-    );
   }
+
+  return Response.json({ id, status: "deleted" });
 }

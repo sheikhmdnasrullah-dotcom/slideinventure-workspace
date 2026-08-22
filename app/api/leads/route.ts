@@ -1,123 +1,95 @@
-import { createServiceClient } from "@/lib/supabase/server";
-import { randomUUID } from "node:crypto";
+import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { ApiError } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { validateQuery, validate } from "@/lib/api/validation";
+import { z } from "zod";
+import { LeadSchema, type Lead } from "@/lib/api/schemas";
+import { recordAudit } from "@/lib/api/audit";
+import { NextRequest } from "next/server";
 
-export async function GET(request: Request) {
+const ListSchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  sortBy: z.string().default("created_at"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  search: z.string().optional(),
+  status: z.string().optional(),
+  source: z.string().optional(),
+});
+
+const CreateSchema = LeadSchema.omit({ id: true, createdAt: true, updatedAt: true });
+
+export async function GET(request: NextRequest) {
+  const user = getSessionUser();
+  if (!user) return ApiError.unauthorized();
+
+  const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
+  if (!limit.allowed) return ApiError.rateLimited("RATE_LIMITED", "Too many requests", Math.ceil(limit.resetAt / 1000));
+
+  const query = validateQuery(ListSchema, request.nextUrl.searchParams);
   const supabase = createServiceClient();
-  const { searchParams } = new URL(request.url);
 
-  const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  const pageSize = Math.min(200, Math.max(1, Number(searchParams.get("pageSize")) || 50));
-  const sortBy = searchParams.get("sortBy") || "created_at";
-  const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc";
-  const search = searchParams.get("search")?.trim() || "";
-  const status = searchParams.get("status")?.trim() || "";
-  const source = searchParams.get("source")?.trim() || "";
+  let q = supabase.from("leads").select("*", { count: "exact" });
 
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  let query = supabase
-    .from("leads")
-    .select("*", { count: "exact" });
-
-  if (search) {
-    query = query.or(
-      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%`
+  if (query.data.search) {
+    q = q.or(
+      `first_name.ilike.%${query.data.search}%,last_name.ilike.%${query.data.search}%,email.ilike.%${query.data.search}%,company.ilike.%${query.data.search}%`
     );
   }
-
-  if (status) {
-    query = query.eq("status", status);
+  if (query.data.status) {
+    q = q.eq("status", query.data.status);
+  }
+  if (query.data.source) {
+    q = q.eq("source", query.data.source);
   }
 
-  if (source) {
-    query = query.eq("source", source);
-  }
+  const from = (query.data.page - 1) * query.data.pageSize;
+  const to = from + query.data.pageSize - 1;
 
-  query = query.order(sortBy, { ascending: sortOrder === "asc" }).range(from, to);
+  const { data, error, count } = await q
+    .order(query.data.sortBy, { ascending: query.data.sortOrder === "asc" })
+    .range(from, to);
 
-  const { data, error, count } = await query;
-
-  if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return ApiError.internal("DB_ERROR", error.message);
 
   return Response.json({
-    data: data ?? [],
+    data: (data ?? []) as Lead[],
     total: count ?? 0,
-    page,
-    pageSize,
-    totalPages: Math.ceil((count ?? 0) / pageSize),
+    page: query.data.page,
+    pageSize: query.data.pageSize,
   });
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json().catch(() => ({}));
+export async function POST(request: NextRequest) {
+  const user = getSessionUser();
+  if (!user) return ApiError.unauthorized();
 
-    const {
-      id,
-      first_name,
-      last_name,
-      email,
-      company,
-      job_title,
-      phone,
-      source = "manual",
-      status = "new",
-      notes,
-      tags = [],
-      custom_fields = {},
-    } = body as {
-      id?: string;
-      first_name?: string;
-      last_name?: string;
-      email?: string;
-      company?: string;
-      job_title?: string;
-      phone?: string;
-      source?: string;
-      status?: string;
-      notes?: string;
-      tags?: string[];
-      custom_fields?: Record<string, unknown>;
-    };
+  const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
+  if (!limit.allowed) return ApiError.rateLimited();
 
-    if (!first_name || !last_name || !email) {
-      return Response.json(
-        { error: "first_name, last_name, and email are required" },
-        { status: 400 }
-      );
-    }
+  const body = await request.json().catch(() => ({}));
+  const validated = validate(CreateSchema, body);
 
-    const leadId = id ?? randomUUID();
+  const supabase = createServiceClient();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
 
-    const supabase = createServiceClient();
-    const { error } = await supabase.from("leads").upsert({
-      id: leadId,
-      first_name,
-      last_name,
-      email,
-      company: company ?? null,
-      job_title: job_title ?? null,
-      phone: phone ?? null,
-      source,
-      status,
-      notes: notes ?? null,
-      tags,
-      custom_fields: custom_fields ?? {},
-      updated_at: new Date().toISOString(),
-    });
+  const { error } = await supabase.from("leads").upsert({
+    id,
+    ...validated.data,
+    updated_at: now,
+    created_at: now,
+  });
 
-    if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
-    }
+  if (error) return ApiError.internal("DB_ERROR", error.message);
 
-    return Response.json({ id: leadId, status: "created" }, { status: 201 });
-  } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
-  }
+  await recordAudit({
+    table: "leads",
+    recordId: id,
+    action: "insert",
+    diff: validated.data,
+    actor: { userEmail: user.email ?? undefined, userId: user.id },
+  });
+
+  return Response.json({ id, status: "created" }, { status: 201 });
 }

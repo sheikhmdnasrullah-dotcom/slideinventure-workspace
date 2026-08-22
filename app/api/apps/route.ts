@@ -3,16 +3,17 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
-import { EmailAttachmentSchema } from "@/lib/api/schemas";
+import { AppSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
-  emailId: z.string().optional(),
+  category: z.string().optional(),
+  enabled: z.coerce.boolean().optional(),
 });
 
-const CreateSchema = EmailAttachmentSchema.omit({ id: true, createdAt: true });
+const CreateSchema = AppSchema.omit({ id: true, createdAt: true, updatedAt: true });
 
 export async function GET(request: NextRequest) {
   const user = getSessionUser();
@@ -24,16 +25,19 @@ export async function GET(request: NextRequest) {
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
   const supabase = createServiceClient();
 
-  let q = supabase.from("email_attachments").select("*", { count: "exact" });
+  let q = supabase.from("apps").select("*", { count: "exact" });
 
-  if (query.data.emailId) {
-    q = q.eq("email_id", query.data.emailId);
+  if (query.data.category) {
+    q = q.eq("category", query.data.category);
+  }
+  if (query.data.enabled !== undefined) {
+    q = q.eq("enabled", query.data.enabled);
   }
 
   const from = (query.data.page - 1) * query.data.pageSize;
   const to = from + query.data.pageSize - 1;
 
-  const { data, error, count } = await q.order("created_at", { ascending: false }).range(from, to);
+  const { data, error, count } = await q.order("name", { ascending: true }).range(from, to);
 
   if (error) return ApiError.internal("DB_ERROR", error.message);
 
@@ -49,7 +53,7 @@ export async function POST(request: NextRequest) {
   const user = getSessionUser();
   if (!user) return ApiError.unauthorized();
 
-  const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
+  const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited();
 
   const body = await request.json().catch(() => ({}));
@@ -59,10 +63,11 @@ export async function POST(request: NextRequest) {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  const { error } = await supabase.from("email_attachments").insert({
+  const { error } = await supabase.from("apps").insert({
     id,
     ...validated.data,
     created_at: now,
+    updated_at: now,
   });
 
   if (error) return ApiError.internal("DB_ERROR", error.message);

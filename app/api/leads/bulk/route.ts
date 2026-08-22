@@ -1,45 +1,46 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { ApiError } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { validate } from "@/lib/api/validation";
+import { z } from "zod";
+import { NextRequest } from "next/server";
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json().catch(() => ({}));
-    const { action, ids } = body as { action?: string; ids?: string[] };
+const BulkSchema = z.object({
+  action: z.enum(["delete", "update"]),
+  ids: z.array(z.string().uuid()).min(1).max(100),
+});
 
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return Response.json({ error: "No ids provided" }, { status: 400 });
-    }
+export async function POST(request: NextRequest) {
+  const user = getSessionUser();
+  if (!user) return ApiError.unauthorized();
 
-    const supabase = createServiceClient();
+  const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
+  if (!limit.allowed) return ApiError.rateLimited();
 
-    if (action === "delete") {
-      const { error } = await supabase.from("leads").delete().in("id", ids);
-      if (error) {
-        return Response.json({ error: error.message }, { status: 500 });
-      }
-      return Response.json({ deleted: ids.length });
-    }
+  const body = await request.json().catch(() => ({}));
+  const validated = validate(BulkSchema, body);
 
-    if (action === "update") {
-      const updates = body as Record<string, unknown>;
-      const { error } = await supabase
-        .from("leads")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .in("id", ids);
+  const supabase = createServiceClient();
 
-      if (error) {
-        return Response.json({ error: error.message }, { status: 500 });
-      }
-      return Response.json({ updated: ids.length });
-    }
+  if (validated.data.action === "delete") {
+    const { error } = await supabase.from("leads").delete().in("id", validated.data.ids);
 
-    return Response.json({ error: "Unsupported action" }, { status: 400 });
-  } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    if (error) return ApiError.internal("DB_ERROR", error.message);
+
+    return Response.json({ deleted: validated.data.ids.length });
   }
+
+  if (validated.data.action === "update") {
+    const rest = body as Record<string, unknown>;
+    const { error } = await supabase
+      .from("leads")
+      .update({ ...rest, updated_at: new Date().toISOString() })
+      .in("id", validated.data.ids);
+
+    if (error) return ApiError.internal("DB_ERROR", error.message);
+
+    return Response.json({ updated: validated.data.ids.length });
+  }
+
+  return ApiError.badRequest("UNSUPPORTED_ACTION", "Action must be 'delete' or 'update'");
 }

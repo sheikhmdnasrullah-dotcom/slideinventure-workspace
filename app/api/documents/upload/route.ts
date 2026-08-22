@@ -1,55 +1,79 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient, requireUser } from "@/lib/supabase/server";
+import { ApiError } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
 import { randomUUID } from "node:crypto";
-import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { NextRequest } from "next/server";
+import { recordAudit } from "@/lib/api/audit";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "documents");
+export async function POST(request: NextRequest) {
+  const user = await requireUser();
+  if (!user) return ApiError.unauthorized();
 
-export async function POST(request: Request) {
+  const limit = checkRateLimit(request, { limit: 5, windowMs: 60_000 });
+  if (!limit.allowed) return ApiError.rateLimited();
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const title = (formData.get("title") as string | null)?.trim() || "Untitled";
     const tags = ((formData.get("tags") as string | null) || "").split(",").map((t) => t.trim()).filter(Boolean);
-    const author = (formData.get("author") as string | null)?.trim() || "user";
+    const author = user.email || "user";
 
     if (!file) {
-      return Response.json({ error: "File is required" }, { status: 400 });
+      return ApiError.badRequest("FILE_REQUIRED", "File is required");
+    }
+
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return ApiError.badRequest("FILE_TOO_LARGE", "File exceeds 50MB limit");
+    }
+
+    const allowedTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "text/markdown"];
+    if (file.type && !allowedTypes.includes(file.type) && !file.name.endsWith(".pdf") && !file.name.endsWith(".docx") && !file.name.endsWith(".txt") && !file.name.endsWith(".md")) {
+      return ApiError.badRequest("UNSUPPORTED_TYPE", "Unsupported file type");
     }
 
     const id = randomUUID();
     const ext = path.extname(file.name) || ".pdf";
-    const filename = `${id}${ext}`;
-    const storagePath = path.join(UPLOAD_DIR, filename);
-    const url = `/uploads/documents/${filename}`;
-
-    await mkdir(UPLOAD_DIR, { recursive: true });
-    const bytes = Buffer.from(await file.arrayBuffer());
-    await writeFile(storagePath, bytes);
+    const storageFilename = `${id}${ext}`;
 
     const supabase = createServiceClient();
-    const { error } = await supabase.from("documents").insert({
+
+    const bytes = await file.arrayBuffer();
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(storageFilename, bytes, {
+        contentType: file.type || "application/pdf",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return ApiError.internal("STORAGE_ERROR", "Failed to upload file to storage");
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from("documents").getPublicUrl(storageFilename);
+
+    const { error: dbError } = await supabase.from("documents").insert({
       id,
       title,
       filename: file.name,
       mime_type: file.type || "application/pdf",
       size_bytes: file.size,
-      storage_path: storagePath,
-      url,
+      storage_path: storageFilename,
+      url: publicUrl,
       tags,
       author,
       status: "active",
     });
 
-    if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
+    if (dbError) {
+      await supabase.storage.from("documents").remove([storageFilename]);
+      return ApiError.internal("DB_ERROR", "Failed to save metadata");
     }
 
-    return Response.json({ id, url, title, filename }, { status: 201 });
+    return Response.json({ id, url: publicUrl, title, filename: file.name }, { status: 201 });
   } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : "Upload failed" },
-      { status: 500 }
-    );
+    return ApiError.internal("UPLOAD_ERROR", error instanceof Error ? error.message : "Upload failed");
   }
 }

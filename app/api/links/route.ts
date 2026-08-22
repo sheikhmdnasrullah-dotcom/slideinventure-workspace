@@ -3,16 +3,17 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
-import { EmailAttachmentSchema } from "@/lib/api/schemas";
+import { UsefulLinkSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
-  emailId: z.string().optional(),
+  search: z.string().optional(),
+  tag: z.string().optional(),
 });
 
-const CreateSchema = EmailAttachmentSchema.omit({ id: true, createdAt: true });
+const CreateSchema = UsefulLinkSchema.omit({ id: true, createdAt: true, updatedAt: true });
 
 export async function GET(request: NextRequest) {
   const user = getSessionUser();
@@ -24,10 +25,13 @@ export async function GET(request: NextRequest) {
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
   const supabase = createServiceClient();
 
-  let q = supabase.from("email_attachments").select("*", { count: "exact" });
+  let q = supabase.from("useful_links").select("*", { count: "exact" });
 
-  if (query.data.emailId) {
-    q = q.eq("email_id", query.data.emailId);
+  if (query.data.search) {
+    q = q.or(`title.ilike.%${query.data.search}%,url.ilike.%${query.data.search}%`);
+  }
+  if (query.data.tag) {
+    q = q.contains("tags", [query.data.tag]);
   }
 
   const from = (query.data.page - 1) * query.data.pageSize;
@@ -59,10 +63,12 @@ export async function POST(request: NextRequest) {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  const { error } = await supabase.from("email_attachments").insert({
+  const { error } = await supabase.from("useful_links").insert({
     id,
     ...validated.data,
+    created_by: user.email ?? null,
     created_at: now,
+    updated_at: now,
   });
 
   if (error) return ApiError.internal("DB_ERROR", error.message);

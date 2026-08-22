@@ -3,16 +3,17 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
-import { EmailAttachmentSchema } from "@/lib/api/schemas";
+import { NotionActivitySchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
-  emailId: z.string().optional(),
+  eventType: z.string().optional(),
+  pageId: z.string().optional(),
 });
 
-const CreateSchema = EmailAttachmentSchema.omit({ id: true, createdAt: true });
+const CreateSchema = NotionActivitySchema.omit({ id: true, createdAt: true });
 
 export async function GET(request: NextRequest) {
   const user = getSessionUser();
@@ -24,11 +25,10 @@ export async function GET(request: NextRequest) {
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
   const supabase = createServiceClient();
 
-  let q = supabase.from("email_attachments").select("*", { count: "exact" });
+  let q = supabase.from("notion_activity").select("*", { count: "exact" });
 
-  if (query.data.emailId) {
-    q = q.eq("email_id", query.data.emailId);
-  }
+  if (query.data.eventType) q = q.eq("event_type", query.data.eventType);
+  if (query.data.pageId) q = q.eq("page_id", query.data.pageId);
 
   const from = (query.data.page - 1) * query.data.pageSize;
   const to = from + query.data.pageSize - 1;
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   const user = getSessionUser();
   if (!user) return ApiError.unauthorized();
 
-  const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
+  const limit = checkRateLimit(request, { limit: 50, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited();
 
   const body = await request.json().catch(() => ({}));
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  const { error } = await supabase.from("email_attachments").insert({
+  const { error } = await supabase.from("notion_activity").insert({
     id,
     ...validated.data,
     created_at: now,
