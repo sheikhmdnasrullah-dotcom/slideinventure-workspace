@@ -88,15 +88,16 @@ export function AddCommandDialog({ open, onOpenChange, onSaved, editingCommand }
       })
 
       if (!res.ok) {
-        toast.error(editingCommand ? "Failed to update command" : "Failed to add command")
+        const data = await res.json().catch(() => null)
+        toast.error(data?.error?.message || (editingCommand ? "Failed to update command" : "Failed to add command"))
         return
       }
 
       toast.success(editingCommand ? "Command updated" : "Command added")
       onSaved()
       onOpenChange(false)
-    } catch {
-      toast.error("Something went wrong")
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong")
     } finally {
       setSaving(false)
     }

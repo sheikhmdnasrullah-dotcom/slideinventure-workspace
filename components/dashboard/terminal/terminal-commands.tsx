@@ -100,7 +100,8 @@ export function TerminalCommands() {
     try {
       const res = await fetch(`/api/terminal/${id}`, { method: "DELETE" })
       if (!res.ok) {
-        toast.error("Delete failed")
+        const data = await res.json().catch(() => null)
+        toast.error(data?.error?.message || "Delete failed")
         return
       }
       toast.success("Command deleted")
@@ -118,7 +119,8 @@ export function TerminalCommands() {
         body: JSON.stringify({ favorite: !command.favorite }),
       })
       if (!res.ok) {
-        toast.error("Update failed")
+        const data = await res.json().catch(() => null)
+        toast.error(data?.error?.message || "Update failed")
         return
       }
       await loadCommands()

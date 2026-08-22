@@ -81,13 +81,16 @@ export function LinksClient() {
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message || "Failed to save");
+      }
       
       toast.success(editingLink ? "Link updated" : "Link added");
       setIsDialogOpen(false);
       fetchLinks();
-    } catch (e) {
-      toast.error("Failed to save link");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save link");
     }
   };
 
@@ -96,11 +99,14 @@ export function LinksClient() {
     
     try {
       const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message || "Failed to delete");
+      }
       toast.success("Link deleted");
       fetchLinks();
-    } catch (e) {
-      toast.error("Failed to delete link");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete link");
     }
   };
 

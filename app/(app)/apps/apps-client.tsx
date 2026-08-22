@@ -114,13 +114,16 @@ export function AppsClient() {
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message || "Failed to save");
+      }
       
       toast.success(editingApp ? "App updated" : "App added");
       setIsDialogOpen(false);
       fetchApps();
-    } catch (e) {
-      toast.error("Failed to save app");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save app");
     }
   };
 
@@ -129,11 +132,14 @@ export function AppsClient() {
     
     try {
       const res = await fetch(`/api/apps/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message || "Failed to delete");
+      }
       toast.success("App deleted");
       fetchApps();
-    } catch (e) {
-      toast.error("Failed to delete app");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete app");
     }
   };
 
