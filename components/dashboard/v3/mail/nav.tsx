@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -18,6 +17,7 @@ interface NavProps {
     label?: string
     icon: LucideIcon
     variant: "default" | "ghost"
+    onClick?: () => void
   }[]
 }
 
@@ -33,8 +33,9 @@ export function Nav({ links, isCollapsed }: NavProps) {
             <Tooltip key={index}>
               <TooltipTrigger
                 render={
-                  <Link
-                    href="#"
+                  <button
+                    type="button"
+                    onClick={link.onClick}
                     className={cn(
                       buttonVariants({ variant: link.variant, size: "icon" }),
                       "h-9 w-9",
@@ -44,22 +45,21 @@ export function Nav({ links, isCollapsed }: NavProps) {
                   >
                     <link.icon className="h-4 w-4" />
                     <span className="sr-only">{link.title}</span>
-                  </Link>
+                  </button>
                 }
               />
               <TooltipContent side="right" className="flex items-center gap-4">
                 {link.title}
                 {link.label && (
-                  <span className="ml-auto text-muted-foreground">
-                    {link.label}
-                  </span>
+                  <span className="ml-auto text-muted-foreground">{link.label}</span>
                 )}
               </TooltipContent>
             </Tooltip>
           ) : (
-            <Link
+            <button
               key={index}
-              href="#"
+              type="button"
+              onClick={link.onClick}
               className={cn(
                 buttonVariants({ variant: link.variant, size: "sm" }),
                 link.variant === "default" &&
@@ -73,14 +73,13 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 <span
                   className={cn(
                     "ml-auto",
-                    link.variant === "default" &&
-                      "text-background dark:text-white"
+                    link.variant === "default" && "text-background dark:text-white"
                   )}
                 >
                   {link.label}
                 </span>
               )}
-            </Link>
+            </button>
           )
         )}
       </nav>

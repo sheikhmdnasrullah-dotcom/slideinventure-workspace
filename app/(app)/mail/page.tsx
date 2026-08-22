@@ -1,11 +1,13 @@
 import { cookies } from "next/headers"
+import { requireUser } from "@/lib/supabase/server"
 
 import { SiteHeader } from "@/components/dashboard/site-header"
 import { Mail } from "@/components/dashboard/v3/mail/mail"
 import { MailProvider } from "@/components/dashboard/v3/mail/use-mail"
-import { accounts, mails } from "@/components/dashboard/v3/mail/data"
 
 export default async function MailPage() {
+  await requireUser()
+
   const cookieStore = await cookies()
   const layout = cookieStore.get("react-resizable-panels:layout:mail")
   const collapsed = cookieStore.get("react-resizable-panels:collapsed")
@@ -22,8 +24,6 @@ export default async function MailPage() {
       <div className="hidden flex-1 flex-col md:flex">
         <MailProvider>
           <Mail
-            accounts={accounts}
-            mails={mails}
             defaultLayout={defaultLayout}
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}
