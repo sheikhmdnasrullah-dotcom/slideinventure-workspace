@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/sidebar"
 
 import { NavMain } from "@/components/dashboard/v3/nav-main"
-import { NavSecondary } from "@/components/dashboard/v3/nav-secondary"
 import { NavUser } from "@/components/dashboard/v3/nav-user"
 import { NavDocuments } from "@/components/dashboard/v3/nav-documents"
 
@@ -73,9 +72,6 @@ const NAV_DOCUMENTS: NavItem[] = [
   { title: "Miro", url: "/miro", icon: Activity },
   { title: "Todoist", url: "/todoist", icon: Sparkles },
   { title: "Vault", url: "/vault", icon: FileText },
-]
-
-const NAV_SECONDARY: NavItem[] = [
   { title: "Integrations", url: "/automations", icon: Cable },
   { title: "Terminal", url: "/terminal", icon: Terminal },
   { title: "Apps", url: "/apps", icon: Cable },
@@ -106,12 +102,6 @@ export function AppSidebar({
     icon: item.icon,
   }))
 
-  const navSecondaryItems = NAV_SECONDARY.map((item) => ({
-    title: item.title,
-    url: item.url,
-    icon: item.icon,
-  }))
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -133,7 +123,6 @@ export function AppSidebar({
       <SidebarContent>
         <NavMain items={navMainItems} />
         <NavDocuments items={navDocumentsItems} />
-        <NavSecondary items={navSecondaryItems} className="mt-auto" />
      </SidebarContent>
 
       <SidebarFooter>
