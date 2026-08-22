@@ -292,9 +292,7 @@ export function Mail({
           key={navSize}
           id="nav"
           defaultSize={navSize}
-          collapsedSize={navCollapsedSize}
-          collapsible={true}
-          minSize={15}
+          minSize={5}
           maxSize={35}
           onResize={(panelSize) => {
             const collapsed = panelSize.asPercentage <= navCollapsedSize
