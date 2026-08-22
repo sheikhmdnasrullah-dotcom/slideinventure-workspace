@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
   if (!verifyInternalSecret(request)) {
-    return ApiError.unauthorized("UNAUTHORIZED", "Invalid internal secret").toResponse();
+    return toJson(ApiError.unauthorized("UNAUTHORIZED", "Invalid internal secret"));
   }
 
   const supabase = createServiceClient();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch {
-    return ApiError.badRequest("WEBHOOK_ERROR", "Invalid payload").toResponse();
+    return toJson(ApiError.badRequest("WEBHOOK_ERROR", "Invalid payload"));
   }
 
   return Response.json({ id: runId, status: "accepted" }, { status: 202 });

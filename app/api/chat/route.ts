@@ -171,10 +171,10 @@ async function retrieveEvidence(
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const supabase = createServiceClient();
   const body = await request.json();

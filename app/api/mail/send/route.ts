@@ -18,13 +18,13 @@ const SendSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const body = await request.json().catch(() => null);
-  if (!body) return ApiError.badRequest("INVALID_BODY", "Invalid JSON body").toResponse();
+  if (!body) return toJson(ApiError.badRequest("INVALID_BODY", "Invalid JSON body"));
 
   const validated = validate(SendSchema, body);
 
@@ -47,6 +47,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, messageId: result.messageId });
   } catch (err) {
-    return ApiError.internal("SEND_ERROR", err instanceof Error ? err.message : "Failed to send message").toResponse();
+    return toJson(ApiError.internal("SEND_ERROR", err instanceof Error ? err.message : "Failed to send message"));
   }
 }

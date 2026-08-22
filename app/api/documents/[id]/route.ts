@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const { id } = await params;
   const supabase = createServiceClient();
@@ -13,7 +13,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
   const { error } = await supabase.from("documents").delete().eq("id", id);
 
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
   if (doc?.storage_path) {
     try {

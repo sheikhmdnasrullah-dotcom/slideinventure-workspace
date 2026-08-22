@@ -11,24 +11,24 @@ const UpdateSchema = LeadSchema.partial().omit({ id: true, createdAt: true, upda
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const { id } = await params;
   const supabase = createServiceClient();
 
   const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
 
-  if (error || !data) return ApiError.notFound("LEAD_NOT_FOUND", "Lead not found").toResponse();
+  if (error || !data) return toJson(ApiError.notFound("LEAD_NOT_FOUND", "Lead not found"));
 
   return Response.json(data as Lead);
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     .update({ ...validated.data, updated_at: now })
     .eq("id", id);
 
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
   await recordAudit({
     table: "leads",
@@ -59,10 +59,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const { id } = await params;
   const supabase = createServiceClient();
@@ -76,7 +76,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { error } = await supabase.from("leads").delete().eq("id", id);
 
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
   return Response.json({ id, status: "deleted" });
 }

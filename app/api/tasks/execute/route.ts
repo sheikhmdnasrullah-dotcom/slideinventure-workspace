@@ -20,10 +20,10 @@ const TaskRunInputSchema = z.object({
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(TaskRunInputSchema, body);
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     started_at: now,
   });
 
-  if (error) return ApiError.internal("DB_ERROR", "Database unavailable").toResponse();
+  if (error) return toJson(ApiError.internal("DB_ERROR", "Database unavailable"));
 
   await recordAudit({
     table: "task_runs",

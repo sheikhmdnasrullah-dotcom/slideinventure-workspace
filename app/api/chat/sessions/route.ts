@@ -5,10 +5,10 @@ import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  if (!user) return toJson(ApiError.unauthorized());
 
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
-  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+  if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -18,6 +18,6 @@ export async function GET(request: NextRequest) {
     .order("updated_at", { ascending: false })
     .limit(50);
 
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
+  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
   return Response.json(data ?? []);
 }
