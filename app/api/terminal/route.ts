@@ -63,25 +63,29 @@ export async function POST(request: NextRequest) {
   if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const body = await request.json().catch(() => ({}));
-  const validated = validate(CreateSchema, body);
+  try {
+    const validated = validate(CreateSchema, body);
+    const supabase = createServiceClient();
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
 
-  const supabase = createServiceClient();
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
+    const { triggeredBy, exitCode, durationMs, ...rest } = validated.data;
 
-  const { triggeredBy, exitCode, durationMs, ...rest } = validated.data;
+    const { error } = await supabase.from("terminal_commands").insert({
+      id,
+      ...rest,
+      triggered_by: user.email ?? triggeredBy ?? null,
+      exit_code: exitCode ?? null,
+      duration_ms: durationMs ?? null,
+      created_at: now,
+      updated_at: now,
+    });
 
-  const { error } = await supabase.from("terminal_commands").insert({
-    id,
-    ...rest,
-    triggered_by: user.email ?? triggeredBy ?? null,
-    exit_code: exitCode ?? null,
-    duration_ms: durationMs ?? null,
-    created_at: now,
-    updated_at: now,
-  });
+    if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
 
-  if (error) return toJson(ApiError.internal("DB_ERROR", error.message));
-
-  return Response.json({ id }, { status: 201 });
+    return Response.json({ id }, { status: 201 });
+  } catch (err: any) {
+    if (err instanceof ApiError) return toJson(err);
+    return toJson(ApiError.internal("UNHANDLED", err.message || "Unknown error"));
+  }
 }
