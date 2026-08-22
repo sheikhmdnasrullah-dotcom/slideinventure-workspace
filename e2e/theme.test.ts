@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const PAGES = ["/", "/knowledge", "/chat", "/agents", "/prospects", "/research", "/insights", "/activity", "/strategy", "/automations", "/cold-outreach", "/login"];
+const PAGES = ["/", "/knowledge", "/chat", "/agents", "/leads", "/research", "/insights", "/activity", "/strategy", "/automations", "/cold-outreach", "/login"];
 const THEMES = ["day", "night"];
 
 function generateThemeTests() {

@@ -1,13 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Send, X, Loader2, Sparkles, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { format, isToday, isYesterday } from "date-fns";
+import { Send, Loader2, Sparkles, MessageSquarePlus } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { EvidenceBlock } from "@/components/system";
-import { FilterBar } from "@/components/system";
 
 type MessageRole = "user" | "assistant";
 
@@ -26,16 +29,7 @@ interface Message {
   id: string;
   role: MessageRole;
   content: string;
-  evidence?: Array<{
-    chunk_id: string;
-    knowledge_item_id: string;
-    chunk_index: number;
-    heading: string | null;
-    text: string;
-    start_offset: number;
-    end_offset: number;
-    similarity: number;
-  }>;
+  evidence?: EvidenceChunk[];
   filters?: Record<string, unknown>;
   createdAt: string;
 }
@@ -44,6 +38,34 @@ interface Session {
   id: string;
   title: string;
   updatedAt: string;
+}
+
+function formatMessageTime(timestamp: string) {
+  const date = new Date(timestamp);
+  if (isToday(date)) return format(date, "HH:mm");
+  if (isYesterday(date)) return `Yesterday ${format(date, "HH:mm")}`;
+  return format(date, "MMM d, HH:mm");
+}
+
+function formatDateHeader(dateString: string) {
+  const date = new Date(dateString);
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+  return format(date, "EEEE, MMMM d");
+}
+
+function groupMessagesByDay(messages: Message[]) {
+  const groups: { date: string; messages: Message[] }[] = [];
+  for (const message of messages) {
+    const messageDate = format(new Date(message.createdAt), "yyyy-MM-dd");
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.date === messageDate) {
+      lastGroup.messages.push(message);
+    } else {
+      groups.push({ date: messageDate, messages: [message] });
+    }
+  }
+  return groups;
 }
 
 async function loadSessions(
@@ -83,9 +105,8 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load sessions on mount
   useEffect(() => {
@@ -106,15 +127,18 @@ export function ChatInterface() {
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streaming]);
 
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
   const newSession = () => {
-    setStreaming(true);
     setInput("");
     setMessages([]);
     setActiveSessionId(null);
-    setStreaming(false);
+    textareaRef.current?.focus();
   };
 
   const sendMessage = async () => {
@@ -123,6 +147,7 @@ export function ChatInterface() {
 
     setStreaming(true);
     setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setMessages((prev) => [...prev, { id: `temp-${Date.now()}`, role: "user", content: text, createdAt: new Date().toISOString() }]);
 
     try {
@@ -201,171 +226,181 @@ export function ChatInterface() {
         return prev;
       });
 
+      loadSessions(setSessions, setActiveSessionId, activeSessionId);
     } catch (error) {
       console.error("Chat error:", error);
       setMessages((prev) => [...prev, { id: `msg-${Date.now()}`, role: "assistant", content: "Sorry, something went wrong. Please try again.", createdAt: new Date().toISOString() }]);
     } finally {
       setStreaming(false);
-      inputRef.current?.focus();
+      textareaRef.current?.focus();
     }
   };
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+    }
+  };
+
+  const activeSession = sessions.find((s) => s.id === activeSessionId);
+  const citedCount = messages.filter((m) => m.role === "assistant" && m.evidence?.length).length;
+  const messageGroups = groupMessagesByDay(messages);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full">
       {/* Sidebar - Session list */}
-      <aside
-        className={cn(
-          "flex flex-col border-r border-rule bg-[var(--surface)] transition-all duration-220 ease-expo",
-          sidebarOpen ? "w-72" : "w-14"
-        )}
-      >
-        <div className="flex h-14 items-center justify-between border-b border-rule px-3">
-          {sidebarOpen && (
-            <span className="font-label text-ink-muted">Conversations</span>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen((v) => !v)}
-            aria-label="Toggle sidebar"
-            className="shrink-0"
-          >
-            <X className="size-4" />
-          </Button>
+      <aside className="flex w-72 shrink-0 flex-col border-r bg-background">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b px-3">
+          <span className="text-sm font-medium">Conversations</span>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 mb-2"
-            onClick={newSession}
-            disabled={streaming}
-          >
-            <MessageSquare className="size-4" />
-            {sidebarOpen && <span className="font-body text-sm">New conversation</span>}
-          </Button>
-
-          {sessions.map((session) => (
-            <button
-              key={session.id}
-              onClick={() => setActiveSessionId(session.id)}
-              className={cn(
-                "w-full text-left rounded-sm px-2 py-1.5 text-sm transition-colors",
-                activeSessionId === session.id
-                  ? "bg-[var(--accent-wash)] text-[var(--text-accent)]"
-                  : "text-ink-muted hover:text-ink-strong hover:bg-[var(--surface-2)]"
-              )}
+        <ScrollArea className="flex-1">
+          <div className="space-y-1 p-2">
+            <Button
+              variant="outline"
+              className="mb-1 w-full justify-start gap-2"
+              onClick={newSession}
+              disabled={streaming}
             >
-              <span className="truncate block">{session.title}</span>
-              {sidebarOpen && (
-                <span className="font-label text-[10px] text-ink-faint">
+              <MessageSquarePlus className="size-4" />
+              New conversation
+            </Button>
+
+            {sessions.map((session) => (
+              <button
+                key={session.id}
+                onClick={() => setActiveSessionId(session.id)}
+                className={cn(
+                  "w-full rounded-md px-2 py-2 text-left text-sm transition-colors",
+                  activeSessionId === session.id
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                )}
+              >
+                <span className="block truncate">{session.title}</span>
+                <span className="text-xs text-muted-foreground">
                   {new Date(session.updatedAt).toLocaleDateString()}
                 </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {sidebarOpen && (
-          <div className="border-t border-rule p-3">
-            <span className="font-label text-ink-faint">SlideIn Venture OS</span>
+              </button>
+            ))}
           </div>
-        )}
+        </ScrollArea>
       </aside>
 
       {/* Main chat area */}
-      <div className="flex flex-1 flex-col bg-[var(--page-fill)]">
+      <div className="flex flex-1 flex-col">
         {/* Header */}
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-rule px-4 bg-[var(--surface)]">
-          <h1 className="font-body text-sm font-medium text-ink-strong">
-            {activeSessionId
-              ? sessions.find((s) => s.id === activeSessionId)?.title || "Conversation"
-              : "Start a conversation"}
+        <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+          <h1 className="truncate text-sm font-semibold">
+            {activeSessionId ? activeSession?.title || "Conversation" : "Start a conversation"}
           </h1>
-          {activeSessionId && (
-            <Badge variant="outline" className="ml-auto font-label">
-              {messages.filter((m) => m.role === "assistant" && m.evidence?.length).length} cited
+          {activeSessionId && citedCount > 0 && (
+            <Badge variant="secondary" className="ml-auto text-xs">
+              {citedCount} cited
             </Badge>
           )}
-        </header>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center text-ink-muted">
-              <Sparkles className="size-12 text-flame mb-4" />
-              <p className="font-body text-base">Start a conversation</p>
-              <p className="font-body text-sm mt-1">Ask about prospects, research, SOPs, decisions…</p>
-            </div>
-          ) : (
-            messages.map((msg, idx) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.15, delay: idx * 0.03 }}
-                className={cn("flex gap-3", msg.role === "user" && "flex-row-reverse")}
-              >
-                <div
-                  className={cn(
-                    "size-8 shrink-0 rounded-full flex items-center justify-center font-label text-xs",
-                    msg.role === "user" ? "bg-flame text-white" : "bg-flame text-white"
-                  )}
-                >
-                  {msg.role === "user" ? "U" : "AI"}
-                </div>
-                <div className={cn("flex-1 min-w-0", msg.role === "user" && "text-right")}>
-                  <div className={cn("font-body prose prose-sm max-w-none", msg.role === "user" && "text-right")}>
-                    {msg.content}
-                  </div>
-
-                  {msg.evidence && msg.evidence.length > 0 && msg.role === "assistant" && (
-                    <div className="mt-2 space-y-2">
-                      {msg.evidence?.map((ev: NonNullable<Message["evidence"]>[0], i: number) => (
-                        <EvidenceBlock
-                          key={ev.chunk_id}
-                          query=""
-                          text={ev.text}
-                          type={ev.heading || undefined}
-                          source={`${ev.knowledge_item_id} · chunk ${ev.chunk_index}`}
-                          position={`similarity ${(ev.similarity * 100).toFixed(0)}%`}
-                          href={`/knowledge/${ev.knowledge_item_id}?chunk=${ev.chunk_index}`}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  <div className={cn("mt-1 font-label text-[10px] text-ink-faint", msg.role === "user" && "text-right")}>
-                    {new Date(msg.createdAt).toLocaleTimeString()}
-                  </div>
-                </div>
-              </motion.div>
-            )))}
-
-          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="shrink-0 border-t border-rule bg-[var(--surface)] p-4">
-          <FilterBar>
-            <FilterBar.Search
+        {/* Messages */}
+        <ScrollArea className="flex-1 px-4">
+          <div className="space-y-4 py-4">
+            {messages.length === 0 ? (
+              <div className="flex h-full min-h-[50vh] flex-col items-center justify-center text-center text-muted-foreground">
+                <Sparkles className="mb-4 size-10 text-muted-foreground/60" />
+                <p className="text-base">Start a conversation</p>
+                <p className="mt-1 text-sm">Ask about knowledge, research, SOPs, decisions…</p>
+              </div>
+            ) : (
+              messageGroups.map((group) => (
+                <div key={group.date}>
+                  <div className="flex items-center justify-center py-2">
+                    <div className="rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground">
+                      {formatDateHeader(group.date)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {group.messages.map((msg, idx) => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.15, delay: idx * 0.03 }}
+                        className={cn("flex gap-3", msg.role === "user" && "flex-row-reverse")}
+                      >
+                        {msg.role === "assistant" && (
+                          <Avatar size="sm" className="mt-0.5 shrink-0">
+                            <AvatarFallback>AI</AvatarFallback>
+                          </Avatar>
+                        )}
+
+                        <div className={cn("max-w-[70%] min-w-0", msg.role === "user" && "flex flex-col items-end")}>
+                          <div
+                            className={cn(
+                              "rounded-lg px-3 py-2 text-sm break-words",
+                              msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                            )}
+                          >
+                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                          </div>
+
+                          {msg.evidence && msg.evidence.length > 0 && msg.role === "assistant" && (
+                            <div className="mt-2 w-full space-y-2">
+                              {msg.evidence.map((ev) => (
+                                <EvidenceBlock
+                                  key={ev.chunk_id}
+                                  query=""
+                                  text={ev.text}
+                                  type={ev.heading || undefined}
+                                  source={`${ev.knowledge_item_id} · chunk ${ev.chunk_index}`}
+                                  position={`similarity ${(ev.similarity * 100).toFixed(0)}%`}
+                                  href={`/knowledge/${ev.knowledge_item_id}?chunk=${ev.chunk_index}`}
+                                />
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {formatMessageTime(msg.createdAt)}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+
+            <div ref={bottomRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Composer */}
+        <div className="shrink-0 border-t p-4">
+          <div className="flex items-end gap-2">
+            <Textarea
+              ref={textareaRef}
               value={input}
-              onChange={setInput}
-              placeholder={streaming ? "Sending…" : "Ask about prospects, research, SOPs…"}
-              className="flex-1"
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              disabled={streaming}
+              placeholder={streaming ? "Sending…" : "Ask about knowledge, research, SOPs…"}
+              rows={1}
+              className="max-h-40 min-h-[40px] flex-1 resize-none"
             />
-            <Button
-              size="sm"
-              onClick={sendMessage}
-              disabled={!input.trim() || streaming}
-            >
+            <Button size="icon" onClick={sendMessage} disabled={!input.trim() || streaming}>
               {streaming ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             </Button>
-          </FilterBar>
+          </div>
         </div>
       </div>
     </div>

@@ -11,7 +11,6 @@ import {
   RefreshCw,
   Send,
   Sparkles,
-  Target,
   Terminal,
 } from "lucide-react";
 import { commandMenuStore, useCommandMenu } from "@/lib/command-menu-store";
@@ -45,7 +44,6 @@ const NAV_ENTRIES: Omit<CmdEntry, "run">[] = [
   { id: "nav-home", label: "Command Center", group: "Navigate", icon: LayoutDashboard, hint: "/" },
   { id: "nav-activity", label: "Activity", group: "Navigate", icon: Activity, hint: "/activity" },
   { id: "nav-knowledge", label: "Knowledge", group: "Navigate", icon: BookOpen, hint: "/knowledge" },
-  { id: "nav-prospects", label: "Prospects", group: "Navigate", icon: Target, hint: "/prospects" },
   { id: "nav-outreach", label: "Outreach", group: "Navigate", icon: Send, hint: "/cold-outreach" },
   { id: "nav-strategy", label: "Strategy", group: "Navigate", icon: Sparkles, hint: "/strategy" },
   { id: "nav-research", label: "Research", group: "Navigate", icon: BookOpen, hint: "/research" },

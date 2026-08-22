@@ -14,7 +14,6 @@ import {
   Send,
   Settings,
   Sparkles,
-  Target,
   Terminal,
   Users,
   type LucideIcon,
@@ -63,7 +62,6 @@ const NAV_MAIN: NavItem[] = [
 
 const NAV_DOCUMENTS: NavItem[] = [
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
-  { title: "Prospects", url: "/prospects", icon: Target },
   { title: "Outreach", url: "/cold-outreach", icon: Send },
   { title: "Leads", url: "/leads", icon: Users },
   { title: "Documents", url: "/documents", icon: FileText },

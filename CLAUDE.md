@@ -1,19 +1,52 @@
 @AGENTS.md
 
-# SlideIn Venture OS — Claude Code Instructions
+# PROJECT RULES
 
-You are the AI operator for SlideIn Venture's internal knowledge system.
+This dashboard is based on the downloaded ShadcnStore dashboard template.
 
-## Core rules
-- The /knowledge folder is the source of truth. Every file needs frontmatter:
-  id, type, title, tags, status, source, author, created_at, updated_at.
-- Never mark anything status: confirmed. You may write proposed or
-  ai_inferred. Only the founder marks things confirmed.
-- Always cite where information came from in the source field. If you
-  can't identify a source, say so explicitly rather than guessing.
-- After writing or editing knowledge files, run npm run sync to index
-  them. Never write directly to the database.
-- Don't duplicate an existing knowledge item, search /knowledge first.
-- If something contradicts existing knowledge, flag it in the file body
-  rather than silently overwriting the older file.
+SOURCE OF TRUTH:
+https://github.com/shadcnstore/shadcn-dashboard-landing-template
 
+Do NOT redesign the UI.
+
+Do NOT invent alternative layouts.
+
+Do NOT "improve" the visual design.
+
+Reuse/adapt the existing ShadcnStore components whenever possible.
+
+Preserve its:
+- layout
+- sidebar
+- header
+- spacing
+- typography
+- tables
+- cards
+- Mail UI
+- responsive behavior
+- component style
+
+This application uses LIGHT MODE ONLY.
+
+Do NOT implement dark mode.
+Do NOT add dark-mode logic.
+Do NOT add dark-mode CSS/classes.
+Do NOT create theme toggles for dark mode.
+
+Our application adds functionality; it does not replace the design.
+
+If a requested feature does not exist in the template:
+use the closest existing ShadcnStore component pattern.
+
+Do not create unnecessary abstractions.
+
+Do not refactor unrelated code.
+
+Work directly in the existing repository.
+
+After making changes:
+run the relevant typecheck/build/test and fix actual errors.
+
+Do not give long explanations.
+Implement the task.
