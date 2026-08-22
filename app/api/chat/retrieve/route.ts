@@ -27,21 +27,11 @@ function isSecretQuery(message: string): boolean {
   return SECRET_PATTERNS.some((pattern) => pattern.test(message));
 }
 
-function escapeTsQuery(input: string): string {
-  return input
-    .replace(/[&|!<>():*]/g, " ")
-    .trim()
-    .split(/\s+/)
-    .map((w) => `${w}:*`)
-    .join(" & ");
-}
-
 async function searchKnowledgeChunks(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const sanitized = escapeTsQuery(query);
-  if (!sanitized) return [];
+  if (!query.trim()) return [];
 
   const { data, error } = await supabase.rpc("match_knowledge_chunks_fts", {
-    query_tsquery: sanitized,
+    query_text: query,
     match_count: 5,
   });
 
@@ -57,11 +47,10 @@ async function searchKnowledgeChunks(supabase: ReturnType<typeof createServiceCl
 }
 
 async function searchLeads(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const sanitized = escapeTsQuery(query);
-  if (!sanitized) return [];
+  if (!query.trim()) return [];
 
   const { data, error } = await supabase.rpc("search_leads_fts", {
-    query_tsquery: sanitized,
+    query_text: query,
     match_count: 10,
   });
 
@@ -81,11 +70,10 @@ async function searchLeads(supabase: ReturnType<typeof createServiceClient>, que
 }
 
 async function searchTerminalCommands(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const sanitized = escapeTsQuery(query);
-  if (!sanitized) return [];
+  if (!query.trim()) return [];
 
   const { data, error } = await supabase.rpc("search_terminal_commands_fts", {
-    query_tsquery: sanitized,
+    query_text: query,
     match_count: 10,
   });
 
@@ -104,11 +92,10 @@ async function searchTerminalCommands(supabase: ReturnType<typeof createServiceC
 }
 
 async function searchApps(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const sanitized = escapeTsQuery(query);
-  if (!sanitized) return [];
+  if (!query.trim()) return [];
 
   const { data, error } = await supabase.rpc("search_apps_fts", {
-    query_tsquery: sanitized,
+    query_text: query,
     match_count: 10,
   });
 
@@ -125,11 +112,10 @@ async function searchApps(supabase: ReturnType<typeof createServiceClient>, quer
 }
 
 async function searchUsefulLinks(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  const sanitized = escapeTsQuery(query);
-  if (!sanitized) return [];
+  if (!query.trim()) return [];
 
   const { data, error } = await supabase.rpc("search_useful_links_fts", {
-    query_tsquery: sanitized,
+    query_text: query,
     match_count: 10,
   });
 

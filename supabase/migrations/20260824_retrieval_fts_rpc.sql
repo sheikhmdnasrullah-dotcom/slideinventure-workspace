@@ -1,10 +1,10 @@
 -- Retrieval fast-path: parameterized FTS search RPCs per source table.
--- Each accepts a tsquery string (already formatted with :* for prefix matching)
--- and returns ranked matches with a normalized rank score.
+-- Uses websearch_to_tsquery for forgiving query parsing (handles special
+-- characters, quoted phrases, and implicit AND semantics).
 
 -- knowledge_chunks
 create or replace function match_knowledge_chunks_fts(
-  query_tsquery text,
+  query_text text,
   match_count int default 5
 )
 returns table (
@@ -28,16 +28,16 @@ as $$
     text,
     start_offset,
     end_offset,
-    ts_rank(search_vector, to_tsquery('english', query_tsquery)) as rank
+    ts_rank(search_vector, websearch_to_tsquery('english', query_text)) as rank
   from public.knowledge_chunks
-  where search_vector @@ to_tsquery('english', query_tsquery)
+  where search_vector @@ websearch_to_tsquery('english', query_text)
   order by rank desc
   limit match_count;
 $$;
 
 -- leads
 create or replace function search_leads_fts(
-  query_tsquery text,
+  query_text text,
   match_count int default 10
 )
 returns table (
@@ -61,16 +61,16 @@ as $$
     company,
     job_title,
     notes,
-    ts_rank(search_vector, to_tsquery('english', query_tsquery)) as rank
+    ts_rank(search_vector, websearch_to_tsquery('english', query_text)) as rank
   from public.leads
-  where search_vector @@ to_tsquery('english', query_tsquery)
+  where search_vector @@ websearch_to_tsquery('english', query_text)
   order by rank desc
   limit match_count;
 $$;
 
 -- terminal_commands
 create or replace function search_terminal_commands_fts(
-  query_tsquery text,
+  query_text text,
   match_count int default 10
 )
 returns table (
@@ -94,16 +94,16 @@ as $$
     stdout,
     stderr,
     created_at,
-    ts_rank(search_vector, to_tsquery('english', query_tsquery)) as rank
+    ts_rank(search_vector, websearch_to_tsquery('english', query_text)) as rank
   from public.terminal_commands
-  where search_vector @@ to_tsquery('english', query_tsquery)
+  where search_vector @@ websearch_to_tsquery('english', query_text)
   order by rank desc
   limit match_count;
 $$;
 
 -- apps
 create or replace function search_apps_fts(
-  query_tsquery text,
+  query_text text,
   match_count int default 10
 )
 returns table (
@@ -123,16 +123,16 @@ as $$
     description,
     url,
     category,
-    ts_rank(search_vector, to_tsquery('english', query_tsquery)) as rank
+    ts_rank(search_vector, websearch_to_tsquery('english', query_text)) as rank
   from public.apps
-  where search_vector @@ to_tsquery('english', query_tsquery)
+  where search_vector @@ websearch_to_tsquery('english', query_text)
   order by rank desc
   limit match_count;
 $$;
 
 -- useful_links
 create or replace function search_useful_links_fts(
-  query_tsquery text,
+  query_text text,
   match_count int default 10
 )
 returns table (
@@ -152,9 +152,9 @@ as $$
     url,
     description,
     tags,
-    ts_rank(search_vector, to_tsquery('english', query_tsquery)) as rank
+    ts_rank(search_vector, websearch_to_tsquery('english', query_text)) as rank
   from public.useful_links
-  where search_vector @@ to_tsquery('english', query_tsquery)
+  where search_vector @@ websearch_to_tsquery('english', query_text)
   order by rank desc
   limit match_count;
 $$;

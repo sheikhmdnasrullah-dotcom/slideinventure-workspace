@@ -18,7 +18,7 @@ export default async function MailPage() {
   return (
     <>
       <SiteHeader crumbs={[{ label: "Mail" }]} />
-      <div className="flex flex-1 flex-col">
+      <div className="flex h-[calc(100vh-theme(spacing.16))] flex-col p-4">
         <MailProvider>
           <Mail
             defaultLayout={defaultLayout}

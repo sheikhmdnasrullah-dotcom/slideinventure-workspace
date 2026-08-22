@@ -284,7 +284,7 @@ export function Mail({
             [layout.nav, layout.list, layout.display]
           )}`
         }}
-        className="h-full max-h-[800px] items-stretch"
+        className="h-full items-stretch rounded-lg border overflow-hidden"
       >
         {/* ─── LEFT NAV ─── */}
         <ResizablePanel
