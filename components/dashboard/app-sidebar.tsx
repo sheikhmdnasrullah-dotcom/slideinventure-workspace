@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  Activity,
   BookOpen,
   Cable,
   FileText,
@@ -28,7 +29,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+
+import { NavMain } from "@/components/dashboard/v3/nav-main"
+import { NavSecondary } from "@/components/dashboard/v3/nav-secondary"
 import { NavUser } from "@/components/dashboard/v3/nav-user"
+import { NavDocuments } from "@/components/dashboard/v3/nav-documents"
 
 function useIsActive() {
   const pathname = usePathname()
@@ -48,21 +53,39 @@ type NavItem = {
   external?: boolean
 }
 
-const NAV: NavItem[] = [
+const NAV_MAIN: NavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Leads", url: "/leads", icon: Users },
   { title: "Mail", url: "/mail", icon: Inbox },
-  { title: "Chat", url: "/chat", icon: MessageSquare },
-  { title: "Todoist", url: "/todoist", icon: Sparkles },
+  { title: "Activity", url: "/activity", icon: Activity },
+  { title: "Agents", url: "/agents", icon: Terminal },
+]
+
+const NAV_DOCUMENTS: NavItem[] = [
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
+  { title: "Outreach", url: "/cold-outreach", icon: Send },
+  { title: "Leads", url: "/leads", icon: Users },
   { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notion", url: "/notion", icon: Sparkles },
-  { title: "Miro", url: "/miro", icon: Sparkles },
-  { title: "Terminal", url: "/terminal", icon: Terminal },
-  { title: "Useful Links", url: "/useful-links", icon: Send },
-  { title: "Apps", url: "/apps", icon: Cable },
+  { title: "Strategy", url: "/strategy", icon: Sparkles },
+  { title: "Research", url: "/research", icon: BookOpen },
+  { title: "Insights", url: "/insights", icon: Lightbulb },
+  { title: "Chat", url: "/chat", icon: MessageSquare },
+  { title: "Notion", url: "/notion", icon: FileText },
+  { title: "Miro", url: "/miro", icon: Activity },
+  { title: "Todoist", url: "/todoist", icon: Sparkles },
   { title: "Vault", url: "/vault", icon: FileText },
-  { title: "Settings", url: "/settings", icon: Settings },
+]
+
+const NAV_SECONDARY: NavItem[] = [
+  { title: "Integrations", url: "/automations", icon: Cable },
+  { title: "Terminal", url: "/terminal", icon: Terminal },
+  { title: "Apps", url: "/apps", icon: Cable },
+  { title: "Useful Links", url: "/useful-links", icon: Send },
+  {
+    title: "Admin",
+    url: "https://admin.tanim.tech",
+    icon: Settings,
+    external: true,
+  },
 ]
 
 export function AppSidebar({
@@ -71,7 +94,19 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & { userEmail: string }) {
   const isActive = useIsActive()
 
-  const navItems = NAV.map((item) => ({
+  const navMainItems = NAV_MAIN.map((item) => ({
+    title: item.title,
+    url: item.url,
+    icon: item.icon,
+  }))
+
+  const navDocumentsItems = NAV_DOCUMENTS.map((item) => ({
+    name: item.title,
+    url: item.url,
+    icon: item.icon,
+  }))
+
+  const navSecondaryItems = NAV_SECONDARY.map((item) => ({
     title: item.title,
     url: item.url,
     icon: item.icon,
@@ -91,22 +126,15 @@ export function AppSidebar({
                 <span className="truncate text-xs text-muted-foreground">Ops console</span>
              </div>
            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
+         </SidebarMenuItem>
+       </SidebarMenu>
+     </SidebarHeader>
 
       <SidebarContent>
-        <nav>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-             </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </nav>
-       </SidebarContent>
+        <NavMain items={navMainItems} />
+        <NavDocuments items={navDocumentsItems} />
+        <NavSecondary items={navSecondaryItems} className="mt-auto" />
+     </SidebarContent>
 
       <SidebarFooter>
         <NavUser
