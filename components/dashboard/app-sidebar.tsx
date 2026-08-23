@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Send,
   Settings,
+  ShieldCheck,
   Sparkles,
   Terminal,
   type LucideIcon,
@@ -31,7 +32,15 @@ import { useRouter } from "next/navigation"
 
 const NAV_MAIN = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Leads", url: "/leads", icon: FileText },
+  {
+    title: "Leads",
+    url: "/leads",
+    icon: FileText,
+    items: [
+      { title: "All Leads", url: "/leads" },
+      { title: "Verify Leads", url: "/leads/verify", icon: ShieldCheck },
+    ],
+  },
   { title: "Mail", url: "/mail", icon: Inbox },
   { title: "Chat", url: "/chat", icon: MessageSquare },
   { title: "Todoist", url: "/todoist", icon: Sparkles },
