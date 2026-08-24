@@ -63,8 +63,9 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`/api/documents`)
       if (!res.ok) throw new Error("Failed to fetch documents")
-      const data: Document[] = await res.json()
-      setDocuments(data)
+      const json = await res.json()
+      // API returns paginated response: { data: [...], total, page, pageSize }
+      setDocuments(json.data ?? [])
     } catch (e) {
       setError(String(e))
     } finally {

@@ -18,7 +18,7 @@ export function KnowledgeList() {
           <button
             key={item.id}
             className={cn(
-              "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent/20",
+              "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent",
               selected === item.id && "bg-muted"
             )}
             onClick={() => setSelected(item.id)}
@@ -52,7 +52,7 @@ export function KnowledgeList() {
             </div>
             {item.body && (
               <div className="line-clamp-2 text-xs text-muted-foreground">
-                {item.body.substring(0, 200)}
+                {item.body.substring(0, 300)}
               </div>
             )}
           </button>

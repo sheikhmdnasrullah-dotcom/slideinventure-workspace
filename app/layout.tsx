@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import DatadogInit from "@/components/datadog-init";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,9 +37,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* day → no class; night → .dark on <html>. next-themes persists the
-            choice and applies it before paint (suppressHydrationWarning
-            acknowledges that the class is set on the client). */}
+        <DatadogInit />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

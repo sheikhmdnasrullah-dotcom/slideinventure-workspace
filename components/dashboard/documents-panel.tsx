@@ -33,8 +33,8 @@ export function DocumentsPanel() {
     try {
       const res = await fetch("/api/documents", { cache: "no-store" });
       if (res.ok) {
-        const data = (await res.json()) as Document[];
-        setDocuments(data);
+        const json = await res.json()
+        setDocuments(json.data ?? [])
       }
     } catch {
       // silent
