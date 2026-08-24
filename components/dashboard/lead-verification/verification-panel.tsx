@@ -1,799 +1,676 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState, useCallback, DragEvent } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { toast } from "sonner"
+import {
+  ArrowDownToLine,
+  CheckCircle2,
+  CircleAlert,
+  Loader2,
+  Upload,
+} from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type JobStatus = "idle" | "uploading" | "running" | "completed" | "failed";
-
-interface VerdictCounts {
-  [verdict: string]: number;
-}
-
-interface JobState {
-  jobId: string;
-  supabaseJobId: string;
-  status: JobStatus;
-  totalLeads: number;
-  checkedCount: number;
-  verdictCounts: VerdictCounts;
-  errorMessage?: string;
-}
+type Phase = "idle" | "uploading" | "running" | "completed" | "failed"
 
 interface ResultRow {
-  [key: string]: string;
+  index: number
+  email: string
+  verdict: string
+  checked_at: string
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = "lead_verification_job";
-const VERDICT_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  safe:       { label: "Safe",      color: "#10b981", bg: "rgba(16,185,129,0.12)" },
-  risky:      { label: "Risky",     color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
-  invalid:    { label: "Invalid",   color: "#ef4444", bg: "rgba(239,68,68,0.12)"  },
-  unknown:    { label: "Unknown",   color: "#6b7280", bg: "rgba(107,114,128,0.12)"},
-  ERROR:      { label: "Error",     color: "#ef4444", bg: "rgba(239,68,68,0.12)"  },
-  INVALID_FORMAT: { label: "Bad Format", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
-};
-
-function getVerdictStyle(verdict: string) {
-  return VERDICT_CONFIG[verdict] ?? { label: verdict, color: "#94a3b8", bg: "rgba(148,163,184,0.12)" };
+interface HistoryJob {
+  job_id: string
+  filename: string | null
+  created_at: string | null
+  status: string | null
+  total_leads: number | null
+  checked_count: number | null
+  counts?: {
+    summary?: { safe: number; risky: number; invalid: number; error: number }
+  }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = "lv_job_id"
 
-function parseCSV(text: string): ResultRow[] {
-  const lines = text.trim().split("\n");
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-  return lines.slice(1).map((line) => {
-    // Simple CSV parse (handles quoted fields with commas)
-    const vals: string[] = [];
-    let cur = "";
-    let inQ = false;
-    for (const ch of line) {
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === "," && !inQ) { vals.push(cur); cur = ""; }
-      else { cur += ch; }
-    }
-    vals.push(cur);
-    const row: ResultRow = {};
-    headers.forEach((h, i) => { row[h] = (vals[i] ?? "").trim().replace(/^"|"$/g, ""); });
-    return row;
-  });
+// ─── Verdict styling (semantic colors matching the dashboard) ─────────────────
+
+const VERDICT_STYLE: Record<string, { label: string; className: string }> = {
+  safe: { label: "Safe", className: "!bg-emerald-500/10 !text-emerald-500 !border-emerald-500/20" },
+  risky: { label: "Risky", className: "!bg-amber-500/10 !text-amber-500 !border-amber-500/20" },
+  invalid: { label: "Invalid", className: "!bg-red-500/10 !text-red-500 !border-red-500/20" },
+  INVALID_FORMAT: { label: "Bad Format", className: "!bg-purple-500/10 !text-purple-500 !border-purple-500/20" },
+  error: { label: "Error", className: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20" },
+  ERROR: { label: "Error", className: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20" },
+  unknown: { label: "Unknown", className: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20" },
 }
 
-function formatDuration(ms: number) {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const h = Math.floor(m / 60);
-  if (h > 0) return `${h}h ${m % 60}m`;
-  if (m > 0) return `${m}m ${s % 60}s`;
-  return `${s}s`;
+function verdictStyle(verdict: string) {
+  return VERDICT_STYLE[verdict] ?? { label: verdict, className: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20" }
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function VerdictBadge({ verdict }: { verdict: string }) {
-  const cfg = getVerdictStyle(verdict);
-  return (
-    <span style={{
-      fontSize: "0.7rem",
-      fontFamily: "'DM Mono', monospace",
-      fontWeight: 600,
-      letterSpacing: "0.04em",
-      padding: "2px 8px",
-      borderRadius: "4px",
-      color: cfg.color,
-      background: cfg.bg,
-      border: `1px solid ${cfg.color}33`,
-      textTransform: "uppercase",
-    }}>
-      {cfg.label}
-    </span>
-  );
+function categoryOf(verdict: string): "safe" | "risky" | "invalid" | "error" {
+  switch (verdict) {
+    case "safe":
+      return "safe"
+    case "risky":
+      return "risky"
+    case "invalid":
+    case "INVALID_FORMAT":
+      return "invalid"
+    default:
+      return "error"
+  }
 }
 
-function BoolBadge({ value }: { value: string }) {
-  const isTrue = value === "true" || value === "True";
-  const isUnknown = value === "unknown" || value === "n/a" || value === "";
-  const color = isUnknown ? "#6b7280" : isTrue ? "#ef4444" : "#10b981";
-  const label = isUnknown ? "—" : isTrue ? "yes" : "no";
-  return (
-    <span style={{
-      fontSize: "0.7rem",
-      fontFamily: "'DM Mono', monospace",
-      color,
-      fontWeight: 500,
-    }}>
-      {label}
-    </span>
-  );
-}
-
-function ProgressBar({ value, total }: { value: number; total: number }) {
-  const pct = total > 0 ? Math.min(100, Math.round((value / total) * 100)) : 0;
-  return (
-    <div style={{ position: "relative", height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-      <div style={{
-        position: "absolute",
-        top: 0, left: 0,
-        height: "100%",
-        width: `${pct}%`,
-        background: "linear-gradient(90deg, #f59e0b, #fbbf24)",
-        borderRadius: 3,
-        transition: "width 0.4s ease",
-        boxShadow: "0 0 12px rgba(245,158,11,0.5)",
-      }} />
-    </div>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function VerificationPanel() {
-  const [phase, setPhase] = useState<JobStatus>("idle");
-  const [job, setJob] = useState<JobState | null>(null);
-  const [results, setResults] = useState<ResultRow[]>([]);
-  const [search, setSearch] = useState("");
-  const [filterVerdict, setFilterVerdict] = useState("all");
-  const [drag, setDrag] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
+  const [phase, setPhase] = useState<Phase>("idle")
+  const [rows, setRows] = useState<ResultRow[]>([])
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [drag, setDrag] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [history, setHistory] = useState<HistoryJob[]>([])
+  const [verdictFilter, setVerdictFilter] = useState<string>("all")
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(0)
 
-  const startTimeRef = useRef<number | null>(null);
-  const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const realtimeRef = useRef<ReturnType<typeof createClient> | null>(null);
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const rowsRef = useRef<Map<number, ResultRow>>(new Map())
+  const esRef = useRef<EventSource | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const PAGE_SIZE = 50
 
-  const PAGE_SIZE = 50;
+  const addRow = useCallback((r: ResultRow) => {
+    rowsRef.current.set(r.index, r)
+    setRows(Array.from(rowsRef.current.values()))
+  }, [])
 
-  // ── Realtime subscription ──────────────────────────────────────────────────
-  const subscribeToJob = useCallback((supabaseJobId: string) => {
-    const sb = createClient();
-    realtimeRef.current = sb;
-    const ch = sb
-      .channel(`verification_job_${supabaseJobId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "verification_jobs",
-          filter: `id=eq.${supabaseJobId}`,
-        },
-        (payload) => {
-          const row = payload.new as {
-            status: string;
-            checked_count: number;
-            total_leads: number;
-            verdict_counts: VerdictCounts;
-            error_message: string | null;
-          };
-          setJob((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              status: row.status as JobStatus,
-              checkedCount: row.checked_count,
-              totalLeads: row.total_leads ?? prev.totalLeads,
-              verdictCounts: row.verdict_counts ?? {},
-              errorMessage: row.error_message ?? undefined,
-            };
-          });
-          setPhase(row.status as JobStatus);
-          if (row.status === "completed" || row.status === "failed") {
-            stopTimer();
+  const closeStream = useCallback(() => {
+    if (esRef.current) {
+      esRef.current.close()
+      esRef.current = null
+    }
+  }, [])
+
+  const openStream = useCallback(
+    (id: string) => {
+      closeStream()
+      const es = new EventSource(`/api/lead-verification/stream?jobId=${id}`)
+      esRef.current = es
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data)
+          if (data.status === "done") {
+            setPhase("completed")
+            closeStream()
+          } else if (data.status === "failed") {
+            setError(data.error ?? "Verification failed on the server.")
+            setPhase("failed")
+            closeStream()
+          } else if (typeof data.index === "number") {
+            addRow({
+              index: data.index,
+              email: data.email ?? "",
+              verdict: data.verdict ?? "unknown",
+              checked_at: data.checked_at ?? "",
+            })
           }
+        } catch {
+          /* ignore malformed frames */
         }
-      )
-      .subscribe();
-    channelRef.current = ch;
-  }, []);
+      }
+      es.onerror = () => {
+        // EventSource auto-reconnects; backend replays + resumes.
+      }
+    },
+    [addRow, closeStream]
+  )
 
-  // ── Timer ──────────────────────────────────────────────────────────────────
-  const startTimer = () => {
-    startTimeRef.current = Date.now();
-    elapsedRef.current = setInterval(() => {
-      setElapsed(Date.now() - (startTimeRef.current ?? Date.now()));
-    }, 1000);
-  };
-  const stopTimer = () => {
-    if (elapsedRef.current) { clearInterval(elapsedRef.current); elapsedRef.current = null; }
-  };
+  const loadHistory = useCallback(() => {
+    fetch("/api/lead-verification/jobs")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: HistoryJob[]) => setHistory(Array.isArray(d) ? d : []))
+      .catch(() => {})
+  }, [])
 
-  // ── Restore job from localStorage on mount ────────────────────────────────
+  // Reconnect on mount if a job was in progress.
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
-    try {
-      const saved: JobState = JSON.parse(stored);
-      if (!saved.supabaseJobId) return;
-
-      // Fetch current state from Supabase
-      const sb = createClient();
-      sb.from("verification_jobs")
-        .select("*")
-        .eq("id", saved.supabaseJobId)
-        .single()
-        .then(({ data, error }) => {
-          if (error || !data) return;
-          const restoredJob: JobState = {
-            ...saved,
-            status: data.status as JobStatus,
-            checkedCount: data.checked_count,
-            totalLeads: data.total_leads ?? saved.totalLeads,
-            verdictCounts: data.verdict_counts ?? {},
-            errorMessage: data.error_message ?? undefined,
-          };
-          setJob(restoredJob);
-          setPhase(data.status as JobStatus);
-          if (data.status === "running") {
-            startTimer();
-            subscribeToJob(saved.supabaseJobId);
-          }
-        });
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) {
+      loadHistory()
+      return
     }
-  }, [subscribeToJob]);
+    setJobId(saved)
+    fetch(`/api/lead-verification/status?jobId=${saved}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || d.error) {
+          localStorage.removeItem(STORAGE_KEY)
+          loadHistory()
+          return
+        }
+        if (d.status === "failed") {
+          setError(d.error_message ?? "Verification failed on the server.")
+          setPhase("failed")
+        } else {
+          setPhase(d.status === "done" ? "completed" : "running")
+          openStream(saved)
+        }
+      })
+      .catch(() => loadHistory())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
-    return () => {
-      stopTimer();
-      if (channelRef.current && realtimeRef.current) {
-        realtimeRef.current.removeChannel(channelRef.current);
-      }
-    };
-  }, []);
+    return () => closeStream()
+  }, [closeStream])
 
-  // ── Fetch results CSV when completed ─────────────────────────────────────
+  // Refresh history once a run completes.
   useEffect(() => {
-    if (phase !== "completed" || !job?.jobId) return;
-    fetch(`/api/lead-verification/download?jobId=${job.jobId}`)
-      .then((r) => r.text())
-      .then((csv) => setResults(parseCSV(csv)))
-      .catch(() => {}); // UI shows download button as fallback
-  }, [phase, job?.jobId]);
+    if (phase === "completed" || phase === "failed") loadHistory()
+  }, [phase, loadHistory])
 
-  // ── Upload handler ────────────────────────────────────────────────────────
-  const handleUpload = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      setUploadError("Only .csv files are accepted");
-      return;
+  const startUpload = useCallback(async () => {
+    if (!selectedFile) return
+    if (!selectedFile.name.toLowerCase().endsWith(".csv")) {
+      toast.error("Only .csv files are accepted")
+      return
     }
-    setUploadError(null);
-    setPhase("uploading");
-
-    const form = new FormData();
-    form.append("file", file);
-
+    setPhase("uploading")
+    const form = new FormData()
+    form.append("file", selectedFile)
     try {
-      const resp = await fetch("/api/lead-verification", { method: "POST", body: form });
-      const data = await resp.json();
-      if (!resp.ok) {
-        setUploadError(data.error ?? "Upload failed");
-        setPhase("idle");
-        return;
+      const resp = await fetch("/api/lead-verification", { method: "POST", body: form })
+      const data = await resp.json()
+      if (!resp.ok || !data.job_id) {
+        toast.error(data.error ?? "Upload failed")
+        setPhase("idle")
+        return
       }
-
-      const newJob: JobState = {
-        jobId: data.job_id,
-        supabaseJobId: data.supabase_job_id ?? "",
-        status: "running",
-        totalLeads: data.total_leads ?? 0,
-        checkedCount: 0,
-        verdictCounts: {},
-      };
-      setJob(newJob);
-      setPhase("running");
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newJob));
-      startTimer();
-
-      if (newJob.supabaseJobId) {
-        subscribeToJob(newJob.supabaseJobId);
-      }
+      const id: string = data.job_id
+      setJobId(id)
+      localStorage.setItem(STORAGE_KEY, id)
+      rowsRef.current.clear()
+      setRows([])
+      setPhase("running")
+      openStream(id)
     } catch (err) {
-      setUploadError(`Network error: ${err instanceof Error ? err.message : String(err)}`);
-      setPhase("idle");
+      toast.error(`Network error: ${err instanceof Error ? err.message : String(err)}`)
+      setPhase("idle")
     }
-  };
+  }, [selectedFile, openStream])
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleUpload(file);
-    e.target.value = "";
-  };
+  const reset = useCallback(() => {
+    closeStream()
+    localStorage.removeItem(STORAGE_KEY)
+    rowsRef.current.clear()
+    setRows([])
+    setJobId(null)
+    setError(null)
+    setSelectedFile(null)
+    setVerdictFilter("all")
+    setSearch("")
+    setPage(0)
+    setPhase("idle")
+  }, [closeStream])
 
-  const onDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDrag(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleUpload(file);
-  };
+  // ── Derived data ──────────────────────────────────────────────────────────
+  const sortedRows = useMemo(
+    () => [...rows].sort((a, b) => b.index - a.index),
+    [rows]
+  )
 
-  const reset = () => {
-    stopTimer();
-    if (channelRef.current && realtimeRef.current) {
-      realtimeRef.current.removeChannel(channelRef.current);
-    }
-    setPhase("idle");
-    setJob(null);
-    setResults([]);
-    setSearch("");
-    setFilterVerdict("all");
-    setElapsed(0);
-    setUploadError(null);
-    setPage(0);
-    localStorage.removeItem(STORAGE_KEY);
-  };
+  const total = rows.length ? Math.max(...rows.map((r) => r.index)) : 0
 
-  // ── Filtered results ───────────────────────────────────────────────────────
-  const allVerdicts = Array.from(new Set(results.map((r) => r.verdict).filter(Boolean)));
-  const filtered = results.filter((r) => {
-    const q = search.toLowerCase();
-    const matchQ = !q || (r.email ?? "").toLowerCase().includes(q) ||
-      (r.first_name ?? "").toLowerCase().includes(q) ||
-      (r.last_name ?? "").toLowerCase().includes(q) ||
-      (r.Email ?? "").toLowerCase().includes(q);
-    const matchV = filterVerdict === "all" || r.verdict === filterVerdict;
-    return matchQ && matchV;
-  });
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const counts = useMemo(() => {
+    const c = { safe: 0, risky: 0, invalid: 0, error: 0 }
+    for (const r of rows) c[categoryOf(r.verdict)]++
+    return c
+  }, [rows])
 
-  // ── Styles ─────────────────────────────────────────────────────────────────
-  const card: React.CSSProperties = {
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 12,
-    padding: "24px",
-  };
+  const percent = total > 0 ? Math.min(100, Math.round((rows.length / total) * 100)) : 0
 
-  const statBox: React.CSSProperties = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 8,
-    padding: "12px 16px",
-    flex: 1,
-    minWidth: 100,
-  };
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return sortedRows.filter((r) => {
+      const matchV = verdictFilter === "all" || categoryOf(r.verdict) === verdictFilter
+      const matchQ = !q || r.email.toLowerCase().includes(q)
+      return matchV && matchQ
+    })
+  }, [sortedRows, verdictFilter, search])
 
-  // ─────────────────────────────────────────────────────────────────────────
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pageCount - 1)
+  const pageRows = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <>
-      {/* Google Fonts */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;500;600;700&display=swap');
-
-        .lv-dropzone {
-          transition: border-color 0.2s, background 0.2s, transform 0.15s;
-        }
-        .lv-dropzone:hover, .lv-dropzone.drag {
-          border-color: rgba(245,158,11,0.5) !important;
-          background: rgba(245,158,11,0.04) !important;
-          transform: translateY(-1px);
-        }
-        .lv-input:focus {
-          outline: none;
-          border-color: rgba(245,158,11,0.4) !important;
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.08);
-        }
-        .lv-select:focus {
-          outline: none;
-          border-color: rgba(245,158,11,0.4) !important;
-        }
-        .lv-row:hover td {
-          background: rgba(255,255,255,0.02);
-        }
-        .lv-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-        .lv-btn:active { transform: translateY(0); }
-        .lv-btn { transition: opacity 0.15s, transform 0.15s; }
-        @keyframes pulse-bar {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .lv-spinner { animation: spin 0.8s linear infinite; }
-      `}</style>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1200 }}>
-
-        {/* ── IDLE: Upload dropzone ─────────────────────────────────────── */}
-        {(phase === "idle" || phase === "uploading") && (
-          <div style={card}>
-            <div style={{ marginBottom: 20 }}>
-              <h2 style={{
-                fontFamily: "'Syne', sans-serif",
-                fontSize: "1.05rem",
-                fontWeight: 600,
-                color: "rgba(255,255,255,0.9)",
-                margin: 0,
-                letterSpacing: "-0.01em",
-              }}>
-                Upload Lead CSV
-              </h2>
-              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.72rem", color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
-                Required column: <span style={{ color: "#f59e0b" }}>Email</span>. Additional columns are preserved in output.
-              </p>
-            </div>
-
+    <div className="flex flex-col gap-6">
+      {/* Upload */}
+      {(phase === "idle" || phase === "uploading") && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Upload Lead CSV</CardTitle>
+            <CardDescription>
+              Required column: <span className="text-foreground/70">Email</span>. All other
+              columns are preserved in the verified output.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
             <div
-              className={`lv-dropzone${drag ? " drag" : ""}`}
-              onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-              onDragLeave={() => setDrag(false)}
-              onDrop={onDrop}
               onClick={() => phase === "idle" && fileInputRef.current?.click()}
-              style={{
-                border: "1px dashed rgba(255,255,255,0.12)",
-                borderRadius: 10,
-                padding: "48px 24px",
-                textAlign: "center",
-                cursor: phase === "uploading" ? "default" : "pointer",
-                position: "relative",
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDrag(true)
               }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDrag(false)
+                const f = e.dataTransfer.files?.[0]
+                if (f) setSelectedFile(f)
+              }}
+              className={cn(
+                "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-10 text-center transition-colors hover:border-primary/40 hover:bg-muted/50",
+                drag && "border-primary/60 bg-primary/5",
+                phase === "uploading" && "cursor-default"
+              )}
             >
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".csv"
-                style={{ display: "none" }}
-                onChange={onFileChange}
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) setSelectedFile(f)
+                  e.target.value = ""
+                }}
               />
-
               {phase === "uploading" ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                  <div className="lv-spinner" style={{
-                    width: 28, height: 28,
-                    border: "2px solid rgba(245,158,11,0.2)",
-                    borderTop: "2px solid #f59e0b",
-                    borderRadius: "50%",
-                  }} />
-                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.8rem", color: "#f59e0b" }}>
-                    Uploading &amp; starting job…
-                  </span>
-                </div>
+                <>
+                  <Loader2 className="size-6 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Uploading &amp; starting job…</p>
+                </>
               ) : (
                 <>
-                  <div style={{ fontSize: 40, marginBottom: 12 }}>📂</div>
-                  <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 500, fontSize: "0.9rem", color: "rgba(255,255,255,0.6)", margin: 0 }}>
-                    Drop your CSV here or <span style={{ color: "#f59e0b", textDecoration: "underline" }}>browse</span>
+                  <Upload className="size-6 text-muted-foreground" />
+                  <p className="text-sm font-medium">
+                    Drop your CSV here or <span className="text-primary underline">browse</span>
                   </p>
-                  <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.7rem", color: "rgba(255,255,255,0.25)", marginTop: 6 }}>
-                    .csv only · max 50 MB
-                  </p>
+                  <p className="text-xs text-muted-foreground">.csv only · max 50 MB</p>
                 </>
               )}
             </div>
 
-            {uploadError && (
-              <div style={{
-                marginTop: 12, padding: "10px 14px",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
-                borderRadius: 8,
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "0.76rem",
-                color: "#ef4444",
-              }}>
-                ⚠ {uploadError}
+            {selectedFile && phase === "idle" && (
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{selectedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(selectedFile.size / 1024).toFixed(0)} KB
+                  </p>
+                </div>
+                <Button onClick={startUpload}>
+                  <Upload /> Start Verification
+                </Button>
               </div>
             )}
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* ── RUNNING: Live progress ────────────────────────────────────── */}
-        {phase === "running" && job && (
-          <div style={card}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <div>
-                <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "1.05rem", fontWeight: 600, color: "rgba(255,255,255,0.9)", margin: 0 }}>
-                  Verification Running
-                </h2>
-                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", marginTop: 3 }}>
-                  job: {job.jobId.slice(0, 8)}…
-                </p>
-              </div>
-              <div style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "0.8rem",
-                color: "#f59e0b",
-                background: "rgba(245,158,11,0.08)",
-                border: "1px solid rgba(245,158,11,0.2)",
-                borderRadius: 6,
-                padding: "4px 12px",
-                animation: "pulse-bar 2s ease-in-out infinite",
-              }}>
-                ● LIVE
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div style={{ marginBottom: 16 }}>
-              <ProgressBar value={job.checkedCount} total={job.totalLeads} />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.72rem", color: "rgba(255,255,255,0.4)" }}>
-                  {job.checkedCount} / {job.totalLeads} checked
+      {/* Running */}
+      {phase === "running" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Verification Running</CardTitle>
+            <CardDescription>
+              {jobId ? `job ${jobId.slice(0, 8)}…` : ""} · checking leads against Reacher
+            </CardDescription>
+            <CardAction>
+              <Badge variant="outline" className="gap-1.5 !border-emerald-500/30 !text-emerald-500">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" /> LIVE
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <Progress value={percent} />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>
+                  {rows.length} / {total || rows.length} checked
                 </span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.72rem", color: "rgba(255,255,255,0.4)" }}>
-                  {job.totalLeads > 0 ? Math.round((job.checkedCount / job.totalLeads) * 100) : 0}%
-                </span>
+                <span>{percent}%</span>
               </div>
             </div>
 
-            {/* Stats row */}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-              <div style={statBox}>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.65rem", color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>ELAPSED</div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "1rem", fontWeight: 500, color: "#f59e0b" }}>
-                  {formatDuration(elapsed)}
-                </div>
-              </div>
-              <div style={statBox}>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.65rem", color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>REMAINING</div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "1rem", fontWeight: 500, color: "rgba(255,255,255,0.7)" }}>
-                  {Math.max(0, job.totalLeads - job.checkedCount)}
-                </div>
-              </div>
-              {Object.entries(job.verdictCounts).map(([verdict, count]) => {
-                const cfg = getVerdictStyle(verdict);
-                return (
-                  <div key={verdict} style={{ ...statBox }}>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.65rem", color: cfg.color, marginBottom: 4, textTransform: "uppercase" }}>
-                      {cfg.label}
-                    </div>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "1rem", fontWeight: 500, color: cfg.color }}>
-                      {count}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Stat label="Safe" value={counts.safe} className="text-emerald-500" />
+              <Stat label="Risky" value={counts.risky} className="text-amber-500" />
+              <Stat label="Invalid" value={counts.invalid} className="text-red-500" />
+              <Stat label="Error" value={counts.error} className="text-zinc-400" />
             </div>
 
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.7rem", color: "rgba(255,255,255,0.25)" }}>
-              This page will update automatically. You can safely close and return — progress is persisted.
-            </p>
-          </div>
-        )}
+            <LiveTable rows={sortedRows.slice(0, 100)} total={total} />
+          </CardContent>
+        </Card>
+      )}
 
-        {/* ── FAILED: Error state ───────────────────────────────────────── */}
-        {phase === "failed" && job && (
-          <div style={{ ...card, borderColor: "rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.04)" }}>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "1.05rem", fontWeight: 600, color: "#ef4444", margin: "0 0 8px 0" }}>
-              Verification Failed
-            </h2>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>
-              {job.errorMessage ?? "An unrecoverable error occurred on the verification server."}
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button className="lv-btn" onClick={reset} style={{
-                fontFamily: "'DM Mono', monospace", fontSize: "0.78rem",
-                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 6, padding: "8px 16px", color: "rgba(255,255,255,0.7)", cursor: "pointer",
-              }}>
-                ← Start new job
-              </button>
-            </div>
-          </div>
-        )}
+      {/* Failed */}
+      {phase === "failed" && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <CircleAlert className="size-4" /> Verification Failed
+            </CardTitle>
+            <CardDescription>{error ?? "An unrecoverable error occurred on the server."}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={reset}>
+              Start new job
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* ── COMPLETED: Results table ──────────────────────────────────── */}
-        {phase === "completed" && job && (
-          <>
-            {/* Summary bar */}
-            <div style={{ ...card, padding: "16px 24px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+      {/* Completed */}
+      {phase === "completed" && (
+        <>
+          <Card className="border-emerald-500/30 bg-emerald-500/5">
+            <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="size-5 text-emerald-500" />
                 <div>
-                  <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: "0.95rem", color: "#10b981" }}>
-                    ✓ Verification Complete
-                  </span>
-                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.7rem", color: "rgba(255,255,255,0.3)", marginLeft: 12 }}>
-                    {job.totalLeads} leads · {formatDuration(elapsed)}
-                  </span>
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {Object.entries(job.verdictCounts).map(([v, c]) => {
-                    const cfg = getVerdictStyle(v);
-                    return (
-                      <span key={v} style={{
-                        fontFamily: "'DM Mono', monospace", fontSize: "0.72rem",
-                        padding: "3px 10px", borderRadius: 4,
-                        color: cfg.color, background: cfg.bg,
-                        border: `1px solid ${cfg.color}33`,
-                      }}>
-                        {cfg.label}: {c}
-                      </span>
-                    );
-                  })}
-                  <button
-                    className="lv-btn"
-                    onClick={() => { window.location.href = `/api/lead-verification/download?jobId=${job.jobId}`; }}
-                    style={{
-                      fontFamily: "'DM Mono', monospace", fontSize: "0.75rem",
-                      background: "#f59e0b", border: "none",
-                      borderRadius: 6, padding: "6px 14px",
-                      color: "#000", fontWeight: 600, cursor: "pointer",
-                    }}
-                  >
-                    ↓ Download CSV
-                  </button>
-                  <button className="lv-btn" onClick={reset} style={{
-                    fontFamily: "'DM Mono', monospace", fontSize: "0.75rem",
-                    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 6, padding: "6px 14px", color: "rgba(255,255,255,0.6)", cursor: "pointer",
-                  }}>
-                    New job
-                  </button>
+                  <p className="text-sm font-medium text-emerald-500">Verification Complete</p>
+                  <p className="text-xs text-muted-foreground">
+                    {total} leads ·{" "}
+                    <span className="text-emerald-500">{counts.safe}</span> safe ·{" "}
+                    <span className="text-amber-500">{counts.risky}</span> risky ·{" "}
+                    <span className="text-red-500">{counts.invalid}</span> invalid ·{" "}
+                    <span className="text-zinc-400">{counts.error}</span> error
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Filters */}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <input
-                className="lv-input"
-                type="text"
-                placeholder="Search name or email…"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                style={{
-                  fontFamily: "'DM Mono', monospace", fontSize: "0.8rem",
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 7, padding: "8px 14px", color: "rgba(255,255,255,0.8)",
-                  flex: 1, minWidth: 200,
-                }}
-              />
-              <select
-                className="lv-select"
-                value={filterVerdict}
-                onChange={(e) => { setFilterVerdict(e.target.value); setPage(0); }}
-                style={{
-                  fontFamily: "'DM Mono', monospace", fontSize: "0.78rem",
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 7, padding: "8px 14px", color: "rgba(255,255,255,0.7)",
-                  cursor: "pointer",
-                }}
-              >
-                <option value="all">All verdicts ({results.length})</option>
-                {allVerdicts.map((v) => (
-                  <option key={v} value={v}>
-                    {getVerdictStyle(v).label} ({results.filter((r) => r.verdict === v).length})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Results table */}
-            {results.length > 0 ? (
-              <div style={{ ...card, padding: 0, overflow: "hidden" }}>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                        {["Name", "Email", "Verdict", "Disposable", "Role Acct", "Catch-all"].map((h) => (
-                          <th key={h} style={{
-                            fontFamily: "'DM Mono', monospace",
-                            fontSize: "0.65rem",
-                            fontWeight: 500,
-                            letterSpacing: "0.06em",
-                            color: "rgba(255,255,255,0.3)",
-                            textTransform: "uppercase",
-                            padding: "12px 16px",
-                            textAlign: "left",
-                            background: "rgba(0,0,0,0.15)",
-                            whiteSpace: "nowrap",
-                          }}>
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginated.map((row, i) => {
-                        const email = row.email ?? row.Email ?? "";
-                        const firstName = row.first_name ?? row["First Name"] ?? row.FirstName ?? "";
-                        const lastName = row.last_name ?? row["Last Name"] ?? row.LastName ?? "";
-                        const name = [firstName, lastName].filter(Boolean).join(" ") || "—";
-                        return (
-                          <tr
-                            key={`${email}-${i}`}
-                            className="lv-row"
-                            style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-                          >
-                            <td style={{ padding: "10px 16px" }}>
-                              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.8rem", color: "rgba(255,255,255,0.65)" }}>
-                                {name}
-                              </span>
-                            </td>
-                            <td style={{ padding: "10px 16px" }}>
-                              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.78rem", color: "rgba(255,255,255,0.5)" }}>
-                                {email}
-                              </span>
-                            </td>
-                            <td style={{ padding: "10px 16px" }}>
-                              <VerdictBadge verdict={row.verdict ?? "unknown"} />
-                            </td>
-                            <td style={{ padding: "10px 16px" }}>
-                              <BoolBadge value={row.is_disposable ?? ""} />
-                            </td>
-                            <td style={{ padding: "10px 16px" }}>
-                              <BoolBadge value={row.is_role_account ?? ""} />
-                            </td>
-                            <td style={{ padding: "10px 16px" }}>
-                              <BoolBadge value={row.is_catch_all ?? ""} />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "12px 16px",
-                    borderTop: "1px solid rgba(255,255,255,0.06)",
-                  }}>
-                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.72rem", color: "rgba(255,255,255,0.3)" }}>
-                      {filtered.length} results · page {page + 1} of {totalPages}
-                    </span>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        className="lv-btn"
-                        disabled={page === 0}
-                        onClick={() => setPage((p) => p - 1)}
-                        style={{
-                          fontFamily: "'DM Mono', monospace", fontSize: "0.75rem",
-                          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                          borderRadius: 5, padding: "5px 12px", color: "rgba(255,255,255,0.5)",
-                          cursor: page === 0 ? "default" : "pointer", opacity: page === 0 ? 0.4 : 1,
-                        }}
-                      >
-                        ← prev
-                      </button>
-                      <button
-                        className="lv-btn"
-                        disabled={page >= totalPages - 1}
-                        onClick={() => setPage((p) => p + 1)}
-                        style={{
-                          fontFamily: "'DM Mono', monospace", fontSize: "0.75rem",
-                          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                          borderRadius: 5, padding: "5px 12px", color: "rgba(255,255,255,0.5)",
-                          cursor: page >= totalPages - 1 ? "default" : "pointer",
-                          opacity: page >= totalPages - 1 ? 0.4 : 1,
-                        }}
-                      >
-                        next →
-                      </button>
-                    </div>
-                  </div>
+              <div className="flex gap-2">
+                {jobId && (
+                  <Button variant="default" render={<a href={`/api/lead-verification/download?jobId=${jobId}`} />}>
+                    <ArrowDownToLine /> Download Results
+                  </Button>
                 )}
+                <Button variant="outline" onClick={reset}>
+                  New job
+                </Button>
               </div>
-            ) : (
-              <div style={{ ...card, textAlign: "center", padding: "32px" }}>
-                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "0.8rem", color: "rgba(255,255,255,0.3)" }}>
-                  Loading results… or{" "}
-                  <a
-                    href={`/api/lead-verification/download?jobId=${job.jobId}`}
-                    style={{ color: "#f59e0b", textDecoration: "underline", cursor: "pointer" }}
-                  >
-                    download CSV directly
-                  </a>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Results</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  placeholder="Search email…"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setPage(0)
+                  }}
+                  className="h-8 w-44 text-xs"
+                />
+                <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+                  {[
+                    { key: "all", label: "All" },
+                    { key: "safe", label: "Safe" },
+                    { key: "risky", label: "Risky" },
+                    { key: "invalid", label: "Invalid" },
+                    { key: "error", label: "Error" },
+                  ].map((f) => (
+                    <Button
+                      key={f.key}
+                      size="xs"
+                      variant={verdictFilter === f.key ? "default" : "ghost"}
+                      onClick={() => {
+                        setVerdictFilter(f.key)
+                        setPage(0)
+                      }}
+                    >
+                      {f.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {filtered.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No results match the current filter.
                 </p>
-              </div>
-            )}
-          </>
+              ) : (
+                <>
+                  <div className="overflow-hidden rounded-lg border">
+                    <Table>
+                      <TableHeader className="bg-muted">
+                        <TableRow>
+                          <TableHead className="w-[60px]">#</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Verdict</TableHead>
+                          <TableHead>Checked At</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pageRows.map((r) => {
+                          const s = verdictStyle(r.verdict)
+                          return (
+                            <TableRow key={r.index}>
+                              <TableCell className="font-mono text-xs text-muted-foreground">
+                                {r.index}
+                              </TableCell>
+                              <TableCell className="font-mono text-sm">{r.email}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={cn("border", s.className)}>
+                                  {s.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {r.checked_at ? new Date(r.checked_at).toLocaleString() : "—"}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {pageCount > 1 && (
+                    <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {filtered.length} results · page {currentPage + 1} of {pageCount}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          disabled={currentPage === 0}
+                          onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        >
+                          Prev
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          disabled={currentPage >= pageCount - 1}
+                          onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* History (when not actively running) */}
+      {phase !== "running" && <HistoryCard jobs={history} onChanged={loadHistory} />}
+    </div>
+  )
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function Stat({ label, value, className }: { label: string; value: number; className?: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+      <p className="text-xs text-muted-foreground">{label.toUpperCase()}</p>
+      <p className={cn("text-xl font-semibold", className)}>{value}</p>
+    </div>
+  )
+}
+
+function LiveTable({ rows, total }: { rows: ResultRow[]; total: number }) {
+  return (
+    <div className="overflow-hidden rounded-lg border">
+      <Table>
+        <TableHeader className="bg-muted">
+          <TableRow>
+            <TableHead className="w-[60px]">#</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Verdict</TableHead>
+            <TableHead>Checked At</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-20 text-center text-sm text-muted-foreground">
+                Waiting for first result…
+              </TableCell>
+            </TableRow>
+          ) : (
+            rows.map((r) => {
+              const s = verdictStyle(r.verdict)
+              return (
+                <TableRow key={r.index}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{r.index}</TableCell>
+                  <TableCell className="font-mono text-sm">{r.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={cn("border", s.className)}>
+                      {s.label}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {r.checked_at ? new Date(r.checked_at).toLocaleString() : "—"}
+                  </TableCell>
+                </TableRow>
+              )
+            })
+          )}
+        </TableBody>
+      </Table>
+      {total > rows.length && (
+        <p className="border-t bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+          Showing {rows.length} most recent of {total} checked.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function HistoryCard({ jobs, onChanged }: { jobs: HistoryJob[]; onChanged?: () => void }) {
+  if (!jobs.length) return null
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Job History</CardTitle>
+        {onChanged && (
+          <CardAction>
+            <Button size="xs" variant="ghost" onClick={onChanged}>
+              Refresh
+            </Button>
+          </CardAction>
         )}
-      </div>
-    </>
-  );
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader className="bg-muted">
+              <TableRow>
+                <TableHead>File</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Checked</TableHead>
+                <TableHead className="text-right">Download</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {jobs.map((j) => {
+                const summary = j.counts?.summary
+                return (
+                  <TableRow key={j.job_id}>
+                    <TableCell className="max-w-[200px] truncate font-medium">
+                      {j.filename ?? j.job_id.slice(0, 8)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {j.created_at ? new Date(j.created_at).toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "border",
+                          j.status === "done"
+                            ? "!bg-emerald-500/10 !text-emerald-500 !border-emerald-500/20"
+                            : j.status === "failed"
+                              ? "!bg-red-500/10 !text-red-500 !border-red-500/20"
+                              : "!bg-amber-500/10 !text-amber-500 !border-amber-500/20"
+                        )}
+                      >
+                        {j.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {j.checked_count ?? 0}
+                      {summary ? (
+                        <span className="ml-2 text-emerald-500">{summary.safe}</span>
+                      ) : null}
+                      {summary ? <span className="ml-1 text-amber-500">{summary.risky}</span> : null}
+                      {summary ? <span className="ml-1 text-red-500">{summary.invalid}</span> : null}
+                      {summary ? <span className="ml-1 text-zinc-400">{summary.error}</span> : null}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button size="xs" variant="outline" render={<a href={`/api/lead-verification/download?jobId=${j.job_id}`} />}>
+                        <ArrowDownToLine /> CSV
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }

@@ -4,7 +4,6 @@ import {
   BookOpen,
   Cable,
   FileText,
-  Inbox,
   LayoutDashboard,
   Mail,
   MessageSquare,
@@ -41,7 +40,6 @@ const NAV_MAIN = [
       { title: "Verify Leads", url: "/leads/verify", icon: ShieldCheck },
     ],
   },
-  { title: "Mail", url: "/mail", icon: Inbox },
   { title: "Chat", url: "/chat", icon: MessageSquare },
   { title: "Todoist", url: "/todoist", icon: Sparkles },
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
@@ -68,7 +66,6 @@ const NAV_SECONDARY = [
 const SETTINGS_ITEMS = [
   { title: "General", url: "/settings" },
   { title: "Integrations", url: "/settings/integrations" },
-  { title: "Mail", url: "/settings/mail" },
   { title: "Knowledge", url: "/settings/knowledge" },
 ]
 
