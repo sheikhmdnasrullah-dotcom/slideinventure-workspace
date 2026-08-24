@@ -3,8 +3,12 @@ import path from "path";
 
 export const AI_VENTURE_DIR = path.join(process.cwd(), "AI Venture");
 
+// Folders that should always exist at the root of the AI Venture workspace.
+export const VENTURE_ROOT_FOLDERS = ["PDF", "Brainstormed Ideas", "Brainstorm Sketches"];
+
 const IGNORED = new Set([".DS_Store", "Thumbs.db"]);
-const TEXT_EXTENSIONS = new Set([".md", ".txt"]);
+// Editable text formats (markdown, plain text, and Tldraw snapshots).
+const TEXT_EXTENSIONS = new Set([".md", ".txt", ".tldr", ".json"]);
 const PDF_EXTENSIONS = new Set([".pdf"]);
 
 export type VentureNode = {
@@ -94,6 +98,17 @@ export function listTree(): VentureNode {
   if (!fs.existsSync(AI_VENTURE_DIR)) {
     fs.mkdirSync(AI_VENTURE_DIR, { recursive: true });
   }
+  // Ensure the well-known root folders always exist.
+  for (const folder of VENTURE_ROOT_FOLDERS) {
+    const folderPath = path.join(AI_VENTURE_DIR, folder);
+    if (!fs.existsSync(folderPath)) {
+      try {
+        fs.mkdirSync(folderPath, { recursive: true });
+      } catch {
+        // best-effort; listTree will surface it on the next request
+      }
+    }
+  }
   const stat = fs.statSync(AI_VENTURE_DIR);
   const children = fs
     .readdirSync(AI_VENTURE_DIR)
@@ -121,7 +136,7 @@ export function readFileContent(relativePath: string): { content: string; name: 
 
   if (isPdfFile(abs)) {
     // For PDFs, we return a placeholder since we can't easily extract text without a library
-    // The display component will use an iframe for PDF viewing
+    // The display component will stream the raw bytes via /api/ai-venture/file/raw
     return {
       content: "",
       name: path.basename(abs),
@@ -138,12 +153,21 @@ export function readFileContent(relativePath: string): { content: string; name: 
   };
 }
 
-export function writeFileContent(relativePath: string, content: string): void {
+export function writeFileContent(
+  relativePath: string,
+  content: string,
+  encoding: "utf-8" | "base64" = "utf-8"
+): void {
   const abs = resolveSafePath(relativePath);
-  if (!isTextFile(abs) && !isPdfFile(abs)) throw new VentureFsError("Only .md, .txt, and .pdf files can be edited", 415);
+  if (!isTextFile(abs) && !isPdfFile(abs)) {
+    throw new VentureFsError("Only .md, .txt, .pdf, .tldr and .json files can be saved", 415);
+  }
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   if (isPdfFile(abs)) {
-    fs.writeFileSync(abs, content, "binary");
+    const buffer = encoding === "base64" ? Buffer.from(content, "base64") : Buffer.from(content, "binary");
+    fs.writeFileSync(abs, buffer);
+  } else if (encoding === "base64") {
+    fs.writeFileSync(abs, Buffer.from(content, "base64"), "binary");
   } else {
     fs.writeFileSync(abs, content, "utf-8");
   }
@@ -157,7 +181,9 @@ export function createEntry(relativePath: string, type: "file" | "folder"): void
     fs.mkdirSync(abs, { recursive: true });
     return;
   }
-  if (!isTextFile(abs) && !isPdfFile(abs)) throw new VentureFsError("Only .md, .txt, and .pdf files can be created", 415);
+  if (!isTextFile(abs) && !isPdfFile(abs)) {
+    throw new VentureFsError("Only .md, .txt, .pdf, .tldr and .json files can be created", 415);
+  }
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   if (isPdfFile(abs)) {
     fs.writeFileSync(abs, "", "binary");
@@ -173,6 +199,35 @@ export function moveEntry(fromRelative: string, toRelative: string): void {
   if (fs.existsSync(to)) throw new VentureFsError("Destination already exists", 409);
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.renameSync(from, to);
+}
+
+export function readFileStream(relativePath: string): {
+  stream: NodeJS.ReadableStream;
+  size: number;
+  contentType: string;
+  filename: string;
+} {
+  const resolved = resolveSafePath(relativePath);
+  if (!fs.existsSync(resolved)) throw new VentureFsError("File not found", 404);
+  const stat = fs.lstatSync(resolved);
+  if (!stat.isFile()) throw new VentureFsError("Not a file", 400);
+
+  const ext = path.extname(resolved).toLowerCase();
+  const contentTypeMap: Record<string, string> = {
+    ".pdf": "application/pdf",
+    ".md": "text/markdown; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".tldr": "application/json; charset=utf-8",
+  };
+  const contentType = contentTypeMap[ext] || "application/octet-stream";
+
+  return {
+    stream: fs.createReadStream(resolved),
+    size: stat.size,
+    contentType,
+    filename: path.basename(resolved),
+  };
 }
 
 export function deleteEntry(relativePath: string): void {

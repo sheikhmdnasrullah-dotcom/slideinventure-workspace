@@ -36,11 +36,15 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { path, content } = body as { path?: string; content?: string };
+    const { path, content, encoding } = body as {
+      path?: string;
+      content?: string;
+      encoding?: "utf-8" | "base64";
+    };
     if (!path || typeof content !== "string") {
       return ApiError.badRequest("BAD_REQUEST", "path and content are required").toResponse();
     }
-    writeFileContent(path, content);
+    writeFileContent(path, content, encoding === "base64" ? "base64" : "utf-8");
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);

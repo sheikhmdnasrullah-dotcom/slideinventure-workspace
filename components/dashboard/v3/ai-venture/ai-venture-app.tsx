@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { FolderPlus, Plus, RefreshCw, Search } from "lucide-react"
+import { Brain, FileUp, Plus, RefreshCw, Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { toast } from "sonner"
 
 import { AIVentureDisplay } from "./ai-venture-display"
 import { AIVentureList } from "./ai-venture-list"
@@ -34,9 +35,21 @@ interface AIVentureAppProps {
 }
 
 function AIVentureAppInner({ defaultLayout = [40, 60] }: AIVentureAppProps) {
-  const { loading, searchQuery, setSearchQuery, sortBy, setSortBy, typeFilter, setTypeFilter, breadcrumbs, navigateTo, refresh } =
+  const { loading, searchQuery, setSearchQuery, sortBy, setSortBy, typeFilter, setTypeFilter, breadcrumbs, navigateTo, refresh, startBrainstorm, uploadPdf } =
     useAIVenture()
   const [newItemOpen, setNewItemOpen] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const handleUploadPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    try {
+      await uploadPdf(file)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload PDF")
+    }
+  }
 
   return (
     <TooltipProvider delay={0}>
@@ -83,6 +96,31 @@ function AIVentureAppInner({ defaultLayout = [40, 60] }: AIVentureAppProps) {
             >
               <RefreshCw className={cn("size-4", loading && "animate-spin")} />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 text-[var(--text-accent)]"
+              title="New brainstorm"
+              onClick={startBrainstorm}
+            >
+              <Brain className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0"
+              title="Upload PDF"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FileUp className="size-4" />
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handleUploadPdf}
+            />
           </div>
           <Separator />
           <div className="flex flex-col gap-2 bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -114,6 +152,8 @@ function AIVentureAppInner({ defaultLayout = [40, 60] }: AIVentureAppProps) {
                   <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="md">Markdown</SelectItem>
                   <SelectItem value="txt">Text</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                  <SelectItem value="brainstorm">Brainstorms</SelectItem>
                 </SelectContent>
               </Select>
             </div>

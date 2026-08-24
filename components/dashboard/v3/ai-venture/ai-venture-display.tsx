@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { format } from "date-fns"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -13,6 +14,12 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { useAIVenture } from "./use-ai-venture"
+
+// Tldraw touches browser-only APIs, so load it client-side only.
+const BrainstormCanvas = dynamic(
+  () => import("./brainstorm-canvas").then((m) => m.BrainstormCanvas),
+  { ssr: false }
+)
 
 function highlight(text: string, query: string): React.ReactNode {
   if (!query.trim()) return text
@@ -29,7 +36,7 @@ function highlight(text: string, query: string): React.ReactNode {
 }
 
 export function AIVentureDisplay() {
-  const { selectedFile, fileLoading, saveFileContent } = useAIVenture()
+  const { selectedFile, fileLoading, saveFileContent, brainstormOpen } = useAIVenture()
   const [mode, setMode] = React.useState<"preview" | "raw">("preview")
   const [editing, setEditing] = React.useState(false)
   const [draft, setDraft] = React.useState("")
@@ -42,6 +49,15 @@ export function AIVentureDisplay() {
     setMode("preview")
   }, [selectedFile?.path])
 
+  // Brainstorm mode: always show a fresh canvas.
+  if (brainstormOpen) {
+    return (
+      <div className="h-full w-full">
+        <BrainstormCanvas />
+      </div>
+    )
+  }
+
   if (fileLoading) {
     return <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">Loading file...</div>
   }
@@ -49,12 +65,27 @@ export function AIVentureDisplay() {
   if (!selectedFile) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center text-muted-foreground">
-        Select a file to view its contents
+        Select a file to view its contents, or start a brainstorm.
       </div>
     )
   }
 
+  const isPdf = selectedFile.name.toLowerCase().endsWith(".pdf")
   const isMarkdown = selectedFile.name.toLowerCase().endsWith(".md")
+  const isTldr = selectedFile.name.toLowerCase().endsWith(".tldr") || selectedFile.name.toLowerCase().endsWith(".json")
+
+  // Tldraw snapshot file: open in the editable canvas.
+  if (isTldr) {
+    return (
+      <div className="h-full w-full">
+        <BrainstormCanvas
+          initialContent={selectedFile.content}
+          fileName={selectedFile.name.replace(/\.(tldr|json)$/i, "")}
+        />
+      </div>
+    )
+  }
+
   const matchCount = inFileQuery.trim()
     ? (selectedFile.content.toLowerCase().match(new RegExp(inFileQuery.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")) ?? []).length
     : 0
@@ -141,7 +172,7 @@ export function AIVentureDisplay() {
           <span>{(selectedFile.size / 1024).toFixed(1)} KB</span>
           <span className="ml-auto">Modified {format(new Date(selectedFile.modifiedAt), "PPp")}</span>
         </div>
-        {!editing && (
+        {!editing && !isPdf && (
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -163,6 +194,12 @@ export function AIVentureDisplay() {
             className="min-h-[400px] font-mono text-sm"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+          />
+        ) : isPdf ? (
+          <iframe
+            src={`/api/ai-venture/file/raw?path=${encodeURIComponent(selectedFile.path)}`}
+            className="h-full w-full rounded-md border"
+            title={selectedFile?.name}
           />
         ) : isMarkdown && mode === "preview" ? (
           <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-a:text-primary prose-pre:bg-muted prose-pre:text-foreground">

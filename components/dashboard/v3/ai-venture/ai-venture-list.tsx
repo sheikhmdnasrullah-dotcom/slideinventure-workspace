@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { formatDistanceToNow } from "date-fns"
-import { Folder, FolderPlus, MoreVertical, FileText, FileType, Brain, Sparkles } from "lucide-react"
+import { Folder, FolderPlus, MoreVertical, FileText, FileType, FileJson, Brain, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -24,12 +24,15 @@ function formatSize(bytes: number): string {
 
 function NodeIcon({ node }: { node: VentureNode }) {
   if (node.type === "folder") {
-    if (node.name === "Brainstorm") return <Brain className="size-4 text-primary" />
-    if (node.name === "Brainstorm Sketches") return <Sparkles className="size-4 text-primary" />
+    const lower = node.name.toLowerCase()
+    if (lower === "brainstorm" || lower === "brainstormed ideas") return <Brain className="size-4 text-primary" />
+    if (lower === "brainstorm sketches") return <Sparkles className="size-4 text-primary" />
+    if (lower === "pdf") return <FileType className="size-4 text-primary" />
     return <Folder className="size-4 text-muted-foreground" />
   }
   if (node.ext === ".md") return <FileText className="size-4 text-muted-foreground" />
   if (node.ext === ".pdf") return <FileType className="size-4 text-primary" />
+  if (node.ext === ".tldr" || node.ext === ".json") return <FileJson className="size-4 text-primary" />
   return <FileType className="size-4 text-muted-foreground" />
 }
 

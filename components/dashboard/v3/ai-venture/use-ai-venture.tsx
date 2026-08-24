@@ -47,6 +47,12 @@ type AIVentureContextValue = {
   fileLoading: boolean
   selectFile: (path: string) => void
 
+  brainstormOpen: boolean
+  startBrainstorm: () => void
+  closeBrainstorm: () => void
+  exportBrainstorm: (content: string, name: string) => Promise<void>
+  uploadPdf: (file: File) => Promise<void>
+
   refresh: () => Promise<void>
   createEntry: (name: string, type: "file" | "folder") => Promise<void>
   renameEntry: (node: VentureNode, newName: string) => Promise<void>
@@ -87,6 +93,7 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
   const [selectedPath, setSelectedPath] = React.useState<string | null>(null)
   const [selectedFile, setSelectedFile] = React.useState<SelectedFile | null>(null)
   const [fileLoading, setFileLoading] = React.useState(false)
+  const [brainstormOpen, setBrainstormOpen] = React.useState(false)
 
   const fetchTree = React.useCallback(async () => {
     setLoading(true)
@@ -133,7 +140,7 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
       list = list.filter((n) => n.type === "folder" || n.ext === `.${typeFilter}`)
     }
     if (typeFilter === "brainstorm") {
-      list = list.filter((n) => n.name === "Brainstorm")
+      list = list.filter((n) => n.name.toLowerCase().includes("brainstorm"))
     }
     if (typeFilter === "pdf") {
       list = list.filter((n) => n.ext === ".pdf")
@@ -244,6 +251,58 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
     [fetchTree, selectFile]
   )
 
+  const startBrainstorm = React.useCallback(() => {
+    setSelectedPath(null)
+    setSelectedFile(null)
+    setBrainstormOpen(true)
+  }, [])
+
+  const closeBrainstorm = React.useCallback(() => {
+    setBrainstormOpen(false)
+  }, [])
+
+  const exportBrainstorm = React.useCallback(
+    async (content: string, name: string) => {
+      const safe = (name || "Brainstorm")
+        .replace(/[^\w.-]+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")
+      const fileName = `${safe}.tldr`
+      const res = await fetch("/api/ai-venture/file", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: `Brainstormed Ideas/${fileName}`, content }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || "Failed to export brainstorm")
+      }
+      toast.success("Saved to Brainstormed Ideas")
+      await fetchTree()
+    },
+    [fetchTree]
+  )
+
+  const uploadPdf = React.useCallback(
+    async (file: File) => {
+      const buffer = await file.arrayBuffer()
+      const base64 = Buffer.from(buffer).toString("base64")
+      const safeName = file.name.replace(/[^\w.-]+/g, "_")
+      const res = await fetch("/api/ai-venture/file", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: `PDF/${safeName}`, content: base64, encoding: "base64" }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || "Failed to upload PDF")
+      }
+      toast.success("Uploaded to PDF folder")
+      await fetchTree()
+    },
+    [fetchTree]
+  )
+
   return (
     <AIVentureContext.Provider
       value={{
@@ -264,6 +323,11 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
         selectedFile,
         fileLoading,
         selectFile,
+        brainstormOpen,
+        startBrainstorm,
+        closeBrainstorm,
+        exportBrainstorm,
+        uploadPdf,
         refresh: fetchTree,
         createEntry,
         renameEntry,
