@@ -78,10 +78,10 @@ export function AIVentureList() {
               {formatDistanceToNow(new Date(node.modifiedAt), { addSuffix: true })}
             </span>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-7 shrink-0">
-                  <MoreVertical className="size-4" />
-                </Button>
+              <DropdownMenuTrigger
+                render={<Button variant="ghost" size="icon" className="size-7 shrink-0" />}
+              >
+                <MoreVertical className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleRename(node)}>Rename</DropdownMenuItem>

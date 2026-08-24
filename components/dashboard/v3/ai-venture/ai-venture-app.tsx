@@ -58,10 +58,11 @@ function AIVentureAppInner({ defaultLayout = [40, 60] }: AIVentureAppProps) {
                       {i === breadcrumbs.length - 1 ? (
                         <BreadcrumbPage className="line-clamp-1">{crumb.name}</BreadcrumbPage>
                       ) : (
-                        <BreadcrumbLink asChild>
-                          <button onClick={() => navigateTo(crumb.path)} className="line-clamp-1">
-                            {crumb.name}
-                          </button>
+                        <BreadcrumbLink
+                          render={<button type="button" onClick={() => navigateTo(crumb.path)} />}
+                          className="line-clamp-1"
+                        >
+                          {crumb.name}
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
