@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { FileText, Search, Upload, RefreshCw, Folder } from "lucide-react"
+import { FileText, Search, Upload, RefreshCw, Folder, PanelRightClose, PanelRightOpen } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -14,37 +14,27 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable"
 import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { DocumentDisplay } from "./document-display"
 import { DocumentList } from "./document-list"
-import { Nav } from "./nav"
 import { useDocuments, DocumentsProvider } from "./use-documents"
 
-interface DocumentsAppProps {
-  defaultLayout?: number[]
-  defaultCollapsed?: boolean
-  navCollapsedSize: number
-}
+const FOLDERS = [
+  { title: "All Documents", folder: "All" },
+]
 
-function DocumentsAppInner({
-  defaultLayout = [20, 32, 48],
-  defaultCollapsed = false,
-  navCollapsedSize,
-}: DocumentsAppProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
+function DocumentsAppInner() {
+  const [collapsed, setCollapsed] = React.useState(false)
+  const [uploadOpen, setUploadOpen] = React.useState(false)
   const {
     loading, search, setSearch,
-    setFolder, folder, refresh, uploadOpen, setUploadOpen
+    setFolder, folder, refresh
   } = useDocuments()
 
-  // Upload form state
   const [uploadFile, setUploadFile] = React.useState<File | null>(null)
   const [uploadTitle, setUploadTitle] = React.useState("")
   const [uploadTags, setUploadTags] = React.useState("")
@@ -52,7 +42,7 @@ function DocumentsAppInner({
 
   async function handleUpload() {
     if (!uploadFile) {
-      toast.error("Please select a file")
+      toast.error("Please select a PDF file")
       return
     }
     setUploading(true)
@@ -86,82 +76,64 @@ function DocumentsAppInner({
 
   return (
     <TooltipProvider delay={0}>
-      <ResizablePanelGroup
-        orientation="horizontal"
-        onLayoutChanged={(layout) => {
-          document.cookie = `react-resizable-panels:layout:documents=${JSON.stringify(
-            [layout.nav, layout.list, layout.display]
-          )}`
-        }}
-        className="h-full max-h-[800px] items-stretch"
-      >
-        {/* ─── LEFT NAV ─── */}
-        <ResizablePanel
-          id="nav"
-          defaultSize={defaultLayout[0]}
-          collapsedSize={navCollapsedSize}
-          collapsible={true}
-          minSize={15}
-          maxSize={20}
-          onResize={(panelSize) => {
-            const nowCollapsed = panelSize.asPercentage <= navCollapsedSize
-            setIsCollapsed(nowCollapsed)
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(nowCollapsed)}`
-          }}
+      <div className="flex h-full overflow-hidden">
+        <div
           className={cn(
-            isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
+            "flex h-full flex-col border-r transition-all duration-300",
+            collapsed ? "w-[56px]" : "w-[220px]"
           )}
+          style={{ borderColor: "var(--rule)" }}
         >
-          <div className="flex h-[52px] items-center justify-center">
-            <span className={cn("font-semibold", isCollapsed && "hidden")}>Documents</span>
-            {isCollapsed && <FileText className="h-4 w-4" />}
-          </div>
-          <Separator />
-          {/* Upload button */}
-          {!isCollapsed && (
-            <div className="px-2 py-2">
-              <Button
-                className="w-full justify-start gap-2"
-                size="sm"
-                onClick={() => setUploadOpen(true)}
-              >
-                <Upload className="h-4 w-4" />
-                Upload PDF
-              </Button>
-            </div>
-          )}
-          {isCollapsed && (
-            <div className="flex justify-center py-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => setUploadOpen(true)}
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-          <Nav
-            isCollapsed={isCollapsed}
-            links={[
-              { title: "All Documents", icon: Folder, variant: folder === "All" ? "default" : "ghost", onClick: () => setFolder("All") },
-            ]}
-          />
-        </ResizablePanel>
-
-        <ResizableHandle withHandle />
-
-        {/* ─── DOCUMENT LIST ─── */}
-        <ResizablePanel id="list" defaultSize={defaultLayout[1]} minSize={30}>
-          <div className="flex items-center px-4 py-2">
-            <h1 className="text-xl font-bold capitalize">
-              {folder}
-            </h1>
+          <div className="flex h-[52px] items-center justify-between px-3">
+            {!collapsed && (
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[var(--text-accent)]" />
+                <span className="text-sm font-semibold">Documents</span>
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto"
+              className="h-7 w-7"
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              {collapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+            </Button>
+          </div>
+          <Separator />
+          <div className="p-2">
+            <Button
+              className={cn("w-full justify-start gap-2", collapsed && "justify-center px-0")}
+              size="sm"
+              onClick={() => setUploadOpen(true)}
+            >
+              <Upload className="h-4 w-4" />
+              {!collapsed && <span>Upload PDF</span>}
+            </Button>
+          </div>
+          <nav className="flex flex-col gap-1 px-2 py-2">
+            {FOLDERS.map((item) => (
+              <Button
+                key={item.folder}
+                variant={folder === item.folder ? "default" : "ghost"}
+                className={cn("justify-start gap-2", collapsed && "justify-center px-2")}
+                size="sm"
+                onClick={() => setFolder(item.folder)}
+              >
+                <Folder className="h-4 w-4" />
+                {!collapsed && <span className="text-sm">{item.title}</span>}
+              </Button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3">
+            <h1 className="text-lg font-semibold capitalize">{folder}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-8 w-8"
               onClick={refresh}
               disabled={loading}
               title="Refresh"
@@ -173,7 +145,7 @@ function DocumentsAppInner({
           <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <form onSubmit={(e) => e.preventDefault()}>
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search documents"
                   className="pl-8"
@@ -183,65 +155,80 @@ function DocumentsAppInner({
               </div>
             </form>
           </div>
-          <DocumentList />
-        </ResizablePanel>
+          <ScrollArea className="flex-1">
+            <DocumentList />
+          </ScrollArea>
+        </div>
 
-        <ResizableHandle withHandle />
+        <DocumentPreviewSheet />
 
-        {/* ─── DOCUMENT DISPLAY ─── */}
-        <ResizablePanel id="display" defaultSize={defaultLayout[2]} minSize={30}>
-          <DocumentDisplay />
-        </ResizablePanel>
-      </ResizablePanelGroup>
-
-      {/* ─── UPLOAD DIALOG ─── */}
-      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="file">PDF File</Label>
-              <Input
-                id="file"
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-              />
+        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Upload Document</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="file">PDF File</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title (optional)</Label>
+                <Input
+                  id="title"
+                  placeholder="Custom title"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tags">Tags (comma-separated)</Label>
+                <Input
+                  id="tags"
+                  placeholder="invoice, Q3, finance"
+                  value={uploadTags}
+                  onChange={(e) => setUploadTags(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleUpload} disabled={uploading || !uploadFile}>
+                {uploading ? "Uploading..." : "Upload"}
+              </Button>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title (optional)</Label>
-              <Input
-                id="title"
-                placeholder="Custom title"
-                value={uploadTitle}
-                onChange={(e) => setUploadTitle(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
-              <Input
-                id="tags"
-                placeholder="invoice, Q3, finance"
-                value={uploadTags}
-                onChange={(e) => setUploadTags(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleUpload} disabled={uploading || !uploadFile}>
-              {uploading ? "Uploading..." : "Upload"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </div>
     </TooltipProvider>
   )
 }
 
-export function DocumentsApp(props: DocumentsAppProps) {
+function DocumentPreviewSheet() {
+  const { selected, setSelected, selectedDocument } = useDocuments()
+
+  return (
+    <Sheet open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+      <SheetContent className="w-full overflow-auto sm:max-w-2xl">
+        <SheetHeader>
+          <SheetTitle>{selectedDocument?.title || "Preview"}</SheetTitle>
+        </SheetHeader>
+        <DocumentDisplay />
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+export function DocumentsApp(_props: DocumentsAppProps) {
   return (
     <DocumentsProvider>
-      <DocumentsAppInner {...props} />
+      <DocumentsAppInner />
     </DocumentsProvider>
   )
+}
+
+interface DocumentsAppProps {
+  navCollapsedSize?: number
 }

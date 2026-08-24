@@ -5,6 +5,7 @@ export const AI_VENTURE_DIR = path.join(process.cwd(), "AI Venture");
 
 const IGNORED = new Set([".DS_Store", "Thumbs.db"]);
 const TEXT_EXTENSIONS = new Set([".md", ".txt"]);
+const PDF_EXTENSIONS = new Set([".pdf"]);
 
 export type VentureNode = {
   path: string; // relative to AI_VENTURE_DIR, "/" separated
@@ -47,6 +48,10 @@ function toRelative(absolutePath: string): string {
 
 export function isTextFile(name: string): boolean {
   return TEXT_EXTENSIONS.has(path.extname(name).toLowerCase());
+}
+
+function isPdfFile(name: string): boolean {
+  return PDF_EXTENSIONS.has(path.extname(name).toLowerCase());
 }
 
 function buildNode(absolutePath: string, name: string): VentureNode | null {
@@ -112,7 +117,18 @@ export function readFileContent(relativePath: string): { content: string; name: 
   if (!fs.existsSync(abs)) throw new VentureFsError("File not found", 404);
   const stat = fs.lstatSync(abs);
   if (!stat.isFile()) throw new VentureFsError("Not a file", 400);
-  if (!isTextFile(abs)) throw new VentureFsError("Unsupported file type", 415);
+  if (!isTextFile(abs) && !isPdfFile(abs)) throw new VentureFsError("Unsupported file type", 415);
+
+  if (isPdfFile(abs)) {
+    // For PDFs, we return a placeholder since we can't easily extract text without a library
+    // The display component will use an iframe for PDF viewing
+    return {
+      content: "",
+      name: path.basename(abs),
+      size: stat.size,
+      modifiedAt: stat.mtime.toISOString(),
+    };
+  }
 
   return {
     content: fs.readFileSync(abs, "utf-8"),
@@ -124,9 +140,13 @@ export function readFileContent(relativePath: string): { content: string; name: 
 
 export function writeFileContent(relativePath: string, content: string): void {
   const abs = resolveSafePath(relativePath);
-  if (!isTextFile(abs)) throw new VentureFsError("Only .md and .txt files can be edited", 415);
+  if (!isTextFile(abs) && !isPdfFile(abs)) throw new VentureFsError("Only .md, .txt, and .pdf files can be edited", 415);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, content, "utf-8");
+  if (isPdfFile(abs)) {
+    fs.writeFileSync(abs, content, "binary");
+  } else {
+    fs.writeFileSync(abs, content, "utf-8");
+  }
 }
 
 export function createEntry(relativePath: string, type: "file" | "folder"): void {
@@ -137,9 +157,13 @@ export function createEntry(relativePath: string, type: "file" | "folder"): void
     fs.mkdirSync(abs, { recursive: true });
     return;
   }
-  if (!isTextFile(abs)) throw new VentureFsError("Only .md and .txt files can be created", 415);
+  if (!isTextFile(abs) && !isPdfFile(abs)) throw new VentureFsError("Only .md, .txt, and .pdf files can be created", 415);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, "", "utf-8");
+  if (isPdfFile(abs)) {
+    fs.writeFileSync(abs, "", "binary");
+  } else {
+    fs.writeFileSync(abs, "", "utf-8");
+  }
 }
 
 export function moveEntry(fromRelative: string, toRelative: string): void {

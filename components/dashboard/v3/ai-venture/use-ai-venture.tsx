@@ -22,7 +22,7 @@ export type SelectedFile = {
 }
 
 type SortBy = "name" | "modified" | "size"
-type TypeFilter = "all" | "md" | "txt"
+type TypeFilter = "all" | "md" | "txt" | "pdf" | "brainstorm"
 
 type AIVentureContextValue = {
   tree: VentureNode | null
@@ -131,6 +131,12 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
 
     if (typeFilter !== "all") {
       list = list.filter((n) => n.type === "folder" || n.ext === `.${typeFilter}`)
+    }
+    if (typeFilter === "brainstorm") {
+      list = list.filter((n) => n.name === "Brainstorm")
+    }
+    if (typeFilter === "pdf") {
+      list = list.filter((n) => n.ext === ".pdf")
     }
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()

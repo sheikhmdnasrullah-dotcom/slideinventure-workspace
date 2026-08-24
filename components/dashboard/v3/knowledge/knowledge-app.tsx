@@ -1,123 +1,95 @@
 "use client"
 
 import * as React from "react"
-import { BookOpen, FileText, Search, Plus, RefreshCw, Layers, FileCode2, LibraryBig } from "lucide-react"
+import { BookOpen, FileText, Plus, RefreshCw, FileCode2, LibraryBig, PanelRightClose, PanelRightOpen } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable"
 import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-import { KnowledgeDisplay } from "./knowledge-display"
 import { KnowledgeList } from "./knowledge-list"
-import { Nav } from "./nav"
-import { useKnowledge, KnowledgeProvider } from "./use-knowledge"
+import { KnowledgeDisplay } from "./knowledge-display"
 import { AddContextDialog } from "./add-context-dialog"
+import { useKnowledge, KnowledgeProvider } from "./use-knowledge"
 
-interface KnowledgeAppProps {
-  defaultLayout?: number[]
-  defaultCollapsed?: boolean
-  navCollapsedSize: number
-}
+const CATEGORIES = [
+  { title: "All Items", icon: FileText, cat: "All" },
+  { title: "Notes", icon: BookOpen, cat: "note" },
+  { title: "SOPs", icon: FileText, cat: "sop" },
+  { title: "System Docs", icon: FileCode2, cat: "system" },
+]
 
-function KnowledgeAppInner({
-  defaultLayout = [20, 32, 48],
-  defaultCollapsed = false,
-  navCollapsedSize,
-}: KnowledgeAppProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
+function KnowledgeAppInner() {
+  const [collapsed, setCollapsed] = React.useState(false)
   const {
     loading, searchQuery, setSearchQuery,
-    setCategory, category, refresh, setAddOpen, syncFilesystem
+    setCategory, category, setAddOpen, syncFilesystem
   } = useKnowledge()
 
   return (
     <TooltipProvider delay={0}>
-      <ResizablePanelGroup
-        orientation="horizontal"
-        onLayoutChanged={(layout) => {
-          document.cookie = `react-resizable-panels:layout:knowledge=${JSON.stringify(
-            [layout.nav, layout.list, layout.display]
-          )}`
-        }}
-        className="h-full max-h-[800px] items-stretch"
-      >
-        {/* ─── LEFT NAV ─── */}
-        <ResizablePanel
-          id="nav"
-          defaultSize={defaultLayout[0]}
-          collapsedSize={navCollapsedSize}
-          collapsible={true}
-          minSize={15}
-          maxSize={20}
-          onResize={(panelSize) => {
-            const nowCollapsed = panelSize.asPercentage <= navCollapsedSize
-            setIsCollapsed(nowCollapsed)
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(nowCollapsed)}`
-          }}
+      <div className="flex h-full overflow-hidden">
+        <div
           className={cn(
-            isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
+            "flex h-full flex-col border-r transition-all duration-300",
+            collapsed ? "w-[56px]" : "w-[220px]"
           )}
+          style={{ borderColor: "var(--rule)" }}
         >
-          <div className="flex h-[52px] items-center justify-center">
-            <span className={cn("font-semibold", isCollapsed && "hidden")}>Knowledge Base</span>
-            {isCollapsed && <LibraryBig className="h-4 w-4" />}
-          </div>
-          <Separator />
-          {/* Add button */}
-          {!isCollapsed && (
-            <div className="px-2 py-2">
-              <Button
-                className="w-full justify-start gap-2"
-                size="sm"
-                onClick={() => setAddOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Add Context
-              </Button>
-            </div>
-          )}
-          {isCollapsed && (
-            <div className="flex justify-center py-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => setAddOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-          <Nav
-            isCollapsed={isCollapsed}
-            links={[
-              { title: "All Items", icon: Layers, variant: category === "All" ? "default" : "ghost", onClick: () => setCategory("All") },
-              { title: "Notes", icon: FileText, variant: category === "note" ? "default" : "ghost", onClick: () => setCategory("note") },
-              { title: "SOPs", icon: BookOpen, variant: category === "sop" ? "default" : "ghost", onClick: () => setCategory("sop") },
-              { title: "System Docs", icon: FileCode2, variant: category === "system" ? "default" : "ghost", onClick: () => setCategory("system") },
-            ]}
-          />
-        </ResizablePanel>
-
-        <ResizableHandle withHandle />
-
-        {/* ─── LIST ─── */}
-        <ResizablePanel id="list" defaultSize={defaultLayout[1]} minSize={30}>
-          <div className="flex items-center px-4 py-2">
-            <h1 className="text-xl font-bold capitalize">
-              {category}
-            </h1>
+          <div className="flex h-[52px] items-center justify-between px-3">
+            {!collapsed && (
+              <div className="flex items-center gap-2">
+                <LibraryBig className="h-4 w-4 text-[var(--text-accent)]" />
+                <span className="text-sm font-semibold">Knowledge</span>
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto"
+              className="h-7 w-7"
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              {collapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+            </Button>
+          </div>
+          <Separator />
+          <div className="p-2">
+            <Button
+              className={cn("w-full justify-start gap-2", collapsed && "justify-center px-0")}
+              size="sm"
+              onClick={() => setAddOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              {!collapsed && <span>Add Context</span>}
+            </Button>
+          </div>
+          <nav className="flex flex-col gap-1 px-2 py-2">
+            {CATEGORIES.map((item) => (
+              <Button
+                key={item.cat}
+                variant={category === item.cat ? "default" : "ghost"}
+                className={cn("justify-start gap-2", collapsed && "justify-center px-2")}
+                size="sm"
+                onClick={() => setCategory(item.cat)}
+              >
+                <item.icon className="h-4 w-4" />
+                {!collapsed && <span className="text-sm">{item.title}</span>}
+              </Button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3">
+            <h1 className="text-lg font-semibold capitalize">{category}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-8 w-8"
               onClick={syncFilesystem}
               disabled={loading}
               title="Sync from Filesystem"
@@ -129,7 +101,7 @@ function KnowledgeAppInner({
           <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <form onSubmit={(e) => e.preventDefault()}>
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <FileText className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search knowledge..."
                   className="pl-8"
@@ -139,26 +111,41 @@ function KnowledgeAppInner({
               </div>
             </form>
           </div>
-          <KnowledgeList />
-        </ResizablePanel>
+          <ScrollArea className="flex-1">
+            <KnowledgeList />
+          </ScrollArea>
+        </div>
 
-        <ResizableHandle withHandle />
-
-        {/* ─── DISPLAY ─── */}
-        <ResizablePanel id="display" defaultSize={defaultLayout[2]} minSize={30}>
-          <KnowledgeDisplay />
-        </ResizablePanel>
-      </ResizablePanelGroup>
-
-      <AddContextDialog />
+        <KnowledgeDetailSheet />
+        <AddContextDialog />
+      </div>
     </TooltipProvider>
   )
 }
 
-export function KnowledgeApp(props: KnowledgeAppProps) {
+function KnowledgeDetailSheet() {
+  const { selected, setSelected, selectedItem } = useKnowledge()
+
+  return (
+    <Sheet open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+      <SheetContent className="w-full overflow-auto sm:max-w-xl">
+        <SheetHeader>
+          <SheetTitle>{selectedItem?.title || "Detail"}</SheetTitle>
+        </SheetHeader>
+        <KnowledgeDisplay />
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+export function KnowledgeApp(_props: KnowledgeAppProps) {
   return (
     <KnowledgeProvider>
-      <KnowledgeAppInner {...props} />
+      <KnowledgeAppInner />
     </KnowledgeProvider>
   )
+}
+
+interface KnowledgeAppProps {
+  navCollapsedSize?: number
 }
