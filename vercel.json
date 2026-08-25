@@ -1,3 +1,8 @@
 {
-  "protection": false
+  "crons": [
+    {
+      "path": "/api/cron/todoist-reminders",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }
