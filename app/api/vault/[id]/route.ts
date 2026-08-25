@@ -1,28 +1,49 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
-import { z } from "zod";
 import { SecretVaultEntrySchema } from "@/lib/api/schemas";
-import { encryptSecret, decryptSecret } from "@/lib/vault/crypto";
-import { recordAudit } from "@/lib/api/audit";
-import { getClientIp, getUserAgent } from "@/lib/api/request";
+import { encryptSecret } from "@/lib/vault/crypto";
 import { NextRequest } from "next/server";
 
-const UpdateSchema = SecretVaultEntrySchema.partial().omit({ id: true, createdAt: true, updatedAt: true, iv: true, keyVersion: true });
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.vault;
 
-async function assertOwnership(supabase: ReturnType<typeof createServiceClient>, id: string, userEmail: string) {
-  const { data, error } = await supabase
-    .from("secret_vault_entries")
-    .select("id")
-    .eq("id", id)
-    .eq("created_by", userEmail)
-    .single();
+const UpdateSchema = SecretVaultEntrySchema.partial().omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  iv: true,
+  keyVersion: true,
+});
 
-  if (error || !data) {
-    return false;
-  }
-  return true;
+function serialize(doc: Record<string, any>) {
+  return {
+    id: doc.$id,
+    name: doc.name,
+    category: doc.category,
+    service_name: doc.service_name,
+    username: doc.username,
+    secret_type: doc.secret_type,
+    url: doc.url,
+    notes: doc.notes,
+    tags: doc.tags ?? [],
+    expires_at: doc.expires_at,
+    created_by: doc.created_by,
+    created_at: doc.created_at,
+    updated_at: doc.updated_at,
+  };
+}
+
+async function fetchOwned(id: string, email: string) {
+  const res = await databases.listDocuments(DB, COL, [
+    Query.equal("$id", id),
+    Query.equal("created_by", email),
+  ]);
+  return res.documents[0] ?? null;
 }
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -30,21 +51,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!user) return ApiError.unauthorized().toResponse();
 
   const { id } = await params;
-  const supabase = createServiceClient();
+  const doc = await fetchOwned(id, user.email ?? "");
+  if (!doc) return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
 
-  if (!(await assertOwnership(supabase, id, user.email ?? ""))) {
-    return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
-  }
-
-  const { data, error } = await supabase
-    .from("secret_vault_entries")
-    .select("id, name, category, service_name, username, secret_type, url, notes, tags, expires_at, created_by, created_at, updated_at")
-    .eq("id", id)
-    .single();
-
-  if (error || !data) return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
-
-  return Response.json(data);
+  return Response.json(serialize(doc));
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -55,15 +65,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const { id } = await params;
-  const supabase = createServiceClient();
+  const doc = await fetchOwned(id, user.email ?? "");
+  if (!doc) return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
 
-  if (!(await assertOwnership(supabase, id, user.email ?? ""))) {
-    return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
-  }
-
-  const body = await request.json().catch(() => ({}));
+  const body = await request.json().catch(() => ({}) as Record<string, unknown>);
   const validated = validate(UpdateSchema, body);
-
   const now = new Date().toISOString();
 
   const updateData: Record<string, unknown> = {
@@ -86,30 +92,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     updateData.key_version = 1;
   }
 
-  const { error } = await supabase.from("secret_vault_entries").update(updateData).eq("id", id);
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
+  await databases.updateDocument(DB, COL, id, updateData);
   return Response.json({ id, status: "updated" });
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
-  const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
+  const limit = checkRateLimit(_request, { limit: 10, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const { id } = await params;
-  const supabase = createServiceClient();
+  const doc = await fetchOwned(id, user.email ?? "");
+  if (!doc) return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
 
-  if (!(await assertOwnership(supabase, id, user.email ?? ""))) {
-    return ApiError.notFound("VAULT_ENTRY_NOT_FOUND", "Vault entry not found").toResponse();
-  }
-
-  const { error } = await supabase.from("secret_vault_entries").delete().eq("id", id);
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
+  await databases.deleteDocument(DB, COL, id);
   return Response.json({ id, status: "deleted" });
 }

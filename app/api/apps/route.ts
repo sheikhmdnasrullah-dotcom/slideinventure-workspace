@@ -1,10 +1,25 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
 import { AppSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.apps;
+
+function serialize(doc: Record<string, any>) {
+  const out: Record<string, any> = { id: doc.$id };
+  for (const [k, v] of Object.entries(doc)) {
+    if (k.startsWith("$")) continue;
+    out[k] = k === "config" && typeof v === "string" ? JSON.parse(v) : v;
+  }
+  return out;
+}
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -23,30 +38,25 @@ export async function GET(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
-  const supabase = createServiceClient();
+  const page = query.data.page;
+  const pageSize = query.data.pageSize;
 
-  let q = supabase.from("apps").select("*", { count: "exact" });
+  try {
+    const queries: any[] = [Query.orderAsc("name")];
+    if (query.data.category) queries.push(Query.equal("category", query.data.category));
+    if (query.data.enabled !== undefined) queries.push(Query.equal("enabled", query.data.enabled));
+    queries.push(Query.limit(pageSize), Query.offset((page - 1) * pageSize));
 
-  if (query.data.category) {
-    q = q.eq("category", query.data.category);
+    const res = await databases.listDocuments(DB, COL, queries);
+    return Response.json({
+      data: res.documents.map(serialize),
+      total: res.total,
+      page,
+      pageSize,
+    });
+  } catch (error) {
+    return ApiError.internal("DB_ERROR", (error as Error).message).toResponse();
   }
-  if (query.data.enabled !== undefined) {
-    q = q.eq("enabled", query.data.enabled);
-  }
-
-  const from = (query.data.page - 1) * query.data.pageSize;
-  const to = from + query.data.pageSize - 1;
-
-  const { data, error, count } = await q.order("name", { ascending: true }).range(from, to);
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({
-    data: data ?? [],
-    total: count ?? 0,
-    page: query.data.page,
-    pageSize: query.data.pageSize,
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -57,20 +67,27 @@ export async function POST(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
-  const validated = validate(CreateSchema, body);
+  try {
+    const validated = validate(CreateSchema, body);
+    const d = validated.data;
+    const now = new Date().toISOString();
 
-  const supabase = createServiceClient();
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
+    const doc = await databases.createDocument(DB, COL, ID.unique(), {
+      name: d.name,
+      slug: d.slug,
+      description: d.description ?? null,
+      icon: d.icon ?? null,
+      url: d.url ?? null,
+      category: d.category ?? null,
+      enabled: d.enabled ?? true,
+      config: JSON.stringify(d.config ?? {}),
+      created_at: now,
+      updated_at: now,
+    });
 
-  const { error } = await supabase.from("apps").insert({
-    id,
-    ...validated.data,
-    created_at: now,
-    updated_at: now,
-  });
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({ id }, { status: 201 });
+    return Response.json({ id: doc.$id }, { status: 201 });
+  } catch (err: any) {
+    if (err instanceof ApiError) return err.toResponse();
+    return ApiError.internal("UNHANDLED", err.message || "Unknown error").toResponse();
+  }
 }

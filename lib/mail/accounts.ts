@@ -1,6 +1,11 @@
 import 'server-only'
-import { createServiceClient } from '@/lib/supabase/server'
+import { databases, ID } from '@/lib/appwrite/server'
+import { Query } from 'node-appwrite'
+import { APPWRITE } from '@/lib/appwrite/config'
 import { encryptSecret, decryptSecret } from '@/lib/vault/crypto'
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.mailAccounts
 
 export interface MailAccount {
   id?: string // present only for DB-backed accounts (addable/removable)
@@ -67,16 +72,11 @@ let _envAccounts: MailAccount[] | null = null
 // DB-backed accounts (user-added via the UI) — fetched fresh each call so
 // add/remove reflects immediately with no cache-invalidation logic needed.
 async function loadDbAccounts(): Promise<MailAccount[]> {
-  const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('mail_accounts')
-    .select('id, email, name, provider, imap_host, imap_port, smtp_host, smtp_port, encrypted_password')
-    .order('created_at', { ascending: true })
+  const res = await databases.listDocuments(DB, COL, [Query.orderDesc('created_at')])
+  if (res.documents.length === 0) return []
 
-  if (error || !data) return []
-
-  return data.map((row) => ({
-    id: row.id as string,
+  return res.documents.map((row) => ({
+    id: row.$id as string,
     email: row.email as string,
     name: row.name as string,
     provider: row.provider as MailAccount['provider'],
@@ -123,12 +123,10 @@ export interface CreateAccountInput {
 }
 
 export async function createDbAccount(input: CreateAccountInput): Promise<{ id: string }> {
-  const supabase = createServiceClient()
-  const id = crypto.randomUUID()
   const { encrypted } = encryptSecret(input.password)
+  const now = new Date().toISOString()
 
-  const { error } = await supabase.from('mail_accounts').insert({
-    id,
+  const doc = await databases.createDocument(DB, COL, ID.unique(), {
     email: input.email,
     name: input.name,
     provider: 'imap_smtp',
@@ -137,14 +135,12 @@ export async function createDbAccount(input: CreateAccountInput): Promise<{ id: 
     smtp_host: input.smtpHost,
     smtp_port: input.smtpPort,
     encrypted_password: encrypted,
+    created_at: now,
   })
 
-  if (error) throw new Error(error.message)
-  return { id }
+  return { id: doc.$id }
 }
 
 export async function deleteDbAccount(id: string): Promise<void> {
-  const supabase = createServiceClient()
-  const { error } = await supabase.from('mail_accounts').delete().eq('id', id)
-  if (error) throw new Error(error.message)
+  await databases.deleteDocument(DB, COL, id)
 }

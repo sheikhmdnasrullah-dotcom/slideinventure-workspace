@@ -1,10 +1,25 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
 import { UsefulLinkSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.usefulLinks;
+
+function serialize(doc: Record<string, any>) {
+  const out: Record<string, any> = { id: doc.$id };
+  for (const [k, v] of Object.entries(doc)) {
+    if (k.startsWith("$")) continue;
+    out[k] = v;
+  }
+  return out;
+}
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -23,30 +38,42 @@ export async function GET(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
-  const supabase = createServiceClient();
+  const page = query.data.page;
+  const pageSize = query.data.pageSize;
 
-  let q = supabase.from("useful_links").select("*", { count: "exact" });
+  try {
+    let docs: Record<string, any>[] = [];
+    let total = 0;
 
-  if (query.data.search) {
-    q = q.or(`title.ilike.%${query.data.search}%,url.ilike.%${query.data.search}%`);
+    if (query.data.search) {
+      const term = query.data.search;
+      const base: any[] = [];
+      if (query.data.tag) base.push(Query.contains("tags", [query.data.tag]));
+      const searches = await Promise.all([
+        databases.listDocuments(DB, COL, [...base, Query.search("title", term), Query.limit(1000)]),
+        databases.listDocuments(DB, COL, [...base, Query.search("url", term), Query.limit(1000)]),
+      ]);
+      const map = new Map<string, Record<string, any>>();
+      for (const res of searches) for (const d of res.documents) if (!map.has(d.$id)) map.set(d.$id, d);
+      docs = [...map.values()].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      total = docs.length;
+      const from = (page - 1) * pageSize;
+      docs = docs.slice(from, from + pageSize);
+    } else {
+      const queries: any[] = [Query.orderDesc("created_at")];
+      if (query.data.tag) queries.push(Query.contains("tags", [query.data.tag]));
+      queries.push(Query.limit(pageSize), Query.offset((page - 1) * pageSize));
+      const res = await databases.listDocuments(DB, COL, queries);
+      docs = res.documents;
+      total = res.total;
+    }
+
+    return Response.json({ data: docs.map(serialize), total, page, pageSize });
+  } catch (error) {
+    return ApiError.internal("DB_ERROR", (error as Error).message).toResponse();
   }
-  if (query.data.tag) {
-    q = q.contains("tags", [query.data.tag]);
-  }
-
-  const from = (query.data.page - 1) * query.data.pageSize;
-  const to = from + query.data.pageSize - 1;
-
-  const { data, error, count } = await q.order("created_at", { ascending: false }).range(from, to);
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({
-    data: data ?? [],
-    total: count ?? 0,
-    page: query.data.page,
-    pageSize: query.data.pageSize,
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -57,21 +84,25 @@ export async function POST(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => ({}));
-  const validated = validate(CreateSchema, body);
+  try {
+    const validated = validate(CreateSchema, body);
+    const d = validated.data;
+    const now = new Date().toISOString();
 
-  const supabase = createServiceClient();
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
+    const doc = await databases.createDocument(DB, COL, ID.unique(), {
+      title: d.title,
+      url: d.url,
+      description: d.description ?? null,
+      tags: d.tags ?? [],
+      favicon: d.favicon ?? null,
+      created_by: user.email ?? null,
+      created_at: now,
+      updated_at: now,
+    });
 
-  const { error } = await supabase.from("useful_links").insert({
-    id,
-    ...validated.data,
-    created_by: user.email ?? null,
-    created_at: now,
-    updated_at: now,
-  });
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({ id }, { status: 201 });
+    return Response.json({ id: doc.$id }, { status: 201 });
+  } catch (err: any) {
+    if (err instanceof ApiError) return err.toResponse();
+    return ApiError.internal("UNHANDLED", err.message || "Unknown error").toResponse();
+  }
 }

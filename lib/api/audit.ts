@@ -1,5 +1,5 @@
-
-import { createServiceClient } from "@/lib/supabase/server";
+import { databases, ID } from "@/lib/appwrite/server";
+import { APPWRITE } from "@/lib/appwrite/config";
 
 export type AuditActor = {
   userEmail?: string;
@@ -19,19 +19,23 @@ export type AuditEntry = {
 
 export async function recordAudit(entry: AuditEntry): Promise<void> {
   try {
-    const supabase = createServiceClient();
-    await supabase.from("audit_logs").insert({
-      table_name: entry.table,
-      record_id: entry.recordId,
-      action: entry.action,
-      diff: entry.diff ?? null,
-      metadata: entry.metadata ?? null,
-      actor_email: entry.actor?.userEmail ?? null,
-      actor_id: entry.actor?.userId ?? null,
-      ip: entry.actor?.ip ?? null,
-      user_agent: entry.actor?.userAgent ?? null,
-      created_at: new Date().toISOString(),
-    });
+    await databases.createDocument(
+      APPWRITE.databaseId,
+      APPWRITE.collections.auditLogs,
+      ID.unique(),
+      {
+        table_name: entry.table,
+        record_id: entry.recordId,
+        action: entry.action,
+        diff: entry.diff ? JSON.stringify(entry.diff) : null,
+        metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+        actor_email: entry.actor?.userEmail ?? null,
+        actor_id: entry.actor?.userId ?? null,
+        ip: entry.actor?.ip ?? null,
+        user_agent: entry.actor?.userAgent ?? null,
+        created_at: new Date().toISOString(),
+      }
+    );
   } catch {
     // Audit logging must not break the primary flow
   }

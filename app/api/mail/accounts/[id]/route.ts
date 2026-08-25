@@ -1,4 +1,4 @@
-import { getSessionUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { deleteDbAccount } from "@/lib/mail/accounts";

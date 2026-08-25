@@ -3,7 +3,9 @@
  * Provides typed entity types, properties, and relation kinds.
  */
 
-import { SupabaseClient } from "@supabase/supabase-js";
+import { databases, ID } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 
 export type EntityType = "company" | "person" | "project" | "campaign" | "deal" | "document" | "tag";
 
@@ -72,11 +74,49 @@ export interface Relation {
   created_at: string;
 }
 
+const ENTITY_COL = APPWRITE.collections.entities;
+const RELATION_COL = APPWRITE.collections.relations;
+const DB = APPWRITE.databaseId;
+
+function parseProps(value: unknown): Record<string, unknown> {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+  return (value as Record<string, unknown>) ?? {};
+}
+
+function serializeEntity(doc: Record<string, any>): Entity {
+  return {
+    id: doc.entity_id ?? doc.$id,
+    entity_type: (doc.entity_type as EntityType) ?? null,
+    name: doc.name,
+    properties: parseProps(doc.properties),
+    source: doc.source ?? null,
+    created_at: doc.created_at ?? "",
+    updated_at: doc.updated_at ?? "",
+  };
+}
+
+function serializeRelation(doc: Record<string, any>): Relation {
+  return {
+    id: doc.$id,
+    from_entity_id: doc.from_entity_id,
+    to_entity_id: doc.to_entity_id,
+    relation_type: doc.relation_type as RelationType,
+    source_knowledge_item_id: doc.source_knowledge_item_id ?? null,
+    source: doc.source ?? null,
+    created_at: doc.created_at ?? "",
+  };
+}
+
 /**
- * Create or upsert an entity.
+ * Create or upsert an entity. The entity `id` is used as the document id.
  */
 export async function upsertEntity(
-  supabase: SupabaseClient,
   input: {
     id: string;
     entity_type: EntityType;
@@ -85,29 +125,32 @@ export async function upsertEntity(
     source?: string;
   }
 ): Promise<{ success: boolean; entity?: Entity; error?: string }> {
-  const entity = {
-    id: input.id,
+  const existing = await databases.listDocuments(DB, ENTITY_COL, [Query.equal("entity_id", input.id)]);
+
+  const data = {
+    entity_id: input.id,
+    type: input.entity_type,
     entity_type: input.entity_type,
     name: input.name,
-    properties: input.properties ?? {},
+    properties: JSON.stringify(input.properties ?? {}),
     source: input.source ?? "manual",
   };
 
-  const { data, error } = await supabase
-    .from("entities")
-    .upsert(entity, { onConflict: "id" })
-    .select()
-    .single();
-
-  if (error) return { success: false, error: error.message };
-  return { success: true, entity: data };
+  try {
+    const doc =
+      existing.documents.length > 0
+        ? await databases.updateDocument(DB, ENTITY_COL, existing.documents[0].$id, data)
+        : await databases.createDocument(DB, ENTITY_COL, ID.unique(), data);
+    return { success: true, entity: serializeEntity(doc) };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Failed to upsert entity" };
+  }
 }
 
 /**
- * Create a relation between two entities.
+ * Create a relation between two entities (deduplicated on the 4-tuple).
  */
 export async function createRelation(
-  supabase: SupabaseClient,
   input: {
     from_entity_id: string;
     to_entity_id: string;
@@ -116,41 +159,47 @@ export async function createRelation(
     source?: string;
   }
 ): Promise<{ success: boolean; relation?: Relation; error?: string }> {
-  const relation = {
-    from_entity_id: input.from_entity_id,
-    to_entity_id: input.to_entity_id,
-    relation_type: input.relation_type,
-    source_knowledge_item_id: input.source_knowledge_item_id ?? null,
-    source: input.source ?? "manual",
-  };
+  const dedupe = await databases.listDocuments(DB, RELATION_COL, [
+    Query.equal("from_entity_id", input.from_entity_id),
+    Query.equal("to_entity_id", input.to_entity_id),
+    Query.equal("relation_type", input.relation_type),
+    Query.equal("source_knowledge_item_id", input.source_knowledge_item_id ?? ""),
+  ]);
 
-  const { data, error } = await supabase
-    .from("relations")
-    .upsert(relation, { onConflict: "from_entity_id,to_entity_id,relation_type,source_knowledge_item_id" })
-    .select()
-    .single();
+  if (dedupe.documents.length > 0) {
+    return { success: true, relation: serializeRelation(dedupe.documents[0]) };
+  }
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, relation: data };
+  try {
+    const doc = await databases.createDocument(DB, RELATION_COL, ID.unique(), {
+      from_entity_id: input.from_entity_id,
+      to_entity_id: input.to_entity_id,
+      relation_type: input.relation_type,
+      source_knowledge_item_id: input.source_knowledge_item_id ?? null,
+      source: input.source ?? "manual",
+    });
+    return { success: true, relation: serializeRelation(doc) };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Failed to create relation" };
+  }
 }
 
 /**
  * Get entity with its relations (one hop).
  */
 export async function getEntityWithRelations(
-  supabase: SupabaseClient,
   entityId: string
 ): Promise<{ entity: Entity | null; outgoing: Relation[]; incoming: Relation[] }> {
-  const [{ data: entity }, { data: outgoing }, { data: incoming }] = await Promise.all([
-    supabase.from("entities").select("*").eq("id", entityId).single(),
-    supabase.from("relations").select("*").eq("from_entity_id", entityId),
-    supabase.from("relations").select("*").eq("to_entity_id", entityId),
+  const [entityRes, outgoingRes, incomingRes] = await Promise.all([
+    databases.listDocuments(DB, ENTITY_COL, [Query.equal("entity_id", entityId)]),
+    databases.listDocuments(DB, RELATION_COL, [Query.equal("from_entity_id", entityId)]),
+    databases.listDocuments(DB, RELATION_COL, [Query.equal("to_entity_id", entityId)]),
   ]);
 
   return {
-    entity: entity.data,
-    outgoing: outgoing ?? [],
-    incoming: incoming ?? [],
+    entity: entityRes.documents[0] ? serializeEntity(entityRes.documents[0]) : null,
+    outgoing: outgoingRes.documents.map(serializeRelation),
+    incoming: incomingRes.documents.map(serializeRelation),
   };
 }
 
@@ -158,42 +207,39 @@ export async function getEntityWithRelations(
  * Find entities by type with optional property filter.
  */
 export async function findEntities(
-  supabase: SupabaseClient,
   entityType: EntityType,
   propertyFilter?: Record<string, unknown>,
   limit = 100
 ): Promise<Entity[]> {
-  const query = supabase
-    .from("entities")
-    .select("*")
-    .eq("entity_type", entityType)
-    .limit(limit);
+  const res = await databases.listDocuments(DB, ENTITY_COL, [
+    Query.equal("entity_type", entityType),
+    Query.limit(limit),
+  ]);
 
-  // Note: propertyFilter would require Postgres jsonb containment queries
-  // which are not directly supported by PostgREST. Implement via RPC if needed.
-  // For now, fetch and filter in memory for small datasets.
+  const entities = res.documents.map(serializeEntity);
+  if (!propertyFilter) return entities;
 
-  const { data, error } = await query;
-  if (error) throw new Error(`Entity find failed: ${error.message}`);
-
-  if (!propertyFilter) return (data ?? []) as Entity[];
-
-  return (data ?? []).filter((e: Entity) =>
+  return entities.filter((e) =>
     Object.entries(propertyFilter).every(([k, v]) => e.properties[k] === v)
-  ) as Entity[];
+  );
 }
 
 /**
  * Traverse relations from an entity (BFS up to depth).
+ * Note: Appwrite has no `.in()` operator, so all relations are fetched once and
+ * filtered in memory (acceptable for the small relation sets in this app).
  */
 export async function traverseRelations(
-  supabase: SupabaseClient,
   startEntityId: string,
   options: { maxDepth?: number; relationTypes?: RelationType[]; direction?: "outgoing" | "incoming" | "both" } = {}
 ): Promise<{ entities: Entity[]; relations: Relation[] }> {
   const maxDepth = options.maxDepth ?? 2;
   const allowedTypes = new Set(options.relationTypes ?? RELATION_TYPES);
   const direction = options.direction ?? "both";
+
+  const allRelations = (await databases.listDocuments(DB, RELATION_COL, [Query.limit(5000)]))
+    .documents.map(serializeRelation)
+    .filter((r) => allowedTypes.has(r.relation_type));
 
   const visited = new Set<string>();
   const entities: Entity[] = [];
@@ -206,45 +252,35 @@ export async function traverseRelations(
     if (currentLevel.length === 0) break;
 
     const nextLevel: string[] = [];
+    const levelSet = new Set(currentLevel);
 
-    for (const entityId of currentLevel) {
-      if (depth > 0 && !visited.has(entityId)) {
-        visited.add(entityId);
-        const { data: entity } = await supabase.from("entities").select("*").eq("id", entityId).single();
-        if (entity) entities.push(entity as Entity);
-      }
+    const matches = allRelations.filter((rel) => {
+      const out = direction === "outgoing" || direction === "both";
+      const inc = direction === "incoming" || direction === "both";
+      return (out && levelSet.has(rel.from_entity_id)) || (inc && levelSet.has(rel.to_entity_id));
+    });
 
-      if (depth === maxDepth) continue;
+    for (const rel of matches) {
+      relations.push(rel);
+      const nextId = direction === "incoming" ? rel.from_entity_id : rel.to_entity_id;
+      if (!visited.has(nextId)) nextLevel.push(nextId);
+    }
 
-      let query = supabase.from("relations").select("*");
-      if (direction === "outgoing" || direction === "both") {
-        query = query.or(`from_entity_id.in.(${currentLevel.join(",")})`);
-      }
-      if (direction === "incoming" || direction === "both") {
-        query = query.or(`to_entity_id.in.(${currentLevel.join(",")})`);
-      }
-      if (options.relationTypes) {
-        query = query.in("relation_type", options.relationTypes);
-      }
-
-      const { data: rels } = await query;
-      if (rels) {
-        relations.push(...(rels as Relation[]));
-        for (const rel of rels) {
-          const nextId = direction === "outgoing" ? rel.to_entity_id : rel.from_entity_id;
-          if (!visited.has(nextId)) nextLevel.push(nextId);
-        }
-      }
+    for (const entityId of nextLevel) {
+      visited.add(entityId);
+      const res = await databases.listDocuments(DB, ENTITY_COL, [Query.equal("entity_id", entityId)]);
+      if (res.documents[0]) entities.push(serializeEntity(res.documents[0]));
     }
 
     currentLevel = nextLevel;
   }
 
-  // Fetch all unique entities
-  const entityIds = [...visited];
-  if (entityIds.length > 0) {
-    const { data: ents } = await supabase.from("entities").select("*").in("id", entityIds);
-    if (ents) entities.push(...(ents as Entity[]));
+  // Ensure start + any visited entities not yet collected are present
+  for (const id of visited) {
+    if (!entities.some((e) => e.id === id)) {
+      const res = await databases.listDocuments(DB, ENTITY_COL, [Query.equal("entity_id", id)]);
+      if (res.documents[0]) entities.push(serializeEntity(res.documents[0]));
+    }
   }
 
   return { entities, relations };
@@ -254,36 +290,22 @@ export async function traverseRelations(
  * Helper: create company entity with standard properties.
  */
 export async function createCompany(
-  supabase: SupabaseClient,
   name: string,
   properties: Record<string, unknown> = {},
   source = "manual"
 ): Promise<{ success: boolean; entity?: Entity; error?: string }> {
   const id = `company-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-  return upsertEntity(supabase, {
-    id,
-    entity_type: "company",
-    name,
-    properties,
-    source,
-  });
+  return upsertEntity({ id, entity_type: "company", name, properties, source });
 }
 
 /**
  * Helper: create person entity with standard properties.
  */
 export async function createPerson(
-  supabase: SupabaseClient,
   name: string,
   properties: Record<string, unknown> = {},
   source = "manual"
 ): Promise<{ success: boolean; entity?: Entity; error?: string }> {
   const id = `person-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-  return upsertEntity(supabase, {
-    id,
-    entity_type: "person",
-    name,
-    properties,
-    source,
-  });
+  return upsertEntity({ id, entity_type: "person", name, properties, source });
 }

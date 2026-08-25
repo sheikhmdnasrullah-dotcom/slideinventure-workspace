@@ -1,4 +1,7 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
@@ -6,6 +9,9 @@ import { z } from "zod";
 import { SecretVaultEntrySchema } from "@/lib/api/schemas";
 import { encryptSecret } from "@/lib/vault/crypto";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.vault;
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -22,6 +28,24 @@ const CreateSchema = SecretVaultEntrySchema.omit({
   keyVersion: true,
 });
 
+function serialize(doc: Record<string, any>) {
+  return {
+    id: doc.$id,
+    name: doc.name,
+    category: doc.category,
+    service_name: doc.service_name,
+    username: doc.username,
+    secret_type: doc.secret_type,
+    url: doc.url,
+    notes: doc.notes,
+    tags: doc.tags ?? [],
+    expires_at: doc.expires_at,
+    created_by: doc.created_by,
+    created_at: doc.created_at,
+    updated_at: doc.updated_at,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
@@ -30,29 +54,38 @@ export async function GET(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
-  const supabase = createServiceClient();
+  const email = user.email ?? "";
+  const page = query.data.page;
+  const pageSize = query.data.pageSize;
 
-  let q = supabase
-    .from("secret_vault_entries")
-    .select("id, name, category, service_name, username, secret_type, url, notes, tags, expires_at, created_by, created_at, updated_at", { count: "exact" })
-    .eq("created_by", user.email ?? "");
+  let docs: Record<string, any>[] = [];
+  let total = 0;
 
-  if (query.data.category) q = q.eq("category", query.data.category);
-  if (query.data.search) q = q.or(`name.ilike.%${query.data.search}%,service_name.ilike.%${query.data.search}%,username.ilike.%${query.data.search}%`);
+  if (query.data.search) {
+    const term = query.data.search;
+    const searches = await Promise.all([
+      databases.listDocuments(DB, COL, [Query.equal("created_by", email), Query.search("name", term), Query.limit(1000)]),
+      databases.listDocuments(DB, COL, [Query.equal("created_by", email), Query.search("service_name", term), Query.limit(1000)]),
+      databases.listDocuments(DB, COL, [Query.equal("created_by", email), Query.search("username", term), Query.limit(1000)]),
+    ]);
+    const map = new Map<string, Record<string, any>>();
+    for (const res of searches) for (const d of res.documents) if (!map.has(d.$id)) map.set(d.$id, d);
+    docs = [...map.values()].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    total = docs.length;
+    const from = (page - 1) * pageSize;
+    docs = docs.slice(from, from + pageSize);
+  } else {
+    const queries = [Query.equal("created_by", email), Query.orderDesc("created_at")];
+    if (query.data.category) queries.push(Query.equal("category", query.data.category));
+    queries.push(Query.limit(pageSize), Query.offset((page - 1) * pageSize));
+    const res = await databases.listDocuments(DB, COL, queries);
+    docs = res.documents;
+    total = res.total;
+  }
 
-  const from = (query.data.page - 1) * query.data.pageSize;
-  const to = from + query.data.pageSize - 1;
-
-  const { data, error, count } = await q.order("created_at", { ascending: false }).range(from, to);
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({
-    data: data ?? [],
-    total: count ?? 0,
-    page: query.data.page,
-    pageSize: query.data.pageSize,
-  });
+  return Response.json({ data: docs.map(serialize), total, page, pageSize });
 }
 
 export async function POST(request: NextRequest) {
@@ -62,7 +95,7 @@ export async function POST(request: NextRequest) {
   const limit = checkRateLimit(request, { limit: 10, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
-  const body = await request.json().catch(() => ({}));
+  const body = await request.json().catch(() => ({}) as Record<string, unknown>);
   const validated = validate(CreateSchema, body);
 
   const secretPlaintext = validated.data.encryptedValue;
@@ -71,13 +104,9 @@ export async function POST(request: NextRequest) {
   }
 
   const { encrypted, iv } = encryptSecret(secretPlaintext);
-
-  const supabase = createServiceClient();
-  const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  const { error } = await supabase.from("secret_vault_entries").insert({
-    id,
+  const doc = await databases.createDocument(DB, COL, ID.unique(), {
     name: validated.data.name,
     category: validated.data.category ?? null,
     service_name: validated.data.serviceName ?? null,
@@ -95,7 +124,5 @@ export async function POST(request: NextRequest) {
     updated_at: now,
   });
 
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({ id }, { status: 201 });
+  return Response.json({ id: doc.$id }, { status: 201 });
 }

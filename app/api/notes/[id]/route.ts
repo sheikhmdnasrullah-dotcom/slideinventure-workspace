@@ -1,77 +1,89 @@
-import { NextRequest } from "next/server";
-import { getSessionUser, createServiceClient } from "@/lib/supabase/server";
-import { ApiError, toJson } from "@/lib/api/errors";
-import { checkRateLimit } from "@/lib/api/rate-limit";
+import { NextRequest } from "next/server"
+import { getSessionUser } from "@/lib/appwrite/auth"
+import { databases } from "@/lib/appwrite/server"
+import { Query } from "node-appwrite"
+import { APPWRITE } from "@/lib/appwrite/config"
+import { ApiError, toJson } from "@/lib/api/errors"
+import { checkRateLimit } from "@/lib/api/rate-limit"
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.notes
+
+function serialize(doc: Record<string, any>) {
+  return {
+    id: doc.$id,
+    title: doc.title,
+    content: doc.content,
+    created_at: doc.created_at,
+    updated_at: doc.updated_at,
+  }
+}
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  const user = await getSessionUser()
+  if (!user) return ApiError.unauthorized().toResponse()
 
-  const { id } = await params;
+  const { id } = await params
   try {
-    const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from("notes")
-      .select("id, title, content, created_at, updated_at")
-      .eq("id", id)
-      .eq("user_email", user.email ?? "")
-      .single();
-    if (error) throw error;
-    if (!data) return ApiError.notFound().toResponse();
-    return Response.json({ note: { ...data, content: JSON.stringify(data.content) } });
+    const res = await databases.listDocuments(DB, COL, [
+      Query.equal("$id", id),
+      Query.equal("user_email", user.email ?? ""),
+    ])
+    if (res.documents.length === 0) return ApiError.notFound().toResponse()
+    return Response.json({ note: serialize(res.documents[0]) })
   } catch (error) {
-    return toJson(error);
+    return toJson(error)
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  const user = await getSessionUser()
+  if (!user) return ApiError.unauthorized().toResponse()
 
-  const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000, identifier: `notes-update:${user.id}` });
-  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+  const limit = checkRateLimit(request, {
+    limit: 30,
+    windowMs: 60_000,
+    identifier: `notes-update:${user.id}`,
+  })
+  if (!limit.allowed) return ApiError.rateLimited().toResponse()
 
-  const { id } = await params;
+  const { id } = await params
   try {
-    const body = await request.json().catch(() => ({}));
-    const title = (body.title as string | undefined)?.toString().slice(0, 200);
-    const content = body.content; // already a JSON string from the editor
-    const supabase = createServiceClient();
+    const body = await request.json().catch(() => ({}) as Record<string, unknown>)
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    const title = body.title
+    const content = body.content
+    if (typeof title === "string") update.title = title.toString().slice(0, 200)
+    if (typeof content === "string") update.content = content
 
-    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (typeof title === "string") update.title = title;
-    if (typeof content === "string") update.content = content;
+    const res = await databases.listDocuments(DB, COL, [
+      Query.equal("$id", id),
+      Query.equal("user_email", user.email ?? ""),
+    ])
+    if (res.documents.length === 0) return ApiError.notFound().toResponse()
 
-    const { data, error } = await supabase
-      .from("notes")
-      .update(update)
-      .eq("id", id)
-      .eq("user_email", user.email ?? "")
-      .select("id, title, content, created_at, updated_at")
-      .single();
-    if (error) throw error;
-    if (!data) return ApiError.notFound().toResponse();
-    return Response.json({ note: { ...data, content: JSON.stringify(data.content) } });
+    const doc = await databases.updateDocument(DB, COL, id, update)
+    return Response.json({ note: serialize(doc) })
   } catch (error) {
-    return toJson(error);
+    return toJson(error)
   }
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getSessionUser();
-  if (!user) return ApiError.unauthorized().toResponse();
+  const user = await getSessionUser()
+  if (!user) return ApiError.unauthorized().toResponse()
 
-  const { id } = await params;
+  const { id } = await params
   try {
-    const supabase = createServiceClient();
-    const { error } = await supabase
-      .from("notes")
-      .delete()
-      .eq("id", id)
-      .eq("user_email", user.email ?? "");
-    if (error) throw error;
-    return Response.json({ ok: true });
+    const res = await databases.listDocuments(DB, COL, [
+      Query.equal("$id", id),
+      Query.equal("user_email", user.email ?? ""),
+    ])
+    if (res.documents.length === 0) return ApiError.notFound().toResponse()
+
+    await databases.deleteDocument(DB, COL, id)
+    return Response.json({ ok: true })
   } catch (error) {
-    return toJson(error);
+    return toJson(error)
   }
 }

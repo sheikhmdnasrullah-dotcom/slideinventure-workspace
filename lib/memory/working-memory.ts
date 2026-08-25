@@ -4,7 +4,12 @@
  * creates audit trail.
  */
 
-import { SupabaseClient } from "@supabase/supabase-js";
+import { databases, ID } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.workingMemory;
 
 export interface WorkingMemoryEntry {
   id: string;
@@ -32,61 +37,76 @@ export interface WorkingMemoryStats {
   by_source: Record<string, number>;
 }
 
+function parseContext(value: unknown): Record<string, unknown> {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+  return (value as Record<string, unknown>) ?? {};
+}
+
+function serialize(doc: Record<string, any>): WorkingMemoryEntry {
+  return {
+    id: doc.$id,
+    user_email: doc.user_email,
+    content: doc.content,
+    source: doc.source ?? null,
+    context: parseContext(doc.context),
+    expires_at: doc.expires_at,
+    created_at: doc.created_at,
+    promoted_to_knowledge_item_id: doc.promoted_to_knowledge_item_id ?? null,
+  };
+}
+
 /**
  * Create a working memory entry with TTL.
  */
 export async function createWorkingMemory(
-  supabase: SupabaseClient,
   input: CreateWorkingMemoryInput
 ): Promise<{ success: boolean; entry?: WorkingMemoryEntry; error?: string }> {
   const ttlHours = input.ttl_hours ?? 168; // 1 week default
   const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString();
+  const now = new Date().toISOString();
 
-  const entry = {
-    user_email: input.user_email,
-    content: input.content,
-    source: input.source ?? "manual",
-    context: input.context ?? {},
-    expires_at: expiresAt,
-  };
-
-  const { data, error } = await supabase
-    .from("working_memory")
-    .insert(entry)
-    .select()
-    .single();
-
-  if (error) return { success: false, error: error.message };
-  return { success: true, entry: data };
+  try {
+    const doc = await databases.createDocument(DB, COL, ID.unique(), {
+      user_email: input.user_email,
+      content: input.content,
+      source: input.source ?? "manual",
+      context: JSON.stringify(input.context ?? {}),
+      expires_at: expiresAt,
+      promoted_to_knowledge_item_id: null,
+      created_at: now,
+    });
+    return { success: true, entry: serialize(doc) };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Failed to create working memory" };
+  }
 }
 
 /**
  * Get working memory entries for a user (non-expired by default).
  */
 export async function getWorkingMemory(
-  supabase: SupabaseClient,
   userEmail: string,
   options: { includeExpired?: boolean; limit?: number; source?: string } = {}
 ): Promise<WorkingMemoryEntry[]> {
-  let query = supabase
-    .from("working_memory")
-    .select("*")
-    .eq("user_email", userEmail)
-    .order("created_at", { ascending: false });
+  const queries: string[] = [Query.equal("user_email", userEmail)];
 
   if (!options.includeExpired) {
-    query = query.gt("expires_at", new Date().toISOString());
+    queries.push(Query.greaterThanEqual("expires_at", new Date().toISOString()));
   }
   if (options.source) {
-    query = query.eq("source", options.source);
+    queries.push(Query.equal("source", options.source));
   }
-  if (options.limit) {
-    query = query.limit(options.limit);
-  }
+  queries.push(Query.orderDesc("created_at"));
+  if (options.limit) queries.push(Query.limit(options.limit));
 
-  const { data, error } = await query;
-  if (error) throw new Error(`Working memory fetch failed: ${error.message}`);
-  return data ?? [];
+  const res = await databases.listDocuments(DB, COL, queries);
+  return res.documents.map(serialize);
 }
 
 /**
@@ -94,59 +114,62 @@ export async function getWorkingMemory(
  * Returns the new knowledge_item_id.
  */
 export async function promoteToKnowledge(
-  supabase: SupabaseClient,
   workingMemoryId: string,
   knowledgeItemId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
-    .from("working_memory")
-    .update({ promoted_to_knowledge_item_id: knowledgeItemId })
-    .eq("id", workingMemoryId);
-
-  if (error) return { success: false, error: error.message };
-  return { success: true };
+  try {
+    await databases.updateDocument(DB, COL, workingMemoryId, {
+      promoted_to_knowledge_item_id: knowledgeItemId,
+    });
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Failed to promote" };
+  }
 }
 
 /**
  * Delete a working memory entry.
  */
 export async function deleteWorkingMemory(
-  supabase: SupabaseClient,
   id: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase.from("working_memory").delete().eq("id", id);
-  if (error) return { success: false, error: error.message };
-  return { success: true };
+  try {
+    await databases.deleteDocument(DB, COL, id);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Failed to delete" };
+  }
 }
 
 /**
  * Clean up expired entries. Returns count of deleted rows.
  */
-export async function cleanupExpiredWorkingMemory(
-  supabase: SupabaseClient
-): Promise<number> {
-  const { count, error } = await supabase
-    .from("working_memory")
-    .delete()
-    .lt("expires_at", new Date().toISOString());
+export async function cleanupExpiredWorkingMemory(): Promise<number> {
+  const res = await databases.listDocuments(DB, COL, [
+    Query.lessThan("expires_at", new Date().toISOString()),
+    Query.limit(1000),
+  ]);
 
-  if (error) throw new Error(`Cleanup failed: ${error.message}`);
-  return count ?? 0;
+  let deleted = 0;
+  for (const doc of res.documents) {
+    await databases.deleteDocument(DB, COL, doc.$id);
+    deleted++;
+  }
+  return deleted;
 }
 
 /**
  * Get working memory stats for a user.
  */
 export async function getWorkingMemoryStats(
-  supabase: SupabaseClient,
   userEmail: string
 ): Promise<WorkingMemoryStats> {
-  const { data: all } = await supabase
-    .from("working_memory")
-    .select("source, expires_at, promoted_to_knowledge_item_id")
-    .eq("user_email", userEmail);
+  const res = await databases.listDocuments(DB, COL, [
+    Query.equal("user_email", userEmail),
+    Query.limit(5000),
+  ]);
 
-  const entries = (all ?? []) as Array<{ source: string; expires_at: string; promoted_to_knowledge_item_id: string | null }>;
+  const entries = res.documents.map(serialize);
   const now = new Date().toISOString();
 
   return {
@@ -154,7 +177,8 @@ export async function getWorkingMemoryStats(
     expired: entries.filter((e) => e.expires_at < now).length,
     promoted: entries.filter((e) => e.promoted_to_knowledge_item_id).length,
     by_source: entries.reduce((acc: Record<string, number>, e) => {
-      acc[e.source] = (acc[e.source] ?? 0) + 1;
+      const k = e.source ?? "unknown";
+      acc[k] = (acc[k] ?? 0) + 1;
       return acc;
     }, {} as Record<string, number>),
   };

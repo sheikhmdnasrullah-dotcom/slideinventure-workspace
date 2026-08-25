@@ -1,7 +1,31 @@
 import { NextRequest } from "next/server";
-import { getSessionUser, createServiceClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.boards;
+
+function serialize(doc: Record<string, any>) {
+  return {
+    id: doc.$id,
+    title: doc.title,
+    content: doc.content,
+    created_at: doc.created_at,
+    updated_at: doc.updated_at,
+  };
+}
+
+async function fetchOwned(id: string, email: string) {
+  const res = await databases.listDocuments(DB, COL, [
+    Query.equal("$id", id),
+    Query.equal("user_email", email),
+  ]);
+  return res.documents[0] ?? null;
+}
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -9,16 +33,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { id } = await params;
   try {
-    const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from("boards")
-      .select("id, title, content, created_at, updated_at")
-      .eq("id", id)
-      .eq("user_email", user.email ?? "")
-      .single();
-    if (error) throw error;
-    if (!data) return ApiError.notFound().toResponse();
-    return Response.json({ board: { ...data, content: JSON.stringify(data.content) } });
+    const doc = await fetchOwned(id, user.email ?? "");
+    if (!doc) return ApiError.notFound().toResponse();
+    return Response.json({ board: serialize(doc) });
   } catch (error) {
     return toJson(error);
   }
@@ -33,25 +50,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
   try {
+    const doc = await fetchOwned(id, user.email ?? "");
+    if (!doc) return ApiError.notFound().toResponse();
+
     const body = await request.json().catch(() => ({}));
     const title = (body.title as string | undefined)?.toString().slice(0, 200);
-    const content = body.content; // already a JSON string from the whiteboard
-    const supabase = createServiceClient();
-
+    const content = body.content;
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (typeof title === "string") update.title = title;
     if (typeof content === "string") update.content = content;
 
-    const { data, error } = await supabase
-      .from("boards")
-      .update(update)
-      .eq("id", id)
-      .eq("user_email", user.email ?? "")
-      .select("id, title, content, created_at, updated_at")
-      .single();
-    if (error) throw error;
-    if (!data) return ApiError.notFound().toResponse();
-    return Response.json({ board: { ...data, content: JSON.stringify(data.content) } });
+    const updated = await databases.updateDocument(DB, COL, id, update);
+    return Response.json({ board: serialize(updated) });
   } catch (error) {
     return toJson(error);
   }
@@ -63,13 +73,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
   const { id } = await params;
   try {
-    const supabase = createServiceClient();
-    const { error } = await supabase
-      .from("boards")
-      .delete()
-      .eq("id", id)
-      .eq("user_email", user.email ?? "");
-    if (error) throw error;
+    const doc = await fetchOwned(id, user.email ?? "");
+    if (!doc) return ApiError.notFound().toResponse();
+
+    await databases.deleteDocument(DB, COL, id);
     return Response.json({ ok: true });
   } catch (error) {
     return toJson(error);
