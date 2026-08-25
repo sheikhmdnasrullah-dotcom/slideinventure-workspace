@@ -33,7 +33,7 @@ export function LoginForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "same-origin",
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -45,7 +45,7 @@ export function LoginForm({
 
       setTimeout(() => {
         window.location.assign("/");
-      }, 100);
+      }, 1000);
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
