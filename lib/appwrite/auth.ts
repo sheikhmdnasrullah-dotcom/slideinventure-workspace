@@ -24,10 +24,34 @@ export async function getSessionUser(): Promise<{ id: string; email: string } | 
 }
 
 export async function createEmailPasswordSession(email: string, password: string): Promise<string> {
-  const client = new Client().setEndpoint(ENDPOINT).setProject(PROJECT)
-  const account = new Account(client)
-  const session = await account.createEmailPasswordSession(email, password)
-  return session.$id
+  const res = await fetch(`${ENDPOINT}/account/sessions/email`, {
+    method: "POST",
+    headers: { "X-Appwrite-Project": PROJECT, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!res.ok) {
+    throw new Error("Invalid email or password")
+  }
+
+  const fallback = res.headers.get("x-fallback-cookies")
+  if (fallback) {
+    try {
+      const parsed = JSON.parse(fallback) as Record<string, string>
+      const key = `a_session_${PROJECT}`
+      if (parsed[key]) return parsed[key]
+    } catch {
+      // ignore parse error and fall back to set-cookie parsing below
+    }
+  }
+
+  const prefix = `a_session_${PROJECT}=`
+  const setCookies =
+    typeof res.headers.getSetCookie === "function"
+      ? res.headers.getSetCookie()
+      : [res.headers.get("set-cookie") || ""]
+  const cookie = setCookies.find((c) => c.startsWith(prefix))
+  if (!cookie) throw new Error("No session cookie returned")
+  return cookie.slice(prefix.length).split(";")[0]
 }
 
 export async function deleteCurrentSession() {
