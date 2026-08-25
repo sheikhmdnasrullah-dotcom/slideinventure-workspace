@@ -44,7 +44,9 @@ export const commandMenuStore = {
 };
 
 export function useCommandMenu<T>(selector: (s: State) => T): T {
-  return useSyncExternalStore(commandMenuStore.subscribe, () =>
-    selector(commandMenuStore.getSnapshot())
-  );
+  return useSyncExternalStore(
+    commandMenuStore.subscribe,
+    () => selector(commandMenuStore.getSnapshot()),
+    () => selector(commandMenuStore.getSnapshot())
+  )
 }
