@@ -1,5 +1,11 @@
 import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { databases } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import type { DashboardResponse, ChartPoint, ActivityRow, KpiCard } from "@/lib/dashboard/types";
+
+const DB = APPWRITE.databaseId;
+const RUNS = APPWRITE.collections.taskRuns;
 
 function buildChart(days: number, runs: any[]): ChartPoint[] {
   const points: ChartPoint[] = [];
@@ -51,14 +57,22 @@ export async function GET() {
   }
 
   try {
-    const { data: taskRunsData } = await supabase
-      .from("task_runs")
-      .select("id, task_type, status, command, exit_code, started_at, completed_at, triggered_by")
-      .order("started_at", { ascending: false })
-      .limit(100);
-    taskRuns = taskRunsData ?? [];
+    const res = await databases.listDocuments(DB, RUNS, [
+      Query.orderDesc("started_at"),
+      Query.limit(100),
+    ]);
+    taskRuns = res.documents.map((d: any) => ({
+      id: d.$id,
+      task_type: d.task_type,
+      status: d.status,
+      command: d.command,
+      exit_code: d.exit_code,
+      started_at: d.started_at,
+      completed_at: d.completed_at,
+      triggered_by: d.triggered_by,
+    }));
   } catch {
-    // Supabase unreachable; degrade gracefully with empty data
+    // Appwrite unreachable; degrade gracefully with empty data
   }
 
   try {

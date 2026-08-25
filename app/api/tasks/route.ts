@@ -1,7 +1,27 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.taskRuns;
+
+function serialize(doc: Record<string, any>) {
+  return {
+    id: doc.$id,
+    task_type: doc.task_type,
+    status: doc.status,
+    command: doc.command,
+    exit_code: doc.exit_code,
+    started_at: doc.started_at,
+    completed_at: doc.completed_at,
+    triggered_by: doc.triggered_by,
+    knowledge_item_id: doc.knowledge_item_id,
+  };
+}
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
@@ -10,18 +30,16 @@ export async function GET(request: NextRequest) {
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
-  const supabase = createServiceClient();
   let data: unknown[] = [];
 
   try {
-    const result = await supabase
-      .from("task_runs")
-      .select("id, task_type, status, command, exit_code, started_at, completed_at, triggered_by, knowledge_item_id")
-      .order("started_at", { ascending: false })
-      .limit(100);
-    data = result.data ?? [];
+    const result = await databases.listDocuments(DB, COL, [
+      Query.orderDesc("started_at"),
+      Query.limit(100),
+    ]);
+    data = result.documents.map(serialize);
   } catch {
-    // Supabase unreachable; return empty list
+    // Appwrite unreachable; return empty list
   }
 
   return Response.json(data);

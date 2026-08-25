@@ -1,12 +1,17 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { z } from "zod";
 import { execAndRecord } from "@/lib/tasks/runner";
-import { randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { recordAudit } from "@/lib/api/audit";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.taskRuns;
 
 type TaskType = "script" | "research" | "cold_email" | "automation" | "system";
 
@@ -28,22 +33,22 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const validated = validate(TaskRunInputSchema, body);
 
-  const supabase = createServiceClient();
-  const id = randomUUID();
+  const id = ID.unique();
   const now = new Date().toISOString();
 
-  const { error } = await supabase.from("task_runs").insert({
-    id,
-    task_type: validated.data.task_type,
-    status: "running",
-    command: validated.data.command ?? null,
-    triggered_by: validated.data.triggered_by ?? null,
-    knowledge_item_id: validated.data.knowledge_item_id ?? null,
-    metadata: validated.data.metadata ?? {},
-    started_at: now,
-  });
-
-  if (error) return ApiError.internal("DB_ERROR", "Database unavailable").toResponse();
+  try {
+    await databases.createDocument(DB, COL, id, {
+      task_type: validated.data.task_type,
+      status: "running",
+      command: validated.data.command ?? null,
+      triggered_by: validated.data.triggered_by ?? null,
+      knowledge_item_id: validated.data.knowledge_item_id ?? null,
+      metadata: JSON.stringify(validated.data.metadata ?? {}),
+      started_at: now,
+    });
+  } catch {
+    return ApiError.internal("DB_ERROR", "Database unavailable").toResponse();
+  }
 
   await recordAudit({
     table: "task_runs",

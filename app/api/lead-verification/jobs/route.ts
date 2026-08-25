@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getSessionUser } from "@/lib/supabase/server"
+import { getSessionUser } from "@/lib/appwrite/auth"
 
 const JOB_API_URL = process.env.LEAD_JOB_API_URL ?? "https://leads.nasrullahtanim.me"
 const JOB_API_SECRET = process.env.LEAD_JOB_API_SECRET ?? ""

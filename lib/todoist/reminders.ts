@@ -1,8 +1,13 @@
 import 'server-only'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { databases } from '@/lib/appwrite/server'
+import { ID, Query } from 'node-appwrite'
+import { APPWRITE } from '@/lib/appwrite/config'
 import { sendMail } from '@/lib/mail/smtp'
 import { getDefaultAccount } from '@/lib/mail/accounts'
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.todoistTasks
 
 export interface TaskReminder {
   id: string
@@ -17,6 +22,13 @@ export interface TaskReminder {
 
 const REMINDER_LEAD_MINUTES = 60
 const REMINDER_EMAIL = 'nasrullahtanim@gmail.com'
+
+function parseJson(v: unknown): Record<string, unknown> {
+  if (typeof v === 'string') {
+    try { return JSON.parse(v) } catch { return {} }
+  }
+  return (v as Record<string, unknown>) ?? {}
+}
 
 function isDueSoon(dueDate?: string): boolean {
   if (!dueDate) return false
@@ -66,11 +78,15 @@ export async function sendTaskReminder(task: TaskReminder): Promise<boolean> {
       body: formatReminderBody(task),
     })
 
-    const supabase = createServiceClient()
-    await supabase
-      .from('todoist_tasks')
-      .update({ metadata: { ...task.metadata, reminder_sent_at: new Date().toISOString() } })
-      .eq('external_id', task.externalId ?? task.id)
+    const externalId = task.externalId ?? task.id
+    const res = await databases.listDocuments(DB, COL, [Query.equal('external_id', externalId)])
+
+    for (const doc of res.documents) {
+      const meta = parseJson(doc.metadata)
+      await databases.updateDocument(DB, COL, doc.$id, {
+        metadata: JSON.stringify({ ...meta, reminder_sent_at: new Date().toISOString() }),
+      })
+    }
 
     return true
   } catch (error) {
@@ -80,46 +96,50 @@ export async function sendTaskReminder(task: TaskReminder): Promise<boolean> {
 }
 
 export async function checkUpcomingDeadlines(): Promise<{ sent: number; failed: number }> {
-  const supabase = createServiceClient()
+  try {
+    const res = await databases.listDocuments(DB, COL, [Query.equal('completed', false), Query.limit(5000)])
+    const tasks = res.documents
+      .filter((d) => d.due_date != null)
+      .map((d) => ({
+        id: d.$id,
+        externalId: d.external_id ?? undefined,
+        content: d.content,
+        dueDate: d.due_date ?? undefined,
+        completed: d.completed,
+        assignee: d.assignee ?? undefined,
+        reminderSentAt: (parseJson(d.metadata).reminder_sent_at as string | undefined) ?? undefined,
+        metadata: parseJson(d.metadata),
+      }))
 
-  const { data: tasks, error } = await supabase
-    .from('todoist_tasks')
-    .select('*')
-    .eq('completed', false)
-    .not('due_date', 'is', null)
-    .order('due_date', { ascending: true })
+    let sent = 0
+    let failed = 0
 
-  if (error || !tasks) {
+    for (const task of tasks) {
+      const reminderSentAt = task.reminderSentAt
+
+      if (reminderSentAt && !isOverdue(task.dueDate)) {
+        continue
+      }
+
+      const shouldRemind = isDueSoon(task.dueDate) || isOverdue(task.dueDate)
+      if (!shouldRemind) continue
+
+      const ok = await sendTaskReminder({
+        id: task.id,
+        externalId: task.externalId,
+        content: task.content,
+        dueDate: task.dueDate,
+        completed: task.completed,
+        assignee: task.assignee,
+        reminderSentAt,
+      })
+
+      if (ok) { sent++ } else { failed++ }
+    }
+
+    return { sent, failed }
+  } catch (error) {
     console.error('Failed to fetch tasks for reminders:', error)
     return { sent: 0, failed: 0 }
   }
-
-  let sent = 0
-  let failed = 0
-
-  for (const task of tasks) {
-    const metadata = (task.metadata as Record<string, unknown>) ?? {}
-    const reminderSentAt = metadata.reminder_sent_at as string | undefined
-
-    if (reminderSentAt && !isOverdue(task.due_date)) {
-      continue
-    }
-
-    const shouldRemind = isDueSoon(task.due_date) || isOverdue(task.due_date)
-    if (!shouldRemind) continue
-
-    const ok = await sendTaskReminder({
-      id: task.id,
-      externalId: task.external_id ?? undefined,
-      content: task.content,
-      dueDate: task.due_date ?? undefined,
-      completed: task.completed,
-      assignee: task.assignee ?? undefined,
-      reminderSentAt,
-    })
-
-    if (ok) { sent++ } else { failed++ }
-  }
-
-  return { sent, failed }
 }

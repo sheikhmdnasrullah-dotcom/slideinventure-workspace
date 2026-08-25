@@ -1,7 +1,21 @@
-import { requireUser, createServiceClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server";
+import { databases } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { PageHeader, Section, Surface, Badge } from "@/components/system";
 import { AgentType } from "@/lib/agents/registry";
 import { cn } from "@/lib/utils";
+
+const DB = APPWRITE.databaseId;
+const RUNS = APPWRITE.collections.taskRuns;
+const EVENTS = APPWRITE.collections.taskRunEvents;
+
+function parseJson(v: unknown): Record<string, unknown> {
+  if (typeof v === "string") {
+    try { return JSON.parse(v); } catch { return {}; }
+  }
+  return (v as Record<string, unknown>) ?? {};
+}
 
 type TaskRun = {
   id: string;
@@ -28,21 +42,47 @@ type ProgressEvent = {
 export default async function AgentsPage() {
   await requireUser();
 
-  const supabase = createServiceClient();
-
-  const [{ data: runsData }, { data: progressData }] = await Promise.all([
-    supabase
-      .from("task_runs")
-      .select("id, task_type, status, command, output, exit_code, started_at, completed_at, triggered_by, metadata")
-      .order("started_at", { ascending: false })
-      .limit(50),
-    supabase
-      .from("task_run_latest_progress")
-      .select("task_run_id, current, total, current_item, status, created_at"),
+  const runsRes = await databases.listDocuments(DB, RUNS, [
+    Query.orderDesc("started_at"),
+    Query.limit(50),
   ]);
 
-  const runs = (runsData ?? []) as TaskRun[];
-  const progressMap = new Map((progressData ?? []).map((p: ProgressEvent) => [p.task_run_id, p]));
+  const runs = runsRes.documents.map((d: any) => ({
+    id: d.$id,
+    task_type: d.task_type,
+    status: d.status,
+    command: d.command,
+    output: d.output,
+    exit_code: d.exit_code,
+    started_at: d.started_at,
+    completed_at: d.completed_at,
+    triggered_by: d.triggered_by,
+    metadata: parseJson(d.metadata),
+  })) as TaskRun[];
+
+  // Replicate the `task_run_latest_progress` view: latest event (max sequence) per task_run_id.
+  const progressMap = new Map<string, ProgressEvent>();
+  if (runs.length) {
+    const evRes = await databases.listDocuments(DB, EVENTS, [
+      Query.equal("task_run_id", runs.map((r) => r.id)),
+      Query.limit(5000),
+    ]);
+    const best = new Map<string, any>();
+    for (const e of evRes.documents) {
+      const cur = best.get(e.task_run_id);
+      if (!cur || e.sequence > cur.sequence) best.set(e.task_run_id, e);
+    }
+    for (const [k, v] of best) {
+      progressMap.set(k, {
+        task_run_id: v.task_run_id,
+        current: v.current,
+        total: v.total,
+        current_item: v.current_item ?? null,
+        status: v.status,
+        created_at: v.created_at,
+      });
+    }
+  }
 
   // Get running tasks
   const running = runs.filter((r) => r.status === "running");

@@ -3,40 +3,61 @@
  * Writes progress events to task_run_events for live "43/100" UX.
  */
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { Client, Databases, ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { ProgressPayload, TaskRunMetadata } from "./registry";
+
+// Self-contained Appwrite client (service role). Imported by both the Next.js
+// server runtime and the standalone `scripts/agent.ts` Node script, so it
+// intentionally constructs its own client instead of the "server-only" wrapper.
+const client = new Client()
+  .setEndpoint(process.env.APPWRITE_ENDPOINT!)
+  .setProject(process.env.APPWRITE_PROJECT_ID!)
+  .setKey(process.env.APPWRITE_API_KEY!);
+
+const databases = new Databases(client);
+
+const DB = APPWRITE.databaseId;
+const RUNS = APPWRITE.collections.taskRuns;
+const EVENTS = APPWRITE.collections.taskRunEvents;
+
+function parseJson(v: unknown): Record<string, unknown> {
+  if (typeof v === "string") {
+    try { return JSON.parse(v); } catch { return {}; }
+  }
+  return (v as Record<string, unknown>) ?? {};
+}
 
 /**
  * Report progress for a task run. Writes to task_run_events with
  * monotonically increasing sequence numbers.
  */
 export async function reportProgress(
-  supabase: SupabaseClient,
+  _supabase: unknown,
   taskRunId: string,
   progress: ProgressPayload
 ): Promise<void> {
-  // Get next sequence number
-  const { data: latest } = await supabase
-    .from("task_run_events")
-    .select("sequence")
-    .eq("task_run_id", taskRunId)
-    .order("sequence", { ascending: false })
-    .limit(1)
-    .single();
+  try {
+    const res = await databases.listDocuments(DB, EVENTS, [
+      Query.equal("task_run_id", taskRunId),
+      Query.orderDesc("sequence"),
+      Query.limit(1),
+    ]);
 
-  const sequence = (latest?.sequence ?? 0) + 1;
+    const latest = res.documents[0];
+    const sequence = (latest?.sequence ?? 0) + 1;
 
-  const { error } = await supabase.from("task_run_events").insert({
-    task_run_id: taskRunId,
-    sequence,
-    current: progress.current,
-    total: progress.total,
-    current_item: progress.currentItem,
-    status: progress.status ?? "running",
-    metadata: progress.metadata ?? {},
-  });
-
-  if (error) {
+    await databases.createDocument(DB, EVENTS, ID.unique(), {
+      task_run_id: taskRunId,
+      sequence,
+      current: progress.current,
+      total: progress.total,
+      current_item: progress.currentItem ?? null,
+      status: progress.status ?? "running",
+      metadata: JSON.stringify(progress.metadata ?? {}),
+      created_at: new Date().toISOString(),
+    });
+  } catch (error) {
     console.error("Progress report failed:", error);
   }
 }
@@ -45,30 +66,27 @@ export async function reportProgress(
  * Complete a task run with final status.
  */
 export async function completeTaskRun(
-  supabase: SupabaseClient,
+  _supabase: unknown,
   taskRunId: string,
   status: "completed" | "failed",
   output: string,
   exitCode: number,
   metadata?: TaskRunMetadata
 ): Promise<void> {
-  const { error } = await supabase
-    .from("task_runs")
-    .update({
+  try {
+    await databases.updateDocument(DB, RUNS, taskRunId, {
       status,
       output,
       exit_code: exitCode,
       completed_at: new Date().toISOString(),
-      metadata: metadata ?? {},
-    })
-    .eq("id", taskRunId);
-
-  if (error) {
+      metadata: JSON.stringify(metadata ?? {}),
+    });
+  } catch (error) {
     console.error("Task completion update failed:", error);
   }
 
   // Also emit final progress event
-  await reportProgress(supabase, taskRunId, {
+  await reportProgress(_supabase, taskRunId, {
     current: 1,
     total: 1,
     status,
@@ -85,7 +103,7 @@ export async function completeTaskRun(
  *   }
  */
 export function createProgressReporter(
-  supabase: SupabaseClient,
+  _supabase: unknown,
   taskRunId: string,
   total: number
 ) {
@@ -100,7 +118,7 @@ export function createProgressReporter(
       status: progress.status ?? "running",
     };
     await reportProgress(
-      supabase,
+      _supabase,
       taskRunId,
       payload as { current: number; total: number; currentItem?: string; status: "starting" | "running" | "completed" | "failed" }
     );
@@ -111,7 +129,7 @@ export function createProgressReporter(
  * Increment helper for simple loops.
  */
 export function createIncrementalReporter(
-  supabase: SupabaseClient,
+  _supabase: unknown,
   taskRunId: string,
   total: number
 ) {
@@ -119,7 +137,7 @@ export function createIncrementalReporter(
 
   return async (currentItem?: string) => {
     current++;
-    await reportProgress(supabase, taskRunId, {
+    await reportProgress(_supabase, taskRunId, {
       current,
       total,
       currentItem,
