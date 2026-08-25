@@ -4,6 +4,7 @@ import { ID, Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+import { nvidiaComplete } from "@/lib/llm/nvidia";
 import { NextRequest } from "next/server";
 
 const DB = APPWRITE.databaseId;
@@ -71,34 +72,6 @@ async function nvidiaRerank(query: string, passages: string[]): Promise<number[]
 
   const data = await res.json();
   return data.data.map((d: any) => d.index);
-}
-
-async function nvidiaComplete(messages: Array<{ role: string; content: string }>): Promise<string> {
-  const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) throw new Error("NVIDIA_API_KEY not set");
-
-  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: LLM_MODEL,
-      messages,
-      temperature: 0.2,
-      max_tokens: 2048,
-      stream: false,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`NVIDIA complete failed: ${res.status} ${err}`);
-  }
-
-  const data = await res.json();
-  return data.choices[0]?.message?.content ?? "";
 }
 
 interface EvidenceChunk {

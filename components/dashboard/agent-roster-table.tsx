@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { DataTable, FilterBar, Badge, type Column } from "@/components/system";
+import { AgentRunSheet } from "@/components/dashboard/agent-run-sheet";
 import type { RosterAgent } from "@/lib/agents/roster";
 
 const DIVISION_LABELS: Record<string, string> = {
@@ -34,6 +35,7 @@ export function AgentRosterTable({
 }) {
   const [query, setQuery] = useState("");
   const [division, setDivision] = useState("all");
+  const [active, setActive] = useState<RosterAgent | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -113,8 +115,10 @@ export function AgentRosterTable({
         columns={columns}
         data={filtered}
         rowKey="slug"
+        onRowClick={(a) => setActive(a)}
         empty={{ title: "No agents match", description: "Try a different search or division." }}
       />
+      <AgentRunSheet agent={active} onOpenChange={(open) => !open && setActive(null)} />
     </div>
   );
 }

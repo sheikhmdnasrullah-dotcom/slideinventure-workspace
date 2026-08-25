@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  Bot,
   Brain,
   Cable,
   FileText,
@@ -43,6 +44,7 @@ const NAV_MAIN = [
     ],
   },
   { title: "Chat", url: "/chat", icon: MessageSquare },
+  { title: "Agents", url: "/agents", icon: Bot },
   { title: "Todoist", url: "/todoist", icon: Sparkles },
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
   { title: "Documents", url: "/documents", icon: FileText },

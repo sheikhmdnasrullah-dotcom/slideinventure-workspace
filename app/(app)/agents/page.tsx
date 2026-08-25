@@ -214,9 +214,9 @@ export default async function AgentsPage() {
       {/* Agent roster */}
       <Section tone="base">
         <PageHeader
-          eyebrow="Reference"
+          eyebrow="Roster"
           title="Agent roster"
-          meta={`${roster.length} Claude Code subagent personas across ${rosterDivisions.length} divisions`}
+          meta={`${roster.length} specialist agents across ${rosterDivisions.length} divisions — click one to chat`}
         />
         <Surface variant="raised">
           {roster.length === 0 ? (
@@ -234,10 +234,11 @@ export default async function AgentsPage() {
           ) : (
             <>
               <p className="font-body text-sm text-ink-muted pb-2">
-                Reference catalog of the specialist subagent personas installed in{" "}
-                <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">.claude/agents/</code>.
-                Invoke one by name in a Claude Code session — e.g. &ldquo;Activate {roster[0]?.name} and…&rdquo;.
-                This catalog is read-only and separate from the live execution runs above.
+                Click any agent below to chat with it directly — each responds in-character using
+                its persona prompt. The same files are also installed in{" "}
+                <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">.claude/agents/</code>{" "}
+                for use inside Claude Code sessions. This roster is separate from the live
+                task-run executions above.
               </p>
               <AgentRosterTable agents={roster} divisions={rosterDivisions} />
             </>

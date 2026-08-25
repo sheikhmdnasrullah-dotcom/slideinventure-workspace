@@ -89,3 +89,27 @@ export function getAgentRoster(): RosterAgent[] {
 export function getAgentDivisions(agents: RosterAgent[]): string[] {
   return Array.from(new Set(agents.map((a) => a.division))).sort();
 }
+
+const SLUG_RE = /^[a-z0-9-]+$/;
+
+/**
+ * Full system-prompt body (frontmatter stripped) for one installed agent,
+ * looked up by slug. Returns null for an unknown or invalid slug — callers
+ * must treat that as 404, not fall back to a default prompt.
+ */
+export function getAgentPrompt(slug: string): { name: string; prompt: string } | null {
+  if (!SLUG_RE.test(slug)) return null;
+  const file = path.join(AGENTS_DIR, `${slug}.md`);
+  let raw: string;
+  try {
+    raw = fs.readFileSync(file, "utf8");
+  } catch {
+    return null;
+  }
+  const data = parseFrontmatter(raw);
+  const body = raw.replace(/^---\n[\s\S]*?\n---\n?/, "").trim();
+  return {
+    name: typeof data.name === "string" ? data.name : slug,
+    prompt: body,
+  };
+}
