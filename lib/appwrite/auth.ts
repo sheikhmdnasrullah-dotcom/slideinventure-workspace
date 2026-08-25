@@ -1,6 +1,7 @@
 import "server-only"
 import { cookies } from "next/headers"
 import { Client, Account } from "node-appwrite"
+import https from "node:https"
 
 const ENDPOINT = process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1"
 const PROJECT = process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc"
@@ -24,37 +25,64 @@ export async function getSessionUser(): Promise<{ id: string; email: string } | 
 }
 
 export async function createEmailPasswordSession(email: string, password: string): Promise<string> {
-  const res = await fetch(`${ENDPOINT}/account/sessions/email`, {
-    method: "POST",
-    headers: { "X-Appwrite-Project": PROJECT, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+  const payload = JSON.stringify({ email, password })
+
+  const url = new URL(`${ENDPOINT}/account/sessions/email`)
+  const apiHeaders = {
+    "X-Appwrite-Project": PROJECT,
+    "content-type": "application/json",
+    "accept": "application/json",
+  }
+
+  const session = await new Promise<string>((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: url.hostname,
+        port: url.port || 443,
+        path: url.pathname,
+        method: "POST",
+        headers: apiHeaders,
+      },
+      (res) => {
+        const chunks: Buffer[] = []
+        res.on("data", (chunk) => chunks.push(chunk))
+        res.on("end", () => {
+          if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+            return reject(new Error("Invalid email or password"))
+          }
+
+          const setCookie = res.headers["set-cookie"] as string[] | undefined
+          const target = `a_session_${PROJECT}=`
+          if (setCookie) {
+            for (const c of setCookie) {
+              if (c.startsWith(target)) {
+                return resolve(c.slice(target.length).split(";")[0])
+              }
+            }
+          }
+
+          const fallbackRaw = res.headers["x-fallback-cookies"] as string | undefined
+          if (fallbackRaw) {
+            try {
+              const parsed = JSON.parse(fallbackRaw) as Record<string, string>
+              const val = parsed[`a_session_${PROJECT}`]
+              if (val) return resolve(val)
+            } catch {
+              // ignore
+            }
+          }
+
+          reject(new Error("No session cookie returned"))
+        })
+      }
+    )
+
+    req.on("error", reject)
+    req.write(payload)
+    req.end()
   })
-  if (!res.ok) {
-    throw new Error("Invalid email or password")
-  }
 
-  const appwriteSession = res.headers.get("x-appwrite-session")
-  if (appwriteSession) return appwriteSession
-
-  const fallback = res.headers.get("x-fallback-cookies")
-  if (fallback) {
-    try {
-      const parsed = JSON.parse(fallback) as Record<string, string>
-      const key = `a_session_${PROJECT}`
-      if (parsed[key]) return parsed[key]
-    } catch {
-      // ignore parse error and fall back to set-cookie parsing below
-    }
-  }
-
-  const prefix = `a_session_${PROJECT}=`
-  const setCookies =
-    typeof res.headers.getSetCookie === "function"
-      ? res.headers.getSetCookie()
-      : [res.headers.get("set-cookie") || ""]
-  const cookie = setCookies.find((c) => c.startsWith(prefix))
-  if (!cookie) throw new Error("No session cookie returned")
-  return cookie.slice(prefix.length).split(";")[0]
+  return session
 }
 
 export async function deleteCurrentSession() {
