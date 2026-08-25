@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { Client, Sites, ID } from "node-appwrite"
+import { Client, Sites, ID, Query } from "node-appwrite"
 import { InputFile } from "node-appwrite/file"
 
 const client = new Client()
@@ -26,37 +26,54 @@ function parseEnv(path) {
 async function ensureVars() {
   const env = parseEnv(".env.local")
   const desired = Object.keys(env).filter((k) => k !== "VERCEL_OIDC_TOKEN")
-  const existing = await sites.listVariables(SITE)
-  const map = new Map((existing.variables || []).map((v) => [v.key, v]))
+  const all = []
+  let page = await sites.listVariables(SITE, [Query.limit(100)])
+  all.push(...(page.variables || []))
+  while (page.variables && page.variables.length === 100) {
+    const last = page.variables[page.variables.length - 1]
+    page = await sites.listVariables(SITE, [Query.limit(100), Query.cursorAfter(last.$id)])
+    all.push(...(page.variables || []))
+  }
+  const map = new Map(all.map((v) => [v.key, v]))
   for (const key of desired) {
     const value = env[key]
     if (typeof value !== "string" || value.length > 8192) {
       console.log(`SKIP/problem ${key}: type=${typeof value} len=${value?.length}`)
       continue
     }
-    const secret = !key.startsWith("NEXT_PUBLIC_")
     const cur = map.get(key)
     try {
       if (cur) {
-        await sites.updateVariable(SITE, cur.$id, key, value, secret)
+        // keep the existing secret flag; only update key/value
+        await sites.updateVariable(SITE, cur.$id, key, value, cur.secret)
         console.log(`updated ${key}`)
       } else {
+        const secret = !key.startsWith("NEXT_PUBLIC_")
         await sites.createVariable(SITE, ID.unique(), key, value, secret)
         console.log(`created ${key}`)
       }
     } catch (e) {
-      if (/non-secret/i.test(e.message) && cur) {
-        try {
-          await sites.deleteVariable(SITE, cur.$id)
-          await sites.createVariable(SITE, ID.unique(), key, value, secret)
-          console.log(`recreated ${key} as secret=${secret}`)
-        } catch (e2) {
-          console.log(`ERROR recreating ${key}: ${e2.message}`)
-        }
-      } else {
-        console.log(`ERROR ${key}: ${e.message}`)
-      }
+      console.log(`ERROR ${key}: ${e.message}`)
     }
+  }
+
+  // Probe: prove secret writes actually persist (non-secret value is returned by API)
+  try {
+    await sites.createVariable(SITE, ID.unique(), "_probe", "probe-ok", false)
+    const allP = []
+    let pp = await sites.listVariables(SITE, [Query.limit(100)])
+    allP.push(...(pp.variables || []))
+    while (pp.variables && pp.variables.length === 100) {
+      const last = pp.variables[pp.variables.length - 1]
+      pp = await sites.listVariables(SITE, [Query.limit(100), Query.cursorAfter(last.$id)])
+      allP.push(...(pp.variables || []))
+    }
+    const probe = (allP).find((v) => v.key === "_probe")
+    const got = probe ? await sites.getVariable(SITE, probe.$id) : null
+    console.log(`PROBE write persisted: ${got && got.value === "probe-ok" ? "YES" : "NO (" + (got && got.value) + ")"}`)
+    if (probe) await sites.deleteVariable(SITE, probe.$id)
+  } catch (e) {
+    console.log("PROBE error:", e.message)
   }
   console.log(`\nDone. ${desired.length} variables ensured.`)
 }
