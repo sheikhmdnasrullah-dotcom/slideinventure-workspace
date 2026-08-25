@@ -125,17 +125,25 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
     const result: Record<string, unknown>[] = []
     for (let i = 1; i < preview.length; i++) {
       const row: Record<string, unknown> = {}
+      const customFields: Record<string, unknown> = {}
+      let hasCustom = false
       headers.forEach((header, index) => {
         const field = mapping[header]
-        if (field && field !== "ignore") {
-          const value = preview[i][index]?.trim() || ""
+        const value = (preview[i][index] ?? "").toString().trim()
+        if (!value) return
+        if (field && field !== "ignore" && field !== "custom") {
           if (field === "tags") {
             row[field] = value ? value.split(",").map((s) => s.trim()) : []
           } else {
             row[field] = value
           }
+        } else {
+          // Unmapped or explicitly "custom" -> preserve every column in custom_fields
+          customFields[header] = value
+          hasCustom = true
         }
       })
+      if (hasCustom) row.custom_fields = customFields
       result.push(row)
     }
     return result
@@ -227,19 +235,20 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Map to..." />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ignore">Skip</SelectItem>
-                        <SelectItem value="first_name">First Name</SelectItem>
-                        <SelectItem value="last_name">Last Name</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="company">Company</SelectItem>
-                        <SelectItem value="job_title">Job Title</SelectItem>
-                        <SelectItem value="phone">Phone</SelectItem>
-                        <SelectItem value="source">Source</SelectItem>
-                        <SelectItem value="status">Status</SelectItem>
-                        <SelectItem value="notes">Notes</SelectItem>
-                        <SelectItem value="tags">Tags</SelectItem>
-                      </SelectContent>
+                       <SelectContent>
+                         <SelectItem value="ignore">Skip</SelectItem>
+                         <SelectItem value="custom">Keep as custom field</SelectItem>
+                         <SelectItem value="first_name">First Name</SelectItem>
+                         <SelectItem value="last_name">Last Name</SelectItem>
+                         <SelectItem value="email">Email</SelectItem>
+                         <SelectItem value="company">Company</SelectItem>
+                         <SelectItem value="job_title">Job Title</SelectItem>
+                         <SelectItem value="phone">Phone</SelectItem>
+                         <SelectItem value="source">Source</SelectItem>
+                         <SelectItem value="status">Status</SelectItem>
+                         <SelectItem value="notes">Notes</SelectItem>
+                         <SelectItem value="tags">Tags</SelectItem>
+                       </SelectContent>
                     </Select>
                   </div>
                 ))}

@@ -46,6 +46,7 @@ type AIVentureContextValue = {
   selectedFile: SelectedFile | null
   fileLoading: boolean
   selectFile: (path: string) => void
+  closeViewer: () => void
 
   brainstormOpen: boolean
   startBrainstorm: () => void
@@ -257,6 +258,12 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
     setBrainstormOpen(true)
   }, [])
 
+  const closeViewer = React.useCallback(() => {
+    setSelectedPath(null)
+    setSelectedFile(null)
+    setBrainstormOpen(false)
+  }, [])
+
   const closeBrainstorm = React.useCallback(() => {
     setBrainstormOpen(false)
   }, [])
@@ -323,6 +330,7 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
         selectedFile,
         fileLoading,
         selectFile,
+        closeViewer,
         brainstormOpen,
         startBrainstorm,
         closeBrainstorm,

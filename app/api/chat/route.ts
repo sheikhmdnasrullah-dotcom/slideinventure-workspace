@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 
 const EMBED_MODEL = "nvidia/nv-embedqa-e5-v5"; // NVIDIA embedding model
 const RERANK_MODEL = "nvidia/nv-rerankqa-mistral-4b"; // NVIDIA reranker
-const LLM_MODEL = "nvidia/nemotron-3-ultra"; // NVIDIA LLM (or Anthropic fallback)
+const LLM_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"; // NVIDIA LLM (or Anthropic fallback)
 const TOP_K_EMBEDDING = 20; // candidates from vector search
 const TOP_K_RERANK = 8; // after rerank
 const MAX_EVIDENCE = 5; // citations sent to LLM

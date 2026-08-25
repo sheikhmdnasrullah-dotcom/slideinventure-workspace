@@ -1,6 +1,6 @@
 "use client"
 
-import { Tldraw, getSnapshot, loadSnapshot } from "tldraw"
+import { Tldraw } from "tldraw"
 import "tldraw/tldraw.css"
 import { useEffect, useRef } from "react"
 
@@ -13,7 +13,9 @@ export default function Whiteboard({ initialData, onChange }) {
     if (initialData) {
       try {
         const snapshot = typeof initialData === "string" ? JSON.parse(initialData) : initialData
-        loadSnapshot(editor.store, snapshot)
+        if (snapshot && typeof snapshot === "object") {
+          editor.store.loadSnapshot(snapshot)
+        }
       } catch {
         // ignore malformed snapshot; start blank
       }
@@ -29,7 +31,7 @@ export default function Whiteboard({ initialData, onChange }) {
       () => {
         clearTimeout(timer)
         timer = setTimeout(() => {
-          const snapshot = getSnapshot(editor.store)
+          const snapshot = editor.store.getSnapshot()
           onChange?.(JSON.stringify(snapshot))
         }, 800)
       },

@@ -10,9 +10,6 @@ export default function Notepad({ onChange, initialContent, document }) {
     initialContent: document ? JSON.parse(document) : initialContent ? JSON.parse(initialContent) : undefined,
   })
 
-  // Extract document data from editor for external sync
-  const { document: editorDocument } = useBlockNote(editor)
-
   return (
     <div className="w-full min-h-[400px] px-4 py-2">
       <BlockNoteView
@@ -20,7 +17,7 @@ export default function Notepad({ onChange, initialContent, document }) {
         theme="light"
         onChange={() => {
           if (onChange) {
-            onChange(JSON.stringify(editorDocument))
+            onChange(JSON.stringify(editor.document))
           }
         }}
       />

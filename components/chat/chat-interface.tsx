@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { format, isToday, isYesterday } from "date-fns";
-import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink, Lock } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -112,9 +112,11 @@ async function loadSessions(
       if (data.length > 0 && !activeSessionId) {
         setActiveSessionId(data[0].id);
       }
+    } else {
+      toast.error("Failed to load sessions");
     }
-  } catch {
-    // silent
+  } catch (error) {
+    toast.error("Failed to load sessions");
   }
 }
 
@@ -123,10 +125,23 @@ async function loadMessages(sessionId: string, setMessages: (m: Message[]) => vo
     const res = await fetch(`/api/chat/messages?sessionId=${sessionId}`);
     if (res.ok) {
       const data = await res.json();
-      setMessages(data);
+      setMessages(
+        (data ?? []).map((m: any) => ({
+          id: m.id,
+          role: m.role as "user" | "assistant",
+          content: m.content ?? "",
+          evidence: m.evidence ?? [],
+          filters: m.filters ?? {},
+          createdAt: m.created_at ?? new Date().toISOString(),
+        }))
+      );
+    } else {
+      toast.error("Failed to load messages");
+      setMessages([]);
     }
-  } catch {
-    // silent
+  } catch (error) {
+    toast.error("Failed to load messages");
+    setMessages([]);
   }
 }
 
@@ -176,13 +191,6 @@ export function ChatInterface() {
     const text = input.trim();
     if (!text || streaming) return;
 
-    if (!activeSessionId) {
-      setMessages((prev) => [...prev, { id: `temp-${Date.now()}`, role: "user", content: text, createdAt: new Date().toISOString() }])
-      setStreaming(false)
-      textareaRef.current?.focus()
-      return
-    }
-
     setStreaming(true);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -197,35 +205,16 @@ export function ChatInterface() {
       });
 
       let retrievalSources: SourceGroup[] | undefined;
-      let secretQuery = false;
 
       if (retrieveRes.ok) {
         const retrieveData = await retrieveRes.json();
         if (retrieveData.type === "retrieval") {
           retrievalSources = retrieveData.sources;
-        } else if (retrieveData.type === "secret_query") {
-          secretQuery = true;
         }
       }
 
       // Remove temp user message
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
-
-      if (secretQuery) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `secret-${Date.now()}`,
-            role: "assistant",
-            content: "This looks like a secret query. Please use the Vault section with step-up authentication to access credentials.",
-            secretQuery: true,
-            createdAt: new Date().toISOString(),
-          },
-        ]);
-        setStreaming(false);
-        textareaRef.current?.focus();
-        return;
-      }
 
       if (retrievalSources && retrievalSources.some((s) => s.matchCount > 0)) {
         setMessages((prev) => [
@@ -236,6 +225,23 @@ export function ChatInterface() {
             content: `Found matches across ${retrievalSources.filter((s) => s.matchCount > 0).length} source${retrievalSources.filter((s) => s.matchCount > 0).length !== 1 ? "s" : ""} for "${text}"`,
             retrievalSources,
             retrievalQuery: text,
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+        setStreaming(false);
+        textareaRef.current?.focus();
+        return;
+      }
+
+      // No retrieval matches. If we have a session, try the LLM; otherwise
+      // tell the user we searched but found nothing.
+      if (!activeSessionId) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `nomatch-${Date.now()}`,
+            role: "assistant",
+            content: `I searched your knowledge base, leads, terminal history, apps, and links but found no matches for "${text}". Try rephrasing, or add this information to your Knowledge base.`,
             createdAt: new Date().toISOString(),
           },
         ]);
@@ -436,16 +442,9 @@ export function ChatInterface() {
                           <div
                             className={cn(
                               "rounded-lg px-3 py-2 text-sm break-words",
-                              msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
-                              msg.secretQuery && "border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950"
+                              msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
                             )}
                           >
-                            {msg.secretQuery && (
-                              <div className="mb-2 flex items-center gap-2 text-orange-600 dark:text-orange-400">
-                                <Lock className="size-4" />
-                                <span className="text-xs font-medium">Vault access required</span>
-                              </div>
-                            )}
                             <p className="whitespace-pre-wrap">{msg.content}</p>
                           </div>
 

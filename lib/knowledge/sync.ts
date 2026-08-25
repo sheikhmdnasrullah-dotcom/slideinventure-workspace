@@ -82,24 +82,34 @@ export async function addKnowledgeItem(data: {
   category?: string
   source?: string
   author?: string
+  contentType?: string
 }) {
-  if (!fs.existsSync(KNOWLEDGE_DIR)) {
-    fs.mkdirSync(KNOWLEDGE_DIR, { recursive: true })
-  }
-
   // Generate a safe slug
   let slug = data.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
-  
+
+  if (!slug) slug = `item-${Date.now()}`
+
   // Ensure unique slug
-  let fullPath = path.join(KNOWLEDGE_DIR, `${slug}.md`)
+  let uniqueSlug = slug
   let counter = 1
-  while (fs.existsSync(fullPath)) {
-    slug = `${slug}-${counter}`
-    fullPath = path.join(KNOWLEDGE_DIR, `${slug}.md`)
-    counter++
+  while (true) {
+    // Best-effort filesystem mirror (fails silently on read-only serverless FS)
+    try {
+      if (fs.existsSync(KNOWLEDGE_DIR)) {
+        const candidate = path.join(KNOWLEDGE_DIR, `${uniqueSlug}.md`)
+        if (fs.existsSync(candidate)) {
+          uniqueSlug = `${slug}-${counter}`
+          counter++
+          continue
+        }
+      }
+    } catch {
+      // ignore FS errors
+    }
+    break
   }
 
   const frontmatter = {
@@ -111,19 +121,29 @@ export async function addKnowledgeItem(data: {
     status: 'proposed'
   }
 
-  const content = matter.stringify(data.body || '', frontmatter)
-  fs.writeFileSync(fullPath, content, 'utf-8')
+  // Best-effort: mirror the item to the local knowledge directory. On Vercel's
+  // read-only filesystem this is expected to fail, so we never throw here.
+  try {
+    if (!fs.existsSync(KNOWLEDGE_DIR)) {
+      fs.mkdirSync(KNOWLEDGE_DIR, { recursive: true })
+    }
+    const fullPath = path.join(KNOWLEDGE_DIR, `${uniqueSlug}.md`)
+    const content = matter.stringify(data.body || '', frontmatter)
+    fs.writeFileSync(fullPath, content, 'utf-8')
+  } catch (err) {
+    console.warn(`Skipping local filesystem mirror for ${uniqueSlug}:`, err)
+  }
 
-  // Sync to database
+  // Sync to database — this is the source of truth for the running app.
   const supabase = createServiceClient()
   const item = {
-    id: slug,
-    slug,
+    id: uniqueSlug,
+    slug: uniqueSlug,
     type: frontmatter.category,
     title: frontmatter.title,
     body: data.body,
-    content_path: `/knowledge/${slug}.md`,
-    content_type: 'markdown',
+    content_path: `/knowledge/${uniqueSlug}.md`,
+    content_type: data.contentType || 'markdown',
     status: frontmatter.status,
     source: frontmatter.source,
     author: frontmatter.author,
@@ -136,7 +156,7 @@ export async function addKnowledgeItem(data: {
     .upsert(item, { onConflict: 'slug' })
 
   if (error) {
-    console.error(`Failed to insert to DB for ${slug}:`, error)
+    console.error(`Failed to insert to DB for ${uniqueSlug}:`, error)
     throw new Error('Database sync failed')
   }
 

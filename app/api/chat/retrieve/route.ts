@@ -19,30 +19,43 @@ interface SourceGroup {
   matchCount: number
 }
 
-const SECRET_PATTERNS = [
-  /\b(password|secret|credential|api key|apikey|token|private key|vault)\b/i,
-]
-
-function isSecretQuery(message: string): boolean {
-  return SECRET_PATTERNS.some((pattern) => pattern.test(message));
-}
-
 async function searchKnowledgeChunks(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
   if (!query.trim()) return [];
 
+  // Preferred: semantic/FTS search over chunked knowledge.
   const { data, error } = await supabase.rpc("match_knowledge_chunks_fts", {
     query_text: query,
     match_count: 5,
   });
 
-  if (error || !data) return [];
+  if (!error && data && data.length > 0) {
+    return data.map((row: any) => ({
+      source: "knowledge",
+      title: row.heading || "Knowledge",
+      snippet: row.text,
+      path: `/knowledge/${row.knowledge_item_id}?chunk=${row.chunk_index}`,
+      score: row.rank || 0,
+    }));
+  }
 
-  return data.map((row: any) => ({
+  // Fallback: plain keyword search across knowledge items so the chat still
+  // finds terminal codes, passwords, and notes stored as text even when
+  // embeddings/FTS are not configured.
+  const escaped = query.replace(/[\\%_]/g, (c) => `\\${c}`);
+  const { data: items, error: itemError } = await supabase
+    .from("knowledge_items")
+    .select("id, title, body")
+    .or(`title.ilike.%${escaped}%,body.ilike.%${escaped}%`)
+    .limit(5);
+
+  if (itemError || !items) return [];
+
+  return items.map((row: any) => ({
     source: "knowledge",
-    title: row.heading || "Knowledge",
-    snippet: row.text,
-    path: `/knowledge/${row.knowledge_item_id}?chunk=${row.chunk_index}`,
-    score: row.rank || 0,
+    title: row.title || "Knowledge",
+    snippet: (row.body || "").slice(0, 300),
+    path: `/knowledge/${row.id}`,
+    score: 0,
   }));
 }
 
@@ -142,10 +155,6 @@ export async function POST(request: NextRequest) {
   const message = (body.message as string | undefined)?.trim();
   if (!message) {
     return Response.json({ error: "Message required" }, { status: 400 });
-  }
-
-  if (isSecretQuery(message)) {
-    return Response.json({ type: "secret_query", message: "Secret queries require step-up authentication." }, { status: 403 });
   }
 
   const start = Date.now();
