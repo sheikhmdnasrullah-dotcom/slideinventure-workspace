@@ -14,16 +14,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
   }
 
-  let session
+  let token
   try {
-    session = await createEmailPasswordSession(email, password)
-  } catch {
+    token = await createEmailPasswordSession(email, password)
+  } catch (e) {
+    console.error("session creation failed", e)
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
   }
 
+  console.error("session token length", token?.length ?? "null", "token", token)
+
   const domain = getCookieDomain(request.headers.get("host"))
   const res = NextResponse.json({ ok: true })
-  res.cookies.set(SESSION_COOKIE, session.secret, {
+  res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     path: "/",
     sameSite: "lax",
