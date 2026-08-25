@@ -14,12 +14,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
   }
 
+  const host = request.nextUrl.hostname
+  const isLocalhost =
+    host === "localhost" || host === "127.0.0.1" || host === "::1"
+  const isHttps = request.nextUrl.protocol === "https:"
+  const secure = isHttps || isLocalhost
+
   const res = NextResponse.json({ ok: true })
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: secure ? "none" : "lax",
+    secure,
   })
   return res
 }
