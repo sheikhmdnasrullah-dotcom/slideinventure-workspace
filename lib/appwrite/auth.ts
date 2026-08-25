@@ -14,18 +14,12 @@ function sessionClient(secret: string) {
 export async function getSessionUser(): Promise<{ id: string; email: string } | null> {
   const store = await cookies()
   const secret = store.get(SESSION_COOKIE)?.value
-  if (!secret) {
-    console.error("getSessionUser: no cookie found, cookie name:", SESSION_COOKIE)
-    return null
-  }
-  console.error("getSessionUser: cookie found, length:", secret.length)
+  if (!secret) return null
   try {
     const account = new Account(sessionClient(secret))
     const u = await account.get()
-    console.error("getSessionUser: Appwrite account.get() succeeded, email:", u.email)
     return { id: u.$id, email: u.email ?? "" }
-  } catch (e) {
-    console.error("getSessionUser: Appwrite account.get() failed:", e)
+  } catch {
     return null
   }
 }
