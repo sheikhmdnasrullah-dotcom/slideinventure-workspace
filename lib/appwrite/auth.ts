@@ -33,6 +33,9 @@ export async function createEmailPasswordSession(email: string, password: string
     throw new Error("Invalid email or password")
   }
 
+  const appwriteSession = res.headers.get("x-appwrite-session")
+  if (appwriteSession) return appwriteSession
+
   const fallback = res.headers.get("x-fallback-cookies")
   if (fallback) {
     try {
