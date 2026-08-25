@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Check if the user has permission to access vault
     const { data: entry, error } = await supabase
       .from("secret_vault_entries")
-      .select("id, name, encrypted_value, iv, key_version")
+      .select("id, name, encrypted_value, iv, key_version, secret_type, service_name, username, url, notes")
       .eq("name", secretName)
       .eq("created_by", user.email ?? "")
       .single()
@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Decrypt the secret
-    const { encryptSecret } = await import("@/lib/vault/crypto")
-    const { encrypted_value: encrypted, iv } = entry
-    const decrypted = encryptSecret.decrypt ? encryptSecret.decrypt(encrypted, iv) : "Decryption not implemented"
+    const { decryptSecret } = await import("@/lib/vault/crypto")
+    const { encrypted_value: encrypted } = entry
+    const decrypted = decryptSecret(encrypted)
 
     return Response.json({
       name: entry.name,

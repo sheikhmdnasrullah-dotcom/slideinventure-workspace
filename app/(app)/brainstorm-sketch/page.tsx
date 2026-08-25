@@ -21,7 +21,7 @@ export default function BrainstormSketchPage() {
   const [content, setContent] = React.useState<string>("{}")
   const [title, setTitle] = React.useState<string>("")
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
-  const saveTimer = React.useRef<ReturnType<typeof setTimeout>>()
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const loadBoards = React.useCallback(async () => {
     try {

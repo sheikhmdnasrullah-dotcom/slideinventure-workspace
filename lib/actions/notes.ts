@@ -12,7 +12,7 @@ export interface Note {
 }
 
 export async function listNotes(): Promise<Note[]> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("notes")
     .select("*")
@@ -23,7 +23,7 @@ export async function listNotes(): Promise<Note[]> {
 }
 
 export async function createNote(title?: string, content: string = ""): Promise<Note> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("notes")
     .insert({ title, content })
@@ -36,7 +36,7 @@ export async function createNote(title?: string, content: string = ""): Promise<
 }
 
 export async function updateNote(id: string, content: string): Promise<Note> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("notes")
     .update({ content, updated_at: new Date().toISOString() })
@@ -50,7 +50,7 @@ export async function updateNote(id: string, content: string): Promise<Note> {
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { error } = await supabase
     .from("notes")
     .delete()
@@ -61,7 +61,7 @@ export async function deleteNote(id: string): Promise<void> {
 }
 
 export async function getNote(id: string): Promise<Note | null> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from("notes")
     .select("*")

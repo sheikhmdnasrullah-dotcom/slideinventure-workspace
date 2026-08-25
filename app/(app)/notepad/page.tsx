@@ -25,7 +25,7 @@ export default function NotepadPage() {
   const [loading, setLoading] = React.useState(true)
   const [saving, setSaving] = React.useState(false)
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
-  const saveTimer = React.useRef<ReturnType<typeof setTimeout>>()
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const loadNotes = React.useCallback(async () => {
     try {
