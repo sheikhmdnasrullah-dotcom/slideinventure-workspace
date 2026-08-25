@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 export function LoginForm({
   className,
@@ -27,20 +28,25 @@ export function LoginForm({
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({} as { error?: string }));
-      setError(data.error || "Invalid email or password");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({} as { error?: string }));
+        setError(data.error || "Invalid email or password");
+        setLoading(false);
+        return;
+      }
+
+      window.location.assign("/");
+    } catch {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
-      return;
     }
-
-    window.location.assign("/");
   }
 
   return (
@@ -94,6 +100,12 @@ export function LoginForm({
           </form>
         </CardContent>
       </Card>
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+        Don&apos;t have an account?{" "}
+        <Link href="/signup" className="underline underline-offset-4">
+          Sign up
+        </Link>
+      </p>
     </div>
   );
 }
