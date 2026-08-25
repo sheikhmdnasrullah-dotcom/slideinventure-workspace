@@ -1,9 +1,12 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
+import { Client, Account } from "node-appwrite";
 import { getSessionUser, createEmailPasswordSession } from "@/lib/appwrite/auth";
-import { createClient } from "@/lib/supabase/server";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+
+const ENDPOINT = process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1";
+const PROJECT = process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc";
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
@@ -23,17 +26,17 @@ export async function POST(request: NextRequest) {
   let verified = false;
 
   try {
-    await createEmailPasswordSession(email, password);
+    const session = await createEmailPasswordSession(email, password);
     verified = true;
-  } catch {
-    // Fallback to Supabase during the transition while both auth systems run.
+    // Clean up the transient verification session so it doesn't linger.
     try {
-      const supabase = await createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (!error) verified = true;
+      const acct = new Account(new Client().setEndpoint(ENDPOINT).setProject(PROJECT).setSession(session.secret));
+      await acct.deleteSession("current");
     } catch {
-      /* ignore */
+      /* ignore cleanup failure */
     }
+  } catch {
+    verified = false;
   }
 
   if (!verified) return ApiError.badRequest("REAUTH_FAILED", "Invalid password").toResponse();

@@ -1,7 +1,6 @@
 import "server-only"
 import { cookies } from "next/headers"
 import { Client, Account } from "node-appwrite"
-import { getSessionUser as getSupabaseUser } from "@/lib/supabase/server"
 
 const ENDPOINT = process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1"
 const PROJECT = process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc"
@@ -14,18 +13,14 @@ function sessionClient(secret: string) {
 export async function getSessionUser(): Promise<{ id: string; email: string } | null> {
   const store = await cookies()
   const secret = store.get(SESSION_COOKIE)?.value
-  if (secret) {
-    try {
-      const account = new Account(sessionClient(secret))
-      const u = await account.get()
-      return { id: u.$id, email: u.email ?? "" }
-    } catch {
-      /* fall through to Supabase session during transition */
-    }
+  if (!secret) return null
+  try {
+    const account = new Account(sessionClient(secret))
+    const u = await account.get()
+    return { id: u.$id, email: u.email ?? "" }
+  } catch {
+    return null
   }
-  const sb = await getSupabaseUser()
-  if (sb) return { id: sb.id, email: sb.email ?? "" }
-  return null
 }
 
 export async function createEmailPasswordSession(email: string, password: string) {
