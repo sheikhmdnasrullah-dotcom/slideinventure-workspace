@@ -1,0 +1,1352 @@
+[
+  {
+    "slug": "academic-anthropologist",
+    "division": "academic",
+    "team": null
+  },
+  {
+    "slug": "academic-geographer",
+    "division": "academic",
+    "team": null
+  },
+  {
+    "slug": "academic-historian",
+    "division": "academic",
+    "team": null
+  },
+  {
+    "slug": "academic-narratologist",
+    "division": "academic",
+    "team": null
+  },
+  {
+    "slug": "academic-psychologist",
+    "division": "academic",
+    "team": null
+  },
+  {
+    "slug": "academic-statistician",
+    "division": "academic",
+    "team": null
+  },
+  {
+    "slug": "accounts-payable-agent",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "agentic-identity-trust",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "agents-orchestrator",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "automation-governance-architect",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "blender-addon-engineer",
+    "division": "game-development",
+    "team": "blender"
+  },
+  {
+    "slug": "business-strategist",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "change-management-consultant",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "chief-financial-officer",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "corporate-training-designer",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "customer-service",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "customer-success-manager",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "data-consolidation-agent",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "data-privacy-officer",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "design-brand-guardian",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-image-prompt-engineer",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-inclusive-visuals-specialist",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-persona-walkthrough",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-ui-designer",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-ui-finish-gate-reviewer",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-ux-architect",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-ux-researcher",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-visual-storyteller",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "design-whimsy-injector",
+    "division": "design",
+    "team": null
+  },
+  {
+    "slug": "economy-designer",
+    "division": "game-development",
+    "team": null
+  },
+  {
+    "slug": "engineering-ai-data-remediation-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-ai-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-api-platform-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-autonomous-optimization-architect",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-backend-architect",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-cms-developer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-code-reviewer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-codebase-onboarding-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-data-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-data-visualization-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-database-optimizer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-database-reliability-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-desktop-app-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-developer-tooling-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-devops-automator",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-drupal-performance",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-drupal-shopping-cart",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-email-intelligence-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-embedded-firmware-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-feishu-integration-developer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-filament-optimization-specialist",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-finops-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-frontend-developer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-gaussdb-expert",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-git-workflow-master",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-i18n-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-identity-access-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-incident-response-commander",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-iot-fleet-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-it-service-manager",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-llm-post-training-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-minimal-change-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-mobile-app-builder",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-mobile-release-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-multi-agent-systems-architect",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-network-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-orgscript-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-payments-billing-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-privacy-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-prompt-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-rag-pipeline-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-rapid-prototyper",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-realtime-collaboration-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-rust-refactoring-specialist",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-search-relevance-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-section-508-specialist",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-senior-developer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-software-architect",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-solidity-smart-contract-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-sre",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-technical-writer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-uswds-developer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-video-streaming-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-voice-ai-integration-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-webassembly-engineer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-wechat-mini-program-developer",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-wordpress-performance",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "engineering-wordpress-shopping-cart",
+    "division": "engineering",
+    "team": null
+  },
+  {
+    "slug": "esg-sustainability-officer",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "finance-bookkeeper-controller",
+    "division": "finance",
+    "team": null
+  },
+  {
+    "slug": "finance-financial-analyst",
+    "division": "finance",
+    "team": null
+  },
+  {
+    "slug": "finance-fpa-analyst",
+    "division": "finance",
+    "team": null
+  },
+  {
+    "slug": "finance-investment-researcher",
+    "division": "finance",
+    "team": null
+  },
+  {
+    "slug": "finance-tax-strategist",
+    "division": "finance",
+    "team": null
+  },
+  {
+    "slug": "game-audio-engineer",
+    "division": "game-development",
+    "team": null
+  },
+  {
+    "slug": "game-designer",
+    "division": "game-development",
+    "team": null
+  },
+  {
+    "slug": "gis-3d-scene-developer",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-analyst",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-bim-specialist",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-cartography-designer",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-drone-reality-mapping",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-geoai-ml-engineer",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-geoprocessing-specialist",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-qa-engineer",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-solution-engineer",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-spatial-data-engineer",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-spatial-data-scientist",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-technical-consultant",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "gis-web-gis-developer",
+    "division": "gis",
+    "team": null
+  },
+  {
+    "slug": "godot-gameplay-scripter",
+    "division": "game-development",
+    "team": "godot"
+  },
+  {
+    "slug": "godot-multiplayer-engineer",
+    "division": "game-development",
+    "team": "godot"
+  },
+  {
+    "slug": "godot-shader-developer",
+    "division": "game-development",
+    "team": "godot"
+  },
+  {
+    "slug": "government-digital-presales-consultant",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "grant-writer",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "healthcare-aging-parent-care-companion",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "healthcare-clinical-evidence-agent",
+    "division": "healthcare",
+    "team": null
+  },
+  {
+    "slug": "healthcare-customer-service",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "healthcare-innovation-strategist",
+    "division": "healthcare",
+    "team": null
+  },
+  {
+    "slug": "healthcare-marketing-compliance",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "healthcare-sovereign-health-systems-agent",
+    "division": "healthcare",
+    "team": null
+  },
+  {
+    "slug": "hospitality-guest-services",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "hr-onboarding",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "identity-graph-operator",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "language-translator",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "legal-billing-time-tracking",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "legal-client-intake",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "legal-document-review",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "level-designer",
+    "division": "game-development",
+    "team": null
+  },
+  {
+    "slug": "loan-officer-assistant",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "lsp-index-engineer",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "ma-integration-manager",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "macos-spatial-metal-engineer",
+    "division": "spatial-computing",
+    "team": null
+  },
+  {
+    "slug": "marketing-aeo-foundations",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-agentic-search-optimizer",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-ai-citation-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-app-store-optimizer",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-baidu-seo-specialist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-bilibili-content-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-book-co-author",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-carousel-growth-engine",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-china-ecommerce-operator",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-china-market-localization-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-content-creator",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-cross-border-ecommerce",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-douyin-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-email-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-global-podcast-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-growth-hacker",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-instagram-curator",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-kuaishou-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-linkedin-content-creator",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-livestream-commerce-coach",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-multi-platform-publisher",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-podcast-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-pr-communications-manager",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-private-domain-operator",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-reddit-community-builder",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-seo-specialist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-short-video-editing-coach",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-social-media-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-tiktok-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-twitter-engager",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-video-optimization-specialist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-wechat-official-account",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-weibo-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-x-twitter-intelligence-analyst",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-xiaohongshu-specialist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "marketing-zhihu-strategist",
+    "division": "marketing",
+    "team": null
+  },
+  {
+    "slug": "medical-billing-coding-specialist",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "narrative-designer",
+    "division": "game-development",
+    "team": null
+  },
+  {
+    "slug": "operations-manager",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "organizational-psychologist",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "paid-media-auditor",
+    "division": "paid-media",
+    "team": null
+  },
+  {
+    "slug": "paid-media-creative-strategist",
+    "division": "paid-media",
+    "team": null
+  },
+  {
+    "slug": "paid-media-paid-social-strategist",
+    "division": "paid-media",
+    "team": null
+  },
+  {
+    "slug": "paid-media-ppc-strategist",
+    "division": "paid-media",
+    "team": null
+  },
+  {
+    "slug": "paid-media-programmatic-buyer",
+    "division": "paid-media",
+    "team": null
+  },
+  {
+    "slug": "paid-media-search-query-analyst",
+    "division": "paid-media",
+    "team": null
+  },
+  {
+    "slug": "paid-media-tracking-specialist",
+    "division": "paid-media",
+    "team": null
+  },
+  {
+    "slug": "personal-growth-mentor",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "product-behavioral-nudge-engine",
+    "division": "product",
+    "team": null
+  },
+  {
+    "slug": "product-feedback-synthesizer",
+    "division": "product",
+    "team": null
+  },
+  {
+    "slug": "product-manager",
+    "division": "product",
+    "team": null
+  },
+  {
+    "slug": "product-sprint-prioritizer",
+    "division": "product",
+    "team": null
+  },
+  {
+    "slug": "product-trend-researcher",
+    "division": "product",
+    "team": null
+  },
+  {
+    "slug": "project-management-experiment-tracker",
+    "division": "project-management",
+    "team": null
+  },
+  {
+    "slug": "project-management-jira-workflow-steward",
+    "division": "project-management",
+    "team": null
+  },
+  {
+    "slug": "project-management-meeting-notes-specialist",
+    "division": "project-management",
+    "team": null
+  },
+  {
+    "slug": "project-management-project-shepherd",
+    "division": "project-management",
+    "team": null
+  },
+  {
+    "slug": "project-management-studio-operations",
+    "division": "project-management",
+    "team": null
+  },
+  {
+    "slug": "project-management-studio-producer",
+    "division": "project-management",
+    "team": null
+  },
+  {
+    "slug": "project-manager-senior",
+    "division": "project-management",
+    "team": null
+  },
+  {
+    "slug": "real-estate-buyer-seller",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "recruitment-specialist",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "report-distribution-agent",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "resume-tailor",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "retail-customer-returns",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "roblox-avatar-creator",
+    "division": "game-development",
+    "team": "roblox-studio"
+  },
+  {
+    "slug": "roblox-experience-designer",
+    "division": "game-development",
+    "team": "roblox-studio"
+  },
+  {
+    "slug": "roblox-systems-scripter",
+    "division": "game-development",
+    "team": "roblox-studio"
+  },
+  {
+    "slug": "sales-account-strategist",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-coach",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-data-extraction-agent",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "sales-deal-strategist",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-discovery-coach",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-engineer",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-offer-lead-gen-strategist",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-outbound-strategist",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-outreach",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "sales-pipeline-analyst",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "sales-proposal-strategist",
+    "division": "sales",
+    "team": null
+  },
+  {
+    "slug": "security-ai-generated-code-auditor",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-appsec-engineer",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-architect",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-blockchain-security-auditor",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-cloud-security-architect",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-compliance-auditor",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-incident-responder",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-penetration-tester",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-secrets-credential-engineer",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-senior-secops",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-threat-detection-engineer",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "security-threat-intelligence-analyst",
+    "division": "security",
+    "team": null
+  },
+  {
+    "slug": "specialized-chief-of-staff",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-civil-engineer",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-codebase-archaeologist",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-cultural-intelligence-strategist",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-developer-advocate",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-document-generator",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-fedramp-rmf-compliance",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-french-consulting-market",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-korean-business-navigator",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-mcp-builder",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-model-qa",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-pricing-analyst",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-salesforce-architect",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-strategy-duel-agent",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "specialized-workflow-architect",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "study-abroad-advisor",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "supply-chain-strategist",
+    "division": "specialized",
+    "team": null
+  },
+  {
+    "slug": "support-analytics-reporter",
+    "division": "support",
+    "team": null
+  },
+  {
+    "slug": "support-executive-summary-generator",
+    "division": "support",
+    "team": null
+  },
+  {
+    "slug": "support-finance-tracker",
+    "division": "support",
+    "team": null
+  },
+  {
+    "slug": "support-infrastructure-maintainer",
+    "division": "support",
+    "team": null
+  },
+  {
+    "slug": "support-legal-compliance-checker",
+    "division": "support",
+    "team": null
+  },
+  {
+    "slug": "support-support-responder",
+    "division": "support",
+    "team": null
+  },
+  {
+    "slug": "technical-artist",
+    "division": "game-development",
+    "team": null
+  },
+  {
+    "slug": "terminal-integration-specialist",
+    "division": "spatial-computing",
+    "team": null
+  },
+  {
+    "slug": "testing-accessibility-auditor",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-api-tester",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-evidence-collector",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-performance-benchmarker",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-reality-checker",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-test-automation-engineer",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-test-results-analyzer",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-tool-evaluator",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "testing-workflow-optimizer",
+    "division": "testing",
+    "team": null
+  },
+  {
+    "slug": "unity-architect",
+    "division": "game-development",
+    "team": "unity"
+  },
+  {
+    "slug": "unity-editor-tool-developer",
+    "division": "game-development",
+    "team": "unity"
+  },
+  {
+    "slug": "unity-multiplayer-engineer",
+    "division": "game-development",
+    "team": "unity"
+  },
+  {
+    "slug": "unity-shader-graph-artist",
+    "division": "game-development",
+    "team": "unity"
+  },
+  {
+    "slug": "unreal-multiplayer-architect",
+    "division": "game-development",
+    "team": "unreal-engine"
+  },
+  {
+    "slug": "unreal-systems-engineer",
+    "division": "game-development",
+    "team": "unreal-engine"
+  },
+  {
+    "slug": "unreal-technical-artist",
+    "division": "game-development",
+    "team": "unreal-engine"
+  },
+  {
+    "slug": "unreal-world-builder",
+    "division": "game-development",
+    "team": "unreal-engine"
+  },
+  {
+    "slug": "visionos-spatial-engineer",
+    "division": "spatial-computing",
+    "team": null
+  },
+  {
+    "slug": "xr-cockpit-interaction-specialist",
+    "division": "spatial-computing",
+    "team": null
+  },
+  {
+    "slug": "xr-immersive-developer",
+    "division": "spatial-computing",
+    "team": null
+  },
+  {
+    "slug": "xr-interface-architect",
+    "division": "spatial-computing",
+    "team": null
+  },
+  {
+    "slug": "zk-steward",
+    "division": "specialized",
+    "team": null
+  }
+]

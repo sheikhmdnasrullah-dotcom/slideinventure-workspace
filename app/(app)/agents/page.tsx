@@ -4,6 +4,8 @@ import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { PageHeader, Section, Surface, Badge } from "@/components/system";
 import { AgentType } from "@/lib/agents/registry";
+import { getAgentRoster, getAgentDivisions } from "@/lib/agents/roster";
+import { AgentRosterTable } from "@/components/dashboard/agent-roster-table";
 import { cn } from "@/lib/utils";
 
 const DB = APPWRITE.databaseId;
@@ -87,6 +89,9 @@ export default async function AgentsPage() {
   // Get running tasks
   const running = runs.filter((r) => r.status === "running");
   const completed = runs.filter((r) => r.status !== "running").slice(0, 20);
+
+  const roster = getAgentRoster();
+  const rosterDivisions = getAgentDivisions(roster);
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -203,6 +208,40 @@ export default async function AgentsPage() {
               </tbody>
             </table>
           </div>
+        </Surface>
+      </Section>
+
+      {/* Agent roster */}
+      <Section tone="base">
+        <PageHeader
+          eyebrow="Reference"
+          title="Agent roster"
+          meta={`${roster.length} Claude Code subagent personas across ${rosterDivisions.length} divisions`}
+        />
+        <Surface variant="raised">
+          {roster.length === 0 ? (
+            <p className="font-body text-sm text-ink-muted py-4">
+              No agent personas installed. Run{" "}
+              <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">
+                CLAUDE_CONFIG_DIR=.claude/agents ./scripts/install.sh --tool claude-code
+              </code>{" "}
+              from a clone of{" "}
+              <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">
+                msitarzewski/agency-agents
+              </code>
+              .
+            </p>
+          ) : (
+            <>
+              <p className="font-body text-sm text-ink-muted pb-2">
+                Reference catalog of the specialist subagent personas installed in{" "}
+                <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">.claude/agents/</code>.
+                Invoke one by name in a Claude Code session — e.g. &ldquo;Activate {roster[0]?.name} and…&rdquo;.
+                This catalog is read-only and separate from the live execution runs above.
+              </p>
+              <AgentRosterTable agents={roster} divisions={rosterDivisions} />
+            </>
+          )}
         </Surface>
       </Section>
     </div>
