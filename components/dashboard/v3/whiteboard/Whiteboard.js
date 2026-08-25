@@ -1,25 +1,49 @@
 "use client"
 
-import { Tldraw } from "tldraw"
+import { Tldraw, getSnapshot, loadSnapshot } from "tldraw"
 import "tldraw/tldraw.css"
-import { useState } from "react"
+import { useEffect, useRef } from "react"
 
 export default function Whiteboard({ initialData, onChange }) {
-  const [api, setApi] = useState(null)
+  const editorRef = useRef(null)
+  const mountedRef = useRef(false)
 
-  const handleSceneChange = (elements, state) => {
-    if (onChange) {
-      onChange(elements, state)
+  const handleMount = (editor) => {
+    editorRef.current = editor
+    if (initialData) {
+      try {
+        const snapshot = typeof initialData === "string" ? JSON.parse(initialData) : initialData
+        loadSnapshot(editor.store, snapshot)
+      } catch {
+        // ignore malformed snapshot; start blank
+      }
     }
+    mountedRef.current = true
   }
+
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor) return
+    let timer
+    const unlisten = editor.store.listen(
+      () => {
+        clearTimeout(timer)
+        timer = setTimeout(() => {
+          const snapshot = getSnapshot(editor.store)
+          onChange?.(JSON.stringify(snapshot))
+        }, 800)
+      },
+      { source: "user", scope: "document" }
+    )
+    return () => {
+      clearTimeout(timer)
+      unlisten()
+    }
+  }, [onChange])
 
   return (
     <div style={{ height: "100%", width: "100%" }}>
-      <Tldraw
-        onChange={handleSceneChange}
-        onMount={(tldrawApi) => setApi(tldrawApi)}
-        initialData={initialData ? { pages: [{ elements: initialData }] } : { pages: [] }}
-      />
+      <Tldraw onMount={handleMount} />
     </div>
   )
 }

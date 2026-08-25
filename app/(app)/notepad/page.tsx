@@ -1,0 +1,193 @@
+"use client"
+
+import * as React from "react"
+import dynamic from "next/dynamic"
+import { Plus, Trash2, FileText, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
+
+const Notepad = dynamic(() => import("@/components/dashboard/v3/note/dynamic"), {
+  ssr: false,
+  loading: () => <div className="p-6 text-muted-foreground">Loading editor…</div>,
+})
+
+type Note = { id: string; title: string | null; content: string; updated_at: string }
+
+export default function NotepadPage() {
+  const [notes, setNotes] = React.useState<Note[]>([])
+  const [selectedId, setSelectedId] = React.useState<string | null>(null)
+  const [content, setContent] = React.useState<string>("[]")
+  const [title, setTitle] = React.useState<string>("")
+  const [loading, setLoading] = React.useState(true)
+  const [saving, setSaving] = React.useState(false)
+  const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
+  const saveTimer = React.useRef<ReturnType<typeof setTimeout>>()
+
+  const loadNotes = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/notes")
+      const data = await res.json()
+      setNotes(data.notes ?? [])
+    } catch {
+      toast.error("Failed to load notes")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    loadNotes()
+  }, [loadNotes])
+
+  const handleWrite = async () => {
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Untitled note" }),
+      })
+      const data = await res.json()
+      const note = data.note as Note
+      setNotes((prev) => [note, ...prev])
+      selectNote(note)
+    } catch {
+      toast.error("Failed to create note")
+    }
+  }
+
+  const selectNote = async (note: Note) => {
+    setSelectedId(note.id)
+    setTitle(note.title ?? "")
+    try {
+      const res = await fetch(`/api/notes/${note.id}`)
+      const data = await res.json()
+      setContent(data.note?.content ?? "[]")
+    } catch {
+      setContent("[]")
+    }
+    setStatus("idle")
+  }
+
+  const persist = React.useCallback(
+    (id: string, nextContent: string, nextTitle: string) => {
+      setStatus("saving")
+      clearTimeout(saveTimer.current)
+      saveTimer.current = setTimeout(async () => {
+        try {
+          await fetch(`/api/notes/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: nextContent, title: nextTitle }),
+          })
+          setStatus("saved")
+          setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, title: nextTitle, updated_at: new Date().toISOString() } : n)))
+        } catch {
+          toast.error("Failed to save note")
+          setStatus("idle")
+        }
+      }, 700)
+    },
+    []
+  )
+
+  const handleChange = (next: string) => {
+    setContent(next)
+    if (selectedId) persist(selectedId, next, title)
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch(`/api/notes/${id}`, { method: "DELETE" })
+      setNotes((prev) => prev.filter((n) => n.id !== id))
+      if (selectedId === id) {
+        setSelectedId(null)
+        setContent("[]")
+      }
+      toast.success("Note deleted")
+    } catch {
+      toast.error("Failed to delete note")
+    }
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between px-6 py-4">
+        <div>
+          <h1 className="text-2xl font-bold">Notepad</h1>
+          <p className="text-sm text-muted-foreground">Rich-text notes, autosaved to your workspace.</p>
+        </div>
+        <Button onClick={handleWrite} className="gap-2">
+          <Plus className="size-4" /> Write Note
+        </Button>
+      </div>
+      <Separator />
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="w-72 shrink-0 border-r">
+          <ScrollArea className="h-full">
+            <div className="flex flex-col gap-1 p-3">
+              {loading ? (
+                <div className="p-4 text-sm text-muted-foreground">Loading…</div>
+              ) : notes.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground">No notes yet. Click “Write Note”.</div>
+              ) : (
+                notes.map((n) => (
+                  <button
+                    key={n.id}
+                    onClick={() => selectNote(n)}
+                    className={cn(
+                      "group flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent/20",
+                      selectedId === n.id && "bg-muted"
+                    )}
+                  >
+                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate font-medium">{n.title || "Untitled note"}</span>
+                    <Trash2
+                      className="size-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(n.id)
+                      }}
+                    />
+                  </button>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </aside>
+
+        <section className="flex flex-1 flex-col">
+          {selectedId ? (
+            <>
+              <div className="flex items-center gap-2 border-b px-4 py-2">
+                <input
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value)
+                    persist(selectedId, content, e.target.value)
+                  }}
+                  placeholder="Note title"
+                  className="flex-1 bg-transparent text-sm font-medium outline-none"
+                />
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  {status === "saving" && <Loader2 className="size-3 animate-spin" />}
+                  {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
+                </span>
+              </div>
+              <div className="flex-1 overflow-auto">
+                <Notepad initialContent={content} onChange={handleChange} />
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+              Select a note or click “Write Note” to start.
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  )
+}

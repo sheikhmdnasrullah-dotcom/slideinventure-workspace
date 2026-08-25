@@ -5,10 +5,13 @@ import { BlockNoteView } from "@blocknote/mantine"
 import "@blocknote/mantine/style.css"
 import { useCreateBlockNote } from "@blocknote/react"
 
-export default function Notepad({ onChange, initialContent }) {
+export default function Notepad({ onChange, initialContent, document }) {
   const editor = useCreateBlockNote({
-    initialContent: initialContent ? JSON.parse(initialContent) : undefined,
+    initialContent: document ? JSON.parse(document) : initialContent ? JSON.parse(initialContent) : undefined,
   })
+
+  // Extract document data from editor for external sync
+  const { document: editorDocument } = useBlockNote(editor)
 
   return (
     <div className="w-full min-h-[400px] px-4 py-2">
@@ -17,7 +20,7 @@ export default function Notepad({ onChange, initialContent }) {
         theme="light"
         onChange={() => {
           if (onChange) {
-            onChange(JSON.stringify(editor.document))
+            onChange(JSON.stringify(editorDocument))
           }
         }}
       />

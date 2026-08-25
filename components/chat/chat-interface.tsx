@@ -176,6 +176,13 @@ export function ChatInterface() {
     const text = input.trim();
     if (!text || streaming) return;
 
+    if (!activeSessionId) {
+      setMessages((prev) => [...prev, { id: `temp-${Date.now()}`, role: "user", content: text, createdAt: new Date().toISOString() }])
+      setStreaming(false)
+      textareaRef.current?.focus()
+      return
+    }
+
     setStreaming(true);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";

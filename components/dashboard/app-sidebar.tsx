@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  Brain,
   Cable,
   FileText,
   LayoutDashboard,
@@ -46,8 +47,8 @@ const NAV_MAIN = [
   { title: "Knowledge", url: "/knowledge", icon: BookOpen },
   { title: "Documents", url: "/documents", icon: FileText },
   { title: "AI Venture", url: "/ai-venture", icon: Rocket },
-  { title: "Notion", url: "/notion", icon: Sparkles },
-  { title: "Miro", url: "/miro", icon: Sparkles },
+  { title: "Notepad", url: "/notepad", icon: BookOpen },
+  { title: "Brainstorm Sketch", url: "/brainstorm-sketch", icon: Brain },
   { title: "Terminal", url: "/terminal", icon: Terminal },
 ]
 
