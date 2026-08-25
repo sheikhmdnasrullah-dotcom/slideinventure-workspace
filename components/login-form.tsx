@@ -33,6 +33,7 @@ export function LoginForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "same-origin",
       });
 
       if (!res.ok) {
@@ -42,7 +43,9 @@ export function LoginForm({
         return;
       }
 
-      window.location.assign("/");
+      setTimeout(() => {
+        window.location.assign("/");
+      }, 100);
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
