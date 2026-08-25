@@ -64,10 +64,6 @@ export async function createEmailPasswordSession(email: string, password: string
               ? setCookieRaw.split(", ")
               : []
 
-          console.error("appwrite set-cookie count", setCookie.length, setCookie[0]?.slice(0, 60))
-          console.error("appwrite x-fallback-cookies", getHeader("x-fallback-cookies")?.slice(0, 120))
-          console.error("appwrite x-appwrite-session", getHeader("x-appwrite-session"))
-
           const target = `a_session_${PROJECT}=`
           for (const c of setCookie) {
             if (c.startsWith(target)) {
