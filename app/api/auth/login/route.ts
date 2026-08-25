@@ -9,7 +9,7 @@ function getCookieDomain(host: string | null): string | undefined {
 }
 
 export async function POST(request: NextRequest) {
-  const { email, password } = await request.json().catch(() => ({}) as Record<string, string>)
+  const { email, password } = await request.json().catch(() => ({} as Record<string, string>))
   if (!email || !password) {
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
   }
