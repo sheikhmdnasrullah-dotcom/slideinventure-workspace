@@ -240,43 +240,69 @@ async function main() {
   }
 
   // ---- PASS 2: remap FK _id columns via updateDocument ----
+  // Build per-collection natural-id maps: naturalId -> new $id. Namespaced by
+  // collection to avoid collisions between different tables' natural ids.
   console.log("\n--- FK remap pass ---")
-  // set of all new Appwrite ids -> if a value already equals one, it is remapped
-  const allNewIds = new Set()
-  for (const t of Object.keys(idMap)) for (const v of Object.values(idMap[t])) allNewIds.add(v)
-  for (const id of newIdsSeen) allNewIds.add(id)
+  const naturalMaps = {} // naturalMaps[table] = Map(oldNaturalId -> $id)
   for (const [table, col] of Object.entries(TABLE_MAP)) {
-    const explicit = EXPLICIT_FK[table] || {}
+    try {
+      const attrs = await getAttrs(col)
+      const na = oldIdAttrFor(table, attrs)
+      if (!na) continue
+      const res = await databases.listDocuments(DB, col, [])
+      const m = new Map()
+      for (const d of res.documents) if (d[na] != null) m.set(String(d[na]), d.$id)
+      naturalMaps[table] = m
+    } catch {}
+  }
+  // explicit child-column -> parent table for FK resolution
+  const FK_PARENT = {
+    knowledge_chunks: { knowledge_item_id: "knowledge_items" },
+    knowledge_item_versions: { knowledge_item_id: "knowledge_items" },
+    chat_messages: { session_id: "chat_sessions" },
+    relations: { from_entity_id: "entities", to_entity_id: "entities", source_knowledge_item_id: "knowledge_items" },
+  }
+  for (const [table, col] of Object.entries(TABLE_MAP)) {
+    let attrs
+    try {
+      attrs = await getAttrs(col)
+    } catch {
+      continue
+    }
+    const ownNatural = oldIdAttrFor(table, attrs) // never remap a doc's own id attr
     let res
     try {
       res = await databases.listDocuments(DB, col, [])
     } catch {
       continue
     }
+    const fk = FK_PARENT[table] || {}
     let updated = 0
     for (const d of res.documents) {
       const patch = {}
-      const idAttrs = Object.keys(d).filter(
-        (k) => k.endsWith("_id") && k !== "$id" && k !== "item_id" && d[k] != null
-      )
-      const candidates = [...new Set([...Object.values(explicit), ...idAttrs])]
-      for (const column of candidates) {
+      // candidate FK columns: explicit + any *_id column (best effort)
+      const candCols = new Set([...Object.keys(fk), ...Object.keys(d).filter((k) => k.endsWith("_id") && k !== "$id" && k !== ownNatural)])
+      for (const column of candCols) {
         const original = d[column]
         if (original == null) continue
-        if (allNewIds.has(original)) continue // already an Appwrite id -> already remapped
-        // explicit mapping takes precedence for target table
         let target = null
-        if (explicit[column]) {
-          const newId = idMap[explicit[column]][original]
-          if (newId !== undefined) target = newId
-          else {
-            // parent not migrated; keep original and note
-            failedRows.push({ table, row: d.$id, reason: `fk ${column}: parent ${explicit[column]} id ${original} not found` })
-          }
+        if (fk[column]) {
+          const m = naturalMaps[fk[column]]
+          if (m && m.has(String(original))) target = m.get(String(original))
+          else if (idMap[fk[column]] && idMap[fk[column]][String(original)] !== undefined)
+            target = idMap[fk[column]][String(original)]
         } else {
-          target = findRemap(column, original)
+          // best-effort: use the ONLY collection whose natural map contains it
+          const hits = Object.entries(naturalMaps).filter(([, m]) => m.has(String(original)))
+          if (hits.length === 1) target = hits[0][1].get(String(original))
+          else {
+            const h2 = Object.entries(idMap).filter(([, m]) => m[String(original)] !== undefined)
+            if (h2.length === 1) target = h2[0][1][String(original)]
+          }
         }
         if (target && target !== original) patch[column] = target
+        else if (fk[column] && target === undefined && naturalMaps[fk[column]] && naturalMaps[fk[column]].size > 0)
+          failedRows.push({ table, row: d.$id, reason: `fk ${column}: parent ${fk[column]} id ${original} not found` })
       }
       if (Object.keys(patch).length > 0) {
         try {
