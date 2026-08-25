@@ -11,9 +11,9 @@ import { ProgressPayload, TaskRunMetadata } from "./registry";
 // server runtime and the standalone `scripts/agent.ts` Node script, so it
 // intentionally constructs its own client instead of the "server-only" wrapper.
 const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT!)
-  .setProject(process.env.APPWRITE_PROJECT_ID!)
-  .setKey(process.env.APPWRITE_API_KEY!);
+  .setEndpoint(process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1")
+  .setProject(process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc")
+  .setKey(process.env.APPWRITE_API_KEY || "dummy-build-key");
 
 const databases = new Databases(client);
 

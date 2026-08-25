@@ -1,9 +1,9 @@
 import { Client, Users, ID } from "node-appwrite"
 
 const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setKey(process.env.APPWRITE_API_KEY)
+  .setEndpoint(process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1")
+  .setProject(process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc")
+  .setKey(process.env.APPWRITE_API_KEY || "dummy-build-key")
 const users = new Users(client)
 
 const EMAIL = "notespoc@slidein.dev"

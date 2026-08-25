@@ -3,8 +3,8 @@ import { cookies } from "next/headers"
 import { Client, Account } from "node-appwrite"
 import { getSessionUser as getSupabaseUser } from "@/lib/supabase/server"
 
-const ENDPOINT = process.env.APPWRITE_ENDPOINT!
-const PROJECT = process.env.APPWRITE_PROJECT_ID!
+const ENDPOINT = process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1"
+const PROJECT = process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc"
 export const SESSION_COOKIE = `a_session_${PROJECT}`
 
 function sessionClient(secret: string) {

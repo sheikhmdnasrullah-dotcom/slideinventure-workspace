@@ -1,7 +1,13 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server"
+import { getSessionUser } from "@/lib/appwrite/auth"
+import { databases } from "@/lib/appwrite/server"
+import { Query } from "node-appwrite"
+import { APPWRITE } from "@/lib/appwrite/config"
 import { ApiError } from "@/lib/api/errors"
 import { checkRateLimit } from "@/lib/api/rate-limit"
 import { NextRequest } from "next/server"
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.vault
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser()
@@ -17,17 +23,14 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Secret name required" }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
+    const res = await databases.listDocuments(DB, COL, [
+      Query.equal("name", secretName),
+      Query.equal("created_by", user.email ?? ""),
+      Query.limit(1),
+    ])
 
-    // Check if the user has permission to access vault
-    const { data: entry, error } = await supabase
-      .from("secret_vault_entries")
-      .select("id, name, encrypted_value, iv, key_version, secret_type, service_name, username, url, notes")
-      .eq("name", secretName)
-      .eq("created_by", user.email ?? "")
-      .single()
-
-    if (error || !entry) {
+    const entry = res.documents[0]
+    if (!entry) {
       return Response.json(
         { error: "Secret not found or access denied" },
         { status: 404 }
@@ -36,17 +39,17 @@ export async function POST(request: NextRequest) {
 
     // Decrypt the secret
     const { decryptSecret } = await import("@/lib/vault/crypto")
-    const { encrypted_value: encrypted } = entry
+    const encrypted = (entry as any).encrypted_value
     const decrypted = decryptSecret(encrypted)
 
     return Response.json({
-      name: entry.name,
-      secretType: entry.secret_type,
+      name: (entry as any).name,
+      secretType: (entry as any).secret_type,
       value: decrypted,
-      serviceName: entry.service_name,
-      username: entry.username,
-      url: entry.url,
-      notes: entry.notes,
+      serviceName: (entry as any).service_name,
+      username: (entry as any).username,
+      url: (entry as any).url,
+      notes: (entry as any).notes,
     })
   } catch (error) {
     console.error("Secret retrieval error:", error)

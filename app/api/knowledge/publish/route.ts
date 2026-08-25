@@ -1,4 +1,6 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { verifyInternalSecret } from "@/lib/auth/verify-internal-secret";
 import { recordVersion } from "@/lib/knowledge/versioning";
@@ -6,7 +8,25 @@ import { reindexChunks } from "@/lib/knowledge/reindex";
 import { z } from "zod";
 import { KnowledgeItemSchema } from "@/lib/api/schemas";
 
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.knowledgeItems;
+
 const PublishSchema = KnowledgeItemSchema.omit({ createdAt: true, updatedAt: true, searchVector: true, embedding: true });
+
+function toItemAttrs(data: Record<string, any>, slug: string, contentPath: string) {
+  return {
+    type: data.type,
+    title: data.title,
+    slug,
+    content_path: contentPath,
+    body: data.body ?? "",
+    status: data.status ?? "proposed",
+    source: data.source ?? null,
+    author: data.author ?? null,
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    content_type: data.contentType ?? "markdown",
+  };
+}
 
 export async function POST(request: Request) {
   if (!verifyInternalSecret(request)) {
@@ -24,36 +44,32 @@ export async function POST(request: Request) {
 
   const { id, type, title, body: content, status = "proposed", source = "terminal", author = "terminal", tags = [] } = validated.data;
 
-  const supabase = createServiceClient();
+  const res = await databases.listDocuments(DB, COL, [
+    Query.equal("item_id", id),
+    Query.limit(1),
+  ]);
 
-  const { data: existing } = await supabase
-    .from("knowledge_items")
-    .select("id, type, title, slug, content_path, content_type, body, status, source, author, tags, created_at, updated_at")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (existing) {
-    await recordVersion(supabase, id, existing, "publish", author);
+  let docId: string;
+  if (res.documents.length > 0) {
+    const existing = res.documents[0];
+    await recordVersion(existing.$id, existing as unknown as Record<string, unknown>, "publish", author);
+    await databases.updateDocument(DB, COL, existing.$id, {
+      ...toItemAttrs({ type, title, body: content, status, source, author, tags }, id, `terminal://${id}`),
+      updated_at: new Date().toISOString(),
+    });
+    docId = existing.$id;
+  } else {
+    const doc = await databases.createDocument(DB, COL, ID.unique(), {
+      item_id: id,
+      ...toItemAttrs({ type, title, body: content, status, source, author, tags }, id, `terminal://${id}`),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    docId = doc.$id;
   }
 
-  const { error } = await supabase.from("knowledge_items").upsert({
-    id,
-    type,
-    title,
-    slug: id,
-    content_path: `terminal://${id}`,
-    body: content ?? "",
-    status,
-    source,
-    author,
-    tags,
-    updated_at: new Date().toISOString(),
-  });
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
   try {
-    await reindexChunks(supabase, id, content ?? "");
+    await reindexChunks(docId, content ?? "");
   } catch (err) {
     return ApiError.internal("REINDEX_ERROR", (err as Error).message).toResponse();
   }

@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { databases } from '@/lib/appwrite/server'
-import { ID, Query } from 'node-appwrite'
+import { Query } from 'node-appwrite'
 import { APPWRITE } from '@/lib/appwrite/config'
 import { sendMail } from '@/lib/mail/smtp'
 import { getDefaultAccount } from '@/lib/mail/accounts'

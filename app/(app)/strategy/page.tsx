@@ -1,22 +1,42 @@
-import { requireUser, createServiceClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server";
 import { createCard } from "./actions";
+import { databases } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { StrategyBoard, type StrategyCard } from "./board";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.knowledgeItems;
+
 export default async function StrategyPage() {
   await requireUser();
 
-  // ponytail: same RLS gap as the knowledge pages — service role, page is
-  // already gated by requireUser().
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("knowledge_items")
-    .select("id, slug, type, title, status, source, updated_at")
-    .in("type", ["decision", "plan"])
-    .order("updated_at", { ascending: false });
+  // ponytail: same RLS gap as the knowledge pages — page is already gated by
+  // requireUser(); Appwrite server client uses the API key (admin scope).
+  let cards: StrategyCard[] = [];
+  let error: { message: string } | null = null;
 
-  const cards = (data ?? []) as StrategyCard[];
+  try {
+    const res = await databases.listDocuments(DB, COL, [
+      Query.orderDesc("updated_at"),
+      Query.limit(1000),
+    ]);
+    cards = res.documents
+      .filter((d) => d.type === "decision" || d.type === "plan")
+      .map((d) => ({
+        id: d.$id,
+        slug: d.slug,
+        type: d.type,
+        title: d.title,
+        status: d.status,
+        source: d.source,
+        updated_at: d.updated_at,
+      })) as StrategyCard[];
+  } catch (e) {
+    error = { message: e instanceof Error ? e.message : "Unknown error" };
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">

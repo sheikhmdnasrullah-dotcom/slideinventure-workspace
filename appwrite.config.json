@@ -1,0 +1,4084 @@
+{
+  "organizationId": "69e150ec9e8d93e79d81",
+  "projectId": "6a8cf7090015800700cc",
+  "projectName": "workspace.slideinventure.com",
+  "endpoint": "https://nyc.cloud.appwrite.io/v1",
+  "settings": {
+    "services": {
+      "account": true,
+      "avatars": true,
+      "databases": true,
+      "locale": true,
+      "health": true,
+      "storage": true,
+      "teams": true,
+      "users": true,
+      "sites": true,
+      "functions": true,
+      "graphql": true,
+      "messaging": true
+    },
+    "protocols": {
+      "rest": true,
+      "graphql": true,
+      "websocket": true
+    },
+    "auth": {
+      "methods": {
+        "jwt": true,
+        "phone": true,
+        "invites": true,
+        "anonymous": true,
+        "email-otp": true,
+        "magic-url": true,
+        "email-password": true
+      },
+      "security": {
+        "duration": 31536000,
+        "limit": null,
+        "sessionsLimit": 10,
+        "passwordHistory": null,
+        "passwordDictionary": false,
+        "personalDataCheck": false,
+        "sessionAlerts": false,
+        "mockNumbers": []
+      }
+    }
+  },
+  "sites": [
+    {
+      "$id": "workspace_slidein",
+      "name": "Workspace App",
+      "framework": "nextjs",
+      "adapter": "ssr",
+      "buildRuntime": "node-22",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
+      "outputDirectory": ".next",
+      "fallbackFile": "",
+      "buildSpecification": "s-4vcpu-4gb",
+      "runtimeSpecification": "s-1vcpu-512mb",
+      "deploymentRetention": 10,
+      "timeout": 30,
+      "logging": true,
+      "path": ".",
+      "id": "workspace_slidein",
+      "variables": {
+        "APPWRITE_ENDPOINT": "https://nyc.cloud.appwrite.io/v1",
+        "NEXT_PUBLIC_APPWRITE_ENDPOINT": "https://nyc.cloud.appwrite.io/v1",
+        "APPWRITE_PROJECT_ID": "6a8cf7090015800700cc",
+        "NEXT_PUBLIC_APPWRITE_PROJECT_ID": "6a8cf7090015800700cc",
+        "APPWRITE_API_KEY": "build-key",
+        "APPWRITE_DATABASE_ID": "workspace"
+      }
+    }
+  ],
+  "tablesDB": [
+    {
+      "$id": "workspace",
+      "name": "Workspace",
+      "enabled": true
+    }
+  ],
+  "tables": [
+    {
+      "$id": "notes",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Notes",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "user_email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "content",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_user_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "user_email"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        }
+      ]
+    },
+    {
+      "$id": "secret_vault_entries",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Secret Vault Entries",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "service_name",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "username",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "secret_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "notes",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "encrypted_value",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "iv",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "key_version",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "expires_at",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "created_by",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_by",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_by"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "ft_name",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "name"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_service_name",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "service_name"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_username",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "username"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "boards",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Boards",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "user_email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "content",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_user_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "user_email"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        }
+      ]
+    },
+    {
+      "$id": "terminal_commands",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Terminal Commands",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "command",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "cwd",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "exit_code",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "stdout",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "stderr",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "duration_ms",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "triggered_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "metadata",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "description",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "notes",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "variables",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "favorite",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "ft_title",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "title"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_command",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "command"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_description",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "description"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "apps",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Apps",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "slug",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "description",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "icon",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "enabled",
+          "type": "boolean",
+          "required": false,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "config",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_slug",
+          "type": "unique",
+          "status": "available",
+          "columns": [
+            "slug"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "useful_links",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Useful Links",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "description",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "favicon",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_by",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_by"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "ft_title",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "title"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_url",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "url"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "integrations",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Integrations",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "provider",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "config",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "last_sync_at",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "last_error",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_created_by",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_by"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_provider",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "provider"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_status",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "status"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "mail_accounts",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Mail Accounts",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "provider",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "imap_host",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "imap_port",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "smtp_host",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "smtp_port",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "encrypted_password",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_created_by",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_by"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_email",
+          "type": "unique",
+          "status": "available",
+          "columns": [
+            "email"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "entities",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Entities",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "entity_type",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "properties",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "entity_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_entity_type",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "entity_type"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_type",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "type"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_entity_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "entity_id"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "relations",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Relations",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "from_entity_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "to_entity_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "relation_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "source_knowledge_item_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_from",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "from_entity_id"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_to",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "to_entity_id"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_relation_type",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "relation_type"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "working_memory",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Working Memory",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "user_email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "content",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "context",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "expires_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "promoted_to_knowledge_item_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_user_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "user_email"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_expires_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "expires_at"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "custom_lead_fields",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Custom Lead Fields",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "key",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "options",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "required",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "visible",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "sortable",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "filterable",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "width",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "order",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_key",
+          "type": "unique",
+          "status": "available",
+          "columns": [
+            "key"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_order",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "order"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "lead_column_configs",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Lead Column Configs",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "user_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "columns",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_user_id",
+          "type": "unique",
+          "status": "available",
+          "columns": [
+            "user_id"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "audit_logs",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Audit Logs",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "table_name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "record_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "action",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "diff",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "metadata",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "actor_email",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "actor_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "ip",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "user_agent",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_table_name",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "table_name"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_record_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "record_id"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_actor_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "actor_email"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "miro_activity",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Miro Activity",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "event_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "board_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "card_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "user_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "user_name",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "action",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "metadata",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_user_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "user_id"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_event_type",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "event_type"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "notion_activity",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Notion Activity",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "event_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "page_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "block_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "user_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "user_name",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "action",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "metadata",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_user_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "user_id"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_event_type",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "event_type"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "todoist_tasks",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Todoist Tasks",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "external_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "project_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "content",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "description",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "priority",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "due_date",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "completed",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "assignee",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "metadata",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_completed",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "completed"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_project_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "project_id"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "task_runs",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Task Runs",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "task_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "command",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "output",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "exit_code",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "started_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "completed_at",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "triggered_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "knowledge_item_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "metadata",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_started_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "started_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_status",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "status"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_task_type",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "task_type"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "task_run_events",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Task Run Events",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "task_run_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "sequence",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "current",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "total",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "current_item",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "metadata",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_run_seq",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "task_run_id",
+            "sequence"
+          ],
+          "orders": [
+            "ASC",
+            "ASC"
+          ]
+        },
+        {
+          "key": "by_run_created",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "task_run_id",
+            "created_at"
+          ],
+          "orders": [
+            "ASC",
+            "DESC"
+          ]
+        }
+      ]
+    },
+    {
+      "$id": "verification_jobs",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Verification Jobs",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "total_leads",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "checked_count",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "verdict_counts",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "result_file_path",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "error_message",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "job_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_status",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "status"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "knowledge_items",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Knowledge Items",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "item_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "content_path",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "content_type",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "body",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": "proposed",
+          "encrypt": false
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 1000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "author",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 1000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "slug",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        }
+      ],
+      "indexes": [
+        {
+          "key": "ft_title",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "title"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_body",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "body"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_slug",
+          "type": "unique",
+          "status": "available",
+          "columns": [
+            "slug"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "leads",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Leads",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "first_name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "last_name",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "company",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "job_title",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "phone",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "notes",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "last_contacted_at",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "custom_fields",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "email"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_status",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "status"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "knowledge_chunks",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Knowledge Chunks",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "knowledge_item_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "chunk_index",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "heading",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "start_offset",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "end_offset",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "ft_text",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "text"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_knowledge_item_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "knowledge_item_id"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "knowledge_item_versions",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Knowledge Item Versions",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "knowledge_item_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "snapshot",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "changed_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 1000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "change_source",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_knowledge_item_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "knowledge_item_id"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "imported_files",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Imported Files",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "filename",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "mime_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "size_bytes",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "storage_path",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "mapping",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "row_count",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "imported_count",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "error_count",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "errors",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "imported_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "completed_at",
+          "type": "datetime",
+          "required": false,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_status",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "status"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        }
+      ]
+    },
+    {
+      "$id": "knowledge_search_history",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Knowledge Search History",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "query",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "mode",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": "exact",
+          "encrypt": false
+        },
+        {
+          "key": "result_count",
+          "type": "integer",
+          "required": false,
+          "array": false,
+          "default": 0,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "user_email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_user_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "user_email"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "chat_sessions",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Chat Sessions",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "user_email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": "New conversation",
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_user_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "user_email"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "chat_messages",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Chat Messages",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "session_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "role",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "content",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "evidence",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": "[]",
+          "encrypt": false
+        },
+        {
+          "key": "filters",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": "{}",
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_session_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "session_id"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "documents",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Documents",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "filename",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "mime_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "size_bytes",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "storage_path",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "tags",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "author",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_status",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "status"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        }
+      ]
+    },
+    {
+      "$id": "email_drafts",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Email Drafts",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "account_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "to",
+          "type": "string",
+          "required": true,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "cc",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "bcc",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "subject",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "body",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "reply_to_message_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_by",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_account_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "account_id"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        }
+      ]
+    },
+    {
+      "$id": "email_attachments",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Email Attachments",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "email_id",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "filename",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "mime_type",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "size_bytes",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "content_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "disposition",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "download_url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_email_id",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "email_id"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        }
+      ]
+    },
+    {
+      "$id": "mail_messages",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Mail Messages",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "uid",
+          "type": "integer",
+          "required": true,
+          "array": false,
+          "default": null,
+          "min": -9223372036854776000,
+          "max": 9223372036854776000
+        },
+        {
+          "key": "folder",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "from",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "from_name",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "to",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "cc",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "subject",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "body_text",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "body_html",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "sent_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "is_read",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "has_attachments",
+          "type": "boolean",
+          "required": true,
+          "array": false,
+          "default": null
+        },
+        {
+          "key": "message_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "in_reply_to",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "labels",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "fetched_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "account",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "message_uid",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 767,
+          "default": null,
+          "encrypt": false
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_folder_sent_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "folder",
+            "sent_at"
+          ],
+          "orders": [
+            "ASC",
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_is_read",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "is_read"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_fetched_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "fetched_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_account",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "account"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_subject",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "subject"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_body_text",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "body_text"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_from_name",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "from_name"
+          ],
+          "orders": []
+        },
+        {
+          "key": "ft_from",
+          "type": "fulltext",
+          "status": "available",
+          "columns": [
+            "from"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_message_uid",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "message_uid"
+          ],
+          "orders": []
+        }
+      ]
+    },
+    {
+      "$id": "users",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Users",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "full_name",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "avatar_url",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "role",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_email",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "email"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_role",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "role"
+          ],
+          "orders": []
+        },
+        {
+          "key": "by_created_at",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "created_at"
+          ],
+          "orders": [
+            "DESC"
+          ]
+        },
+        {
+          "key": "by_full_name",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "full_name"
+          ],
+          "orders": []
+        }
+      ]
+    }
+  ],
+  "buckets": [
+    {
+      "$id": "files",
+      "$permissions": [],
+      "fileSecurity": false,
+      "name": "Files",
+      "enabled": false,
+      "maximumFileSize": 5000000000,
+      "allowedFileExtensions": [],
+      "compression": "none",
+      "encryption": true,
+      "antivirus": true
+    }
+  ]
+}

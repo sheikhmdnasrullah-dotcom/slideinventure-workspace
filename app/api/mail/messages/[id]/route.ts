@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser, createServiceClient } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import {  ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { getMessage, markRead, deleteMessage } from "@/lib/mail/imap";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.mailMessages;
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -31,29 +37,33 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const message = await getMessage(parsed.email, parsed.folder, parsed.uid);
     if (!message) return ApiError.notFound("MESSAGE_NOT_FOUND", "Message not found").toResponse();
 
-    const supabase = createServiceClient();
-    await supabase.from("mail_messages").upsert(
-      {
-        id,
-        uid: message.uid,
-        folder: message.folder,
-        from: message.from,
-        from_name: message.fromName,
-        to: message.to,
-        cc: message.cc ?? [],
-        subject: message.subject,
-        body_text: message.text,
-        body_html: message.html ?? null,
-        sent_at: message.date,
-        is_read: message.read,
-        has_attachments: message.hasAttachments,
-        message_id: message.messageId ?? null,
-        in_reply_to: message.inReplyTo ?? null,
-        labels: message.labels,
-        fetched_at: new Date().toISOString(),
-      },
-      { onConflict: "id" }
-    );
+    const payload = {
+      uid: message.uid,
+      folder: message.folder,
+      from: message.from,
+      from_name: message.fromName,
+      to: message.to,
+      cc: message.cc ?? [],
+      subject: message.subject,
+      body_text: message.text,
+      body_html: message.html ?? null,
+      sent_at: message.date,
+      is_read: message.read,
+      has_attachments: message.hasAttachments,
+      message_id: message.messageId ?? null,
+      in_reply_to: message.inReplyTo ?? null,
+      labels: message.labels,
+      fetched_at: new Date().toISOString(),
+      account: parsed.email,
+      message_uid: id,
+    };
+
+    const existing = await databases.listDocuments(DB, COL, [Query.equal("message_uid", id)]);
+    if (existing.documents.length > 0) {
+      await databases.updateDocument(DB, COL, existing.documents[0].$id, payload);
+    } else {
+      await databases.createDocument(DB, COL, ID.unique(), payload);
+    }
 
     return NextResponse.json(message);
   } catch (err) {
@@ -78,8 +88,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     await markRead(parsed.email, parsed.folder, parsed.uid, read);
 
-    const supabase = createServiceClient();
-    await supabase.from("mail_messages").update({ is_read: read }).eq("id", id);
+    const res = await databases.listDocuments(DB, COL, [Query.equal("message_uid", id)]);
+    if (res.documents.length > 0) {
+      await databases.updateDocument(DB, COL, res.documents[0].$id, { is_read: read });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -101,8 +113,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   try {
     await deleteMessage(parsed.email, parsed.folder, parsed.uid);
 
-    const supabase = createServiceClient();
-    await supabase.from("mail_messages").delete().eq("id", id);
+    const res = await databases.listDocuments(DB, COL, [Query.equal("message_uid", id)]);
+    if (res.documents.length > 0) {
+      await databases.deleteDocument(DB, COL, res.documents[0].$id);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

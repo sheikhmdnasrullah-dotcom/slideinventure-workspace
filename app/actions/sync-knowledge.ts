@@ -1,10 +1,13 @@
 "use server";
 
-import { requireUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
 import { syncKnowledge } from "@/lib/knowledge/sync";
 
 export async function syncKnowledgeBase() {
-  await requireUser();
+  const user = await getSessionUser();
+  if (!user) {
+    return { success: false, counters: { created: [], updated: [], skipped: [], failed: [] }, output: "Unauthorized" };
+  }
 
   try {
     const count = await syncKnowledge();

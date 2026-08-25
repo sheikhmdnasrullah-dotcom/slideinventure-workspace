@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser, createServiceClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server";
+import { databases } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { Badge } from "@/components/ui/badge";
 import { HighlightedBody } from "@/components/knowledge/highlighted-body";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.knowledgeItems;
 
 export default async function KnowledgeItemPage(
   props: PageProps<"/knowledge/[slug]">
@@ -14,16 +20,25 @@ export default async function KnowledgeItemPage(
   const chunkParam = typeof searchParams.chunk === "string" ? Number(searchParams.chunk) : undefined;
   const chunk = chunkParam !== undefined && Number.isFinite(chunkParam) ? chunkParam : undefined;
 
-  const supabase = createServiceClient();
-  const { data: item } = await supabase
-    .from("knowledge_items")
-    .select("id, slug, type, title, status, source, author, tags, body, updated_at")
-    .eq("slug", slug)
-    .maybeSingle();
+  const res = await databases.listDocuments(DB, COL, [Query.equal("slug", slug)]);
+  const doc = res.documents[0];
 
-  if (!item) {
+  if (!doc) {
     notFound();
   }
+
+  const item = {
+    id: doc.$id,
+    slug: doc.slug,
+    type: doc.type,
+    title: doc.title,
+    status: doc.status,
+    source: doc.source,
+    author: doc.author,
+    tags: Array.isArray(doc.tags) ? doc.tags : doc.tags ? JSON.parse(doc.tags as string) : [],
+    body: doc.body,
+    updated_at: doc.updated_at,
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">

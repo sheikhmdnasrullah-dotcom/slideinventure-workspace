@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getSessionUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { createEntry, listTree, VentureFsError } from "@/lib/ai-venture/fs";

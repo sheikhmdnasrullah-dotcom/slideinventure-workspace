@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { addKnowledgeItem } from '@/lib/knowledge/sync'
-import { getSessionUser } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/appwrite/auth'
 import { extractFileText } from '@/lib/knowledge/file-extract'
 
 export async function POST(req: NextRequest) {

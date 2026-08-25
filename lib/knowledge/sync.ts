@@ -1,9 +1,36 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
-import { createServiceClient } from '@/lib/supabase/server'
+import { databases } from '@/lib/appwrite/server'
+import { ID, Query } from 'node-appwrite'
+import { APPWRITE } from '@/lib/appwrite/config'
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.knowledgeItems
 
 const KNOWLEDGE_DIR = path.join(process.cwd(), 'knowledge')
+
+async function upsertItem(item: Record<string, unknown>): Promise<string> {
+  const res = await databases.listDocuments(DB, COL, [
+    Query.equal("slug", item.slug as string),
+    Query.limit(1),
+  ])
+  if (res.documents.length > 0) {
+    const id = res.documents[0].$id
+    await databases.updateDocument(DB, COL, id, {
+      ...item,
+      updated_at: new Date().toISOString(),
+    })
+    return id
+  }
+  const now = new Date().toISOString()
+  const doc = await databases.createDocument(DB, COL, ID.unique(), {
+    ...item,
+    created_at: now,
+    updated_at: now,
+  })
+  return doc.$id
+}
 
 export async function syncKnowledge() {
   if (!fs.existsSync(KNOWLEDGE_DIR)) {
@@ -12,8 +39,6 @@ export async function syncKnowledge() {
 
   const files = fs.readdirSync(KNOWLEDGE_DIR)
   const mdFiles = files.filter(f => f.endsWith('.md'))
-
-  const supabase = createServiceClient()
 
   let count = 0
 
@@ -34,7 +59,7 @@ export async function syncKnowledge() {
     const author = data.author || null
 
     const item = {
-      id: slug, // using slug as id for simplicity
+      item_id: slug,
       slug,
       type,
       title,
@@ -45,29 +70,25 @@ export async function syncKnowledge() {
       source,
       author,
       tags: Array.isArray(tags) ? tags : [tags],
-      updated_at: new Date().toISOString()
     }
 
-    const { error } = await supabase
-      .from('knowledge_items')
-      .upsert(item, { onConflict: 'slug' })
-
-    if (error) {
-      console.error(`Failed to sync ${file}:`, error)
-    } else {
+    try {
+      await upsertItem(item)
       count++
+    } catch (err) {
+      console.error(`Failed to sync ${file}:`, err)
     }
   }
 
   // Optionally delete items in DB that no longer exist in filesystem
-  // For safety, we might not want to automatically delete them unless specified, 
-  // but for strict sync we should.
-  const { data: allItems } = await supabase.from('knowledge_items').select('slug')
-  if (allItems) {
-    const slugsInFs = new Set(mdFiles.map(f => f.replace(/\.md$/, '')))
-    for (const item of allItems) {
-      if (!slugsInFs.has(item.slug)) {
-        await supabase.from('knowledge_items').delete().eq('slug', item.slug)
+  const { documents: allItems } = await databases.listDocuments(DB, COL, [Query.limit(1000)])
+  const slugsInFs = new Set(mdFiles.map(f => f.replace(/\.md$/, '')))
+  for (const item of allItems) {
+    if (!slugsInFs.has((item as any).slug)) {
+      try {
+        await databases.deleteDocument(DB, COL, item.$id)
+      } catch {
+        // ignore delete failures
       }
     }
   }
@@ -135,9 +156,8 @@ export async function addKnowledgeItem(data: {
   }
 
   // Sync to database — this is the source of truth for the running app.
-  const supabase = createServiceClient()
   const item = {
-    id: uniqueSlug,
+    item_id: uniqueSlug,
     slug: uniqueSlug,
     type: frontmatter.category,
     title: frontmatter.title,
@@ -148,17 +168,21 @@ export async function addKnowledgeItem(data: {
     source: frontmatter.source,
     author: frontmatter.author,
     tags: frontmatter.tags,
-    updated_at: new Date().toISOString()
   }
 
-  const { error } = await supabase
-    .from('knowledge_items')
-    .upsert(item, { onConflict: 'slug' })
+  const id = await upsertItem(item)
 
-  if (error) {
-    console.error(`Failed to insert to DB for ${uniqueSlug}:`, error)
-    throw new Error('Database sync failed')
+  return {
+    id,
+    slug: uniqueSlug,
+    type: frontmatter.category,
+    title: frontmatter.title,
+    body: data.body,
+    status: frontmatter.status,
+    source: frontmatter.source,
+    author: frontmatter.author,
+    tags: frontmatter.tags,
+    content_path: item.content_path,
+    content_type: item.content_type,
   }
-
-  return item
 }

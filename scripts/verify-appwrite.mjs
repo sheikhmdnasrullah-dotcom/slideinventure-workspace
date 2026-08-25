@@ -1,9 +1,9 @@
 import { Client, Databases, Users, Storage } from "node-appwrite"
 
 const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setKey(process.env.APPWRITE_API_KEY)
+  .setEndpoint(process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1")
+  .setProject(process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc")
+  .setKey(process.env.APPWRITE_API_KEY || "dummy-build-key")
 
 const databases = new Databases(client)
 const users = new Users(client)

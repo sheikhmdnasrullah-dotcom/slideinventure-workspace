@@ -1,4 +1,9 @@
-import { createServiceClient } from "@/lib/supabase/server"
+import { databases } from "@/lib/appwrite/server"
+import { ID, Query } from "node-appwrite"
+import { APPWRITE } from "@/lib/appwrite/config"
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.leads
 
 export async function POST(request: Request) {
   try {
@@ -9,43 +14,32 @@ export async function POST(request: Request) {
       return Response.json({ error: "No leads provided" }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
     const now = new Date().toISOString()
 
-    // Get existing leads by email to detect duplicates
     const emails = leadsToImport
-      .map((lead) => lead.email ?? (lead as any).name ?? "")
+      .map((lead) => String(lead.email ?? lead.name ?? ""))
       .filter((email): email is string => email !== "")
 
-    let existingLeads: Record<string, string> = {} // email -> id mapping
+    const existingLeads: Record<string, string> = {} // email -> $id mapping
     if (emails.length > 0) {
-      const { data: existing, error } = await supabase
-        .from("leads")
-        .select("id, email")
-        .in("email", emails)
-
-      if (error) {
-        return Response.json({ error: error.message }, { status: 500 })
-      }
-
-      if (existing) {
-        existing.forEach((lead: { id: string; email: string }) => {
-          const emailKey = lead.email?.toLowerCase() ?? ""
-          if (emailKey) {
-            existingLeads[emailKey] = lead.id
-          }
-        })
+      const res = await databases.listDocuments(DB, COL, [
+        Query.equal("email", emails),
+        Query.limit(1000),
+      ])
+      for (const doc of res.documents) {
+        const emailKey = String(doc.email ?? "").toLowerCase()
+        if (emailKey && !(emailKey in existingLeads)) {
+          existingLeads[emailKey] = doc.$id
+        }
       }
     }
 
-    // Process each lead: update if exists, create if new
     const toCreate: Array<Record<string, unknown>> = []
-    const toUpdate: Array<Record<string, unknown>> = []
+    const toUpdate: Array<{ id: string; row: Record<string, unknown> }> = []
 
-    leadsToImport.forEach((lead) => {
+    for (const lead of leadsToImport) {
       const email = String(lead.email ?? lead.name ?? "").toLowerCase()
-      const row = {
-        id: existingLeads[email] || crypto.randomUUID(),
+      const row: Record<string, unknown> = {
         first_name: String(lead.first_name ?? lead.name ?? ""),
         last_name: String(lead.last_name ?? ""),
         email: lead.email ?? "",
@@ -56,38 +50,29 @@ export async function POST(request: Request) {
         status: String(lead.status ?? "new"),
         notes: lead.notes ? String(lead.notes) : null,
         tags: Array.isArray(lead.tags) ? lead.tags.map(String) : [],
-        custom_fields: (lead.custom_fields as Record<string, unknown>) ?? {},
+        custom_fields: JSON.stringify((lead.custom_fields as Record<string, unknown>) ?? {}),
+        last_contacted_at: (lead.last_contacted_at as string) ?? null,
         updated_at: now,
       }
 
-      if (existingLeads[email]) {
-        // Update existing lead - keep the same ID
-        row.id = existingLeads[email]!
-        toUpdate.push(row)
+      const existingId = existingLeads[email]
+      if (existingId) {
+        toUpdate.push({ id: existingId, row })
       } else {
-        // New lead
+        row.created_at = now
         toCreate.push(row)
-      }
-    })
-
-    // Insert new leads
-    if (toCreate.length > 0) {
-      const { error: createError } = await supabase.from("leads").insert(toCreate)
-      if (createError) {
-        return Response.json({ error: createError.message }, { status: 500 })
       }
     }
 
-    // Update existing leads
+    if (toCreate.length > 0) {
+      for (const row of toCreate) {
+        await databases.createDocument(DB, COL, ID.unique(), row)
+      }
+    }
+
     if (toUpdate.length > 0) {
-      const { error: updateError } = await supabase
-        .from("leads")
-        .update(toUpdate.map(row => ({
-          ...row,
-          updated_at: now,
-        })))
-      if (updateError) {
-        return Response.json({ error: updateError.message }, { status: 500 })
+      for (const { id, row } of toUpdate) {
+        await databases.updateDocument(DB, COL, id, row)
       }
     }
 

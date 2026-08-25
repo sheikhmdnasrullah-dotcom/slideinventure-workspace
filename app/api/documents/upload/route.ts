@@ -1,13 +1,16 @@
-import { createServiceClient, requireUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases, storage, ID, Permission, Role } from "@/lib/appwrite/server";
+import { InputFile } from "node-appwrite/file";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
-import { randomUUID } from "node:crypto";
-import path from "node:path";
 import { NextRequest } from "next/server";
-import { recordAudit } from "@/lib/api/audit";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.documents;
 
 export async function POST(request: NextRequest) {
-  const user = await requireUser();
+  const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
   const limit = checkRateLimit(request, { limit: 5, windowMs: 60_000 });
@@ -34,45 +37,44 @@ export async function POST(request: NextRequest) {
       return ApiError.badRequest("UNSUPPORTED_TYPE", "Unsupported file type").toResponse();
     }
 
-    const id = randomUUID();
-    const ext = path.extname(file.name) || ".pdf";
-    const storageFilename = `${id}${ext}`;
-
-    const supabase = createServiceClient();
-
+    const id = ID.unique();
     const bytes = await file.arrayBuffer();
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(storageFilename, bytes, {
-        contentType: file.type || "application/pdf",
-        upsert: false,
+
+    const fileId = id;
+    await storage.createFile(
+      "files",
+      fileId,
+      InputFile.fromBuffer(Buffer.from(bytes), file.name),
+      [Permission.read(Role.any())]
+    );
+
+    const url = `${APPWRITE.endpoint}/storage/buckets/files/files/${fileId}/view?project=${APPWRITE.projectId}`;
+
+    try {
+      await databases.createDocument(DB, COL, id, {
+        title,
+        filename: file.name,
+        mime_type: file.type || "application/pdf",
+        size_bytes: file.size,
+        storage_path: fileId,
+        url,
+        tags,
+        status: "active",
+        author,
+        source: "dashboard",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       });
-
-    if (uploadError) {
-      return ApiError.internal("STORAGE_ERROR", "Failed to upload file to storage").toResponse();
+    } catch (dbError) {
+      try {
+        await storage.deleteFile("files", fileId);
+      } catch {
+        // best-effort cleanup
+      }
+      throw dbError;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from("documents").getPublicUrl(storageFilename);
-
-    const { error: dbError } = await supabase.from("documents").insert({
-      id,
-      title,
-      filename: file.name,
-      mime_type: file.type || "application/pdf",
-      size_bytes: file.size,
-      storage_path: storageFilename,
-      url: publicUrl,
-      tags,
-      author,
-      status: "active",
-    });
-
-    if (dbError) {
-      await supabase.storage.from("documents").remove([storageFilename]);
-      return ApiError.internal("DB_ERROR", "Failed to save metadata").toResponse();
-    }
-
-    return Response.json({ id, url: publicUrl, title, filename: file.name }, { status: 201 });
+    return Response.json({ id, url, title, filename: file.name }, { status: 201 });
   } catch (error) {
     return ApiError.internal("UPLOAD_ERROR", error instanceof Error ? error.message : "Upload failed").toResponse();
   }

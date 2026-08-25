@@ -1,21 +1,23 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { databases } from "@/lib/appwrite/server"
+import { ID } from "node-appwrite"
+import { APPWRITE } from "@/lib/appwrite/config"
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.knowledgeItemVersions
 
 // Snapshots a knowledge_items row into knowledge_item_versions before it's
 // overwritten. Call with the row as it existed *before* the write.
 export async function recordVersion(
-  supabase: SupabaseClient,
   knowledgeItemId: string,
   previousRow: Record<string, unknown>,
   changeSource: string,
   changedBy?: string | null
 ) {
-  const { error } = await supabase.from("knowledge_item_versions").insert({
+  await databases.createDocument(DB, COL, ID.unique(), {
     knowledge_item_id: knowledgeItemId,
-    snapshot: previousRow,
+    snapshot: JSON.stringify(previousRow ?? {}),
     changed_by: changedBy ?? null,
     change_source: changeSource,
-  });
-  if (error) {
-    throw new Error(`version snapshot for '${knowledgeItemId}' failed: ${error.message}`);
-  }
+    created_at: new Date().toISOString(),
+  })
 }

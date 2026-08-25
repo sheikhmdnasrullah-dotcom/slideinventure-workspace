@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import {  ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { z } from "zod";

@@ -1,10 +1,16 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
 import { EmailAttachmentSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.emailAttachments;
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -14,6 +20,20 @@ const ListSchema = z.object({
 
 const CreateSchema = EmailAttachmentSchema.omit({ id: true, createdAt: true });
 
+function serialize(doc: Record<string, any>) {
+  return {
+    id: doc.$id,
+    email_id: doc.email_id,
+    filename: doc.filename,
+    mime_type: doc.mime_type,
+    size_bytes: doc.size_bytes,
+    content_id: doc.content_id,
+    disposition: doc.disposition,
+    download_url: doc.download_url,
+    created_at: doc.created_at,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
@@ -22,27 +42,24 @@ export async function GET(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
-  const supabase = createServiceClient();
 
-  let q = supabase.from("email_attachments").select("*", { count: "exact" });
+  const queries = [];
+  if (query.data.emailId) queries.push(Query.equal("email_id", query.data.emailId));
+  queries.push(Query.limit(query.data.pageSize));
+  queries.push(Query.offset((query.data.page - 1) * query.data.pageSize));
+  queries.push(Query.orderDesc("created_at"));
 
-  if (query.data.emailId) {
-    q = q.eq("email_id", query.data.emailId);
+  try {
+    const res = await databases.listDocuments(DB, COL, queries);
+    return Response.json({
+      data: res.documents.map(serialize),
+      total: res.total,
+      page: query.data.page,
+      pageSize: query.data.pageSize,
+    });
+  } catch (error) {
+    return toJson(error);
   }
-
-  const from = (query.data.page - 1) * query.data.pageSize;
-  const to = from + query.data.pageSize - 1;
-
-  const { data, error, count } = await q.order("created_at", { ascending: false }).range(from, to);
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({
-    data: data ?? [],
-    total: count ?? 0,
-    page: query.data.page,
-    pageSize: query.data.pageSize,
-  });
 }
 
 export async function POST(request: NextRequest) {
@@ -54,18 +71,21 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const validated = validate(CreateSchema, body);
-
-  const supabase = createServiceClient();
-  const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  const { error } = await supabase.from("email_attachments").insert({
-    id,
-    ...validated.data,
-    created_at: now,
-  });
-
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  return Response.json({ id }, { status: 201 });
+  try {
+    const doc = await databases.createDocument(DB, COL, ID.unique(), {
+      email_id: validated.data.emailId,
+      filename: validated.data.filename,
+      mime_type: validated.data.mimeType,
+      size_bytes: validated.data.sizeBytes,
+      content_id: validated.data.contentId ?? null,
+      disposition: validated.data.disposition ?? null,
+      download_url: validated.data.downloadUrl ?? null,
+      created_at: now,
+    });
+    return Response.json({ id: doc.$id }, { status: 201 });
+  } catch (error) {
+    return toJson(error);
+  }
 }

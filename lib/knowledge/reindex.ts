@@ -1,69 +1,37 @@
-import { SupabaseClient } from "@supabase/supabase-js";
-import { chunkBody } from "./chunking";
-import { embedTexts } from "./nvidia";
+import { databases } from "@/lib/appwrite/server"
+import { ID, Query } from "node-appwrite"
+import { APPWRITE } from "@/lib/appwrite/config"
+import { chunkBody } from "./chunking"
+
+const DB = APPWRITE.databaseId
+const COL = APPWRITE.collections.knowledgeChunks
 
 // Rebuilds knowledge_chunks for one item from its current body. Call after
 // every successful knowledge_items insert/update — same wiring shape as
 // recordVersion(), so chunks never drift out of sync with content.
-export async function reindexChunks(
-  supabase: SupabaseClient,
-  knowledgeItemId: string,
-  body: string
-) {
-  const { error: deleteError } = await supabase
-    .from("knowledge_chunks")
-    .delete()
-    .eq("knowledge_item_id", knowledgeItemId);
-  if (deleteError) {
-    throw new Error(`chunk reindex for '${knowledgeItemId}' failed: ${deleteError.message}`);
-  }
+export async function reindexChunks(knowledgeItemId: string, body: string) {
+  const existing = await databases.listDocuments(DB, COL, [
+    Query.equal("knowledge_item_id", knowledgeItemId),
+    Query.limit(1000),
+  ])
+  await Promise.all(
+    existing.documents.map((d) => databases.deleteDocument(DB, COL, d.$id))
+  )
 
-  const chunks = chunkBody(body);
-  if (chunks.length === 0) return;
+  const chunks = chunkBody(body ?? "")
+  if (chunks.length === 0) return
 
-  const { data: inserted, error: insertError } = await supabase
-    .from("knowledge_chunks")
-    .insert(
-      chunks.map((chunk) => ({
+  await Promise.all(
+    chunks.map((chunk) =>
+      databases.createDocument(DB, COL, ID.unique(), {
         knowledge_item_id: knowledgeItemId,
         chunk_index: chunk.chunkIndex,
         heading: chunk.heading,
         text: chunk.text,
         start_offset: chunk.startOffset,
         end_offset: chunk.endOffset,
-      }))
+        created_at: new Date().toISOString(),
+      })
     )
-    .select("id, text");
-  if (insertError) {
-    throw new Error(`chunk reindex for '${knowledgeItemId}' failed: ${insertError.message}`);
-  }
-
-  await embedInsertedChunks(supabase, inserted ?? []);
-}
-
-// Best-effort: embeds every freshly-inserted chunk in one batched call and
-// writes the vectors back. A missing NVIDIA_API_KEY or a failed API call
-// leaves embedding/embedded_at null — chunks stay lexically searchable,
-// this never fails the write that triggered reindexing.
-async function embedInsertedChunks(
-  supabase: SupabaseClient,
-  rows: { id: string; text: string }[]
-) {
-  if (rows.length === 0) return;
-
-  const vectors = await embedTexts(
-    rows.map((r) => r.text),
-    "passage"
-  );
-  if (!vectors) return;
-
-  const embeddedAt = new Date().toISOString();
-  await Promise.all(
-    rows.map((row, i) =>
-      supabase
-        .from("knowledge_chunks")
-        .update({ embedding: vectors[i], embedded_at: embeddedAt })
-        .eq("id", row.id)
-    )
-  );
+  )
 }

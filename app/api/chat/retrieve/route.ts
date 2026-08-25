@@ -1,7 +1,14 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const CHUNKS = APPWRITE.collections.knowledgeChunks;
+const ITEMS = APPWRITE.collections.knowledgeItems;
 
 interface RetrievalResult {
   source: string
@@ -19,129 +26,54 @@ interface SourceGroup {
   matchCount: number
 }
 
-async function searchKnowledgeChunks(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
+async function searchKnowledgeChunks(query: string): Promise<RetrievalResult[]> {
   if (!query.trim()) return [];
 
-  // Preferred: semantic/FTS search over chunked knowledge.
-  const { data, error } = await supabase.rpc("match_knowledge_chunks_fts", {
-    query_text: query,
-    match_count: 5,
-  });
+  // Preferred: fulltext search over chunked knowledge (replaces
+  // match_knowledge_chunks_fts; Appwrite has no tsvector/SQL).
+  const res = await databases.listDocuments(DB, CHUNKS, [
+    Query.search("text", query),
+    Query.limit(5),
+  ]);
 
-  if (!error && data && data.length > 0) {
-    return data.map((row: any) => ({
+  if (res.documents.length > 0) {
+    return res.documents.map((row: any) => ({
       source: "knowledge",
       title: row.heading || "Knowledge",
       snippet: row.text,
       path: `/knowledge/${row.knowledge_item_id}?chunk=${row.chunk_index}`,
-      score: row.rank || 0,
+      score: 0,
     }));
   }
 
   // Fallback: plain keyword search across knowledge items so the chat still
-  // finds terminal codes, passwords, and notes stored as text even when
-  // embeddings/FTS are not configured.
-  const escaped = query.replace(/[\\%_]/g, (c) => `\\${c}`);
-  const { data: items, error: itemError } = await supabase
-    .from("knowledge_items")
-    .select("id, title, body")
-    .or(`title.ilike.%${escaped}%,body.ilike.%${escaped}%`)
-    .limit(5);
-
-  if (itemError || !items) return [];
-
-  return items.map((row: any) => ({
-    source: "knowledge",
-    title: row.title || "Knowledge",
-    snippet: (row.body || "").slice(0, 300),
-    path: `/knowledge/${row.id}`,
-    score: 0,
-  }));
+  // finds terminal codes, passwords, and notes stored as text.
+  const [titleRes, bodyRes] = await Promise.all([
+    databases.listDocuments(DB, ITEMS, [Query.search("title", query), Query.limit(5)]),
+    databases.listDocuments(DB, ITEMS, [Query.search("body", query), Query.limit(5)]),
+  ]);
+  const map = new Map<string, RetrievalResult>();
+  for (const row of [...titleRes.documents, ...bodyRes.documents]) {
+    if (!map.has(row.$id)) {
+      map.set(row.$id, {
+        source: "knowledge",
+        title: (row as any).title || "Knowledge",
+        snippet: ((row as any).body || "").slice(0, 300),
+        path: `/knowledge/${row.$id}`,
+        score: 0,
+      });
+    }
+  }
+  return [...map.values()];
 }
 
-async function searchLeads(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  if (!query.trim()) return [];
-
-  const { data, error } = await supabase.rpc("search_leads_fts", {
-    query_text: query,
-    match_count: 10,
-  });
-
-  if (error || !data) return [];
-
-  return data.map((row: any) => {
-    const name = [row.first_name, row.last_name].filter(Boolean).join(" ") || "Unnamed";
-    const snippet = [row.email, row.company, row.job_title, row.notes].filter(Boolean).join(" · ") || name;
-    return {
-      source: "leads",
-      title: name,
-      snippet,
-      path: `/leads?id=${row.id}`,
-      score: row.rank || 0,
-    };
-  });
-}
-
-async function searchTerminalCommands(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  if (!query.trim()) return [];
-
-  const { data, error } = await supabase.rpc("search_terminal_commands_fts", {
-    query_text: query,
-    match_count: 10,
-  });
-
-  if (error || !data) return [];
-
-  return data.map((row: any) => {
-    const snippet = [row.command, row.stdout, row.stderr].filter(Boolean).join("\n") || row.command;
-    return {
-      source: "terminal",
-      title: row.command,
-      snippet: snippet.slice(0, 500),
-      path: `/terminal?command=${encodeURIComponent(row.id)}`,
-      score: row.rank || 0,
-    };
-  });
-}
-
-async function searchApps(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  if (!query.trim()) return [];
-
-  const { data, error } = await supabase.rpc("search_apps_fts", {
-    query_text: query,
-    match_count: 10,
-  });
-
-  if (error || !data) return [];
-
-  return data.map((row: any) => ({
-    source: "apps",
-    title: row.name,
-    snippet: row.description || row.url || "",
-    url: row.url,
-    path: `/apps?id=${row.id}`,
-    score: row.rank || 0,
-  }));
-}
-
-async function searchUsefulLinks(supabase: ReturnType<typeof createServiceClient>, query: string): Promise<RetrievalResult[]> {
-  if (!query.trim()) return [];
-
-  const { data, error } = await supabase.rpc("search_useful_links_fts", {
-    query_text: query,
-    match_count: 10,
-  });
-
-  if (error || !data) return [];
-
-  return data.map((row: any) => ({
-    source: "links",
-    title: row.title,
-    snippet: row.description || row.url,
-    url: row.url,
-    path: `/useful-links?id=${row.id}`,
-    score: row.rank || 0,
-  }));
+// TODO(appwrite): leads / terminal / apps / useful_links retrieval was backed
+// by Supabase FTS RPCs (search_leads_fts, search_terminal_commands_fts,
+// search_apps_fts, search_useful_links_fts). Those collections are owned by
+// other migration agents and are out of scope for the Knowledge/Chat module
+// migration. Reimplement here once their Appwrite fulltext indexes exist.
+async function searchExternal(_source: string, _query: string): Promise<RetrievalResult[]> {
+  return [];
 }
 
 export async function POST(request: NextRequest) {
@@ -158,14 +90,13 @@ export async function POST(request: NextRequest) {
   }
 
   const start = Date.now();
-  const supabase = createServiceClient();
 
   const [knowledge, leads, terminal, apps, links] = await Promise.all([
-    searchKnowledgeChunks(supabase, message),
-    searchLeads(supabase, message),
-    searchTerminalCommands(supabase, message),
-    searchApps(supabase, message),
-    searchUsefulLinks(supabase, message),
+    searchKnowledgeChunks(message),
+    searchExternal("leads", message),
+    searchExternal("terminal", message),
+    searchExternal("apps", message),
+    searchExternal("useful_links", message),
   ]);
 
   const sources: SourceGroup[] = [

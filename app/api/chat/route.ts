@@ -1,7 +1,15 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const SESSIONS = APPWRITE.collections.chatSessions;
+const MESSAGES = APPWRITE.collections.chatMessages;
+const CHUNKS = APPWRITE.collections.knowledgeChunks;
 
 const EMBED_MODEL = "nvidia/nv-embedqa-e5-v5"; // NVIDIA embedding model
 const RERANK_MODEL = "nvidia/nv-rerankqa-mistral-4b"; // NVIDIA reranker
@@ -9,16 +17,6 @@ const LLM_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"; // NVIDIA LLM (or Anthrop
 const TOP_K_EMBEDDING = 20; // candidates from vector search
 const TOP_K_RERANK = 8; // after rerank
 const MAX_EVIDENCE = 5; // citations sent to LLM
-
-function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0, na = 0, nb = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    na += a[i] * a[i];
-    nb += b[i] * b[i];
-  }
-  return dot / (Math.sqrt(na) * Math.sqrt(nb));
-}
 
 async function nvidiaEmbed(texts: string[]): Promise<number[][]> {
   const apiKey = process.env.NVIDIA_API_KEY;
@@ -115,45 +113,47 @@ interface EvidenceChunk {
 }
 
 async function retrieveEvidence(
-  supabase: ReturnType<typeof createServiceClient>,
   query: string,
   filters: { type?: string; status?: string; tag?: string; dateFrom?: string; dateTo?: string } = {}
 ): Promise<EvidenceChunk[]> {
-  // 1. Embed the query
-  const [queryEmbedding] = await nvidiaEmbed([query]);
+  // 1. Embed the query — keep the NVIDIA external call for parity, but Appwrite
+  //    has no vector store, so the embedding is not used for matching.
+  await nvidiaEmbed([query]).catch(() => null);
 
-  // 2. Resolve filter -> item IDs (exact match on metadata)
+  // 2. Resolve filter -> item $ids (exact match on metadata)
   let itemIds: string[] | null = null;
   if (filters.type || filters.status || filters.tag || filters.dateFrom || filters.dateTo) {
-    let q = supabase.from("knowledge_items").select("id").limit(1000);
-    if (filters.type) q = q.eq("type", filters.type);
-    if (filters.status) q = q.eq("status", filters.status);
-    if (filters.tag) q = q.contains("tags", [filters.tag]);
-    if (filters.dateFrom) q = q.gte("updated_at", filters.dateFrom);
-    if (filters.dateTo) q = q.lte("updated_at", filters.dateTo);
-    const { data } = await q;
-    itemIds = (data ?? []).map((r) => r.id as string);
+    const queries: string[] = [];
+    if (filters.type) queries.push(Query.equal("type", filters.type));
+    if (filters.status) queries.push(Query.equal("status", filters.status));
+    if (filters.tag) queries.push(Query.contains("tags", filters.tag));
+    if (filters.dateFrom) queries.push(Query.greaterThanEqual("updated_at", filters.dateFrom));
+    if (filters.dateTo) queries.push(Query.lessThanEqual("updated_at", filters.dateTo));
+    queries.push(Query.limit(1000));
+    const { documents } = await databases.listDocuments(
+      DB,
+      APPWRITE.collections.knowledgeItems,
+      queries
+    );
+    itemIds = documents.map((d) => d.$id);
     if (itemIds.length === 0) return [];
   }
 
-  // 3. Semantic search via RPC
-  const { data: semantic, error: semErr } = await supabase.rpc("match_knowledge_chunks", {
-    query_embedding: queryEmbedding,
-    match_count: TOP_K_EMBEDDING,
-    filter_item_ids: itemIds,
-  });
+  // 3. Fulltext search over chunks (replaces the vector RPC)
+  const queries: string[] = [Query.search("text", query), Query.limit(TOP_K_EMBEDDING)];
+  if (itemIds) queries.push(Query.equal("knowledge_item_id", itemIds));
 
-  if (semErr) throw new Error(`Semantic search failed: ${semErr.message}`);
+  const { documents } = await databases.listDocuments(DB, CHUNKS, queries);
 
-  const candidates: EvidenceChunk[] = (semantic ?? []).map((r: any) => ({
-    id: r.id,
+  const candidates: EvidenceChunk[] = documents.map((r: any) => ({
+    id: r.$id,
     knowledge_item_id: r.knowledge_item_id,
     chunk_index: r.chunk_index,
-    heading: r.heading,
+    heading: r.heading ?? null,
     text: r.text,
     start_offset: r.start_offset,
     end_offset: r.end_offset,
-    similarity: r.similarity,
+    similarity: 1.0,
   }));
 
   if (candidates.length === 0) return [];
@@ -176,7 +176,6 @@ export async function POST(request: NextRequest) {
   const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
-  const supabase = createServiceClient();
   const body = await request.json();
 
   const {
@@ -195,28 +194,44 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Message required" }, { status: 400 });
   }
 
-  // Create or get session
+  // Create or get session (ownership-scoped to the current user)
   let sessionIdFinal = sessionId;
   if (!sessionIdFinal) {
-    const { data: session, error } = await supabase
-      .from("chat_sessions")
-      .insert({ user_email: user.email!, title: message.slice(0, 60) })
-      .select("id")
-      .single();
-    if (error) throw new Error(`Session create failed: ${error.message}`);
-    sessionIdFinal = session.id;
+    const session = await databases.createDocument(DB, SESSIONS, ID.unique(), {
+      user_email: user.email!,
+      title: message.slice(0, 60),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    sessionIdFinal = session.$id;
+  } else {
+    const owned = await databases.listDocuments(DB, SESSIONS, [
+      Query.equal("$id", sessionIdFinal),
+      Query.equal("user_email", user.email!),
+      Query.limit(1),
+    ]);
+    if (owned.documents.length === 0) {
+      const session = await databases.createDocument(DB, SESSIONS, ID.unique(), {
+        user_email: user.email!,
+        title: message.slice(0, 60),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      sessionIdFinal = session.$id;
+    }
   }
 
   // Store user message
-  await supabase.from("chat_messages").insert({
+  await databases.createDocument(DB, MESSAGES, ID.unique(), {
     session_id: sessionIdFinal,
     role: "user",
     content: message,
-    filters,
+    filters: JSON.stringify(filters),
+    created_at: new Date().toISOString(),
   });
 
   // Retrieve evidence
-  const evidence = await retrieveEvidence(supabase, message, filters);
+  const evidence = await retrieveEvidence(message, filters);
 
   // Build context for LLM
   const contextParts = evidence.map((e, i) => {
@@ -250,16 +265,14 @@ Cite evidence by number [1], [2], etc. Do not hallucinate.`;
   }));
 
   // Store assistant message with evidence
-  const { data: assistantMsg } = await supabase
-    .from("chat_messages")
-    .insert({
-      session_id: sessionIdFinal,
-      role: "assistant",
-      content: answer,
-      evidence: storedEvidence,
-    })
-    .select("id, created_at")
-    .single();
+  const assistantMsg = await databases.createDocument(DB, MESSAGES, ID.unique(), {
+    session_id: sessionIdFinal,
+    role: "assistant",
+    content: answer,
+    evidence: JSON.stringify(storedEvidence),
+    filters: "{}",
+    created_at: new Date().toISOString(),
+  });
 
   // Stream response as SSE
   const encoder = new TextEncoder();
@@ -279,7 +292,7 @@ Cite evidence by number [1], [2], etc. Do not hallucinate.`;
       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "evidence", evidence: storedEvidence })}\n\n`));
 
       // Done
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done", messageId: assistantMsg?.id })}\n\n`));
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done", messageId: assistantMsg.$id })}\n\n`));
       controller.close();
     },
   });

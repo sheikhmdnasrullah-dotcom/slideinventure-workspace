@@ -1,4 +1,4 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
@@ -6,6 +6,8 @@ import type { DashboardResponse, ChartPoint, ActivityRow, KpiCard } from "@/lib/
 
 const DB = APPWRITE.databaseId;
 const RUNS = APPWRITE.collections.taskRuns;
+const KI = APPWRITE.collections.knowledgeItems;
+const LEADS = APPWRITE.collections.leads;
 
 function buildChart(days: number, runs: any[]): ChartPoint[] {
   const points: ChartPoint[] = [];
@@ -39,21 +41,25 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createServiceClient();
-
   let knowledgeItems: any[] = [];
   let taskRuns: any[] = [];
   let activeLeads = 0;
 
   try {
-    const { data: knowledgeItemsData } = await supabase
-      .from("knowledge_items")
-      .select("id, type, title, status, source, updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(20);
-    knowledgeItems = knowledgeItemsData ?? [];
+    const res = await databases.listDocuments(DB, KI, [
+      Query.orderDesc("updated_at"),
+      Query.limit(20),
+    ]);
+    knowledgeItems = res.documents.map((d: any) => ({
+      id: d.$id,
+      type: d.type,
+      title: d.title,
+      status: d.status,
+      source: d.source,
+      updated_at: d.updated_at,
+    }));
   } catch {
-    // Supabase unreachable; degrade gracefully with empty data
+    // Appwrite unreachable; degrade gracefully with empty data
   }
 
   try {
@@ -76,13 +82,13 @@ export async function GET() {
   }
 
   try {
-    const { count } = await supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true })
-      .neq("status", "lost");
-    activeLeads = count ?? 0;
+    const res = await databases.listDocuments(DB, LEADS, [
+      Query.notEqual("status", "lost"),
+      Query.limit(1),
+    ]);
+    activeLeads = res.total;
   } catch {
-    // Supabase unreachable; degrade gracefully with empty data
+    // Appwrite unreachable; degrade gracefully with empty data
   }
 
   const items = knowledgeItems;

@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases } from "@/lib/appwrite/server";
-import { ID, Query } from "node-appwrite";
+import { ID } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";

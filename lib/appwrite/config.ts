@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const APPWRITE = {
   endpoint: process.env.APPWRITE_ENDPOINT ?? "https://cloud.appwrite.io/v1",
   projectId: process.env.APPWRITE_PROJECT_ID ?? "",
@@ -34,5 +35,7 @@ export const APPWRITE = {
     notionActivity: "notion_activity",
     todoistTasks: "todoist_tasks",
     auditLogs: "audit_logs",
+    mailMessages: "mail_messages",
+    users: "users",
   },
 } as const

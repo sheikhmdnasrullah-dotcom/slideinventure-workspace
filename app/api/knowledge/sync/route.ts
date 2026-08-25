@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { syncKnowledge } from '@/lib/knowledge/sync'
-import { requireUser } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/appwrite/auth'
 
 export async function POST() {
-  const user = await requireUser()
+  const user = await getSessionUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {

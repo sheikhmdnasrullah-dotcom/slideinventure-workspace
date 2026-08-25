@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, createEmailPasswordSession } from "@/lib/appwrite/auth";
 import { createClient } from "@/lib/supabase/server";

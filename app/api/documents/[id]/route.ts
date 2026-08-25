@@ -1,27 +1,39 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases, storage } from "@/lib/appwrite/server";
+import { Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError, toJson } from "@/lib/api/errors";
 import { NextRequest } from "next/server";
+
+const DB = APPWRITE.databaseId;
+const COL = APPWRITE.collections.documents;
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
   const { id } = await params;
-  const supabase = createServiceClient();
 
-  const { data: doc } = await supabase.from("documents").select("storage_path").eq("id", id).single();
+  try {
+    const res = await databases.listDocuments(DB, COL, [Query.equal("$id", id)]);
+    const doc = res.documents[0];
 
-  const { error } = await supabase.from("documents").delete().eq("id", id);
+    if (doc?.storage_path) {
+      try {
+        await storage.deleteFile("files", doc.storage_path);
+      } catch {
+        // best-effort cleanup
+      }
+    }
 
-  if (error) return ApiError.internal("DB_ERROR", error.message).toResponse();
-
-  if (doc?.storage_path) {
     try {
-      await supabase.storage.from("documents").remove([doc.storage_path]);
+      await databases.deleteDocument(DB, COL, id);
     } catch {
       // best-effort cleanup
     }
-  }
 
-  return Response.json({ id, status: "deleted" });
+    return Response.json({ id, status: "deleted" });
+  } catch (error) {
+    return toJson(error);
+  }
 }

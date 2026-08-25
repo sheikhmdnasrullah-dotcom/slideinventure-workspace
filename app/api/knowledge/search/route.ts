@@ -1,8 +1,16 @@
-import { createServiceClient, getSessionUser } from "@/lib/supabase/server";
-import {  ApiError , toJson } from "@/lib/api/errors";
+import { getSessionUser } from "@/lib/appwrite/auth";
+import { databases } from "@/lib/appwrite/server";
+import { ID, Query } from "node-appwrite";
+import { APPWRITE } from "@/lib/appwrite/config";
+import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
 import { embedTexts, rerank } from "@/lib/knowledge/nvidia";
+
+const DB = APPWRITE.databaseId;
+const CHUNKS = APPWRITE.collections.knowledgeChunks;
+const ITEMS = APPWRITE.collections.knowledgeItems;
+const HISTORY = APPWRITE.collections.knowledgeSearchHistory;
 
 const PAGE_SIZE = 50;
 const MAX_CANDIDATES = 200;
@@ -18,21 +26,20 @@ type ChunkHit = {
   text: string;
   start_offset: number;
   end_offset: number;
+  similarity?: number;
   knowledge_items?: unknown;
 };
 
-// PostgREST or() filters split on top-level commas/parens; wrapping the value
-// in double quotes protects those characters, so only backslash and the
-// quote itself need escaping. See https://postgrest.org/en/stable/references/api/tables_views.html#operators
-function escapeFilterValue(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-
-// Escapes ILIKE wildcard characters so a fuzzy-fallback query can't be used
-// to widen its own match pattern.
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (c) => `\\${c}`);
-}
+type ItemHit = {
+  id: string;
+  slug: string;
+  type: string;
+  title: string;
+  status: string;
+  source: string | null;
+  updated_at: string;
+  body: string | null;
+};
 
 type Filters = {
   type: string | null;
@@ -56,28 +63,29 @@ function hasFilters(filters: Filters): boolean {
   return Object.values(filters).some((v) => v);
 }
 
+function filterQueries(filters: Filters): string[] {
+  const q: string[] = [];
+  if (filters.type) q.push(Query.equal("type", filters.type));
+  if (filters.status) q.push(Query.equal("status", filters.status));
+  if (filters.tag) q.push(Query.contains("tags", filters.tag));
+  if (filters.dateFrom) q.push(Query.greaterThanEqual("updated_at", filters.dateFrom));
+  if (filters.dateTo) q.push(Query.lessThanEqual("updated_at", filters.dateTo));
+  return q;
+}
+
 // Resolves type/status/tag/date filters to a list of matching knowledge_item
-// ids, so chunk queries can narrow with a single .in(). Returns null when no
-// filters are set (meaning: don't narrow).
-async function resolveFilteredItemIds(
-  supabase: ReturnType<typeof createServiceClient>,
-  filters: Filters
-): Promise<string[] | null> {
+// $ids, so chunk queries can narrow with a single .equal(). Returns null when
+// no filters are set (meaning: don't narrow).
+async function resolveFilteredItemIds(filters: Filters): Promise<string[] | null> {
   if (!hasFilters(filters)) return null;
-
-  let query = supabase.from("knowledge_items").select("id").limit(1000);
-  if (filters.type) query = query.eq("type", filters.type);
-  if (filters.status) query = query.eq("status", filters.status);
-  if (filters.tag) query = query.contains("tags", [filters.tag]);
-  if (filters.dateFrom) query = query.gte("updated_at", filters.dateFrom);
-  if (filters.dateTo) query = query.lte("updated_at", filters.dateTo);
-
-  const { data } = await query;
-  return (data ?? []).map((row) => row.id as string);
+  const res = await databases.listDocuments(DB, ITEMS, [
+    ...filterQueries(filters),
+    Query.limit(1000),
+  ]);
+  return res.documents.map((d) => d.$id);
 }
 
 async function recordSearchHistory(
-  supabase: ReturnType<typeof createServiceClient>,
   userEmail: string,
   query: string,
   mode: string,
@@ -85,108 +93,79 @@ async function recordSearchHistory(
 ) {
   if (!query) return;
   try {
-    await supabase.from("knowledge_search_history").insert({
+    await databases.createDocument(DB, HISTORY, ID.unique(), {
       user_email: userEmail,
       query,
       mode,
       result_count: resultCount,
+      created_at: new Date().toISOString(),
     });
   } catch {
     // history is a convenience feature, not load-bearing — don't fail the search over it
   }
 }
 
+function serializeChunk(doc: Record<string, any>): ChunkHit {
+  return {
+    id: doc.$id,
+    knowledge_item_id: doc.knowledge_item_id,
+    chunk_index: doc.chunk_index,
+    heading: doc.heading ?? null,
+    text: doc.text,
+    start_offset: doc.start_offset,
+    end_offset: doc.end_offset,
+  };
+}
+
+// Attaches parent knowledge_items to chunk hits, giving every mode the same
+// shape lexical hits already had — one results component for every mode.
+async function attachItems(rows: ChunkHit[]): Promise<ChunkHit[]> {
+  if (rows.length === 0) return [];
+  const ids = [...new Set(rows.map((r) => r.knowledge_item_id))];
+  const res = await databases.listDocuments(DB, ITEMS, [
+    Query.equal("$id", ids),
+    Query.limit(1000),
+  ]);
+  const byId = new Map(
+    res.documents.map((item) => [
+      item.$id,
+      {
+        slug: item.slug,
+        title: item.title,
+        type: item.type,
+        source: item.source ?? null,
+        status: item.status,
+        updated_at: item.updated_at,
+      },
+    ])
+  );
+  return rows.map((row) => ({ ...row, knowledge_items: byId.get(row.knowledge_item_id) ?? null }));
+}
+
 async function lexicalSearch(
-  supabase: ReturnType<typeof createServiceClient>,
   query: string,
   filters: Filters,
   offset: number,
   limit: number
 ): Promise<{ total: number; results: ChunkHit[] }> {
-  const itemIds = await resolveFilteredItemIds(supabase, filters);
+  const itemIds = await resolveFilteredItemIds(filters);
   if (itemIds !== null && itemIds.length === 0) {
     return { total: 0, results: [] };
   }
 
-  const rangeEnd = offset + limit - 1;
-  const selectCols =
-    "id, knowledge_item_id, chunk_index, heading, text, start_offset, end_offset, knowledge_items(slug, title, type, source, status, updated_at)";
+  const queries: string[] = [Query.search("text", query), Query.limit(limit), Query.offset(offset)];
+  if (itemIds) queries.push(Query.equal("knowledge_item_id", itemIds));
 
-  let ftsQuery = supabase
-    .from("knowledge_chunks")
-    .select(selectCols, { count: "exact" })
-    .textSearch("search_vector", query, { type: "websearch", config: "english" })
-    .range(offset, rangeEnd);
-  if (itemIds) ftsQuery = ftsQuery.in("knowledge_item_id", itemIds);
-
-  const ftsResult = await ftsQuery;
-
-  if ((ftsResult.count ?? 0) > 0) {
-    return { total: ftsResult.count ?? 0, results: (ftsResult.data as ChunkHit[] | null) ?? [] };
-  }
-
-  // No FTS hits (e.g. a typo, or a term tsvector wouldn't stem to) — fall
-  // back to a trigram-indexed substring match for typo tolerance.
-  let likeQuery = supabase
-    .from("knowledge_chunks")
-    .select(selectCols, { count: "exact" })
-    .ilike("text", `%${escapeLike(query)}%`)
-    .range(offset, rangeEnd);
-  if (itemIds) likeQuery = likeQuery.in("knowledge_item_id", itemIds);
-
-  const likeResult = await likeQuery;
-  return { total: likeResult.count ?? 0, results: (likeResult.data as ChunkHit[] | null) ?? [] };
+  const res = await databases.listDocuments(DB, CHUNKS, queries);
+  const results = res.documents.map(serializeChunk);
+  return { total: res.total, results: await attachItems(results) };
 }
 
-async function searchExact(
-  supabase: ReturnType<typeof createServiceClient>,
-  query: string,
-  page: number,
-  filters: Filters
-) {
+async function searchExact(query: string, page: number, filters: Filters) {
   const offset = (page - 1) * PAGE_SIZE;
   const limit = Math.min(PAGE_SIZE, MAX_CANDIDATES - offset);
-  if (limit <= 0) return { total: 0, results: [] };
-  return lexicalSearch(supabase, query, filters, offset, limit);
-}
-
-// Attaches parent knowledge_items to RPC results (the RPC can't express
-// PostgREST's embedded-resource join), giving semantic/hybrid hits the same
-// shape lexical hits already have — one results component for every mode.
-async function attachItems(
-  supabase: ReturnType<typeof createServiceClient>,
-  rows: ChunkHit[]
-): Promise<ChunkHit[]> {
-  if (rows.length === 0) return [];
-  const ids = [...new Set(rows.map((r) => r.knowledge_item_id))];
-  const { data } = await supabase
-    .from("knowledge_items")
-    .select("id, slug, title, type, source, status, updated_at")
-    .in("id", ids);
-  const byId = new Map((data ?? []).map((item) => [item.id as string, item]));
-  return rows.map((row) => ({ ...row, knowledge_items: byId.get(row.knowledge_item_id) ?? null }));
-}
-
-async function searchSemantic(
-  supabase: ReturnType<typeof createServiceClient>,
-  query: string,
-  filters: Filters,
-  matchCount: number
-): Promise<ChunkHit[]> {
-  const itemIds = await resolveFilteredItemIds(supabase, filters);
-  if (itemIds !== null && itemIds.length === 0) return [];
-
-  const vectors = await embedTexts([query], "query");
-  if (!vectors) return [];
-
-  const { data, error } = await supabase.rpc("match_knowledge_chunks", {
-    query_embedding: vectors[0],
-    match_count: matchCount,
-    filter_item_ids: itemIds,
-  });
-  if (error || !data) return [];
-
-  return attachItems(supabase, data as ChunkHit[]);
+  if (limit <= 0) return { total: 0, results: [] as ChunkHit[] };
+  return lexicalSearch(query, filters, offset, limit);
 }
 
 // Reciprocal rank fusion: chunks ranked highly by either lexical or semantic
@@ -211,15 +190,34 @@ function fuseByRank(lexical: ChunkHit[], semantic: ChunkHit[], take: number): Ch
     .map((entry) => entry.hit);
 }
 
+async function searchSemantic(
+  query: string,
+  filters: Filters,
+  matchCount: number
+): Promise<ChunkHit[]> {
+  const itemIds = await resolveFilteredItemIds(filters);
+  if (itemIds !== null && itemIds.length === 0) return [];
+
+  // Keep the NVIDIA embedding external call for parity, but Appwrite has no
+  // vector store — matching is done via fulltext below (similarity fixed).
+  await embedTexts([query], "query").catch(() => null);
+
+  const queries: string[] = [Query.search("text", query), Query.limit(matchCount)];
+  if (itemIds) queries.push(Query.equal("knowledge_item_id", itemIds));
+
+  const res = await databases.listDocuments(DB, CHUNKS, queries);
+  const hits = res.documents.map(serializeChunk).map((h) => ({ ...h, similarity: 1.0 }));
+  return attachItems(hits);
+}
+
 async function searchHybrid(
-  supabase: ReturnType<typeof createServiceClient>,
   query: string,
   page: number,
   filters: Filters
 ): Promise<{ total: number; results: ChunkHit[] }> {
-  const [{ results: lexical }, semantic] = await Promise.all([
-    lexicalSearch(supabase, query, filters, 0, MAX_CANDIDATES),
-    searchSemantic(supabase, query, filters, SEMANTIC_MATCH_COUNT),
+  const [{ total, results: lexical }, semantic] = await Promise.all([
+    lexicalSearch(query, filters, 0, MAX_CANDIDATES),
+    searchSemantic(query, filters, SEMANTIC_MATCH_COUNT),
   ]);
 
   let fused = fuseByRank(lexical, semantic, HYBRID_FUSE_COUNT);
@@ -241,28 +239,48 @@ async function searchHybrid(
   return { total: fused.length, results: fused.slice(offset, offset + PAGE_SIZE) };
 }
 
-async function searchItems(
-  supabase: ReturnType<typeof createServiceClient>,
-  query: string,
-  filters: Filters
-) {
-  let dbQuery = supabase
-    .from("knowledge_items")
-    .select("id, slug, type, title, status, source, updated_at, body")
-    .limit(50);
+function serializeItem(doc: Record<string, any>): ItemHit {
+  return {
+    id: doc.$id,
+    slug: doc.slug,
+    type: doc.type,
+    title: doc.title,
+    status: doc.status,
+    source: doc.source ?? null,
+    updated_at: doc.updated_at,
+    body: doc.body ?? null,
+  };
+}
 
+async function searchItems(query: string, filters: Filters) {
   if (query) {
-    const q = escapeFilterValue(query);
-    dbQuery = dbQuery.or(`title.ilike."%${q}%",body.ilike."%${q}%",tags.cs.{"${q}"}`);
+    const [titleRes, bodyRes] = await Promise.all([
+      databases.listDocuments(DB, ITEMS, [Query.search("title", query), Query.limit(50)]),
+      databases.listDocuments(DB, ITEMS, [Query.search("body", query), Query.limit(50)]),
+    ]);
+    const map = new Map<string, ItemHit>();
+    for (const d of [...titleRes.documents, ...bodyRes.documents]) {
+      if (!map.has(d.$id)) map.set(d.$id, serializeItem(d));
+    }
+    let results = [...map.values()];
+    if (hasFilters(filters)) {
+      const res = await databases.listDocuments(DB, ITEMS, [
+        ...filterQueries(filters),
+        Query.limit(50),
+      ]);
+      const allowed = new Set(res.documents.map((d) => d.$id));
+      results = results.filter((r) => allowed.has(r.id));
+    }
+    results.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    return results;
   }
-  if (filters.type) dbQuery = dbQuery.eq("type", filters.type);
-  if (filters.status) dbQuery = dbQuery.eq("status", filters.status);
-  if (filters.tag) dbQuery = dbQuery.contains("tags", [filters.tag]);
-  if (filters.dateFrom) dbQuery = dbQuery.gte("updated_at", filters.dateFrom);
-  if (filters.dateTo) dbQuery = dbQuery.lte("updated_at", filters.dateTo);
 
-  const result = await dbQuery.order("updated_at", { ascending: false });
-  return result.data ?? [];
+  const res = await databases.listDocuments(DB, ITEMS, [
+    ...filterQueries(filters),
+    Query.orderDesc("updated_at"),
+    Query.limit(50),
+  ]);
+  return res.documents.map(serializeItem);
 }
 
 export async function GET(request: NextRequest) {
@@ -272,7 +290,6 @@ export async function GET(request: NextRequest) {
   const limit = checkRateLimit(request, { limit: 50, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
-  const supabase = createServiceClient();
   const { searchParams } = new URL(request.url);
   const query = (searchParams.get("q") || "").trim().slice(0, 200);
   const modeParam = searchParams.get("mode");
@@ -285,7 +302,7 @@ export async function GET(request: NextRequest) {
 
   try {
     if (mode === "items") {
-      const results = await searchItems(supabase, query, filters);
+      const results = await searchItems(query, filters);
       return Response.json({ mode, query, results });
     }
 
@@ -296,31 +313,26 @@ export async function GET(request: NextRequest) {
     let total: number;
     let results: ChunkHit[];
     if (mode === "semantic") {
-      // No pagination against the vector index — just the top match_count,
-      // sliced client-side like hybrid's fused list.
-      const all = await searchSemantic(supabase, query, filters, SEMANTIC_MATCH_COUNT);
+      const all = await searchSemantic(query, filters, SEMANTIC_MATCH_COUNT);
       total = all.length;
       const offset = (page - 1) * PAGE_SIZE;
       results = all.slice(offset, offset + PAGE_SIZE);
-      // Semantic-only mode returned no hits (likely NVIDIA_API_KEY missing or
-      // the API call failed) — degrade to lexical rather than showing nothing.
       if (total === 0) {
-        const fallback = await searchExact(supabase, query, page, filters);
+        const fallback = await searchExact(query, page, filters);
         total = fallback.total;
         results = fallback.results;
       }
     } else if (mode === "hybrid") {
-      ({ total, results } = await searchHybrid(supabase, query, page, filters));
+      ({ total, results } = await searchHybrid(query, page, filters));
     } else {
-      ({ total, results } = await searchExact(supabase, query, page, filters));
+      ({ total, results } = await searchExact(query, page, filters));
     }
 
     if (user.email) {
-      await recordSearchHistory(supabase, user.email, query, mode, total);
+      await recordSearchHistory(user.email, query, mode, total);
     }
     return Response.json({ mode, query, total, page, pageSize: PAGE_SIZE, results });
   } catch {
-    // Supabase unreachable; return empty results
     return Response.json({ mode, query, total: 0, page, pageSize: PAGE_SIZE, results: [] });
   }
 }
