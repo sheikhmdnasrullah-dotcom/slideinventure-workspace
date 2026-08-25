@@ -51,18 +51,28 @@ export async function createEmailPasswordSession(email: string, password: string
             return reject(new Error("Invalid email or password"))
           }
 
-          const setCookie = res.headers["set-cookie"] as string[] | undefined
+          const headers = res.headers as Record<string, unknown>
+          const getHeader = (name: string) =>
+            typeof headers.get === "function"
+              ? (headers as any).get(name)
+              : headers[name]
+
+          const setCookieRaw = getHeader("set-cookie")
+          const setCookie = Array.isArray(setCookieRaw)
+            ? setCookieRaw
+            : typeof setCookieRaw === "string"
+              ? setCookieRaw.split(", ")
+              : []
+
           const target = `a_session_${PROJECT}=`
-          if (setCookie) {
-            for (const c of setCookie) {
-              if (c.startsWith(target)) {
-                return resolve(c.slice(target.length).split(";")[0])
-              }
+          for (const c of setCookie) {
+            if (c.startsWith(target)) {
+              return resolve(c.slice(target.length).split(";")[0])
             }
           }
 
-          const fallbackRaw = res.headers["x-fallback-cookies"] as string | undefined
-          if (fallbackRaw) {
+          const fallbackRaw = getHeader("x-fallback-cookies")
+          if (typeof fallbackRaw === "string") {
             try {
               const parsed = JSON.parse(fallbackRaw) as Record<string, string>
               const val = parsed[`a_session_${PROJECT}`]
