@@ -22,16 +22,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
   }
 
-  console.error("session token length", token?.length ?? "null", "token", token)
-
-  const domain = getCookieDomain(request.headers.get("host"))
   const res = NextResponse.json({ ok: true })
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     path: "/",
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    domain,
   })
   return res
 }
