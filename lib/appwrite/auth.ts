@@ -23,10 +23,11 @@ export async function getSessionUser(): Promise<{ id: string; email: string } | 
   }
 }
 
-export async function createEmailPasswordSession(email: string, password: string) {
+export async function createEmailPasswordSession(email: string, password: string): Promise<string> {
   const client = new Client().setEndpoint(ENDPOINT).setProject(PROJECT)
   const account = new Account(client)
-  return account.createEmailPasswordSession(email, password)
+  const session = await account.createEmailPasswordSession(email, password)
+  return session.$id
 }
 
 export async function deleteCurrentSession() {
