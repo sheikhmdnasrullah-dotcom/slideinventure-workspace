@@ -1,0 +1,20 @@
+# Caddyfile for the workstation.
+#
+# - All HTTPS is handled by Caddy (auto-TLS via the email below).
+# - The Next.js app listens on :3000.
+# - The sandboxed terminal WebSocket bridge listens on :3001; Caddy proxies
+#   /ws/terminal to it and automatically handles the WebSocket upgrade.
+#
+# Place at /etc/caddy/Caddyfile and run: caddy reload --config /etc/caddy/Caddyfile
+
+{
+	email admin@yourdomain.com
+}
+
+yourdomain.com {
+	# Terminal live-shell WebSocket bridge (must come before the catch-all).
+	reverse_proxy /ws/terminal* localhost:3001
+
+	# Everything else -> Next.js
+	reverse_proxy localhost:3000
+}

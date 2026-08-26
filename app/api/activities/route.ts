@@ -3,6 +3,7 @@ import { databases, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+import { ensureActivitiesCollection } from "@/lib/activities/ensure";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.activities;
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
   if (cursor) queries.push(Query.cursorAfter(cursor));
 
   try {
+    await ensureActivitiesCollection();
     const res = await databases.listDocuments(DB, COL, queries);
     const activities = res.documents.map((d: any) => ({
       id: d.$id,

@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { nvidiaComplete } from "@/lib/llm/nvidia";
 import { getAgentPrompt } from "@/lib/agents/roster";
+import { runMastraAgent } from "@/lib/agents/mastra";
 import { NextRequest } from "next/server";
 
 /**
@@ -19,10 +20,11 @@ export async function POST(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => null);
-  const { slug, message, history } = (body ?? {}) as {
+  const { slug, message, history, tools } = (body ?? {}) as {
     slug?: string;
     message?: string;
     history?: Array<{ role: string; content: string }>;
+    tools?: boolean;
   };
 
   if (!slug || typeof slug !== "string") {
@@ -34,6 +36,13 @@ export async function POST(request: NextRequest) {
 
   const agent = getAgentPrompt(slug);
   if (!agent) return ApiError.notFound("AGENT_NOT_FOUND", "Unknown agent").toResponse();
+
+  // Opt-in Mastra mode: persona + tools (retrieve/browse/remember/recall).
+  if (tools) {
+    const res = await runMastraAgent({ slug, message, history, userEmail: user.email });
+    if (!res.ok) return ApiError.internal("MASTRA_AGENT_FAILED", res.error ?? "agent failed").toResponse();
+    return Response.json({ answer: res.answer, agent: res.agentName, tools: res.toolCalls });
+  }
 
   const priorTurns = Array.isArray(history)
     ? history

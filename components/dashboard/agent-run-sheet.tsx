@@ -28,6 +28,8 @@ export function AgentRunSheet({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tools, setTools] = useState(false);
+  const [toolLog, setToolLog] = useState<string[]>([]);
 
   const messages = agent ? (messagesByAgent[agent.slug] ?? []) : [];
 
@@ -43,10 +45,13 @@ export function AgentRunSheet({
       const res = await fetch("/api/agents/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: agent.slug, message: userMsg.content, history }),
+        body: JSON.stringify({ slug: agent.slug, message: userMsg.content, history, tools }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Agent chat failed");
+      if (Array.isArray(data.tools) && data.tools.length) {
+        setToolLog((prev) => [...prev, `🔧 ${agent.name} used: ${data.tools.join(", ")}`]);
+      }
       setMessagesByAgent((prev) => ({
         ...prev,
         [agent.slug]: [...(prev[agent.slug] ?? []), { role: "assistant", content: data.answer }],
@@ -100,6 +105,22 @@ export function AgentRunSheet({
             </div>
 
             <SheetFooter>
+              <label className="flex items-center gap-2 text-xs text-ink-muted pb-2">
+                <input
+                  type="checkbox"
+                  checked={tools}
+                  onChange={(e) => setTools(e.target.checked)}
+                  className="accent-[var(--text-accent)]"
+                />
+                Tools (Mastra) — retrieve, browse, remember, recall
+              </label>
+              {toolLog.length > 0 && (
+                <div className="flex flex-col gap-1 pb-2">
+                  {toolLog.map((t, i) => (
+                    <p key={i} className="font-label text-[10px] text-ink-faint">{t}</p>
+                  ))}
+                </div>
+              )}
               <div className="flex items-end gap-2">
                 <Textarea
                   value={input}

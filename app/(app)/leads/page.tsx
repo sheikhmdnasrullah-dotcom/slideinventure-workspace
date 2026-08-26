@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/supabase/server";
 import { LeadsTable } from "@/components/dashboard/leads-table";
+import { LeadHarvest } from "@/components/dashboard/leads/lead-harvest";
 
 export default async function LeadsPage() {
   await requireUser();
@@ -14,6 +15,7 @@ export default async function LeadsPage() {
           Track and manage your business leads.
         </p>
       </div>
+      <LeadHarvest />
       <LeadsTable />
     </div>
   );

@@ -3,6 +3,8 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { databases, ID } from "@/lib/appwrite/server";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ensureNotificationsCollection } from "@/lib/notifications/ensure";
+import { ensureActivitiesCollection } from "@/lib/activities/ensure";
+import { notifyViaNovu } from "@/lib/notifications/novu";
 
 export type Activity = import("./types").Activity;
 export type ActivityCategory = import("./types").ActivityCategory;
@@ -60,6 +62,7 @@ export async function logActivity(entry: {
   try {
     const user = await getSessionUser();
     if (!user) return;
+    await ensureActivitiesCollection();
     await databases.createDocument(APPWRITE.databaseId, APPWRITE.collections.activities, ID.unique(), {
       category: entry.category,
       action: entry.action,
@@ -89,6 +92,13 @@ export async function logActivity(entry: {
       } catch {
         // notifications are best-effort
       }
+      // Mirror to Novu when configured (optional delivery channel).
+      notifyViaNovu({
+        subscriberId: user.email ?? "system",
+        email: user.email ?? undefined,
+        title: entry.title,
+        body: entry.description ?? "",
+      }).catch(() => {});
     }
   } catch (err) {
     console.error("[logActivity] failed:", err);

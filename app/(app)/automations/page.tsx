@@ -4,6 +4,7 @@ import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { PageHeader, Section, Surface, Badge } from "@/components/system";
 import { cn } from "@/lib/utils";
+import { WindmillRun } from "@/components/dashboard/windmill/windmill-run";
 
 const DB = APPWRITE.databaseId;
 const RUNS = APPWRITE.collections.taskRuns;
@@ -219,6 +220,13 @@ export default async function AutomationsPage() {
               </table>
             </div>
           )}
+        </Surface>
+      </Section>
+
+      <Section tone="base">
+        <PageHeader eyebrow="Orchestration" title="Windmill (optional)" />
+        <Surface variant="inset">
+          <WindmillRun />
         </Surface>
       </Section>
     </div>

@@ -4,6 +4,7 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
+import { ensureActivitiesCollection } from "@/lib/activities/ensure";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.activities;
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    await ensureActivitiesCollection();
     await databases.createDocument(DB, COL, ID.unique(), {
       category,
       action,

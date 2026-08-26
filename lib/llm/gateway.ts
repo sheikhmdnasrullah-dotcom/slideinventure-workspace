@@ -1,4 +1,9 @@
 import "server-only";
+import { langfuseGeneration } from "@/lib/observability/langfuse";
+import { loadInfisicalSecrets } from "@/lib/vault/infisical";
+
+// Load secrets from Infisical into process.env once, at first LLM use.
+loadInfisicalSecrets().catch(() => {});
 
 export const NVIDIA_DEFAULT_MODEL = "nvidia/nemotron-3-ultra-550b-a55b";
 // Cheap OpenRouter fallback used only when NVIDIA is unavailable. Override with
@@ -36,6 +41,20 @@ function buildProviders(opts: ChatOptions): Provider[] {
   const providers: Provider[] = [];
   const nvidiaKey = process.env.NVIDIA_API_KEY;
   const openrouterKey = process.env.OPENROUTER_API_KEY;
+
+  // LiteLLM is the preferred routing/key-management layer when configured
+  // (BerriAI/litellm): all model traffic flows through it for token savings,
+  // fallbacks, and a single API key surface.
+  const litellmUrl = process.env.LITELLM_BASE_URL;
+  const litellmKey = process.env.LITELLM_API_KEY;
+  if (litellmUrl && litellmKey) {
+    providers.push({
+      url: litellmUrl.replace(/\/$/, ""),
+      key: litellmKey,
+      model: opts.model ?? process.env.LITELLM_MODEL ?? NVIDIA_DEFAULT_MODEL,
+    });
+  }
+
   if (nvidiaKey) {
     providers.push({
       url: "https://integrate.api.nvidia.com/v1",
@@ -85,6 +104,14 @@ async function completeAt(
     completionTokens: data.usage?.completion_tokens ?? 0,
     model: provider.model,
   };
+  // Best-effort Langfuse trace (no-op when unconfigured).
+  langfuseGeneration({
+    name: "llm.generate",
+    model: provider.model,
+    input: messages,
+    output: data.choices?.[0]?.message?.content ?? "",
+    usage: { promptTokens: usage.promptTokens, completionTokens: usage.completionTokens },
+  }).catch(() => {});
   return { text: data.choices?.[0]?.message?.content ?? "", usage };
 }
 

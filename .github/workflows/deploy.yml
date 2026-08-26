@@ -1,0 +1,65 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APPWRITE_ENDPOINT: ${{ secrets.NEXT_PUBLIC_APPWRITE_ENDPOINT }}
+          NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_APPWRITE_PROJECT_ID }}
+
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "."
+          target: "/var/www/workspace-app"
+          exclude: ".git/,node_modules/,./.next/,sandbox/,*.log"
+
+      - name: Install prod deps, build on VPS, reload services
+        uses: appleboy/ssh-action@v1.0.3
+        envs: ENV_LOCAL
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          env:
+            ENV_LOCAL: ${{ secrets.ENV_LOCAL }}
+          script: |
+            set -e
+            cd /var/www/workspace-app
+            # Provision runtime secrets (.env.local is gitignored and not shipped).
+            if [ -n "$ENV_LOCAL" ]; then
+              printf '%s' "$ENV_LOCAL" > .env.local
+              echo "wrote .env.local from ENV_LOCAL secret"
+            fi
+            bash deploy/setup-vps.sh || true
+            npm ci --omit=dev
+            npm run build
+            pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
+            pm2 save

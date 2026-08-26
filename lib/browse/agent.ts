@@ -3,6 +3,7 @@ import { chromium, Browser, Page } from "playwright";
 import { chatCompletion } from "@/lib/llm/gateway";
 import { solveCaptcha, isCaptchaSolvingEnabled } from "@/lib/integrations/captcha";
 import { logActivity } from "@/lib/activities/client";
+import { createSteelBrowser, steelEnabled } from "@/lib/browse/steel";
 
 export type BrowseStep = {
   step: number;
@@ -92,13 +93,24 @@ export async function runBrowseTask(opts: {
   const maxSteps = opts.maxSteps ?? 5;
   const steps: BrowseStep[] = [];
   let browser: Browser | null = null;
+  let steel: any = null;
+  let page: Page;
 
   try {
-    browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-    const context = await browser.newContext({
-      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-    });
-    const page = await context.newPage();
+    // Prefer Steel's managed browser when configured (better headless CAPTCHA
+    // handling); otherwise fall back to a local Playwright Chromium.
+    if (steelEnabled()) {
+      steel = await createSteelBrowser();
+    }
+    if (steel) {
+      page = await steel.page();
+    } else {
+      browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
+      const context = await browser.newContext({
+        userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+      });
+      page = await context.newPage();
+    }
     await page.goto(opts.startUrl || "https://www.google.com", { timeout: 30000, waitUntil: "domcontentloaded" });
 
     let finalAnswer = "";
@@ -155,5 +167,6 @@ export async function runBrowseTask(opts: {
     return { ok: false, steps, result: "", error: err instanceof Error ? err.message : "browse failed" };
   } finally {
     if (browser) await browser.close().catch(() => {});
+    if (steel) await steel.close?.().catch(() => {});
   }
 }
