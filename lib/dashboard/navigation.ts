@@ -72,7 +72,7 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "todoist", label: "Todoist", route: "/todoist", icon: Sparkles },
   { id: "knowledge", label: "Knowledge", route: "/knowledge", icon: BookOpen },
   { id: "documents", label: "Documents", route: "/documents", icon: FileText },
-  { id: "ai-venture", label: "AI Venture", route: "/ai-venture", icon: Rocket },
+  { id: "ai-venture", label: "AI Venture", route: "/concepts", icon: Rocket },
   { id: "research-lab", label: "Research Lab", route: "/research-lab", icon: Beaker },
   { id: "notepad", label: "Notepad", route: "/notepad", icon: BookOpen },
   { id: "brainstorm-sketch", label: "Brainstorm Sketch", route: "/brainstorm-sketch", icon: Brain },

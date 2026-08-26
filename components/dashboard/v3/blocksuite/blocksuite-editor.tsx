@@ -3,9 +3,26 @@
 import { useEffect, useRef } from "react";
 import { DocCollection, Job, Schema } from "@blocksuite/store";
 import { AffineSchemas } from "@blocksuite/blocks";
-import "@blocksuite/presets";
 
 export type AffineSnapshot = Record<string, unknown> | null;
+
+// effects() calls customElements.define(...) for every AFFiNE/BlockSuite tag.
+// Calling it more than once throws ("has already been used with this
+// registry") — and this component remounts every time the user switches
+// workspaces (snapshot/mode change), so it must run at most once per page.
+let effectsRegistered: Promise<void> | null = null;
+function ensureEffectsRegistered(): Promise<void> {
+  if (!effectsRegistered) {
+    effectsRegistered = Promise.all([
+      import("@blocksuite/blocks/effects"),
+      import("@blocksuite/presets/effects"),
+    ]).then(([{ effects: blocksEffects }, { effects: presetsEffects }]) => {
+      blocksEffects();
+      presetsEffects();
+    });
+  }
+  return effectsRegistered;
+}
 
 export default function BlocksuiteEditor({
   snapshot,
@@ -28,6 +45,8 @@ export default function BlocksuiteEditor({
     let saveFn: (() => void) | undefined;
 
     (async () => {
+      await ensureEffectsRegistered();
+
       const schema = new Schema();
       schema.register(AffineSchemas);
       const collection = new DocCollection({ schema });

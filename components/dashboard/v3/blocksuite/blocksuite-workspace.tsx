@@ -77,13 +77,19 @@ export default function BlocksuiteWorkspace({
     if (!id) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
-        await fetch(`/api/affine/${activeId}`, {
+        // Stale-closure bug: this used to read `activeId` (the component's
+        // state variable, captured once since this callback has an empty
+        // dependency array) instead of `id` (the up-to-date value read from
+        // activeIdRef.current above). That made every save request target
+        // `/api/affine/null` — autosave has been silently 404ing since this
+        // page loaded, never persisting a single edit.
+        await fetch(`/api/affine/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ snapshot, section }),
         });
       }, 700);
-  }, []);
+  }, [section]);
 
   const deleteWorkspace = async (id: string) => {
     await fetch(`/api/affine/${id}?section=${encodeURIComponent(section)}`, { method: "DELETE" });
