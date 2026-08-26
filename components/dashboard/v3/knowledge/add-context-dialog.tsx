@@ -26,8 +26,8 @@ export function AddContextDialog() {
   const [submitting, setSubmitting] = React.useState(false)
 
   async function handleSubmit() {
-    if (!title || !content) {
-      toast.error("Title and content are required")
+    if (!file && !content.trim() && !title.trim()) {
+      toast.error("Add a file, or paste some text, first")
       return
     }
 
@@ -81,7 +81,7 @@ export function AddContextDialog() {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title (optional — inferred if left blank)</Label>
             <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Supabase Auth Flow" />
           </div>
           
@@ -132,7 +132,7 @@ export function AddContextDialog() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="content">Content (Markdown supported)</Label>
+            <Label htmlFor="content">Content (optional if you uploaded a file — Markdown supported)</Label>
             <Textarea 
               id="content" 
               value={content} 

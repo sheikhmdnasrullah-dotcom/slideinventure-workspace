@@ -17,6 +17,10 @@ interface RetrievalResult {
   path?: string
   url?: string
   score: number
+  // Stable identifier of the underlying knowledge item. Used by the client to
+  // build a defensive deep link and to fall back gracefully if a result's
+  // resource disappears.
+  sourceId?: string
 }
 
 interface SourceGroup {
@@ -24,6 +28,41 @@ interface SourceGroup {
   label: string
   results: RetrievalResult[]
   matchCount: number
+}
+
+// Pulls the most relevant slice of `text` around the first meaningful match
+// for `query`, keeping a small surrounding context window. This keeps search
+// results focused on the exact line/term that matched instead of dumping the
+// entire surrounding document.
+const EXCERPT_CONTEXT = 140;
+
+function buildExcerpt(text: string, query: string): string {
+  const clean = (text || "").replace(/\s+/g, " ").trim();
+  const q = (query || "").trim();
+  if (!clean) return "";
+  if (!q) return clean.slice(0, EXCERPT_CONTEXT * 2);
+
+  const lower = clean.toLowerCase();
+  const needles = [
+    q.toLowerCase(),
+    ...q
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length >= 3),
+  ];
+
+  let hit = -1;
+  for (const needle of needles) {
+    const idx = lower.indexOf(needle);
+    if (idx !== -1 && (hit === -1 || idx < hit)) hit = idx;
+  }
+  if (hit === -1) return clean.slice(0, EXCERPT_CONTEXT * 2);
+
+  const start = Math.max(0, hit - EXCERPT_CONTEXT);
+  const end = Math.min(clean.length, hit + needles[0].length + EXCERPT_CONTEXT);
+  const prefix = start > 0 ? "… " : "";
+  const suffix = end < clean.length ? " …" : "";
+  return prefix + clean.slice(start, end) + suffix;
 }
 
 async function searchKnowledgeChunks(query: string): Promise<RetrievalResult[]> {
@@ -37,13 +76,28 @@ async function searchKnowledgeChunks(query: string): Promise<RetrievalResult[]> 
   ]);
 
   if (res.documents.length > 0) {
-    return res.documents.map((row: any) => ({
-      source: "knowledge",
-      title: row.heading || "Knowledge",
-      snippet: row.text,
-      path: `/knowledge/${row.knowledge_item_id}?chunk=${row.chunk_index}`,
-      score: 0,
-    }));
+    // Resolve the parent knowledge item slugs so result deep links point at
+    // the real /knowledge/[slug] route (not the internal $id, which would 404).
+    const itemIds = [...new Set(res.documents.map((row) => row.knowledge_item_id))];
+    const itemsRes = await databases.listDocuments(DB, ITEMS, [
+      Query.equal("$id", itemIds),
+      Query.limit(1000),
+    ]);
+    const slugById = new Map<string, string>(
+      itemsRes.documents.map((item) => [item.$id, item.slug])
+    );
+
+    return res.documents.map((row) => {
+      const slug = slugById.get(row.knowledge_item_id) || row.knowledge_item_id;
+      return {
+        source: "knowledge",
+        title: row.heading || "Knowledge",
+        snippet: buildExcerpt(row.text, query),
+        sourceId: row.knowledge_item_id,
+        path: `/knowledge/${slug}?chunk=${row.chunk_index}`,
+        score: 0,
+      } as RetrievalResult;
+    });
   }
 
   // Fallback: plain keyword search across knowledge items so the chat still
@@ -55,13 +109,15 @@ async function searchKnowledgeChunks(query: string): Promise<RetrievalResult[]> 
   const map = new Map<string, RetrievalResult>();
   for (const row of [...titleRes.documents, ...bodyRes.documents]) {
     if (!map.has(row.$id)) {
+      const slug = row.slug || row.$id;
       map.set(row.$id, {
         source: "knowledge",
-        title: (row as any).title || "Knowledge",
-        snippet: ((row as any).body || "").slice(0, 300),
-        path: `/knowledge/${row.$id}`,
+        title: row.title || "Knowledge",
+        snippet: buildExcerpt((row.body || "").slice(0, 4000), query),
+        sourceId: row.$id,
+        path: `/knowledge/${slug}`,
         score: 0,
-      });
+      } as RetrievalResult);
     }
   }
   return [...map.values()];

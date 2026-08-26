@@ -34,17 +34,17 @@ export type LeadInput = Record<string, unknown>
 
 export function leadInputToRow(d: LeadInput): Record<string, unknown> {
   const row: Record<string, unknown> = {}
-  if (d.firstName !== undefined) row.first_name = d.firstName
-  if (d.lastName !== undefined) row.last_name = d.lastName
-  if (d.email !== undefined) row.email = d.email
+  if (d.first_name !== undefined) row.first_name = d.first_name
+  if (d.last_name !== undefined) row.last_name = d.last_name
+  if (d.email !== undefined) row.email = d.email || null
   if (d.company !== undefined) row.company = d.company ?? null
-  if (d.jobTitle !== undefined) row.job_title = d.jobTitle ?? null
+  if (d.job_title !== undefined) row.job_title = d.job_title ?? null
   if (d.phone !== undefined) row.phone = d.phone ?? null
   if (d.source !== undefined) row.source = d.source
   if (d.status !== undefined) row.status = d.status
   if (d.notes !== undefined) row.notes = d.notes ?? null
   if (d.tags !== undefined) row.tags = d.tags
-  if (d.lastContactedAt !== undefined) row.last_contacted_at = d.lastContactedAt ?? null
-  if (d.customFields !== undefined) row.custom_fields = JSON.stringify(d.customFields ?? {})
+  if (d.last_contacted_at !== undefined) row.last_contacted_at = d.last_contacted_at ?? null
+  if (d.custom_fields !== undefined) row.custom_fields = JSON.stringify(d.custom_fields ?? {})
   return row
 }

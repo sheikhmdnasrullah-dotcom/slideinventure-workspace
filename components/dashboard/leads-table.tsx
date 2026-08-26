@@ -238,7 +238,8 @@ export function LeadsTable() {
       })
 
       if (!res.ok) {
-        toast.error("Failed to save lead")
+        const err = await res.json().catch(() => ({}))
+        toast.error((typeof err?.error === "string" ? err.error : err?.error?.message) || "Failed to save lead")
         return
       }
 
@@ -914,7 +915,6 @@ export function LeadsTable() {
                   value={form.first_name}
                   onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                   placeholder="First name"
-                  required
                   className="h-9"
                 />
               </div>
@@ -924,7 +924,6 @@ export function LeadsTable() {
                   value={form.last_name}
                   onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                   placeholder="Last name"
-                  required
                   className="h-9"
                 />
               </div>
@@ -936,7 +935,6 @@ export function LeadsTable() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="Email"
-                required
                 className="h-9"
               />
             </div>

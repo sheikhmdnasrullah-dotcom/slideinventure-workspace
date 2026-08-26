@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Papa from "papaparse"
-import { FileUp, X } from "lucide-react"
+import { FileSpreadsheet, FileUp, UploadCloud, X } from "lucide-react"
 import { toast } from "sonner"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -61,9 +63,11 @@ interface CsvImportDialogProps {
 export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDialogProps) {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string[][]>([])
+  const [allRows, setAllRows] = useState<string[][]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [importing, setImporting] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
 
   useEffect(() => {
     if (!open) {

@@ -53,11 +53,10 @@ export default async function StrategyPage() {
         <CardContent>
           <form action={createCard} className="flex flex-wrap items-end gap-3 text-sm">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-foreground/40">Title</label>
+              <label className="text-xs text-foreground/40">Title (optional)</label>
               <input
                 type="text"
                 name="title"
-                required
                 className="border-b border-foreground/15 bg-transparent py-1 outline-none focus:border-signal"
               />
             </div>

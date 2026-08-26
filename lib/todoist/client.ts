@@ -77,6 +77,21 @@ async function todoistFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json()
 }
 
+/**
+ * Todoist v1 returns list endpoints wrapped as `{ results: [...] }`, but
+ * single-resource and mutation endpoints return the resource object directly.
+ * Normalize both shapes into a single task so callers never have to guess.
+ */
+function extractTask(data: unknown): TodoistTask | undefined {
+  if (!data || typeof data !== "object") return undefined
+  const maybe = data as Record<string, unknown>
+  if (Array.isArray(maybe.results) && maybe.results.length > 0) {
+    return maybe.results[0] as TodoistTask
+  }
+  if ("id" in maybe) return data as TodoistTask
+  return undefined
+}
+
 export async function listProjects(): Promise<TodoistProject[]> {
   const data = await todoistFetch<{ results: TodoistProject[] }>("/projects")
   return data.results ?? []
@@ -98,8 +113,10 @@ export async function listTasks(filters?: { project_id?: string; label?: string;
 }
 
 export async function getTask(id: string): Promise<TodoistTask> {
-  const data = await todoistFetch<{ results: TodoistTask[] }>(`/tasks/${id}`)
-  return data.results[0] as TodoistTask
+  const data = await todoistFetch<TodoistTask | { results: TodoistTask[] }>(`/tasks/${id}`)
+  const task = extractTask(data)
+  if (!task?.id) throw new Error("Todoist did not return the requested task")
+  return task
 }
 
 export async function createTask(input: TodoistCreateTaskInput): Promise<TodoistTask> {
@@ -114,11 +131,13 @@ export async function createTask(input: TodoistCreateTaskInput): Promise<Todoist
 
   Object.keys(body).forEach(key => body[key] === undefined && delete body[key])
 
-  const data = await todoistFetch<{ results: TodoistTask[] }>("/tasks", {
+  const data = await todoistFetch<TodoistTask | { results: TodoistTask[] }>("/tasks", {
     method: "POST",
     body: JSON.stringify(body),
   })
-  return data.results[0] as TodoistTask
+  const task = extractTask(data)
+  if (!task?.id) throw new Error("Todoist did not return the created task")
+  return task
 }
 
 export async function updateTask(id: string, input: TodoistUpdateTaskInput): Promise<TodoistTask> {
@@ -134,11 +153,13 @@ export async function updateTask(id: string, input: TodoistUpdateTaskInput): Pro
 
   Object.keys(body).forEach(key => body[key] === undefined && delete body[key])
 
-  const data = await todoistFetch<{ results: TodoistTask[] }>(`/tasks/${id}`, {
+  const data = await todoistFetch<TodoistTask | { results: TodoistTask[] }>(`/tasks/${id}`, {
     method: "POST",
     body: JSON.stringify(body),
   })
-  return data.results[0] as TodoistTask
+  const task = extractTask(data)
+  if (!task?.id) throw new Error("Todoist did not return the updated task")
+  return task
 }
 
 export async function completeTask(id: string): Promise<void> {

@@ -131,13 +131,13 @@ export function Mail({
   }
 
   async function handleComposeSend() {
-    if (!composeTo || !composeSubject || !composeBody) {
-      toast.error("Fill in To, Subject and Body")
+    if (!composeTo.trim()) {
+      toast.error("Add a recipient to send this")
       return
     }
     setComposeSending(true)
     try {
-      await sendMessage(composeTo, composeSubject, composeBody)
+      await sendMessage(composeTo, composeSubject || "(no subject)", composeBody)
       setComposeOpen(false)
       setComposeTo("")
       setComposeSubject("")

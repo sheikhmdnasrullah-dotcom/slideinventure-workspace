@@ -88,9 +88,17 @@ export async function POST(request: NextRequest) {
     const validated = validate(CreateSchema, body);
     const d = validated.data;
     const now = new Date().toISOString();
+    const fallbackTitle = (() => {
+      try {
+        const u = new URL(d.url);
+        return (u.hostname + u.pathname).replace(/\/$/, "");
+      } catch {
+        return d.url;
+      }
+    })();
 
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
-      title: d.title,
+      title: d.title?.trim() || fallbackTitle,
       url: d.url,
       description: d.description ?? null,
       tags: d.tags ?? [],

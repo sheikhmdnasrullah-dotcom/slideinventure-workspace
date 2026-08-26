@@ -4,10 +4,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
 import {
-  listProjects,
-  listLabels,
   listTasks,
-  getTask,
   createTask,
   updateTask,
   completeTask,
@@ -29,7 +26,11 @@ const CreateSchema = z.object({
   projectId: z.string().optional().nullable(),
   labels: z.array(z.string()).default([]),
   priority: z.number().int().min(1).max(4).default(1),
-  dueDate: z.string().datetime().optional().nullable(),
+  dueDate: z
+    .string()
+    .refine((v) => !Number.isNaN(Date.parse(v)), { message: "Invalid due date" })
+    .optional()
+    .nullable(),
 });
 
 const UpdateSchema = z.object({
@@ -38,7 +39,11 @@ const UpdateSchema = z.object({
   projectId: z.string().optional().nullable(),
   labels: z.array(z.string()).default([]),
   priority: z.number().int().min(1).max(4).optional(),
-  dueDate: z.string().datetime().optional().nullable(),
+  dueDate: z
+    .string()
+    .refine((v) => !Number.isNaN(Date.parse(v)), { message: "Invalid due date" })
+    .optional()
+    .nullable(),
   completed: z.boolean().optional(),
 });
 

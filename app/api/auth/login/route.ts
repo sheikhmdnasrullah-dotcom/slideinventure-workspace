@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createEmailPasswordSession, SESSION_COOKIE } from "@/lib/appwrite/auth"
+import { sessionCookieOptions } from "@/lib/appwrite/session-cookie"
 
 export async function POST(request: NextRequest) {
   const { email, password } = await request.json().catch(() => ({} as Record<string, string>))
@@ -14,18 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
   }
 
-  const host = request.nextUrl.hostname
-  const isLocalhost =
-    host === "localhost" || host === "127.0.0.1" || host === "::1"
-  const isHttps = request.nextUrl.protocol === "https:"
-  const secure = isHttps || isLocalhost
-
   const res = NextResponse.json({ ok: true })
-  res.cookies.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    path: "/",
-    sameSite: secure ? "none" : "lax",
-    secure,
-  })
+  res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(request))
   return res
 }

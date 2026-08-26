@@ -111,3 +111,84 @@
     @apply font-sans scroll-smooth;
   }
 }
+
+/* ── Motion polish ───────────────────────────────────────────────────────────
+   Layered on top of the token easings (--ease-expo / --dur-*) and the Base UI
+   data-starting/ending-style primitives already used by modals, popovers, tabs,
+   drawers and switches. Goal: one shared timing language, restrained density. */
+
+@layer components {
+  /* Clickable cards: subtle lift on hover, settle on press. GPU-friendly
+     transform only — never animate layout properties. */
+  .motion-card {
+    transition:
+      transform var(--dur-fast) var(--ease-std),
+      box-shadow var(--dur-fast) var(--ease-std),
+      border-color var(--dur-fast) var(--ease-std);
+    will-change: transform;
+  }
+  .motion-card:hover {
+    transform: translateY(-2px);
+  }
+  .motion-card:active {
+    transform: translateY(0);
+  }
+
+  /* Sidebar nav items: the active background already toggles via data-active,
+     but it snapped in. Smooth the colour change and add a quiet left rail that
+     eases in so the current location reads as continuous, not abrupt. */
+  [data-slot="sidebar-menu-button"] {
+    transition:
+      background-color var(--dur-fast) var(--ease-std),
+      color var(--dur-fast) var(--ease-std);
+  }
+  [data-slot="sidebar-menu-button"][data-active] {
+    position: relative;
+  }
+  [data-slot="sidebar-menu-button"][data-active]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    height: 18px;
+    width: 3px;
+    transform: translateY(-50%);
+    border-radius: 9999px;
+    background: var(--sidebar-primary, var(--primary));
+    animation: sidebar-active-in var(--dur-fast) var(--ease-std);
+  }
+  [data-slot="sidebar-menu-sub-button"][data-active] {
+    position: relative;
+  }
+  [data-slot="sidebar-menu-sub-button"][data-active]::before {
+    content: "";
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    height: 14px;
+    width: 2px;
+    transform: translateY(-50%);
+    border-radius: 9999px;
+    background: var(--sidebar-primary, var(--primary));
+  }
+
+  @keyframes sidebar-active-in {
+    from {
+      opacity: 0;
+      transform: translateY(-50%) scaleY(0.35);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(-50%) scaleY(1);
+    }
+  }
+}
+
+@layer base {
+  /* Reserve scrollbar space so content never shifts when a bar appears
+     (loading → content, opening scrollable panels, etc.). */
+  main,
+  [data-slot="sidebar-inner"] {
+    scrollbar-gutter: stable;
+  }
+}

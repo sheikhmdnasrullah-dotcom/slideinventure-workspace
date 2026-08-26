@@ -1,12 +1,19 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { Plus, Trash2, Check, X, RefreshCw, Filter, Search } from "lucide-react"
+/* eslint-disable react-hooks/set-state-in-effect */
+// The Todoist data loaders fetch from the API and update state after async
+// I/O. Calling them from effects is intentional; there is no synchronous
+// cascading render because all state updates happen after `await`.
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Plus, Trash2, Check, RefreshCw, Filter, Search } from "lucide-react"
+import { format } from "date-fns"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DeadlinePicker } from "./deadline-picker"
 import {
   Select,
   SelectContent,
@@ -23,7 +30,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
@@ -38,6 +45,7 @@ export interface TodoistTask {
   due_date?: string
   completed: boolean
   assignee?: string
+  labels?: string[]
   metadata?: Record<string, unknown>
   created_at: string
   updated_at: string
@@ -83,6 +91,7 @@ export function TodoistContent() {
   const [showForm, setShowForm] = useState(false)
   const [editingTask, setEditingTask] = useState<TodoistTask | null>(null)
   const [saving, setSaving] = useState(false)
+  const submittingRef = useRef(false)
 
   const [form, setForm] = useState({
     content: "",
@@ -118,7 +127,6 @@ export function TodoistContent() {
   }, [])
 
   const loadTasks = useCallback(async () => {
-    setLoading(true)
     try {
       const params = new URLSearchParams()
       if (projectFilter !== "all") params.set("project_id", projectFilter)
@@ -138,12 +146,12 @@ export function TodoistContent() {
   }, [projectFilter, labelFilter, completedFilter])
 
   useEffect(() => {
-    loadProjects()
-    loadLabels()
+    void loadProjects()
+    void loadLabels()
   }, [loadProjects, loadLabels])
 
   useEffect(() => {
-    loadTasks()
+    void loadTasks()
   }, [loadTasks])
 
   const filteredTasks = useMemo(() => {
@@ -187,19 +195,21 @@ export function TodoistContent() {
       content: task.content,
       description: task.description ?? "",
       projectId: task.project_id ?? "",
-      labels: (task.metadata?.labels as string[]) ?? [],
+      labels: task.labels ?? (task.metadata?.labels as string[]) ?? [],
       priority: task.priority ?? 1,
-      dueDate: task.due_date ? task.due_date.slice(0, 16) : "",
+      dueDate: task.due_date ?? "",
     })
     setShowForm(true)
   }
 
   const handleSave = async () => {
+    if (submittingRef.current) return
     if (!form.content.trim()) {
       toast.error("Task content is required")
       return
     }
 
+    submittingRef.current = true
     setSaving(true)
     try {
       const payload = {
@@ -221,21 +231,35 @@ export function TodoistContent() {
       })
 
       if (!res.ok) {
-        toast.error(editingTask ? "Failed to update task" : "Failed to create task")
+        let message = editingTask ? "Failed to update task" : "Failed to create task"
+        try {
+          const body = await res.json()
+          if (body?.error) message = body.error
+        } catch {
+          // keep generic message
+        }
+        toast.error(message)
         return
       }
 
       toast.success(editingTask ? "Task updated" : "Task created")
       setShowForm(false)
-      loadTasks()
+      setForm({ content: "", description: "", projectId: "", labels: [], priority: 1, dueDate: "" })
+      setEditingTask(null)
+      await loadTasks()
     } catch {
-      toast.error("Something went wrong")
+      toast.error(editingTask ? "Failed to update task" : "Failed to create task")
     } finally {
       setSaving(false)
+      submittingRef.current = false
     }
   }
 
+  const busyIds = useRef<Set<string>>(new Set())
+
   const handleComplete = async (task: TodoistTask) => {
+    if (busyIds.current.has(task.id)) return
+    busyIds.current.add(task.id)
     try {
       const res = await fetch(`/api/todoist/${task.id}`, {
         method: "PATCH",
@@ -244,26 +268,32 @@ export function TodoistContent() {
       })
       if (res.ok) {
         toast.success("Task completed")
-        loadTasks()
+        await loadTasks()
       } else {
         toast.error("Failed to complete task")
       }
     } catch {
       toast.error("Failed to complete task")
+    } finally {
+      busyIds.current.delete(task.id)
     }
   }
 
   const handleDelete = async (task: TodoistTask) => {
+    if (busyIds.current.has(task.id)) return
+    busyIds.current.add(task.id)
     try {
       const res = await fetch(`/api/todoist/${task.id}`, { method: "DELETE" })
       if (res.ok) {
         toast.success("Task deleted")
-        loadTasks()
+        await loadTasks()
       } else {
         toast.error("Failed to delete task")
       }
     } catch {
       toast.error("Failed to delete task")
+    } finally {
+      busyIds.current.delete(task.id)
     }
   }
 
@@ -392,7 +422,7 @@ export function TodoistContent() {
                       </Badge>
                       {task.due_date && (
                         <Badge variant={new Date(task.due_date) < new Date() && !task.completed ? "destructive" : "secondary"} className="text-[10px]">
-                          {new Date(task.due_date).toLocaleDateString()}
+                          {format(new Date(task.due_date), "MMM d, h:mm a")}
                         </Badge>
                       )}
                     </div>
@@ -403,7 +433,7 @@ export function TodoistContent() {
                       {activeProject && (
                         <Badge variant="outline" className="text-[10px]">{activeProject.name}</Badge>
                       )}
-                      {(task.metadata?.labels as string[] | undefined)?.map((label) => (
+                      {(task.labels ?? (task.metadata?.labels as string[] | undefined))?.map((label) => (
                         <Badge key={label} variant="secondary" className="text-[10px]">{label}</Badge>
                       ))}
                       {task.assignee && (
@@ -512,11 +542,9 @@ export function TodoistContent() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs">Due Date</Label>
-              <Input
-                type="datetime-local"
+              <DeadlinePicker
                 value={form.dueDate}
-                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                className="h-9"
+                onChange={(v) => setForm({ ...form, dueDate: v })}
               />
             </div>
             <div className="flex flex-col gap-1.5">

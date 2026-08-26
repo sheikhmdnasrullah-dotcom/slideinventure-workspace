@@ -199,12 +199,19 @@
 
 /* ── Reduced motion — global backstop ──────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0.001s;
+    --dur-fast: 0.001s;
+    --dur-base: 0.001s;
+    --dur-slow: 0.001s;
+    --dur-reveal: 0.001s;
+  }
   *,
   *::before,
   *::after {
-    animation-duration: 1ms !important;
+    animation-duration: 0.001s !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+    transition-duration: 0.001s !important;
     scroll-behavior: auto !important;
   }
 }

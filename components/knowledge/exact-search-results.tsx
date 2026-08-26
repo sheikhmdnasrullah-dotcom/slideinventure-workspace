@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Highlight } from "@/components/knowledge/highlight";
+import { Stagger, StaggerItem } from "@/components/system/motion";
 import { Sparkles } from "lucide-react";
 
 export type ChunkHit = {
@@ -55,11 +56,12 @@ export function ExactSearchResults({
         {total} match{total === 1 ? "" : "es"}, showing {from}–{to}
       </p>
 
-      <div className="flex flex-col gap-2">
+      <Stagger className="flex flex-col gap-2">
         {results.map((hit) => {
           const item = hit.knowledge_items;
           return (
-            <Card key={hit.id}>
+            <StaggerItem key={hit.id}>
+              <Card className="motion-card">
               <CardContent className="flex flex-col gap-2 p-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="border-brand/30 bg-brand-soft text-signal">
@@ -70,7 +72,7 @@ export function ExactSearchResults({
                     <span className="truncate text-xs text-foreground/40">{hit.heading}</span>
                   )}
                 </div>
-                <p className="text-sm leading-relaxed text-foreground/80">
+                <p className="break-words text-sm leading-relaxed text-foreground/80">
                   <Highlight text={hit.text} query={query} />
                 </p>
                 <div className="flex items-center justify-between">
@@ -98,10 +100,11 @@ export function ExactSearchResults({
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              </Card>
+              </StaggerItem>
+            );
+          })}
+      </Stagger>
 
       {(hasPrev || hasNext) && (
         <div className="flex items-center justify-between text-xs">

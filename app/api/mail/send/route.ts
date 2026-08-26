@@ -10,8 +10,8 @@ import { recordAudit } from "@/lib/api/audit";
 const SendSchema = z.object({
   account: z.string().min(1),
   to: z.string().email(),
-  subject: z.string().min(1),
-  body: z.string().min(1),
+  subject: z.string().optional().default(""),
+  body: z.string().optional().default(""),
   inReplyTo: z.string().optional(),
   references: z.string().optional(),
 });

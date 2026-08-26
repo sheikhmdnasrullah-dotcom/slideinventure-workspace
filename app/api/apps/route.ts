@@ -72,9 +72,18 @@ export async function POST(request: NextRequest) {
     const d = validated.data;
     const now = new Date().toISOString();
 
+    const fallbackName = d.name?.trim() || (() => {
+      try {
+        return new URL(d.url ?? "").hostname;
+      } catch {
+        return "Untitled app";
+      }
+    })();
+    const slug = d.slug?.trim() || fallbackName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "") || `app-${Date.now()}`;
+
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
-      name: d.name,
-      slug: d.slug,
+      name: fallbackName,
+      slug,
       description: d.description ?? null,
       icon: d.icon ?? null,
       url: d.url ?? null,

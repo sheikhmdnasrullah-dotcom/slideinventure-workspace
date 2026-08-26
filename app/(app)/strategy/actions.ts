@@ -49,13 +49,13 @@ export async function updateCardStatus(id: string, status: string) {
 export async function createCard(formData: FormData) {
   const user = await requireUser();
 
-  const title = ((formData.get("title") as string) || "").trim();
   const type = ((formData.get("type") as string) || "decision").trim();
   const body = ((formData.get("body") as string) || "").trim();
   const source = ((formData.get("source") as string) || "Strategy board").trim();
 
+  let title = ((formData.get("title") as string) || "").trim();
   if (!title) {
-    throw new Error("Title is required.");
+    title = body.split("\n")[0]?.slice(0, 80) || `Untitled ${type} — ${new Date().toLocaleDateString()}`;
   }
   if (!STRATEGY_TYPES.includes(type)) {
     throw new Error(`Invalid type: ${type}`);

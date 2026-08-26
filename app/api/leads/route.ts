@@ -26,7 +26,10 @@ const ListSchema = z.object({
   source: z.string().optional(),
 })
 
-const CreateSchema = LeadSchema.omit({ id: true, createdAt: true, updatedAt: true })
+const CreateSchema = LeadSchema.omit({ id: true, createdAt: true, updatedAt: true }).refine(
+  (data) => Boolean(data.first_name?.trim() || data.last_name?.trim() || data.email?.trim() || data.company?.trim()),
+  { message: "Add at least a name, email, or company so this lead can be identified", path: ["first_name"] }
+)
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser()

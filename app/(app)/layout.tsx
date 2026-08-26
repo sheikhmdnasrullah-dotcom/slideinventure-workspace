@@ -3,6 +3,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandMenu } from "@/components/system/command-menu";
+import { PageTransition } from "@/components/system/motion";
 import { requireUser } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -22,7 +23,7 @@ export default async function AppLayout({
       >
         <AppSidebar userEmail={user.email ?? "unknown"} />
         <SidebarInset>
-          {children}
+          <PageTransition>{children}</PageTransition>
         </SidebarInset>
         <Toaster />
         <CommandMenu />

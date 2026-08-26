@@ -33,16 +33,16 @@ function serialize(doc: Record<string, any>) {
     id: doc.$id,
     name: doc.name,
     category: doc.category,
-    service_name: doc.service_name,
+    serviceName: doc.service_name,
     username: doc.username,
-    secret_type: doc.secret_type,
+    secretType: doc.secret_type,
     url: doc.url,
     notes: doc.notes,
     tags: doc.tags ?? [],
-    expires_at: doc.expires_at,
-    created_by: doc.created_by,
-    created_at: doc.created_at,
-    updated_at: doc.updated_at,
+    expiresAt: doc.expires_at,
+    createdBy: doc.created_by,
+    createdAt: doc.created_at,
+    updatedAt: doc.updated_at,
   };
 }
 

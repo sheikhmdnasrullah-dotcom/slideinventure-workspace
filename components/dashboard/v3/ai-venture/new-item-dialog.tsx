@@ -27,7 +27,6 @@ export function NewItemDialog({ open, onOpenChange }: { open: boolean; onOpenCha
   const [name, setName] = React.useState("")
   const [type, setType] = React.useState<"file" | "folder">("file")
   const [ext, setExt] = React.useState<"md" | "txt">("md")
-  const [brainstormTarget, setBrainstormTarget] = React.useState<"brainstorm" | "brainstorm-sketches">("brainstorm")
   const [saving, setSaving] = React.useState(false)
 
   React.useEffect(() => {
@@ -35,7 +34,6 @@ export function NewItemDialog({ open, onOpenChange }: { open: boolean; onOpenCha
       setName("")
       setType("file")
       setExt("md")
-      setBrainstormTarget("brainstorm")
     }
   }, [open])
 
@@ -46,7 +44,6 @@ export function NewItemDialog({ open, onOpenChange }: { open: boolean; onOpenCha
     setSaving(true)
     try {
       if (type === "folder") {
-        const folderName = brainstormTarget === "brainstorm-sketches" ? "Brainstorm Sketches" : "Brainstorm"
         await createEntry(finalName, "folder")
         // Navigate into the new folder
         await new Promise(resolve => setTimeout(resolve, 100))

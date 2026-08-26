@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
@@ -20,11 +19,37 @@ export default async function KnowledgeItemPage(
   const chunkParam = typeof searchParams.chunk === "string" ? Number(searchParams.chunk) : undefined;
   const chunk = chunkParam !== undefined && Number.isFinite(chunkParam) ? chunkParam : undefined;
 
-  const res = await databases.listDocuments(DB, COL, [Query.equal("slug", slug)]);
-  const doc = res.documents[0];
+  // Resolve the resource by slug first, then by internal $id. Search results
+  // and evidence links may reference either identifier, so accepting both keeps
+  // a deep link from ever hard-failing with a "Not Found" page.
+  const bySlug = await databases.listDocuments(DB, COL, [Query.equal("slug", slug)]);
+  let doc = bySlug.documents[0];
+  if (!doc) {
+    const byId = await databases.listDocuments(DB, COL, [Query.equal("$id", slug)]);
+    doc = byId.documents[0];
+  }
 
   if (!doc) {
-    notFound();
+    return (
+      <div className="flex flex-1 flex-col items-start gap-4 p-6">
+        <Link href="/knowledge" className="text-xs text-foreground/40 hover:underline">
+          ← Knowledge Base
+        </Link>
+        <div className="flex flex-col gap-2 rounded-lg border border-dashed p-6">
+          <h1 className="text-lg font-medium">This source is no longer available</h1>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            The knowledge source referenced by this link could not be found. It may have been
+            deleted or moved. Your other data and the rest of the dashboard are unaffected.
+          </p>
+          <Link
+            href="/chat"
+            className="text-sm text-primary hover:underline"
+          >
+            Return to your search results →
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const item = {

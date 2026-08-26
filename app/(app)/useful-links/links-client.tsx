@@ -83,7 +83,7 @@ export function LinksClient() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error?.message || "Failed to save");
+        throw new Error((typeof data?.error === "string" ? data.error : data?.error?.message) || "Failed to save");
       }
       
       toast.success(editingLink ? "Link updated" : "Link added");
@@ -209,7 +209,7 @@ export function LinksClient() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Title (optional — inferred from the URL if left blank)</Label>
               <Input 
                 id="title" 
                 value={formData.title} 
@@ -248,7 +248,7 @@ export function LinksClient() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!formData.title || !formData.url}>Save</Button>
+            <Button onClick={handleSave} disabled={!formData.url}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

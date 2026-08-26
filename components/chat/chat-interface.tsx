@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { format, isToday, isYesterday } from "date-fns";
 import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EvidenceBlock } from "@/components/system";
+import { Highlight } from "@/components/knowledge/highlight";
 
 type MessageRole = "user" | "assistant";
 
@@ -233,23 +235,9 @@ export function ChatInterface() {
         return;
       }
 
-      // No retrieval matches. If we have a session, try the LLM; otherwise
-      // tell the user we searched but found nothing.
-      if (!activeSessionId) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `nomatch-${Date.now()}`,
-            role: "assistant",
-            content: `I searched your knowledge base, leads, terminal history, apps, and links but found no matches for "${text}". Try rephrasing, or add this information to your Knowledge base.`,
-            createdAt: new Date().toISOString(),
-          },
-        ]);
-        setStreaming(false);
-        textareaRef.current?.focus();
-        return;
-      }
-
+      // No retrieval matches — ask the LLM directly. The backend creates a
+      // session automatically when none exists yet, so this works for a
+      // brand new conversation too.
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -392,7 +380,7 @@ export function ChatInterface() {
       </aside>
 
       {/* Main chat area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
         <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
           <h1 className="truncate text-sm font-semibold">
@@ -406,8 +394,8 @@ export function ChatInterface() {
         </div>
 
         {/* Messages */}
-        <ScrollArea className="flex-1 px-4">
-          <div className="space-y-4 py-4">
+        <ScrollArea className="min-w-0 flex-1 px-4">
+          <div className="min-w-0 space-y-4 py-4">
             {messages.length === 0 ? (
               <div className="flex h-full min-h-[50vh] flex-col items-center justify-center text-center text-muted-foreground">
                 <Sparkles className="mb-4 size-10 text-muted-foreground/60" />
@@ -449,7 +437,7 @@ export function ChatInterface() {
                           </div>
 
                           {msg.retrievalSources && (
-                            <Card className="mt-2 w-full overflow-hidden">
+                            <Card className="motion-card mt-2 min-w-0 w-full overflow-hidden">
                               <div className="border-b bg-muted/30 px-3 py-2">
                                 <p className="text-xs font-medium text-muted-foreground">
                                   From your data
@@ -462,7 +450,7 @@ export function ChatInterface() {
                               </div>
                               <div className="divide-y">
                                 {msg.retrievalSources.map((group) => (
-                                  <div key={group.source} className="p-3">
+                                  <div key={group.source} className="min-w-0 p-3">
                                     <div className="flex items-center gap-2">
                                       <span className="text-sm">{SOURCE_ICONS[group.source] || "📄"}</span>
                                       <span className="text-xs font-medium">{group.label}</span>
@@ -475,21 +463,29 @@ export function ChatInterface() {
                                     ) : (
                                       <div className="mt-2 space-y-2">
                                         {group.results.map((result, idx) => (
-                                          <div key={idx} className="rounded-md border bg-background p-2">
+                                          <div key={idx} className="min-w-0 overflow-hidden rounded-md border bg-background p-2">
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs font-medium">{result.title}</span>
+                                              <span className="min-w-0 truncate text-xs font-medium">{result.title}</span>
                                             </div>
-                                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{result.snippet}</p>
+                                            <p className="mt-1 break-words text-xs text-muted-foreground">
+                                              <Highlight text={result.snippet} query={msg.retrievalQuery || ""} />
+                                            </p>
                                             <div className="mt-1.5 flex items-center gap-3">
-                                              {result.path && (
-                                                <a href={result.path} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                                                  Open <ExternalLink className="size-3" />
-                                                </a>
-                                              )}
-                                              {result.url && (
-                                                <a href={result.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                                                  Visit <ExternalLink className="size-3" />
-                                                </a>
+                                              {result.path ? (
+                                                <Link
+                                                  href={result.path}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                                >
+                                                  Open source <ExternalLink className="size-3" />
+                                                </Link>
+                                              ) : (
+                                                result.url && (
+                                                  <a href={result.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                                                    Visit <ExternalLink className="size-3" />
+                                                  </a>
+                                                )
                                               )}
                                             </div>
                                           </div>

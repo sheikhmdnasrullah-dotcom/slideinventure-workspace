@@ -19,20 +19,23 @@ export type User = z.infer<typeof UserSchema>;
 // ---------------------------------------------------------------
 // 2. Leads
 // ---------------------------------------------------------------
+// Wire format matches the DB columns (snake_case) — the same shape used by
+// /api/leads/import and serializeLead, so create/update/import all agree on
+// field names instead of silently dropping mismatched keys.
 export const LeadSchema = z.object({
   id: z.string().uuid(),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email"),
+  first_name: z.string().default(""),
+  last_name: z.string().default(""),
+  email: z.union([z.string().email("Invalid email"), z.literal("")]).optional().nullable(),
   company: z.string().optional().nullable(),
-  jobTitle: z.string().optional().nullable(),
+  job_title: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   source: z.string().default("manual"),
   status: z.string().default("new"),
   notes: z.string().optional().nullable(),
   tags: z.array(z.string()).default([]),
-  customFields: z.record(z.string(), z.unknown()).default({}),
-  lastContactedAt: z.string().datetime().optional().nullable(),
+  custom_fields: z.record(z.string(), z.unknown()).default({}),
+  last_contacted_at: z.string().datetime().optional().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -150,7 +153,7 @@ export type KnowledgeItem = z.infer<typeof KnowledgeItemSchema>;
 // ---------------------------------------------------------------
 export const UsefulLinkSchema = z.object({
   id: z.string().uuid(),
-  title: z.string().min(1),
+  title: z.string().optional().default(""),
   url: z.string().url(),
   description: z.string().optional().nullable(),
   tags: z.array(z.string()).default([]),
@@ -167,8 +170,8 @@ export type UsefulLink = z.infer<typeof UsefulLinkSchema>;
 // ---------------------------------------------------------------
 export const AppSchema = z.object({
   id: z.string().uuid(),
-  name: z.string().min(1),
-  slug: z.string().min(1),
+  name: z.string().optional().default(""),
+  slug: z.string().optional().default(""),
   description: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
   url: z.string().url().optional().nullable(),

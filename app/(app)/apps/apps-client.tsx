@@ -116,9 +116,9 @@ export function AppsClient() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error?.message || "Failed to save");
+        throw new Error((typeof data?.error === "string" ? data.error : data?.error?.message) || "Failed to save");
       }
-      
+
       toast.success(editingApp ? "App updated" : "App added");
       setIsDialogOpen(false);
       fetchApps();
@@ -252,7 +252,7 @@ export function AppsClient() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">App Name</Label>
+              <Label htmlFor="name">App Name (optional — inferred from the URL if left blank)</Label>
               <Input 
                 id="name" 
                 value={formData.name} 
@@ -291,7 +291,7 @@ export function AppsClient() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!formData.name || !formData.url}>Save</Button>
+            <Button onClick={handleSave} disabled={!formData.name && !formData.url}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

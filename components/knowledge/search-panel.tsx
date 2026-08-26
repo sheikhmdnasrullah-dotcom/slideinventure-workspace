@@ -219,7 +219,7 @@ export function KnowledgeSearchPanel({ initialItems }: { initialItems?: Knowledg
       ) : (
         <div className="flex flex-col gap-2">
           {items.map((item) => (
-            <Card key={item.id}>
+            <Card key={item.id} className="motion-card">
               <CardContent className="flex items-center justify-between gap-3 p-3">
                 <div className="flex flex-col gap-1">
                   <Link href={`/knowledge/${item.slug}`} className="text-sm hover:underline">

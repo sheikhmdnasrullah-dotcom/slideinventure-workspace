@@ -43,9 +43,7 @@ export function LoginForm({
         return;
       }
 
-      setTimeout(() => {
-        window.location.assign("/");
-      }, 1000);
+      window.location.assign("/");
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);

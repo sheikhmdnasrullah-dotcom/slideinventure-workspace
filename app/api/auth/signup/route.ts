@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Client, Users, Account, ID } from "node-appwrite"
 import { SESSION_COOKIE } from "@/lib/appwrite/auth"
+import { sessionCookieOptions } from "@/lib/appwrite/session-cookie"
 
 const ENDPOINT = process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1"
 const PROJECT = process.env.APPWRITE_PROJECT_ID || "6a8cf7090015800700cc"
@@ -30,17 +31,10 @@ export async function POST(request: NextRequest) {
     const user = await users.create(ID.unique(), email, password, name || "")
     const session = await account.createEmailPasswordSession(email, password)
 
-    const host = request.nextUrl.hostname
-    const isLocalhost =
-      host === "localhost" || host === "127.0.0.1" || host === "::1"
-    const secure = request.nextUrl.protocol === "https:" || isLocalhost
     const domain = getCookieDomain(request.headers.get("host"))
     const res = NextResponse.json({ ok: true, user: { id: user.$id, email: user.email, name: user.name } })
     res.cookies.set(SESSION_COOKIE, session.secret, {
-      httpOnly: true,
-      path: "/",
-      sameSite: secure ? "none" : "lax",
-      secure,
+      ...sessionCookieOptions(request),
       domain,
     })
     return res
