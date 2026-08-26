@@ -2,6 +2,7 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases, ID } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ensureAffineCollection } from "@/lib/affine/ensure";
+import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.affineWorkspaces;
@@ -48,19 +49,36 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.snapshot !== undefined) update.snapshot = body.snapshot ? JSON.stringify(body.snapshot) : null;
   try {
     const doc = await databases.updateDocument(DB, COL, id, update);
+    await logActivity({
+      category: (body.section as any) ?? "brainstorm",
+      action: "updated",
+      title: doc.title ?? "Workspace",
+      description: `Updated a ${body.section ?? "brainstorm"} workspace`,
+      entityId: id,
+      entityType: "affine_workspace",
+    });
     return Response.json({ workspace: serialize(doc) });
   } catch {
     return Response.json({ error: "Update failed" }, { status: 404 });
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
+  const section = new URL(req.url).searchParams.get("section") ?? "brainstorm";
   await ensureAffineCollection();
   try {
     await databases.deleteDocument(DB, COL, id);
+    await logActivity({
+      category: section as any,
+      action: "deleted",
+      title: "Workspace",
+      description: `Deleted a ${section} workspace`,
+      entityId: id,
+      entityType: "affine_workspace",
+    });
     return Response.json({ ok: true });
   } catch {
     return Response.json({ error: "Delete failed" }, { status: 404 });

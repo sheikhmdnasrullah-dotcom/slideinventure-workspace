@@ -1,10 +1,5 @@
-import { Suspense } from "react"
-import { ResearchLabApp } from "@/components/dashboard/v3/research-lab/research-lab-app"
+import BlocksuiteWorkspace from "@/components/dashboard/v3/blocksuite/blocksuite-workspace"
 
 export default function ResearchLabPage() {
-  return (
-    <Suspense fallback={null}>
-      <ResearchLabApp scope="global" syncUrl />
-    </Suspense>
-  )
+  return <BlocksuiteWorkspace section="research" title="Research" mode="edgeless" />
 }

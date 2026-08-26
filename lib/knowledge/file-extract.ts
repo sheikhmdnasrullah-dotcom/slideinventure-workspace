@@ -37,6 +37,25 @@ export async function extractFileText(file: File): Promise<ExtractedFile> {
     }
   }
 
+  if (ext === "docx") {
+    try {
+      const mammoth = await import("mammoth")
+      const { value } = await mammoth.extractRawText({ buffer })
+      return {
+        text: value || "",
+        title: name.replace(/\.docx$/i, ""),
+        contentType: "docx",
+      }
+    } catch (err) {
+      console.error("DOCX extraction failed:", err)
+      return {
+        text: "[Uploaded DOCX: " + name + "] - text extraction failed.",
+        title: name.replace(/\.docx$/i, ""),
+        contentType: "docx",
+      }
+    }
+  }
+
   if (TEXT_EXTENSIONS.includes(ext)) {
     const text = buffer.toString("utf-8")
     return { text, title: name, contentType: ext }

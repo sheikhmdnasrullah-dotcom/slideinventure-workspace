@@ -6,6 +6,7 @@
 // cascading render because all state updates happen after `await`.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Plus, Trash2, Check, RefreshCw, Filter, Search } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
@@ -199,11 +200,17 @@ export function TodoistContent() {
     return result
   }, [tasks, search, completedFilter])
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingTask(null)
     setForm({ content: "", description: "", projectId: "", labels: [], priority: 1, dueDate: "", reminder: true })
     setShowForm(true)
-  }
+  }, [])
+
+  // Command palette's "New Todoist Task" entry lands here with ?new=1.
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get("new") === "1") handleAdd()
+  }, [searchParams, handleAdd])
 
   const handleEdit = (task: TodoistTask) => {
     setEditingTask(task)

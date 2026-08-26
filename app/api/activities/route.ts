@@ -21,6 +21,7 @@ export async function GET(request: Request) {
 
   const queries: any[] = [Query.orderDesc("timestamp"), Query.limit(pageSize)];
   if (category) queries.push(Query.equal("category", category));
+  if (cursor) queries.push(Query.cursorAfter(cursor));
 
   try {
     const res = await databases.listDocuments(DB, COL, queries);

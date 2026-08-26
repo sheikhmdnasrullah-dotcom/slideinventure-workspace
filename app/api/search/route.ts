@@ -14,6 +14,7 @@ type SectionDef = {
   route: string;
   orderBy: string;
   label: string;
+  section?: string;
 };
 
 // Global, cross-section search. We pull a recent window from each collection
@@ -25,9 +26,9 @@ const SECTIONS: SectionDef[] = [
   { type: "leads", collection: APPWRITE.collections.leads, titleFields: ["first_name", "last_name", "email", "company"], subtitleFields: ["company", "status"], route: "/leads", orderBy: "updated_at", label: "Lead" },
   { type: "documents", collection: APPWRITE.collections.documents, titleFields: ["title", "filename"], subtitleFields: ["type"], route: "/documents", orderBy: "updated_at", label: "Document" },
   { type: "links", collection: APPWRITE.collections.usefulLinks, titleFields: ["title", "url"], subtitleFields: ["tags"], route: "/useful-links", orderBy: "created_at", label: "Link" },
-  { type: "research", collection: APPWRITE.collections.researchWorkspaces, titleFields: ["title"], subtitleFields: ["scope"], route: "/research-lab", orderBy: "updated_at", label: "Research" },
+  { type: "research", collection: APPWRITE.collections.affineWorkspaces, titleFields: ["title"], subtitleFields: ["section"], route: "/research-lab", orderBy: "updated_at", label: "Research", section: "research" },
   { type: "boards", collection: APPWRITE.collections.boards, titleFields: ["title"], subtitleFields: ["scope"], route: "/brainstorm-sketch", orderBy: "updated_at", label: "Board" },
-  { type: "ai_venture", collection: "ai_venture_files", titleFields: ["title", "name"], subtitleFields: ["type"], route: "/concepts", orderBy: "updated_at", label: "Concepts" },
+  { type: "concepts", collection: APPWRITE.collections.affineWorkspaces, titleFields: ["title"], subtitleFields: ["section"], route: "/concepts", orderBy: "updated_at", label: "Concepts", section: "concepts" },
   { type: "terminal", collection: APPWRITE.collections.terminalCommands, titleFields: ["command", "description"], subtitleFields: ["category"], route: "/terminal", orderBy: "created_at", label: "Terminal" },
   { type: "todoist", collection: APPWRITE.collections.todoistTasks, titleFields: ["title", "content"], subtitleFields: ["project"], route: "/todoist", orderBy: "updated_at", label: "Todoist" },
   { type: "notes", collection: APPWRITE.collections.notes, titleFields: ["title"], subtitleFields: ["updated_at"], route: "/notepad", orderBy: "updated_at", label: "Note" },
@@ -51,10 +52,9 @@ export async function GET(req: NextRequest) {
   const perSection = await Promise.all(
     SECTIONS.map(async (s) => {
       try {
-        const res = await databases.listDocuments(DB, s.collection, [
-          Query.orderDesc(s.orderBy),
-          Query.limit(50),
-        ]);
+        const queries = [Query.orderDesc(s.orderBy), Query.limit(50)]
+        if (s.section) queries.unshift(Query.equal("section", s.section))
+        const res = await databases.listDocuments(DB, s.collection, queries);
         return res.documents
           .filter((d: any) => {
             const hay = s.titleFields.concat(s.subtitleFields).map((f) => d[f]).filter(Boolean).join(" ").toLowerCase();

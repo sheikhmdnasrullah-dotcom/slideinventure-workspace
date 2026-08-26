@@ -40,6 +40,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.31.0",
+    "mammoth": "^1.12.1",
     "next": "16.3.1",
     "next-themes": "^0.4.6",
     "node-appwrite": "^28.0.0",

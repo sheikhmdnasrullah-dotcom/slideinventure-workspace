@@ -114,6 +114,8 @@ function categoryIcon(category: string) {
     knowledge: LibraryBig,
     leads: Users,
     research: Beaker,
+    concepts: Sparkles,
+    brainstorm: Lightbulb,
   }
   const Icon = iconMap[category] ?? FileCode2
   return <Icon className="size-3.5 text-muted-foreground" />

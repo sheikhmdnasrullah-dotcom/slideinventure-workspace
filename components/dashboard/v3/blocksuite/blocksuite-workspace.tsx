@@ -25,6 +25,7 @@ export default function BlocksuiteWorkspace({
 }: {
   section: string;
   title: string;
+  mode?: "page" | "edgeless";
 }) {
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -74,17 +75,17 @@ export default function BlocksuiteWorkspace({
     const id = activeIdRef.current;
     if (!id) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      await fetch(`/api/affine/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ snapshot }),
-      });
-    }, 700);
+      saveTimer.current = setTimeout(async () => {
+        await fetch(`/api/affine/${activeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snapshot, section }),
+        });
+      }, 700);
   }, []);
 
   const deleteWorkspace = async (id: string) => {
-    await fetch(`/api/affine/${id}`, { method: "DELETE" });
+    await fetch(`/api/affine/${id}?section=${encodeURIComponent(section)}`, { method: "DELETE" });
     if (activeId === id) {
       setActive(null);
       setActiveId(null);
@@ -136,7 +137,7 @@ export default function BlocksuiteWorkspace({
 
       <main className="relative flex-1">
         {active ? (
-          <BlocksuiteEditor snapshot={active.snapshot} onChange={handleChange} mode="page" />
+          <BlocksuiteEditor snapshot={active.snapshot} onChange={handleChange} mode={mode ?? "page"} />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
             <p className="text-sm">Select or create a {title.toLowerCase()} to start editing with AFFiNE.</p>

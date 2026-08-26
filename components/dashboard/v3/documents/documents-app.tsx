@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { FileText, Search, Upload, RefreshCw, Folder, PanelRightClose, PanelRightOpen } from "lucide-react"
 import { toast } from "sonner"
 
@@ -36,6 +37,12 @@ function DocumentsAppInner() {
     setFolder, folder, refresh
   } = useDocuments()
 
+  // Command palette's "Upload Document" entry lands here with ?upload=1.
+  const searchParams = useSearchParams()
+  React.useEffect(() => {
+    if (searchParams.get("upload") === "1") setUploadOpen(true)
+  }, [searchParams])
+
   const [uploadFile, setUploadFile] = React.useState<File | null>(null)
   const [uploadTitle, setUploadTitle] = React.useState("")
   const [uploadTags, setUploadTags] = React.useState("")
@@ -43,7 +50,7 @@ function DocumentsAppInner() {
 
   async function handleUpload() {
     if (!uploadFile) {
-      toast.error("Please select a PDF file")
+      toast.error("Please select a file")
       return
     }
     setUploading(true)
@@ -109,7 +116,7 @@ function DocumentsAppInner() {
               onClick={() => setUploadOpen(true)}
             >
               <Upload className="h-4 w-4" />
-              {!collapsed && <span>Upload PDF</span>}
+              {!collapsed && <span>Upload Document</span>}
             </Button>
           </div>
           <nav className="flex flex-col gap-1 px-2 py-2">
@@ -170,11 +177,11 @@ function DocumentsAppInner() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="file">PDF File</Label>
+                <Label htmlFor="file">File</Label>
                 <Input
                   id="file"
                   type="file"
-                  accept="application/pdf"
+                  accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
                   onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
                 />
               </div>
@@ -226,7 +233,9 @@ export function DocumentsApp(_props: DocumentsAppProps) {
   return (
     <SectionErrorBoundary label="Documents">
       <DocumentsProvider>
-        <DocumentsAppInner />
+        <React.Suspense fallback={null}>
+          <DocumentsAppInner />
+        </React.Suspense>
       </DocumentsProvider>
     </SectionErrorBoundary>
   )

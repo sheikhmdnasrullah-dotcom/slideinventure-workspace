@@ -37,7 +37,7 @@ type CmdEntry = {
   id: string;
   label: string;
   hint?: string;
-  group: "Results" | "Create" | "Navigate" | "Actions";
+  group: "Results" | "Recent" | "Create" | "Navigate" | "Actions";
   icon: React.ComponentType<{ className?: string }>;
   run: () => void;
 };
@@ -91,6 +91,43 @@ const SECTION_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   chat: MessageSquare,
 };
 
+// Same categories the Activity page (components/dashboard/activity-feed.tsx)
+// filters on — kept in sync manually since they're two small, independent
+// lookup tables rather than a shared import worth the coupling.
+const RECENT_CATEGORY_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  knowledge: BookOpen,
+  leads: Users,
+  documents: FileText,
+  links: Link2,
+  vault: Lock,
+  todoist: Workflow,
+  notes: NotebookPen,
+  terminal: Terminal,
+  chat: MessageSquare,
+  ai_venture: Rocket,
+  concepts: Rocket,
+  brainstorm: Lightbulb,
+  agents: Bot,
+};
+
+const RECENT_CATEGORY_ROUTE: Record<string, string> = {
+  knowledge: "/knowledge",
+  leads: "/leads",
+  documents: "/documents",
+  links: "/useful-links",
+  vault: "/vault",
+  todoist: "/todoist",
+  notes: "/notepad",
+  terminal: "/terminal",
+  chat: "/chat",
+  ai_venture: "/concepts",
+  concepts: "/concepts",
+  brainstorm: "/brainstorm-sketch",
+  agents: "/agents",
+};
+
+type RecentActivity = { id: string; title: string; category: string };
+
 export function CommandMenu() {
   const open = useCommandMenu((s) => s.open);
 
@@ -137,9 +174,19 @@ function CommandMenuInner() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [recent, setRecent] = useState<RecentActivity[]>([]);
 
   useEffect(() => {
     inputRef.current?.focus();
+  }, []);
+
+  // "Open recent items" — pulled once per open from the same activities
+  // feed the Activity page reads, so this needs no extra API surface.
+  useEffect(() => {
+    fetch("/api/activities?limit=6")
+      .then((res) => res.json())
+      .then((data) => setRecent(Array.isArray(data.activities) ? data.activities : []))
+      .catch(() => setRecent([]));
   }, []);
 
   useEffect(() => {
@@ -188,7 +235,7 @@ function CommandMenuInner() {
         hint: "blank workspace",
         group: "Create",
         icon: Beaker,
-        run: () => createAndGo(router, "/api/research", { scope: "global" }, (d) => d.workspace?.id, "/research-lab"),
+        run: () => createAndGo(router, "/api/affine", { section: "research" }, (d) => d.workspace?.id, "/research-lab"),
       },
       {
         id: "create-board",
@@ -202,6 +249,8 @@ function CommandMenuInner() {
       { id: "create-lead", label: "New Lead", hint: "open form", group: "Create", icon: Users, run: () => router.push("/leads?new=1") },
       { id: "create-link", label: "New Link", hint: "open form", group: "Create", icon: Link2, run: () => router.push("/useful-links?new=1") },
       { id: "create-chat", label: "New Chat", hint: "start conversation", group: "Create", icon: MessageSquare, run: () => router.push("/chat") },
+      { id: "create-upload", label: "Upload Document", hint: "open upload dialog", group: "Create", icon: FileText, run: () => router.push("/documents?upload=1") },
+      { id: "create-todoist", label: "New Todoist Task", hint: "open form", group: "Create", icon: Workflow, run: () => router.push("/todoist?new=1") },
     ],
     [router]
   );
@@ -233,9 +282,22 @@ function CommandMenuInner() {
     [results, router]
   );
 
+  const recentEntries = useMemo<CmdEntry[]>(
+    () =>
+      recent.map((a) => ({
+        id: `recent-${a.id}`,
+        label: a.title,
+        hint: "recent",
+        group: "Recent" as const,
+        icon: RECENT_CATEGORY_ICON[a.category] ?? Activity,
+        run: () => router.push(RECENT_CATEGORY_ROUTE[a.category] ?? "/activity"),
+      })),
+    [recent, router]
+  );
+
   const filtered = useMemo<CmdEntry[]>(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return [...createEntries, ...navEntries, ...actionEntries];
+    if (!q) return [...recentEntries, ...createEntries, ...navEntries, ...actionEntries];
     const local = [...createEntries, ...navEntries, ...actionEntries].filter(
       (e) =>
         e.label.toLowerCase().includes(q) ||
@@ -243,7 +305,7 @@ function CommandMenuInner() {
         e.group.toLowerCase().includes(q)
     );
     return [...searchEntries, ...local];
-  }, [query, searchEntries, createEntries, navEntries, actionEntries]);
+  }, [query, searchEntries, recentEntries, createEntries, navEntries, actionEntries]);
 
   const safeActive = Math.min(active, Math.max(0, filtered.length - 1));
 
@@ -264,7 +326,7 @@ function CommandMenuInner() {
     (acc[e.group] ||= []).push(e);
     return acc;
   }, {});
-  const groupOrder: CmdEntry["group"][] = ["Results", "Create", "Navigate", "Actions"];
+  const groupOrder: CmdEntry["group"][] = ["Results", "Recent", "Create", "Navigate", "Actions"];
   let flatIndex = -1;
 
   return (
@@ -316,6 +378,7 @@ function CommandMenuInner() {
                   <div className="flex items-center gap-2 px-2 py-1 font-label text-ink-faint">
                     {group === "Create" && <Plus className="size-3" />}
                     {group === "Results" && <Search className="size-3" />}
+                    {group === "Recent" && <Activity className="size-3" />}
                     {group}
                   </div>
                   {grouped[group].map((entry) => {

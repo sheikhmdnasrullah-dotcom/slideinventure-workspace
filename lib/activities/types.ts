@@ -12,7 +12,9 @@ export type ActivityCategory =
   | "links"
   | "vault"
   | "integrations"
-  | "agents";
+  | "agents"
+  | "concepts"
+  | "brainstorm";
 
 export type ActivityAction =
   | "created"

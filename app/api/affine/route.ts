@@ -3,6 +3,7 @@ import { databases, ID } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ensureAffineCollection } from "@/lib/affine/ensure";
+import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.affineWorkspaces;
@@ -53,6 +54,14 @@ export async function POST(req: Request) {
     user_email: user.email ?? "",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+  });
+  await logActivity({
+    category: section as any,
+    action: "created",
+    title,
+    description: `Created a ${section} workspace`,
+    entityId: doc.$id,
+    entityType: "affine_workspace",
   });
   return Response.json({ workspace: serialize(doc) }, { status: 201 });
 }

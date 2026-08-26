@@ -118,7 +118,7 @@ export function AddContextDialog() {
             <Input
               id="file"
               type="file"
-              accept=".pdf,.csv,.tsv,.md,.markdown,.txt,.text,.json,.log,.yml,.yaml,.env,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg"
+              accept=".pdf,.docx,.csv,.tsv,.md,.markdown,.txt,.text,.json,.log,.yml,.yaml,.env,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg"
               onChange={e => {
                 const f = e.target.files?.[0] ?? null
                 setFile(f)
