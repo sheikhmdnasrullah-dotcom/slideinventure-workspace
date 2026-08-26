@@ -113,6 +113,7 @@ export async function POST(request: Request) {
       title: `Lead import completed`,
       description: `${imported} leads imported (${toCreate.length} new, ${toUpdate.length} updated)`,
       entityType: "leads",
+      notify: true,
       metadata: { imported, created: toCreate.length, updated: toUpdate.length },
     }).catch(() => {})
 

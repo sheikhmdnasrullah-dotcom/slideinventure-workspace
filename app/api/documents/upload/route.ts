@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
       description: `${file.name}`,
       entityId: id,
       entityType: "document",
+      notify: true,
       metadata: { filename: file.name, mime_type: file.type, size_bytes: file.size },
     }).catch(() => {});
 
