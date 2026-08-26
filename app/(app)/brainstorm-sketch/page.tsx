@@ -1,5 +1,5 @@
-import { BrainstormWorkspace } from "@/components/dashboard/v3/brainstorm/BrainstormWorkspace"
+import BlocksuiteWorkspace from "@/components/dashboard/v3/blocksuite/blocksuite-workspace"
 
 export default function BrainstormSketchPage() {
-  return <BrainstormWorkspace boardId={null} />
+  return <BlocksuiteWorkspace section="brainstorm" title="Brainstorm" />
 }

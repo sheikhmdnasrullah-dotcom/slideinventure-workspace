@@ -61,7 +61,7 @@ const NAV_ENTRIES: Omit<CmdEntry, "run">[] = [
   { id: "nav-links", label: "Useful Links", group: "Navigate", icon: Link2, hint: "/useful-links" },
   { id: "nav-research", label: "Research", group: "Navigate", icon: Beaker, hint: "/research-lab" },
   { id: "nav-brainstorm", label: "Brainstorm", group: "Navigate", icon: Lightbulb, hint: "/brainstorm-sketch" },
-  { id: "nav-ai-venture", label: "AI Venture", group: "Navigate", icon: Rocket, hint: "/ai-venture" },
+  { id: "nav-ai-venture", label: "Concepts", group: "Navigate", icon: Rocket, hint: "/concepts" },
   { id: "nav-terminal", label: "Terminal", group: "Navigate", icon: Terminal, hint: "/terminal" },
   { id: "nav-todoist", label: "Todoist", group: "Navigate", icon: Workflow, hint: "/todoist" },
   { id: "nav-notes", label: "Notes", group: "Navigate", icon: NotebookPen, hint: "/notepad" },

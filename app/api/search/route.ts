@@ -27,7 +27,7 @@ const SECTIONS: SectionDef[] = [
   { type: "links", collection: APPWRITE.collections.usefulLinks, titleFields: ["title", "url"], subtitleFields: ["tags"], route: "/useful-links", orderBy: "created_at", label: "Link" },
   { type: "research", collection: APPWRITE.collections.researchWorkspaces, titleFields: ["title"], subtitleFields: ["scope"], route: "/research-lab", orderBy: "updated_at", label: "Research" },
   { type: "boards", collection: APPWRITE.collections.boards, titleFields: ["title"], subtitleFields: ["scope"], route: "/brainstorm-sketch", orderBy: "updated_at", label: "Board" },
-  { type: "ai_venture", collection: "ai_venture_files", titleFields: ["title", "name"], subtitleFields: ["type"], route: "/ai-venture", orderBy: "updated_at", label: "AI Venture" },
+  { type: "ai_venture", collection: "ai_venture_files", titleFields: ["title", "name"], subtitleFields: ["type"], route: "/concepts", orderBy: "updated_at", label: "Concepts" },
   { type: "terminal", collection: APPWRITE.collections.terminalCommands, titleFields: ["command", "description"], subtitleFields: ["category"], route: "/terminal", orderBy: "created_at", label: "Terminal" },
   { type: "todoist", collection: APPWRITE.collections.todoistTasks, titleFields: ["title", "content"], subtitleFields: ["project"], route: "/todoist", orderBy: "updated_at", label: "Todoist" },
   { type: "notes", collection: APPWRITE.collections.notes, titleFields: ["title"], subtitleFields: ["updated_at"], route: "/notepad", orderBy: "updated_at", label: "Note" },

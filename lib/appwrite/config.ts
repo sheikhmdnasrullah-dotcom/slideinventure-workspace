@@ -39,5 +39,6 @@ export const APPWRITE = {
     activities: "activities",
     mailMessages: "mail_messages",
     users: "users",
+    affineWorkspaces: "affine_workspaces",
   },
 } as const

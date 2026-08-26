@@ -72,7 +72,7 @@ function humanize(type: ActivityRow["type"]): string {
     case "chat":
       return "Chat"
     case "ai_venture":
-      return "AI Venture"
+      return "Concepts"
     case "todoist":
       return "Todoist"
     case "knowledge":
@@ -206,7 +206,7 @@ export async function DashboardHome() {
                 <div className="flex items-center gap-2">
                   <Brain className="size-4 text-muted-foreground" />
                   <div>
-                    <CardTitle className="text-base">AI Venture</CardTitle>
+                    <CardTitle className="text-base">Concepts</CardTitle>
                     <CardDescription>Recent research activity</CardDescription>
                   </div>
                 </div>
@@ -223,11 +223,11 @@ export async function DashboardHome() {
                       </p>
                     </MotionCard>
                   )) ?? (
-                  <p className="text-sm text-muted-foreground">No recent AI Venture activity.</p>
+                  <p className="text-sm text-muted-foreground">No recent Concepts activity.</p>
                 )}
                 <Button asChild variant="outline" size="sm" className="mt-auto">
-                  <Link href="/ai-venture" className="gap-2">
-                    Open AI Venture <ArrowRight className="size-3.5" />
+                  <Link href="/concepts" className="gap-2">
+                    Open Concepts <ArrowRight className="size-3.5" />
                   </Link>
                 </Button>
               </CardContent>
