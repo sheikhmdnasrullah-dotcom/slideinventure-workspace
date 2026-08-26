@@ -74,7 +74,10 @@ export async function syncKnowledge() {
     }
 
     try {
-      await upsertItem(item)
+      const id = await upsertItem(item)
+      // Filesystem-synced items were previously invisible to semantic search
+      // because they never reached LanceDB. Reindex best-effort.
+      reindexChunks(id, body).catch(() => {})
       count++
     } catch (err) {
       console.error(`Failed to sync ${file}:`, err)

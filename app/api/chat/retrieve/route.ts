@@ -4,6 +4,7 @@ import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+import { searchVector } from "@/lib/retrieval/vector-index";
 import { NextRequest } from "next/server";
 
 const DB = APPWRITE.databaseId;
