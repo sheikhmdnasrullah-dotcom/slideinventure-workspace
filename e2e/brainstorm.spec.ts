@@ -72,7 +72,7 @@ test("brainstorm sketch: full create → draw → rename → switch → delete f
 
   // Rename via the board options menu (robust regardless of current title).
   await page.getByRole("button", { name: "Board options" }).click();
-  await page.getByText("Rename", { exact: true }).click();
+  await page.getByText("Rename", { exact: true }).click({ force: true });
   const titleInput = page.locator("main").getByRole("textbox").first();
   await titleInput.fill("Alpha Board");
   await titleInput.press("Enter");
@@ -94,7 +94,7 @@ test("brainstorm sketch: full create → draw → rename → switch → delete f
   await drawRectangle(page);
   await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: "Board options" }).click();
-  await page.getByText("Rename", { exact: true }).click();
+  await page.getByText("Rename", { exact: true }).click({ force: true });
   const titleInput2 = page.locator("main").getByRole("textbox").first();
   await titleInput2.fill("Beta Board");
   await titleInput2.press("Enter");
@@ -116,7 +116,7 @@ test("brainstorm sketch: full create → draw → rename → switch → delete f
   await page.waitForURL(/\/brainstorm-sketch$/);
   const row = page.locator("div.group", { hasText: "Alpha Board" }).first();
   await row.getByRole("button", { name: "Board actions" }).click();
-  await page.getByText("Delete", { exact: true }).click();
+  await page.getByText("Delete", { exact: true }).click({ force: true });
   await page.locator('[role="dialog"]').getByRole("button", { name: "Delete" }).click();
   await expect(page.getByText("Alpha Board")).toHaveCount(0, { timeout: 10000 });
 

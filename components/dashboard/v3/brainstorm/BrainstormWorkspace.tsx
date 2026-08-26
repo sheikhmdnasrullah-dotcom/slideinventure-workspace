@@ -263,20 +263,22 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   }
 
   const startRename = (board: Board) => {
+    console.log("START_RENAME", { boardId: board.id, activeId })
     setRenamingId(board.id)
     setRenameValue(board.title ?? "")
   }
 
-  const commitRename = async (id: string) => {
-    const name = renameValue.trim() || "Untitled"
-    setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, title: name } : b)))
-    if (id === activeIdRef.current) setTitle(name)
+  const commitRename = async (id: string, name: string) => {
+    console.log("COMMIT_RENAME", { id, name, activeId })
+    const clean = name.trim() || "Untitled"
+    setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, title: clean } : b)))
+    if (id === activeId) setTitle(clean)
     setRenamingId(null)
     try {
       await fetch(`/api/boards/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: name }),
+        body: JSON.stringify({ title: clean }),
       })
     } catch {
       toast.error("Failed to rename board")
@@ -485,11 +487,11 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
                     autoFocus
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
-                    onBlur={() => {
-                      if (activeId) commitRename(activeId)
+                    onBlur={(e) => {
+                      if (activeId) commitRename(activeId, e.currentTarget.value)
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && activeId) commitRename(activeId)
+                      if (e.key === "Enter" && activeId) commitRename(activeId, e.currentTarget.value)
                       if (e.key === "Escape") cancelRename()
                     }}
                     className="h-8 max-w-xs text-sm font-semibold"
@@ -620,7 +622,7 @@ function Sidebar(props: {
   setRenameValue: (v: string) => void
   onOpen: (id: string) => void
   onStartRename: (b: Board) => void
-  onCommitRename: (id: string) => void
+  onCommitRename: (id: string, name: string) => void
   onCancelRename: () => void
   onDuplicate: (b: Board) => void
   onRequestDelete: (b: Board) => void
@@ -699,9 +701,9 @@ function Sidebar(props: {
                     autoFocus
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
-                    onBlur={() => onCommitRename(b.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") onCommitRename(b.id)
+                      onBlur={(e) => onCommitRename(b.id, e.currentTarget.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") onCommitRename(b.id, e.currentTarget.value)
                       if (e.key === "Escape") onCancelRename()
                     }}
                     className="h-9 flex-1 text-sm font-medium"
