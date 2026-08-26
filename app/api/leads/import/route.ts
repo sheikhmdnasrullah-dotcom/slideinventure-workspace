@@ -6,6 +6,34 @@ import { logActivity } from "@/lib/activities/client"
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.leads
 
+// Leads are stored as first_name/last_name, but CSVs often provide a single
+// "Name" or "Full Name" column. Reconcile those into first/last so imported
+// names actually show up in the list and exports.
+function splitLeadName(lead: Record<string, unknown>): { firstName: string; lastName: string } {
+  let firstName = String(lead.first_name ?? "").trim()
+  let lastName = String(lead.last_name ?? "").trim()
+
+  const fullName = String(lead.full_name ?? lead.name ?? "").trim()
+  if (fullName && (!firstName || !lastName)) {
+    const parts = fullName.split(/\s+/)
+    if (parts.length === 1) {
+      if (!firstName) firstName = parts[0]
+    } else {
+      if (!firstName) firstName = parts[0]
+      if (!lastName) lastName = parts.slice(1).join(" ")
+    }
+  }
+
+  // A full name landed in first_name with no last_name — split it.
+  if (!lastName && firstName.includes(" ")) {
+    const parts = firstName.split(/\s+/)
+    lastName = parts.slice(1).join(" ")
+    firstName = parts[0]
+  }
+
+  return { firstName, lastName }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}))
@@ -18,7 +46,7 @@ export async function POST(request: Request) {
     const now = new Date().toISOString()
 
     const emails = leadsToImport
-      .map((lead) => String(lead.email ?? lead.name ?? ""))
+      .map((lead) => String(lead.email ?? lead.name ?? lead.full_name ?? ""))
       .filter((email): email is string => email !== "")
 
     const existingLeads: Record<string, string> = {} // email -> $id mapping
@@ -39,10 +67,11 @@ export async function POST(request: Request) {
     const toUpdate: Array<{ id: string; row: Record<string, unknown> }> = []
 
     for (const lead of leadsToImport) {
-      const email = String(lead.email ?? lead.name ?? "").toLowerCase()
+      const email = String(lead.email ?? lead.name ?? lead.full_name ?? "").toLowerCase()
+      const { firstName, lastName } = splitLeadName(lead)
       const row: Record<string, unknown> = {
-        first_name: String(lead.first_name ?? lead.name ?? ""),
-        last_name: String(lead.last_name ?? ""),
+        first_name: firstName,
+        last_name: lastName,
         email: lead.email ?? "",
         company: lead.company ? String(lead.company) : null,
         job_title: lead.job_title ? String(lead.job_title) : null,

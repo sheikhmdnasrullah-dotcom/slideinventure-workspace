@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 export interface TodoistTask {
@@ -83,6 +84,7 @@ export function TodoistContent() {
   const [projects, setProjects] = useState<TodoistProject[]>([])
   const [labels, setLabels] = useState<TodoistLabel[]>([])
   const [loading, setLoading] = useState(true)
+  const [lastSynced, setLastSynced] = useState<Date | null>(null)
   const [search, setSearch] = useState("")
   const [projectFilter, setProjectFilter] = useState<string>("all")
   const [labelFilter, setLabelFilter] = useState<string>("all")
@@ -139,6 +141,7 @@ export function TodoistContent() {
       if (res.ok) {
         const data = await res.json()
         setTasks(data.data ?? [])
+        setLastSynced(new Date())
       }
     } catch {
       toast.error("Failed to load tasks")
@@ -146,6 +149,17 @@ export function TodoistContent() {
       setLoading(false)
     }
   }, [projectFilter, labelFilter, completedFilter])
+
+  const syncedLabel = useMemo(() => {
+    if (!lastSynced) return null
+    const seconds = Math.round((Date.now() - lastSynced.getTime()) / 1000)
+    if (seconds < 10) return "just now"
+    if (seconds < 60) return `${seconds}s ago`
+    const minutes = Math.round(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.round(minutes / 60)
+    return `${hours}h ago`
+  }, [lastSynced])
 
   useEffect(() => {
     void loadProjects()
@@ -382,10 +396,29 @@ export function TodoistContent() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadTasks} disabled={loading}>
-            <RefreshCw className={cn("mr-2 size-4", loading && "animate-spin")} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={loadTasks}
+                    disabled={loading}
+                    aria-label="Refresh tasks"
+                  />
+                }
+              >
+                <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+              </TooltipTrigger>
+              <TooltipContent>Refresh tasks</TooltipContent>
+            </Tooltip>
+            {syncedLabel ? (
+              <span className="hidden text-xs text-muted-foreground sm:inline">
+                Synced {syncedLabel}
+              </span>
+            ) : null}
+          </div>
           <Button size="sm" onClick={handleAdd}>
             <Plus className="mr-2 size-4" />
             Add Task

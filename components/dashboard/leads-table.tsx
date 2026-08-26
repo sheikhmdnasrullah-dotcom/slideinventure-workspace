@@ -326,9 +326,11 @@ export function LeadsTable() {
     const rows = leads.map((lead) =>
       activeColumns.map((col) => {
         if (col.key.startsWith("_")) return ""
-        if (col.key === "first_name" || col.key === "last_name") {
-          return col.key === "first_name" ? lead.first_name : lead.last_name
+        if (col.type === "composite" && col.key === "first_name") {
+          return `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim()
         }
+        if (col.key === "first_name") return lead.first_name ?? ""
+        if (col.key === "last_name") return lead.last_name ?? ""
         if (col.key === "company") return lead.company ?? ""
         if (col.key === "job_title") return lead.job_title ?? ""
         if (col.key === "phone") return lead.phone ?? ""
@@ -363,9 +365,11 @@ export function LeadsTable() {
     const rows = leads.map((lead) =>
       activeColumns.map((col) => {
         if (col.key.startsWith("_")) return ""
-        if (col.key === "first_name" || col.key === "last_name") {
-          return col.key === "first_name" ? lead.first_name : lead.last_name
+        if (col.type === "composite" && col.key === "first_name") {
+          return `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim()
         }
+        if (col.key === "first_name") return lead.first_name ?? ""
+        if (col.key === "last_name") return lead.last_name ?? ""
         if (col.key === "company") return lead.company ?? ""
         if (col.key === "job_title") return lead.job_title ?? ""
         if (col.key === "phone") return lead.phone ?? ""

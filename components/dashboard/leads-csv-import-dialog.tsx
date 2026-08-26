@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table"
 
 const FIELD_MAP: Record<string, string> = {
+  "Name": "first_name",
   "First Name": "first_name",
   "Last Name": "last_name",
   "Full Name": "full_name",
@@ -270,11 +271,11 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
                         <SelectValue placeholder="Map to..." />
                       </SelectTrigger>
                        <SelectContent>
-                         <SelectItem value="ignore">Skip</SelectItem>
-                         <SelectItem value="custom">Keep as custom field</SelectItem>
-                         <SelectItem value="first_name">First Name</SelectItem>
-                         <SelectItem value="last_name">Last Name</SelectItem>
-                         <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="ignore">Skip</SelectItem>
+                          <SelectItem value="custom">Keep as custom field</SelectItem>
+                          <SelectItem value="first_name">Name / First Name</SelectItem>
+                          <SelectItem value="last_name">Last Name</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
                          <SelectItem value="company">Company</SelectItem>
                          <SelectItem value="job_title">Job Title</SelectItem>
                          <SelectItem value="phone">Phone</SelectItem>

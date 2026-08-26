@@ -5,6 +5,7 @@ import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;
@@ -13,6 +14,7 @@ type BoardDoc = {
   $id: string
   title?: string | null
   content?: string | null
+  scope?: string | null
   created_at?: string | null
   updated_at?: string | null
 }
@@ -22,6 +24,7 @@ function serialize(doc: BoardDoc) {
     id: doc.$id,
     title: doc.title ?? null,
     content: doc.content ?? "{}",
+    scope: doc.scope || "global",
     created_at: doc.created_at ?? "",
     updated_at: doc.updated_at ?? "",
   };
@@ -69,6 +72,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (typeof content === "string") update.content = content;
 
     const updated = await databases.updateDocument(DB, COL, id, update);
+
+    if ((doc as BoardDoc).scope === "ai-venture" && typeof title === "string" && title !== doc.title) {
+      logActivity({
+        category: "ai_venture",
+        action: "renamed",
+        title: "Sketch renamed",
+        description: title,
+        entityId: id,
+        entityType: "board",
+      }).catch(() => {});
+    }
+
     return Response.json({ board: serialize(updated) });
   } catch (error) {
     return toJson(error);
@@ -85,6 +100,18 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     if (!doc) return ApiError.notFound().toResponse();
 
     await databases.deleteDocument(DB, COL, id);
+
+    if ((doc as BoardDoc).scope === "ai-venture") {
+      logActivity({
+        category: "ai_venture",
+        action: "deleted",
+        title: "Sketch deleted",
+        description: (doc as BoardDoc).title || "Untitled",
+        entityId: id,
+        entityType: "board",
+      }).catch(() => {});
+    }
+
     return Response.json({ ok: true });
   } catch (error) {
     return toJson(error);

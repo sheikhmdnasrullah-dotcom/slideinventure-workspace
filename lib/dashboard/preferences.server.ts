@@ -14,12 +14,15 @@ import {
 
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.userPreferences
+// The `user_preferences` collection is at Appwrite's per-collection attribute
+// limit, so `labels` can never be provisioned there. Store it in its own
+// collection instead.
+const LABELS_COL = "section_labels"
 const REQUIRED_KEYS = [
   "user_email",
   "theme",
   "default_landing_page",
   "navigation_order",
-  "labels",
   "created_at",
   "updated_at",
 ] as const
@@ -50,6 +53,16 @@ function isAppwriteError(error: unknown, code?: number) {
   )
 }
 
+// Appwrite rejects attribute creation once a collection hits its attribute
+// limit. These errors are non-fatal here: the attribute almost always already
+// exists (the preferences document reads/writes fine), so we just proceed
+// instead of failing the whole save.
+function isAttributeLimitError(error: unknown) {
+  if (isAppwriteError(error, 400)) return true
+  const message = error instanceof Error ? error.message : String(error)
+  return /maximum number or size of attributes/i.test(message) || /attributes for collection/i.test(message)
+}
+
 async function waitForCollectionShape() {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     const attributes = await databases.listAttributes(DB, COL)
@@ -66,7 +79,10 @@ async function waitForCollectionShape() {
     await new Promise((resolve) => setTimeout(resolve, 500))
   }
 
-  throw new Error("Timed out preparing user preferences collection")
+  // Best-effort only: if a required attribute can't be provisioned (e.g. the
+  // collection is at Appwrite's attribute limit), don't block saves — the
+  // document still reads/writes the attributes that do exist.
+  console.warn("Preferences collection shape not fully ready; proceeding with available attributes")
 }
 
 async function ensurePreferencesCollectionInner() {
@@ -98,9 +114,6 @@ async function ensurePreferencesCollectionInner() {
   if (!existing.has("navigation_order")) {
     tasks.push(databases.createStringAttribute(DB, COL, "navigation_order", 8192, false, JSON.stringify(DEFAULT_DASHBOARD_PREFERENCES.navigationOrder)))
   }
-  if (!existing.has("labels")) {
-    tasks.push(databases.createStringAttribute(DB, COL, "labels", 8192, false, "{}"))
-  }
   if (!existing.has("created_at")) {
     tasks.push(databases.createDatetimeAttribute(DB, COL, "created_at", true))
   }
@@ -111,7 +124,7 @@ async function ensurePreferencesCollectionInner() {
   await Promise.all(
     tasks.map((task) =>
       task.catch((error) => {
-        if (!isAppwriteError(error, 409)) throw error
+        if (!isAppwriteError(error, 409) && !isAttributeLimitError(error)) throw error
       })
     )
   )
@@ -128,6 +141,85 @@ export async function ensurePreferencesCollection() {
   }
 
   return ensurePromise
+}
+
+let ensureLabelsPromise: Promise<void> | null = null
+
+async function ensureLabelsCollectionInner() {
+  try {
+    await databases.getCollection(DB, LABELS_COL)
+  } catch (error) {
+    if (!isAppwriteError(error, 404)) throw error
+    try {
+      await databases.createCollection(DB, LABELS_COL, "Section Labels", [], false, true)
+    } catch (createError) {
+      if (!isAppwriteError(createError, 409)) throw createError
+    }
+  }
+
+  const attributes = await databases.listAttributes(DB, LABELS_COL)
+  const existing = new Set((attributes.attributes as AppwriteAttribute[]).map((attribute) => attribute.key))
+
+  const tasks: Promise<unknown>[] = []
+  if (!existing.has("user_email")) {
+    tasks.push(databases.createStringAttribute(DB, LABELS_COL, "user_email", 320, true))
+  }
+  if (!existing.has("labels")) {
+    tasks.push(databases.createStringAttribute(DB, LABELS_COL, "labels", 8192, false, "{}"))
+  }
+
+  await Promise.all(
+    tasks.map((task) =>
+      task.catch((error) => {
+        if (!isAppwriteError(error, 409) && !isAttributeLimitError(error)) throw error
+      })
+    )
+  )
+}
+
+async function ensureLabelsCollection() {
+  if (!ensureLabelsPromise) {
+    ensureLabelsPromise = ensureLabelsCollectionInner().catch((error) => {
+      ensureLabelsPromise = null
+      throw error
+    })
+  }
+
+  return ensureLabelsPromise
+}
+
+async function fetchSectionLabels(userEmail: string): Promise<Record<string, string>> {
+  try {
+    await ensureLabelsCollection()
+    const res = await databases.listDocuments(DB, LABELS_COL, [
+      Query.equal("user_email", userEmail),
+      Query.limit(1),
+    ])
+    const doc = res.documents[0] as { labels?: string } | undefined
+    return parseLabels(doc?.labels) ?? {}
+  } catch {
+    return {}
+  }
+}
+
+async function upsertSectionLabels(userEmail: string, labels: Record<string, string>) {
+  try {
+    await ensureLabelsCollection()
+    const res = await databases.listDocuments(DB, LABELS_COL, [
+      Query.equal("user_email", userEmail),
+      Query.limit(1),
+    ])
+    const existingDoc = res.documents[0]
+    const payload = { user_email: userEmail, labels: JSON.stringify(labels) }
+
+    if (existingDoc) {
+      await databases.updateDocument(DB, LABELS_COL, existingDoc.$id, payload)
+    } else {
+      await databases.createDocument(DB, LABELS_COL, ID.unique(), payload)
+    }
+  } catch {
+    // Labels are best-effort: never block the core preferences save.
+  }
 }
 
 function parseNavigationOrder(value: unknown) {
@@ -175,7 +267,9 @@ async function fetchPreferenceDocument(userEmail: string): Promise<PreferencesDo
 export async function getDashboardPreferencesForUser(userEmail: string): Promise<DashboardPreferences> {
   try {
     const doc = await fetchPreferenceDocument(userEmail)
-    return serializePreferences(doc)
+    const base = serializePreferences(doc)
+    const labels = await fetchSectionLabels(userEmail)
+    return normalizeDashboardPreferences({ ...base, labels })
   } catch {
     return DEFAULT_DASHBOARD_PREFERENCES
   }
@@ -197,7 +291,6 @@ export async function upsertDashboardPreferencesForUser(
     theme: next.theme,
     default_landing_page: next.defaultLandingPage,
     navigation_order: JSON.stringify(next.navigationOrder),
-    labels: JSON.stringify(next.labels),
     created_at: existingDoc?.created_at ?? now,
     updated_at: now,
   }
@@ -207,6 +300,8 @@ export async function upsertDashboardPreferencesForUser(
   } else {
     await databases.createDocument(DB, COL, ID.unique(), payload)
   }
+
+  await upsertSectionLabels(userEmail, next.labels)
 
   return next
 }
