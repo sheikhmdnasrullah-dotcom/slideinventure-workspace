@@ -1,13 +1,18 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { formatDistanceToNow } from "date-fns"
 import { FileText, Loader2, Trash2, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { PdfViewer } from "./pdf-viewer"
+
+// react-pdf/pdfjs-dist reference browser-only globals (e.g. DOMMatrix) at
+// module scope — importing it directly crashes the page during SSR. Loading
+// it dynamically with ssr disabled keeps it out of the server render entirely.
+const PdfViewer = dynamic(() => import("./pdf-viewer").then((m) => m.PdfViewer), { ssr: false })
 
 export type VenturePdf = { id: string; path: string; name: string; size: number; modifiedAt: string }
 

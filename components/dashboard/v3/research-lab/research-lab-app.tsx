@@ -395,6 +395,7 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
         </div>
         <div className="relative flex-1">
           <Whiteboard
+            key={activeId ?? "none"}
             boardId={activeId}
             initialData={content}
             onChange={handleCanvasChange}

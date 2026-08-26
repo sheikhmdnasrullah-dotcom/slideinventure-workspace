@@ -2,7 +2,7 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
-import type { DashboardResponse, ChartPoint, ActivityRow, KpiCard } from "@/lib/dashboard/types";
+import type { DashboardResponse, ChartPoint, ActivityRow, KpiCard, ActivityStatus } from "@/lib/dashboard/types";
 import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
@@ -12,7 +12,6 @@ const LEADS = APPWRITE.collections.leads;
 const DOCS = APPWRITE.collections.documents;
 const NOTES = APPWRITE.collections.notes;
 const TERMINAL = APPWRITE.collections.terminalCommands;
-const LINKS = APPWRITE.collections.usefulLinks;
 const CHAT = APPWRITE.collections.chatSessions;
 const AI_VENTURE = "ai_venture_files";
 
@@ -47,6 +46,13 @@ function humanize(value: string | undefined | null, fallback = "System") {
   return cleaned || fallback;
 }
 
+function mapActivityStatus(action: string | undefined): ActivityStatus {
+  if (action === "failed") return "failed";
+  if (action === "executed" || action === "messaged") return "active";
+  if (action === "proposed") return "proposed";
+  return "completed";
+}
+
 function activityFromDoc(d: any, category: string, action: string, title: string, description?: string): ActivityRow {
   return {
     id: d.$id,
@@ -70,7 +76,6 @@ export async function GET() {
   let recentDocs: any[] = [];
   let recentNotes: any[] = [];
   let recentTerminal: any[] = [];
-  let recentLinks: any[] = [];
   let recentChatSessions: any[] = [];
 
   try {
@@ -169,22 +174,6 @@ export async function GET() {
   }
 
   try {
-    const res = await databases.listDocuments(DB, LINKS, [
-      Query.orderDesc("created_at"),
-      Query.limit(6),
-    ]);
-    recentLinks = res.documents.map((d: any) => ({
-      id: d.$id,
-      title: d.title,
-      url: d.url,
-      created_at: d.created_at,
-      tags: d.tags,
-    }));
-  } catch {
-    // Appwrite unreachable; degrade gracefully with empty data
-  }
-
-  try {
     const res = await databases.listDocuments(DB, CHAT, [
       Query.orderDesc("updated_at"),
       Query.limit(6),
@@ -256,55 +245,33 @@ export async function GET() {
     },
   ];
 
+  // Unified, real, auto-updating activity from every module that logs via
+  // logActivity (documents, links, knowledge, boards, notes, ai-venture,
+  // terminal, todoist, leads, vault, ...). Queried directly (not through the
+  // self-fetch helper) so it runs in-request with the user's session cookie.
+  let recentActivities: any[] = [];
+  try {
+    const res = await databases.listDocuments(DB, APPWRITE.collections.activities, [
+      Query.equal("user_email", user.email ?? ""),
+      Query.orderDesc("timestamp"),
+      Query.limit(30),
+    ]);
+    recentActivities = res.documents;
+  } catch {
+    // Appwrite unreachable; degrade gracefully with empty data
+  }
+
   const activity: ActivityRow[] = [
-    ...runs.slice(0, 5).map((run) => ({
-      id: run.id,
-      item: run.command ?? run.task_type,
-      type: run.task_type as ActivityRow["type"],
-      status: run.status === "completed" ? "active" : run.status === "failed" ? "ai_inferred" : run.status,
-      source: run.triggered_by ?? "backend",
-      updatedAt: run.started_at,
+    ...recentActivities.map((d: any) => ({
+      id: d.$id,
+      item: d.title || "Untitled",
+      type: (d.category as ActivityRow["type"]) ?? "system",
+      status: mapActivityStatus(d.action),
+      source: d.entity_type || d.category || "workspace",
+      updatedAt: d.timestamp ?? new Date().toISOString(),
     })),
-    ...items.slice(0, 5).map((item) => ({
-      id: item.id,
-      item: item.title,
-      type: (item.type as ActivityRow["type"]) ?? "system",
-      status: (item.status as ActivityRow["status"]) ?? "proposed",
-      source: item.source,
-      updatedAt: item.updated_at,
-    })),
-    ...recentDocs.slice(0, 3).map((doc) => ({
-      id: doc.id,
-      item: doc.title || doc.filename || "Untitled document",
-      type: "documents" as ActivityRow["type"],
-      status: "active" as ActivityRow["status"],
-      source: "documents",
-      updatedAt: doc.created_at ?? doc.updated_at,
-    })),
-    ...recentNotes.slice(0, 3).map((note) => ({
-      id: note.id,
-      item: note.title || "Untitled note",
-      type: "notes" as ActivityRow["type"],
-      status: "active" as ActivityRow["status"],
-      source: "notes",
-      updatedAt: note.updated_at ?? note.created_at,
-    })),
-    ...recentTerminal.slice(0, 3).map((t) => ({
-      id: t.id,
-      item: t.title || t.command,
-      type: "terminal" as ActivityRow["type"],
-      status: "active" as ActivityRow["status"],
-      source: t.category ?? "terminal",
-      updatedAt: t.created_at,
-    })),
-    ...recentLinks.slice(0, 3).map((link) => ({
-      id: link.id,
-      item: link.title || link.url,
-      type: "links" as ActivityRow["type"],
-      status: "active" as ActivityRow["status"],
-      source: "links",
-      updatedAt: link.created_at,
-    })),
+    // Chat isn't yet wired into logActivity; keep recent sessions so the
+    // Chat card stays populated with real data.
     ...recentChatSessions.slice(0, 3).map((session) => ({
       id: session.id,
       item: session.title || "Chat session",
@@ -313,8 +280,9 @@ export async function GET() {
       source: "chat",
       updatedAt: session.updated_at ?? session.created_at,
     })),
-  ].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 20);
+  ]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 30);
 
   const suggestions: string[] = [];
   if (items.length === 0) suggestions.push("Your knowledge base is empty. Add your first note.");
