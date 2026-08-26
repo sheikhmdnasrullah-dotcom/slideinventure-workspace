@@ -2,6 +2,7 @@ import "server-only";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { databases, ID } from "@/lib/appwrite/server";
 import { getSessionUser } from "@/lib/appwrite/auth";
+import { ensureNotificationsCollection } from "@/lib/notifications/ensure";
 
 export type Activity = import("./types").Activity;
 export type ActivityCategory = import("./types").ActivityCategory;
@@ -52,6 +53,9 @@ export async function logActivity(entry: {
   entityId?: string;
   entityType?: string;
   metadata?: Record<string, unknown>;
+  // When true, also surfaces an in-app notification (only for meaningful
+  // events — never used for noisy internal operations).
+  notify?: boolean;
 }): Promise<void> {
   try {
     const user = await getSessionUser();
@@ -67,6 +71,25 @@ export async function logActivity(entry: {
       metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
       user_email: user.email ?? null,
     });
+
+    if (entry.notify) {
+      try {
+        await ensureNotificationsCollection();
+        await databases.createDocument(APPWRITE.databaseId, APPWRITE.collections.notifications, ID.unique(), {
+          user_email: user.email ?? null,
+          category: entry.category,
+          title: entry.title,
+          description: entry.description ?? "",
+          entity_id: entry.entityId ?? null,
+          entity_type: entry.entityType ?? null,
+          read: false,
+          created_at: new Date().toISOString(),
+          metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+        });
+      } catch {
+        // notifications are best-effort
+      }
+    }
   } catch (err) {
     console.error("[logActivity] failed:", err);
     // activity logging must never break the primary flow

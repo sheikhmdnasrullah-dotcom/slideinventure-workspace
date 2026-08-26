@@ -40,5 +40,6 @@ export const APPWRITE = {
     mailMessages: "mail_messages",
     users: "users",
     affineWorkspaces: "affine_workspaces",
+    notifications: "notifications",
   },
 } as const

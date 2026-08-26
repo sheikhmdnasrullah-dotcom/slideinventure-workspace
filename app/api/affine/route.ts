@@ -62,6 +62,7 @@ export async function POST(req: Request) {
     description: `Created a ${section} workspace`,
     entityId: doc.$id,
     entityType: "affine_workspace",
+    notify: true,
   });
   return Response.json({ workspace: serialize(doc) }, { status: 201 });
 }

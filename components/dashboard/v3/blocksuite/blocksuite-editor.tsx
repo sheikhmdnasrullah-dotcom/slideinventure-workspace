@@ -107,13 +107,13 @@ export default function BlocksuiteEditor({
         saveTimer = setTimeout(() => saveFn?.(), 900);
       };
 
+      // `doc.slots.updated` and `collection.slots.docUpdated` don't exist on
+      // this version's Doc/DocCollection (see @blocksuite/store's doc.js /
+      // collection.js) — the `?.` chaining silently no-op'd instead of
+      // throwing, so autosave never fired on real edits. `blockUpdated` is
+      // the slot that actually emits on every block add/update/delete.
       try {
-        (doc as any).slots?.updated?.on?.(scheduleSave);
-      } catch {
-        // slot api differs across versions
-      }
-      try {
-        (collection as any).slots?.docUpdated?.on?.(scheduleSave);
+        (doc as any).slots?.blockUpdated?.on?.(scheduleSave);
       } catch {
         // slot api differs across versions
       }

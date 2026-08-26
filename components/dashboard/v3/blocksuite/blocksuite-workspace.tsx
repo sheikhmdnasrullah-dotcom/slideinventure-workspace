@@ -33,7 +33,7 @@ export default function BlocksuiteWorkspace({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [active, setActive] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const activeIdRef = useRef<string | null>(null);
   useEffect(() => {
     activeIdRef.current = activeId;

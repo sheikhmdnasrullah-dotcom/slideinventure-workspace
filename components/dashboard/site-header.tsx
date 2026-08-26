@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { commandMenuStore } from "@/lib/command-menu-store"
+import { NotificationsBell } from "@/components/dashboard/notifications-bell"
 
 type Crumb = { label: string; href?: string }
 
@@ -78,6 +79,7 @@ export function SiteHeader({
          </BreadcrumbList>
        </Breadcrumb>
         <div className="ml-auto flex items-center gap-2">
+          <NotificationsBell />
           <Button
             size="sm"
             variant="outline"
