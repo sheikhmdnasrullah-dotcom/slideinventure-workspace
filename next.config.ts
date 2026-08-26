@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // dynamic import at runtime; bundling them rewrites that path to a chunk
   // that never gets emitted, breaking PDF text extraction. Loading them
   // unbundled via plain Node `require`/`import` keeps that self-import intact.
-  serverExternalPackages: ["dd-trace", "pdf-parse", "pdfjs-dist"],
+  serverExternalPackages: ["dd-trace", "pdf-parse", "pdfjs-dist", "@browserbasehq/stagehand", "browser-use"],
 };
 
 export default nextConfig;

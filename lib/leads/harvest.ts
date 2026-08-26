@@ -7,10 +7,10 @@ import { logActivity } from "@/lib/activities/client";
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 
 /**
- * Lead harvest: drive the Playwright browse agent over YouTube for a niche,
+ * Lead harvest: drive the browse agent over YouTube for a niche,
  * let it solve any CAPTCHAs it meets, and pull channel contact emails back
- * into the leads collection. Educational use: demonstrates the full
- * agentic loop (browse -> captcha -> extract -> persist).
+ * into the leads collection. Demonstrates the full agentic loop
+ * (browse -> captcha -> extract -> persist).
  */
 export async function harvestLeads(opts: {
   topic: string;

@@ -91,6 +91,32 @@ export async function runBrowseTask(opts: {
   userEmail?: string;
 }): Promise<BrowseResult> {
   const maxSteps = opts.maxSteps ?? 5;
+
+  // Preferred backends (when enabled) — graceful fallthrough to the local
+  // Playwright agent below if any of them fail.
+  if (opts.task) {
+    try {
+      const sh = await import("@/lib/browse/stagehand");
+      if (sh.stagehandEnabled()) {
+        const r = await sh.runStagehandTask(opts.task, opts.startUrl, {
+          userEmail: opts.userEmail,
+          maxSteps,
+        });
+        if (r.ok) return { ok: true, steps: r.steps as any, result: r.result };
+      }
+    } catch {}
+    try {
+      const bu = await import("@/lib/browse/browseruse");
+      if (bu.browserUseEnabled()) {
+        const r = await bu.runBrowserUseTask(opts.task, {
+          userEmail: opts.userEmail,
+          maxSteps,
+        });
+        if (r.ok) return { ok: true, steps: r.steps as any, result: r.result };
+      }
+    } catch {}
+  }
+
   const steps: BrowseStep[] = [];
   let browser: Browser | null = null;
   let steel: any = null;

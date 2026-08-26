@@ -1,10 +1,9 @@
 import "server-only";
 
-// Pluggable CAPTCHA solver for the educational agentic-workflow lab.
-// Reads credentials from the environment (never hardcoded) and is gated by
-// ENABLE_CAPTCHA_SOLVING. Currently supports the 2Captcha API. The browser-use
-// agent invokes solveCaptcha() only when enabled, then injects the returned
-// token into the page and resumes.
+// Pluggable CAPTCHA solver. Reads credentials from the environment (never
+// hardcoded) and is gated by ENABLE_CAPTCHA_SOLVING. Currently supports the
+// 2Captcha API. The browse agent invokes solveCaptcha() only when enabled,
+// then injects the returned token into the page and resumes.
 
 const TWOCAPTCHA_BASE = "https://2captcha.com";
 
