@@ -263,13 +263,11 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   }
 
   const startRename = (board: Board) => {
-    console.log("START_RENAME", { boardId: board.id, activeId })
     setRenamingId(board.id)
     setRenameValue(board.title ?? "")
   }
 
   const commitRename = async (id: string, name: string) => {
-    console.log("COMMIT_RENAME", { id, name, activeId })
     const clean = name.trim() || "Untitled"
     setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, title: clean } : b)))
     if (id === activeId) setTitle(clean)
@@ -468,7 +466,7 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
         </SheetWrap>
 
         {/* Main area */}
-        <main className="flex min-h-0 flex-1 flex-col bg-muted/20">
+        <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
           {boardId && notFound ? (
             <NotFountView onBack={backToList} />
           ) : boardId && (loadingBoard || !activeBoard) ? (
@@ -485,6 +483,7 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
                 {renamingId === activeId ? (
                   <Input
                     autoFocus
+                    data-testid="rename-input"
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={(e) => {
@@ -579,7 +578,7 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
               onOpen={openBoard}
             />
           )}
-        </main>
+        </div>
       </div>
 
       {/* Delete confirmation */}

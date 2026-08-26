@@ -275,10 +275,11 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
         .replace(/_+/g, "_")
         .replace(/^_|_$/g, "")
       const fileName = `${safe}.tldr`
+      const targetFolder = currentPath || "Brainstormed Ideas"
       const res = await fetch("/api/ai-venture/file", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: `Brainstormed Ideas/${fileName}`, content }),
+        body: JSON.stringify({ path: `${targetFolder}/${fileName}`, content }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => null)
@@ -287,7 +288,7 @@ export function AIVentureProvider({ children }: { children: React.ReactNode }) {
       toast.success("Saved to Brainstormed Ideas")
       await fetchTree()
     },
-    [fetchTree]
+    [fetchTree, currentPath]
   )
 
   const uploadPdf = React.useCallback(

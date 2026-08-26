@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Bot,
+  Beaker,
   Brain,
   Cable,
   FileText,
@@ -28,6 +29,7 @@ export type DashboardSectionId =
   | "knowledge"
   | "documents"
   | "ai-venture"
+  | "research-lab"
   | "notepad"
   | "brainstorm-sketch"
   | "terminal"
@@ -71,6 +73,7 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "knowledge", label: "Knowledge", route: "/knowledge", icon: BookOpen },
   { id: "documents", label: "Documents", route: "/documents", icon: FileText },
   { id: "ai-venture", label: "AI Venture", route: "/ai-venture", icon: Rocket },
+  { id: "research-lab", label: "Research Lab", route: "/research-lab", icon: Beaker },
   { id: "notepad", label: "Notepad", route: "/notepad", icon: BookOpen },
   { id: "brainstorm-sketch", label: "Brainstorm Sketch", route: "/brainstorm-sketch", icon: Brain },
   { id: "terminal", label: "Terminal", route: "/terminal", icon: Terminal },

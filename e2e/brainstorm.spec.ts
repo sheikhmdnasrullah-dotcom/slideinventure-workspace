@@ -73,7 +73,7 @@ test("brainstorm sketch: full create → draw → rename → switch → delete f
   // Rename via the board options menu (robust regardless of current title).
   await page.getByRole("button", { name: "Board options" }).click();
   await page.getByText("Rename", { exact: true }).click({ force: true });
-  const titleInput = page.locator("main").getByRole("textbox").first();
+  const titleInput = page.getByTestId("rename-input");
   await titleInput.fill("Alpha Board");
   await titleInput.press("Enter");
   await expect(page.getByRole("button", { name: "Alpha Board" }).first()).toBeVisible();

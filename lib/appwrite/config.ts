@@ -6,6 +6,7 @@ export const APPWRITE = {
     userPreferences: "user_preferences",
     notes: "notes",
     boards: "boards",
+    researchWorkspaces: "research_workspaces",
     vault: "secret_vault_entries",
     knowledgeItems: "knowledge_items",
     knowledgeChunks: "knowledge_chunks",

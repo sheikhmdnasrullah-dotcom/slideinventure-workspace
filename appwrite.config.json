@@ -453,6 +453,100 @@
       ]
     },
     {
+      "$id": "research_workspaces",
+      "$permissions": [],
+      "databaseId": "workspace",
+      "name": "Research Workspaces",
+      "enabled": true,
+      "rowSecurity": false,
+      "columns": [
+        {
+          "key": "user_email",
+          "type": "string",
+          "required": true,
+          "array": false,
+          "size": 320,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": "Untitled Research",
+          "encrypt": false
+        },
+        {
+          "key": "scope",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "global",
+          "encrypt": false
+        },
+        {
+          "key": "content",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "document_ids",
+          "type": "string",
+          "required": false,
+          "array": true,
+          "size": 255,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "created_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        },
+        {
+          "key": "updated_at",
+          "type": "datetime",
+          "required": true,
+          "array": false,
+          "default": null,
+          "format": ""
+        }
+      ],
+      "indexes": [
+        {
+          "key": "by_user_email",
+          "type": "key",
+          "status": "available",
+          "columns": ["user_email"],
+          "orders": []
+        },
+        {
+          "key": "by_scope",
+          "type": "key",
+          "status": "available",
+          "columns": ["scope"],
+          "orders": []
+        },
+        {
+          "key": "by_updated_at",
+          "type": "key",
+          "status": "available",
+          "columns": ["updated_at"],
+          "orders": ["DESC"]
+        }
+      ]
+    },
+    {
       "$id": "terminal_commands",
       "$permissions": [],
       "databaseId": "workspace",

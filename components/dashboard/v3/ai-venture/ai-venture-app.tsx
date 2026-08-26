@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Brain, FileUp, Plus, RefreshCw, Search } from "lucide-react"
+import { Beaker, Brain, FileText, FileUp, Pencil, Plus, RefreshCw, Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ import { AIVentureList } from "./ai-venture-list"
 import { NewItemDialog } from "./new-item-dialog"
 import { useAIVenture, AIVentureProvider } from "./use-ai-venture"
 import { SectionErrorBoundary } from "@/components/system/error-boundary"
+import { ResearchLabApp } from "@/components/dashboard/v3/research-lab/research-lab-app"
 
 interface AIVentureAppProps {
   defaultLayout?: number[]
@@ -32,10 +33,21 @@ interface AIVentureAppProps {
 }
 
 function AIVentureAppInner({ }: AIVentureAppProps) {
-  const { loading, searchQuery, setSearchQuery, sortBy, setSortBy, typeFilter, setTypeFilter, breadcrumbs, navigateTo, refresh, startBrainstorm, uploadPdf, selectedFile, brainstormOpen, closeViewer } =
+  const { loading, searchQuery, setSearchQuery, sortBy, setSortBy, typeFilter, setTypeFilter, breadcrumbs, navigateTo, refresh, startBrainstorm, uploadPdf, selectedFile, brainstormOpen, closeViewer, currentPath } =
     useAIVenture()
   const [newItemOpen, setNewItemOpen] = React.useState(false)
+  const [researchOpen, setResearchOpen] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const folderKind = (() => {
+    const last = currentPath.split("/").pop()?.toLowerCase() ?? ""
+    if (last.includes("sketch")) return "sketches" as const
+    if (last.includes("idea") || last.includes("brainstorm")) return "ideas" as const
+    return "generic" as const
+  })()
+  const addButtonLabel =
+    folderKind === "sketches" ? "New sketch" : folderKind === "ideas" ? "New idea" : "New file"
+  const handleAdd = () => (folderKind === "sketches" ? startBrainstorm() : setNewItemOpen(true))
 
   const handleUploadPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -75,8 +87,20 @@ function AIVentureAppInner({ }: AIVentureAppProps) {
               ))}
             </BreadcrumbList>
           </Breadcrumb>
-          <Button variant="ghost" size="icon" className="size-8 shrink-0" title="New file" onClick={() => setNewItemOpen(true)}>
-            <Plus className="size-4" />
+          <Button
+            size="sm"
+            className="shrink-0 gap-1.5"
+            onClick={handleAdd}
+            title={folderKind === "sketches" ? "Draw a new brainstorm sketch" : "Add a new idea"}
+          >
+            {folderKind === "sketches" ? (
+              <Pencil className="size-4" />
+            ) : folderKind === "ideas" ? (
+              <FileText className="size-4" />
+            ) : (
+              <Plus className="size-4" />
+            )}
+            {addButtonLabel}
           </Button>
           <Button
             variant="ghost"
@@ -96,6 +120,15 @@ function AIVentureAppInner({ }: AIVentureAppProps) {
             onClick={startBrainstorm}
           >
             <Brain className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0"
+            title="Research Lab"
+            onClick={() => setResearchOpen(true)}
+          >
+            <Beaker className="size-4" />
           </Button>
           <Button
             variant="ghost"
@@ -160,6 +193,12 @@ function AIVentureAppInner({ }: AIVentureAppProps) {
       </Dialog>
 
       <NewItemDialog open={newItemOpen} onOpenChange={setNewItemOpen} />
+
+      <Dialog open={researchOpen} onOpenChange={setResearchOpen}>
+        <DialogContent className="h-[90vh] max-h-[90vh] w-[95vw] max-w-[1200px] overflow-hidden p-0">
+          <ResearchLabApp scope="ai-venture" />
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   )
 }

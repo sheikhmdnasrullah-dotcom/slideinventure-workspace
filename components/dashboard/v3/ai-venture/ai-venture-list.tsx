@@ -14,7 +14,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Stagger, StaggerItem } from "@/components/system/motion"
 import { useAIVenture, type VentureNode } from "./use-ai-venture"
+import { RenameDialog } from "./rename-dialog"
 
 function NodeIcon({ node }: { node: VentureNode }) {
   if (node.type === "folder") {
@@ -31,21 +33,26 @@ function NodeIcon({ node }: { node: VentureNode }) {
 }
 
 export function AIVentureList() {
-  const { entries, navigateTo, selectFile, renameEntry, deleteEntry } = useAIVenture()
+  const { entries, navigateTo, selectFile, deleteEntry, currentPath } = useAIVenture()
+  const [renameTarget, setRenameTarget] = React.useState<VentureNode | null>(null)
+  const [renameOpen, setRenameOpen] = React.useState(false)
+
+  const lastSegment = currentPath.split("/").pop()?.toLowerCase() ?? ""
+  const folderkindLabel =
+    lastSegment.includes("sketch")
+      ? "New sketch"
+      : lastSegment.includes("idea") || lastSegment.includes("brainstorm")
+        ? "New idea"
+        : "New file"
 
   const handleOpen = (node: VentureNode) => {
     if (node.type === "folder") navigateTo(node.path)
     else selectFile(node.path)
   }
 
-  const handleRename = async (node: VentureNode) => {
-    const next = window.prompt("Rename to:", node.name)
-    if (!next || next === node.name) return
-    try {
-      await renameEntry(node, next)
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to rename")
-    }
+  const handleRename = (node: VentureNode) => {
+    setRenameTarget(node)
+    setRenameOpen(true)
   }
 
   const handleDelete = async (node: VentureNode) => {
@@ -60,9 +67,9 @@ export function AIVentureList() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <Stagger className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {entries.map((node) => (
-          <div
+          <StaggerItem
             key={node.path}
             className="group relative flex flex-col items-center gap-2 rounded-xl border border-transparent p-3 text-center transition-all hover:border-border hover:bg-accent/30"
           >
@@ -92,12 +99,19 @@ export function AIVentureList() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
+          </StaggerItem>
         ))}
         {entries.length === 0 && (
-          <div className="col-span-full p-8 text-center text-sm text-muted-foreground">This folder is empty</div>
+          <div className="col-span-full flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">
+            This folder is empty
+            <span className="text-xs">
+              Use the “{folderkindLabel}” button above to add something here.
+            </span>
+          </div>
         )}
-      </div>
+      </Stagger>
+
+      <RenameDialog node={renameTarget} open={renameOpen} onOpenChange={setRenameOpen} />
     </ScrollArea>
   )
 }
