@@ -111,7 +111,10 @@ test.describe("Global search / command palette", () => {
     const result = page.getByText(marker, { exact: false }).first()
     await expect(result).toBeVisible({ timeout: 5000 })
     await result.click()
-    await page.waitForURL(/\/useful-links/, { timeout: 10000 })
+    // A command-palette Result triggers a client-side router.push (no full
+    // page "load" event), so poll the URL directly rather than waitForURL's
+    // default load-event wait.
+    await expect.poll(() => page.url(), { timeout: 10000 }).toContain("/useful-links")
     // No "not found" / error state, no layout explosion (page has real content).
     await expect(page.getByText(/not found/i)).toHaveCount(0)
 

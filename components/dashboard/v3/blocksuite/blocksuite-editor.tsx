@@ -55,6 +55,9 @@ export default function BlocksuiteEditor({
       try {
         if (!doc.root) {
           const pageId = doc.addBlock("affine:page", {} as never);
+          if (mode === "edgeless") {
+            doc.addBlock("affine:surface", {} as never, pageId as never);
+          }
           doc.addBlock("affine:note", {} as never, pageId as never);
         }
       } catch {
