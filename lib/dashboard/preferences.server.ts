@@ -291,6 +291,7 @@ export async function upsertDashboardPreferencesForUser(
     theme: next.theme,
     default_landing_page: next.defaultLandingPage,
     navigation_order: JSON.stringify(next.navigationOrder),
+    labels: JSON.stringify(next.labels ?? {}),
     created_at: existingDoc?.created_at ?? now,
     updated_at: now,
   }

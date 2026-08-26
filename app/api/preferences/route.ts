@@ -54,6 +54,7 @@ export async function PUT(request: NextRequest) {
     })
     return Response.json({ data: preferences, status: "updated" })
   } catch (error) {
+    console.error("[preferences] PUT failed:", error)
     if (error instanceof ApiError) return error.toResponse()
     return toJson(ApiError.internal("PREFERENCES_WRITE_FAILED", (error as Error).message))
   }

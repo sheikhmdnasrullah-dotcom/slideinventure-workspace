@@ -164,13 +164,7 @@ const columns = columnHelper.columns([
   }),
   columnHelper.accessor("header", {
     header: "Item",
-    cell: ({ row }) => (
-      <SheetItemViewer item={row.original}>
-        <button className="w-fit px-0 text-left text-foreground hover:underline cursor-pointer">
-          {row.original.header}
-       </button>
-     </SheetItemViewer>
-    ),
+    cell: ({ row }) => <SheetItemViewer item={row.original} />,
     enableHiding: false,
   }),
   columnHelper.accessor("type", {
@@ -246,16 +240,18 @@ const columns = columnHelper.columns([
     id: "actions",
     cell: () => (
       <DropdownMenu>
-        <DropdownMenuTrigger>
-          <Button
-            variant="ghost"
-            className="flex size-8 text-muted-foreground data-[popup-open]:bg-muted"
-            size="icon"
-          >
-            <MoreHorizontal />
-            <span className="sr-only">Open menu</span>
-         </Button>
-       </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              className="flex size-8 text-muted-foreground data-[popup-open]:bg-muted"
+              size="icon"
+            />
+          }
+        >
+          <MoreHorizontal />
+          <span className="sr-only">Open menu</span>
+        </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-32">
           <DropdownMenuItem>Edit</DropdownMenuItem>
           <DropdownMenuItem>Make a copy</DropdownMenuItem>
@@ -395,14 +391,16 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
        </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
-        <DropdownMenuTrigger>
-              <Button variant="outline" size="sm">
-                <Columns2 />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <ChevronDown />
-             </Button>
-           </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="outline" size="sm" />
+          }
+        >
+          <Columns2 />
+          <span className="hidden lg:inline">Customize Columns</span>
+          <span className="lg:hidden">Columns</span>
+          <ChevronDown />
+        </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {table
                 .getAllColumns()
@@ -575,16 +573,16 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
   )
 }
 
-function SheetItemViewer({
-  item,
-  children,
-}: {
-  item: ActivityItem
-  children: React.ReactNode
-}) {
+function SheetItemViewer({ item }: { item: ActivityItem }) {
   return (
     <Sheet>
-      <SheetTrigger>{children}</SheetTrigger>
+      <SheetTrigger
+        render={
+          <button className="w-fit px-0 text-left text-foreground hover:underline cursor-pointer" />
+        }
+      >
+        {item.header}
+      </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-xl">
         <SheetHeader>
           <SheetTitle>{item.header}</SheetTitle>

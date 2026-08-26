@@ -115,7 +115,12 @@ export function DashboardPreferencesProvider({
       if (!res.ok) {
         pendingRef.current = patch
         const json = await res.json().catch(() => null)
-        throw new Error(json?.error?.message || json?.message || "Could not save preferences")
+        const serverMsg =
+          json && typeof json.error === "object"
+            ? (json.error as { message?: string }).message
+            : (json?.error ?? json?.message)
+        console.error("[preferences] save rejected by server:", json)
+        throw new Error(serverMsg || "Could not save preferences")
       }
 
       failedRef.current = null
