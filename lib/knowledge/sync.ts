@@ -4,6 +4,7 @@ import matter from 'gray-matter'
 import { databases } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
 import { APPWRITE } from '@/lib/appwrite/config'
+import { reindexChunks } from '@/lib/knowledge/reindex'
 
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.knowledgeItems
@@ -171,6 +172,12 @@ export async function addKnowledgeItem(data: {
   }
 
   const id = await upsertItem(item)
+
+  // Every other write path (ingest/publish/[id] update) reindexes chunks
+  // right after writing the item — this one never did, so anything added
+  // through the "Add Context" dialog was invisible to both lexical chunk
+  // search and (now) semantic search. Best-effort: never block the add.
+  reindexChunks(id, data.body || '').catch(() => {})
 
   return {
     id,
