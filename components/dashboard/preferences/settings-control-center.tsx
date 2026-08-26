@@ -1,13 +1,15 @@
 "use client"
 
+import { useMemo } from "react"
 import { ArrowDown, ArrowUp, RotateCcw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { DASHBOARD_SECTIONS } from "@/lib/dashboard/navigation"
+import { DASHBOARD_SECTIONS, getOrderedSections } from "@/lib/dashboard/navigation"
 import { useDashboardPreferences } from "@/components/dashboard/preferences/preferences-provider"
 
 const themeOptions = [
@@ -26,9 +28,22 @@ export function SettingsControlCenter() {
     retrySave,
   } = useDashboardPreferences()
 
-  const orderedSections = preferences.navigationOrder
-    .map((id) => DASHBOARD_SECTIONS.find((section) => section.id === id))
-    .filter((section): section is (typeof DASHBOARD_SECTIONS)[number] => Boolean(section))
+  const orderedSections = getOrderedSections(preferences.navigationOrder, preferences.labels)
+  const defaultLabels = useMemo(
+    () => Object.fromEntries(DASHBOARD_SECTIONS.map((section) => [section.id, section.label])),
+    []
+  )
+
+  function setSectionLabel(id: string, value: string) {
+    const trimmed = value.trim()
+    const nextLabels = { ...preferences.labels }
+    if (!trimmed || trimmed === defaultLabels[id]) {
+      delete nextLabels[id]
+    } else {
+      nextLabels[id] = trimmed
+    }
+    updatePreferences({ labels: nextLabels })
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -74,6 +89,44 @@ export function SettingsControlCenter() {
               ))}
             </SelectContent>
           </Select>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Section names</CardTitle>
+          <CardDescription>Rename any section to match how you think. Names are saved and stay after refresh or logout.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+            <span>
+              {saveState === "saving" ? "Saving names…" : saveState === "saved" ? "Names saved" : saveState === "error" ? "Couldn’t save yet" : "Names save automatically"}
+            </span>
+            <Button size="sm" variant="outline" onClick={() => updatePreferences({ labels: {} })}>
+              <RotateCcw className="mr-2 size-4" />
+              Reset names
+            </Button>
+          </div>
+          <div className="grid gap-2">
+            {orderedSections.map((section) => (
+              <div key={section.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+                <div className="flex items-center gap-3">
+                  <section.icon className="size-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">{section.route}</p>
+                  </div>
+                </div>
+                <Input
+                  aria-label={`Rename ${defaultLabels[section.id]}`}
+                  value={section.label}
+                  key={section.id}
+                  placeholder={defaultLabels[section.id]}
+                  className="max-w-xs"
+                  onChange={(event) => setSectionLabel(section.id, event.target.value)}
+                />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

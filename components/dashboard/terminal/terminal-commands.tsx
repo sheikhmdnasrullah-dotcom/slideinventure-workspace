@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Copy, Edit3, Plus, Search, Star } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Beaker, Copy, Edit3, Plus, Search, Star } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { AddCommandDialog } from "./add-command-dialog"
+import { RESEARCH_LAB_CAPTURE_KEY } from "@/components/dashboard/v3/research-lab/research-lab-app"
 
 export type TerminalCommand = {
   id: string
@@ -282,6 +284,40 @@ function CommandCard({
   onToggleFavorite: (cmd: TerminalCommand) => void
 }) {
   const [showActions, setShowActions] = useState(false)
+  const [savingToResearch, setSavingToResearch] = useState(false)
+  const router = useRouter()
+
+  // One click: land this command (+ description/notes if present) on the
+  // most recently touched research canvas, creating one first if none exist
+  // yet. No picker, no form — matches the "one click should be enough" rule.
+  const handleSaveToResearch = async () => {
+    setSavingToResearch(true)
+    try {
+      const listRes = await fetch("/api/research")
+      const listData = await listRes.json().catch(() => ({ workspaces: [] }))
+      let workspaceId: string | undefined = listData.workspaces?.[0]?.id
+
+      if (!workspaceId) {
+        const createRes = await fetch("/api/research", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        })
+        const created = await createRes.json()
+        workspaceId = created.workspace?.id
+      }
+      if (!workspaceId) throw new Error("Could not open Research Lab")
+
+      const text = [command.title, command.command, command.description, command.notes]
+        .filter(Boolean)
+        .join("\n\n")
+      sessionStorage.setItem(RESEARCH_LAB_CAPTURE_KEY, JSON.stringify({ workspaceId, text }))
+      router.push(`/research-lab?w=${workspaceId}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save to Research Lab")
+      setSavingToResearch(false)
+    }
+  }
 
   return (
     <Card className="flex flex-col" data-favorite={command.favorite}>
@@ -315,6 +351,17 @@ function CommandCard({
           >
             <Copy className="size-3.5" />
             <span className="sr-only">Copy command</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            onClick={handleSaveToResearch}
+            disabled={savingToResearch}
+            title="Save to Research Lab"
+          >
+            <Beaker className="size-3.5" />
+            <span className="sr-only">Save to Research Lab</span>
           </Button>
           <Button
             variant="ghost"

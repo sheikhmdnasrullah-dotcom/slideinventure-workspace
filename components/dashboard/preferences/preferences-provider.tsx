@@ -53,20 +53,9 @@ export function DashboardPreferencesProvider({
 }) {
   const { setTheme } = useTheme()
   const storageKey = useMemo(() => makeStorageKey(userEmail), [userEmail])
-  const [preferences, setPreferences] = useState(() => {
-    if (!isBrowser()) return normalizeDashboardPreferences(initialPreferences)
-
-    const raw = window.localStorage.getItem(makeStorageKey(userEmail))
-    if (!raw) return normalizeDashboardPreferences(initialPreferences)
-
-    try {
-      const parsed = JSON.parse(raw)
-      return normalizeDashboardPreferences({ ...initialPreferences, ...parsed })
-    } catch {
-      window.localStorage.removeItem(makeStorageKey(userEmail))
-      return normalizeDashboardPreferences(initialPreferences)
-    }
-  })
+  const [preferences, setPreferences] = useState(() =>
+    normalizeDashboardPreferences(initialPreferences)
+  )
   const [saveState, setSaveState] = useState<SaveLifecycleState>("idle")
   const flushTimerRef = useRef<number | null>(null)
   const savingRef = useRef(false)
@@ -78,6 +67,21 @@ export function DashboardPreferencesProvider({
     if (!isBrowser()) return
     window.localStorage.setItem(storageKey, JSON.stringify(preferences))
   }, [preferences, storageKey])
+
+  // Apply the locally-cached preferences after mount so the first client
+  // render matches the server (no hydration mismatch), then layers the
+  // browser copy on top.
+  useEffect(() => {
+    if (!isBrowser()) return
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) return
+    try {
+      const parsed = JSON.parse(raw)
+      setPreferences((current) => mergeDashboardPreferences(current, parsed))
+    } catch {
+      window.localStorage.removeItem(storageKey)
+    }
+  }, [storageKey])
 
   useEffect(() => {
     setTheme(preferences.theme)

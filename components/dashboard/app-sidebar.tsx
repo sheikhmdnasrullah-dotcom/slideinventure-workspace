@@ -58,8 +58,8 @@ export function AppSidebar({
   const { preferences, saveState, setNavigationOrder, retrySave } = useDashboardPreferences()
 
   const orderedSections = useMemo(
-    () => getOrderedSections(preferences.navigationOrder),
-    [preferences.navigationOrder]
+    () => getOrderedSections(preferences.navigationOrder, preferences.labels),
+    [preferences.navigationOrder, preferences.labels]
   )
 
   const sensors = useSensors(
@@ -171,6 +171,7 @@ function SortableSidebarItem({
             className="mt-1 shrink-0 cursor-grab text-sidebar-foreground/50 hover:text-sidebar-foreground group-data-[collapsible=icon]:hidden"
             aria-label={`Drag ${section.label}`}
             title={`Drag ${section.label}`}
+            data-testid="sidebar-drag-handle"
             {...attributes}
             {...listeners}
           >

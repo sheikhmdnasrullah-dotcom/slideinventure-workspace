@@ -39,12 +39,22 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   try {
     const res = await databases.listDocuments(DB, COL, [Query.equal("$id", id)]);
     const doc = res.documents[0];
+    if (!doc) return ApiError.notFound("DOCUMENT_NOT_FOUND", "Document not found").toResponse();
 
-    if (doc?.storage_path) {
+    if (doc.author && user.email && doc.author !== user.email) {
+      return ApiError.forbidden("NOT_OWNER", "You can only delete documents you uploaded").toResponse();
+    }
+
+    const storagePath = doc?.storage_path as string | undefined;
+
+    // Delete the binary first. If it fails for a reason other than "already
+    // gone", abort so we never leave an orphaned file behind.
+    if (storagePath) {
       try {
-        await storage.deleteFile("files", doc.storage_path);
-      } catch {
-        // best-effort cleanup
+        await storage.deleteFile("files", storagePath);
+      } catch (storageError) {
+        const code = (storageError as { code?: number })?.code;
+        if (code !== 404) throw storageError;
       }
     }
 
@@ -52,11 +62,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     // mirror (an index entry, not an independent copy) goes with it.
     await unlinkDocumentFromKnowledge(doc?.knowledge_item_id);
 
-    try {
-      await databases.deleteDocument(DB, COL, id);
-    } catch {
-      // best-effort cleanup
-    }
+    await databases.deleteDocument(DB, COL, id);
 
     return Response.json({ id, status: "deleted" });
   } catch (error) {

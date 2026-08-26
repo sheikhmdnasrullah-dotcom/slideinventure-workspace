@@ -7,7 +7,7 @@
 import * as React from "react"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
-import type { Editor } from "tldraw"
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -15,6 +15,7 @@ import {
   FileUp,
   Loader2,
   MoreVertical,
+  Search,
   Sparkles,
   StickyNote,
   Trash2,
@@ -48,7 +49,7 @@ const Whiteboard = dynamic(() => import("@/components/dashboard/v3/whiteboard/Wh
   boardId?: string
   initialData?: string
   onChange: (data: string) => void
-  onMount: (editor: Editor) => void
+  onMount: (api: ExcalidrawImperativeAPI) => void
 }>
 
 type ResearchWorkspace = {
@@ -73,6 +74,27 @@ function timeAgo(iso: string): string {
   return `${day}d ago`
 }
 
+function viewportCenter(api: ExcalidrawImperativeAPI): { x: number; y: number } {
+  const s = api.getAppState()
+  const zoom = s.zoom?.value || 1
+  return {
+    x: -s.scrollX + s.width / (2 * zoom),
+    y: -s.scrollY + s.height / (2 * zoom),
+  }
+}
+
+async function insertTextShape(api: ExcalidrawImperativeAPI, text: string) {
+  const { convertToExcalidrawElements } = await import("@excalidraw/excalidraw")
+  const center = viewportCenter(api)
+  const [element] = convertToExcalidrawElements([
+    { type: "text", x: center.x - 150, y: center.y - 40, text, width: 300 },
+  ])
+  api.updateScene({ elements: [...api.getSceneElements(), element] })
+}
+
+export const RESEARCH_LAB_CAPTURE_KEY = "research-lab-pending-capture"
+const CAPTURE_KEY = RESEARCH_LAB_CAPTURE_KEY
+
 function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture"; syncUrl?: boolean }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -95,7 +117,8 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
   const [creating, setCreating] = React.useState(false)
   const [asking, setAsking] = React.useState(false)
   const [question, setQuestion] = React.useState("")
-  const editorRef = React.useRef<Editor | null>(null)
+  const [listSearch, setListSearch] = React.useState("")
+  const editorRef = React.useRef<ExcalidrawImperativeAPI | null>(null)
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -211,19 +234,26 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
   }
 
   const handleStickyNote = async () => {
-    const editor = editorRef.current
-    if (!editor) return
-    const { createShapeId } = await import("@tldraw/tlschema")
-    const center = editor.getViewportPageBounds().center
-    const id = createShapeId()
-    editor.createShape({
-      id,
-      type: "note",
-      x: center.x - 100,
-      y: center.y - 100,
+    const api = editorRef.current
+    if (!api) return
+    const { convertToExcalidrawElements } = await import("@excalidraw/excalidraw")
+    const center = viewportCenter(api)
+    const elements = convertToExcalidrawElements([
+      {
+        type: "rectangle",
+        x: center.x - 90,
+        y: center.y - 90,
+        width: 180,
+        height: 180,
+        backgroundColor: "#fff3bf",
+        strokeColor: "#f1c40f",
+        label: { text: "" },
+      },
+    ])
+    api.updateScene({
+      elements: [...api.getSceneElements(), ...elements],
+      appState: { selectedElementIds: { [elements[0].id]: true } },
     })
-    editor.select(id)
-    editor.setEditingShape(id)
   }
 
   const handleUploadClick = () => fileInputRef.current?.click()
@@ -246,12 +276,22 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
       setActive((prev) => (prev ? { ...prev, documentIds: nextDocIds } : prev))
       persist({ documentIds: nextDocIds })
 
-      const center = editor.getViewportPageBounds().center
-      await editor.putExternalContent({
-        type: "url",
-        url: doc.url,
-        point: { x: center.x, y: center.y },
-      })
+      const { convertToExcalidrawElements } = await import("@excalidraw/excalidraw")
+      const center = viewportCenter(editor)
+      const elements = convertToExcalidrawElements([
+        {
+          type: "rectangle",
+          x: center.x - 120,
+          y: center.y - 30,
+          width: 240,
+          height: 60,
+          backgroundColor: "#e7f5ff",
+          strokeColor: "#339af0",
+          link: doc.url,
+          label: { text: doc.title || file.name, fontSize: 14 },
+        },
+      ])
+      editor.updateScene({ elements: [...editor.getSceneElements(), ...elements] })
       toast.success("Added to canvas", { id: toastId })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed", { id: toastId })
@@ -264,9 +304,10 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
     setAsking(true)
     try {
       const editor = editorRef.current
-      const shapes = editor.getCurrentPageShapes()
-      const context = shapes
-        .map((s) => (editor.getShapeUtil(s).getText?.(s) ?? "").trim())
+      const context = editor
+        .getSceneElements()
+        .filter((el) => el.type === "text")
+        .map((el) => ("text" in el ? el.text.trim() : ""))
         .filter(Boolean)
         .slice(0, 20)
         .join("\n")
@@ -279,16 +320,7 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
       if (!res.ok) throw new Error("AI request failed")
       const data = await res.json()
 
-      const { toRichText, createShapeId } = await import("@tldraw/tlschema")
-      const center = editor.getViewportPageBounds().center
-      const id = createShapeId()
-      editor.createShape({
-        id,
-        type: "text",
-        x: center.x - 150,
-        y: center.y - 60,
-        props: { richText: toRichText(data.answer), w: 320, autoSize: false },
-      })
+      await insertTextShape(editor, data.answer)
       setQuestion("")
       toast.success("Added AI answer to canvas")
     } catch (e) {
@@ -358,6 +390,22 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
             onChange={handleCanvasChange}
             onMount={(editor) => {
               editorRef.current = editor
+              // Picked up from a "Save to Research Lab" action elsewhere in
+              // the dashboard (e.g. Terminal) that navigated here with a
+              // pending capture waiting to land on the canvas.
+              try {
+                const pending = sessionStorage.getItem(CAPTURE_KEY)
+                if (pending) {
+                  const { workspaceId, text } = JSON.parse(pending) as { workspaceId: string; text: string }
+                  if (workspaceId === activeId) {
+                    sessionStorage.removeItem(CAPTURE_KEY)
+                    insertTextShape(editor, text)
+                    toast.success("Saved to this research canvas")
+                  }
+                }
+              } catch {
+                // malformed/stale payload — ignore
+              }
             }}
           />
         </div>
@@ -392,8 +440,30 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
           </Button>
         </Reveal>
       ) : (
+        <>
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search research..."
+              className="pl-9"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+            />
+          </div>
+          {(() => {
+            const filtered = listSearch.trim()
+              ? workspaces.filter((w) => w.title.toLowerCase().includes(listSearch.trim().toLowerCase()))
+              : workspaces
+            if (filtered.length === 0) {
+              return (
+                <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+                  No research matches &quot;{listSearch}&quot;.
+                </p>
+              )
+            }
+            return (
         <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {workspaces.map((w) => (
+          {filtered.map((w) => (
             <StaggerItem key={w.id}>
               <div
                 className="motion-card group relative flex cursor-pointer flex-col gap-2 rounded-lg border p-4"
@@ -425,6 +495,9 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
             </StaggerItem>
           ))}
         </Stagger>
+            )
+          })()}
+        </>
       )}
     </div>
   )

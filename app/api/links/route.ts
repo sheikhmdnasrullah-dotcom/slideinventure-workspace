@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       const map = new Map<string, LinkDocument>();
       for (const res of searches) for (const d of res.documents) if (!map.has(d.$id)) map.set(d.$id, d);
       docs = [...map.values()].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        (a, b) => (b.created_at ? new Date(b.created_at).getTime() : 0) - (a.created_at ? new Date(a.created_at).getTime() : 0)
       );
       total = docs.length;
       const from = (page - 1) * pageSize;

@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const now = new Date().toISOString();
     const nextUrl = d.url ?? doc.url;
     const nextTitle = d.title !== undefined || d.url !== undefined
-      ? (d.title?.trim() || buildFallbackTitle(nextUrl))
+      ? (d.title?.trim() || buildFallbackTitle(nextUrl ?? ""))
       : undefined;
 
     const payload: Record<string, unknown> = { updated_at: now };

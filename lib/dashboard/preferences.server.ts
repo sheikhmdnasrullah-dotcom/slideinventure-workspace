@@ -9,6 +9,7 @@ import {
   mergeDashboardPreferences,
   normalizeDashboardPreferences,
   type DashboardPreferences,
+  type DashboardThemePreference,
 } from "@/lib/dashboard/preferences-shared"
 
 const DB = APPWRITE.databaseId
@@ -18,6 +19,7 @@ const REQUIRED_KEYS = [
   "theme",
   "default_landing_page",
   "navigation_order",
+  "labels",
   "created_at",
   "updated_at",
 ] as const
@@ -34,6 +36,7 @@ type PreferencesDocument = Record<string, unknown> & {
   theme?: string
   default_landing_page?: string
   navigation_order?: string
+  labels?: string
 }
 
 let ensurePromise: Promise<void> | null = null
@@ -87,13 +90,16 @@ async function ensurePreferencesCollectionInner() {
     tasks.push(databases.createStringAttribute(DB, COL, "user_email", 320, true))
   }
   if (!existing.has("theme")) {
-    tasks.push(databases.createEnumAttribute(DB, COL, "theme", ["system", "light", "dark"], false, "system"))
+    tasks.push(databases.createEnumAttribute(DB, COL, "theme", ["system", "light", "dark"], false, "light"))
   }
   if (!existing.has("default_landing_page")) {
     tasks.push(databases.createStringAttribute(DB, COL, "default_landing_page", 255, false, DEFAULT_DASHBOARD_PREFERENCES.defaultLandingPage))
   }
   if (!existing.has("navigation_order")) {
     tasks.push(databases.createStringAttribute(DB, COL, "navigation_order", 8192, false, JSON.stringify(DEFAULT_DASHBOARD_PREFERENCES.navigationOrder)))
+  }
+  if (!existing.has("labels")) {
+    tasks.push(databases.createStringAttribute(DB, COL, "labels", 8192, false, "{}"))
   }
   if (!existing.has("created_at")) {
     tasks.push(databases.createDatetimeAttribute(DB, COL, "created_at", true))
@@ -134,13 +140,24 @@ function parseNavigationOrder(value: unknown) {
   }
 }
 
+function parseLabels(value: unknown) {
+  if (typeof value !== "string") return undefined
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === "object" ? parsed : undefined
+  } catch {
+    return undefined
+  }
+}
+
 function serializePreferences(doc: PreferencesDocument | null): DashboardPreferences {
   if (!doc) return DEFAULT_DASHBOARD_PREFERENCES
 
   return normalizeDashboardPreferences({
-    theme: doc.theme,
+    theme: doc.theme as DashboardThemePreference | undefined,
     defaultLandingPage: doc.default_landing_page,
     navigationOrder: parseNavigationOrder(doc.navigation_order),
+    labels: parseLabels(doc.labels),
   })
 }
 
@@ -180,12 +197,13 @@ export async function upsertDashboardPreferencesForUser(
     theme: next.theme,
     default_landing_page: next.defaultLandingPage,
     navigation_order: JSON.stringify(next.navigationOrder),
+    labels: JSON.stringify(next.labels),
     created_at: existingDoc?.created_at ?? now,
     updated_at: now,
   }
 
   if (existingDoc) {
-    await databases.updateDocument(DB, COL, existingDoc.$id, payload)
+    await databases.updateDocument(DB, COL, existingDoc.$id!, payload)
   } else {
     await databases.createDocument(DB, COL, ID.unique(), payload)
   }

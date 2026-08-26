@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/appwrite/auth"
 import { databases } from "@/lib/appwrite/server"
-import { ID, Query } from "node-appwrite"
+import { ID, Query, type Models } from "node-appwrite"
 import { APPWRITE } from "@/lib/appwrite/config"
 import { ApiError, toJson } from "@/lib/api/errors"
 import { checkRateLimit } from "@/lib/api/rate-limit"
@@ -18,7 +18,7 @@ const SORTABLE = new Set(["created_at", "email", "status"])
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  pageSize: z.coerce.number().int().min(1).max(10000).default(20),
   sortBy: z.string().default("created_at"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
   search: z.string().optional(),
@@ -59,13 +59,25 @@ export async function GET(request: NextRequest) {
   queries.push(query.data.sortOrder === "asc" ? Query.orderAsc(sortAttr) : Query.orderDesc(sortAttr))
 
   const from = (query.data.page - 1) * query.data.pageSize
-  queries.push(Query.limit(query.data.pageSize), Query.offset(from))
+  const to = from + query.data.pageSize
 
   try {
-    const res = await databases.listDocuments(DB, COL, queries)
+    const documents: Models.Document[] = []
+    let total = 0
+    let offset = from
+    while (offset < to) {
+      const chunkLimit = Math.min(100, to - offset)
+      const chunkQueries = [...queries, Query.limit(chunkLimit), Query.offset(offset)]
+      const res = await databases.listDocuments(DB, COL, chunkQueries)
+      if (offset === from) total = res.total
+      documents.push(...res.documents)
+      if (res.documents.length < chunkLimit) break
+      offset += chunkLimit
+    }
+
     return Response.json({
-      data: res.documents.map(serializeLead),
-      total: res.total,
+      data: documents.map(serializeLead),
+      total,
       page: query.data.page,
       pageSize: query.data.pageSize,
     })

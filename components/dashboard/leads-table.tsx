@@ -160,7 +160,8 @@ export function LeadsTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   const [rowSelection, setRowSelection] = useState({})
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 50 })
+  const [total, setTotal] = useState(0)
   const [columns, setColumns] = useState<LeadColumnConfig[]>(DEFAULT_COLUMNS)
   const [showColumnConfig, setShowColumnConfig] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -182,6 +183,7 @@ export function LeadsTable() {
       if (res.ok) {
         const json = await res.json()
         setLeads(json.data ?? [])
+        setTotal(json.total ?? 0)
         setPagination((prev) => ({
           ...prev,
           pageIndex: Math.max(0, (json.page ?? prev.pageIndex + 1) - 1),
@@ -584,6 +586,8 @@ export function LeadsTable() {
   const table = useReactTable({
     data: leads,
     columns: visibleColumns,
+    manualPagination: true,
+    rowCount: total,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -826,18 +830,23 @@ export function LeadsTable() {
             Show
           </Label>
           <Select
-            value={`${table.getState().pagination.pageSize}`}
+            value={pagination.pageSize === 10000 ? "All" : String(pagination.pageSize)}
             onValueChange={(value) => {
-              table.setPageSize(Number(value))
+              table.setPageSize(value === "All" ? 10000 : Number(value))
             }}
           >
-            <SelectTrigger className="w-20 cursor-pointer" id="page-size">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+            <SelectTrigger className="w-24 cursor-pointer" id="page-size">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
+              {[
+                { value: "50", label: "50" },
+                { value: "100", label: "100" },
+                { value: "150", label: "150" },
+                { value: "All", label: "All" },
+              ].map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>

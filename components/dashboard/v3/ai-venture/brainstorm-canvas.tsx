@@ -1,12 +1,24 @@
 "use client"
 
 import * as React from "react"
-import { Tldraw, getSnapshot, loadSnapshot, type Editor, type TLStoreSnapshot } from "tldraw"
-import "tldraw/tldraw.css"
+import dynamic from "next/dynamic"
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types"
 import { Button } from "@/components/ui/button"
 import { Download, X } from "lucide-react"
 import { useAIVenture } from "./use-ai-venture"
 import { toast } from "sonner"
+
+// Reuses the same shared Excalidraw wrapper as Research Lab and Brainstorm
+// Sketch, rather than a second bespoke canvas mount — its `onChange` is
+// unused here since this view saves via an explicit Export action instead
+// of autosave.
+const Whiteboard = dynamic(() => import("@/components/dashboard/v3/whiteboard/Whiteboard"), {
+  ssr: false,
+}) as unknown as React.ComponentType<{
+  initialData?: string
+  onChange: (data: string) => void
+  onMount: (api: ExcalidrawImperativeAPI) => void
+}>
 
 export function BrainstormCanvas({
   initialContent,
@@ -15,28 +27,22 @@ export function BrainstormCanvas({
   initialContent?: string
   fileName?: string
 }) {
-  const editorRef = React.useRef<Editor | null>(null)
+  const editorRef = React.useRef<ExcalidrawImperativeAPI | null>(null)
   const { exportBrainstorm, closeBrainstorm } = useAIVenture()
 
-  const handleMount = React.useCallback(
-    (editor: Editor) => {
-      editorRef.current = editor
-      if (initialContent) {
-        try {
-          const snapshot = JSON.parse(initialContent) as TLStoreSnapshot
-          loadSnapshot(editor.store, snapshot)
-        } catch {
-          // If the snapshot is malformed, just start with a blank canvas.
-        }
-      }
-    },
-    [initialContent]
-  )
-
   const handleExport = async () => {
-    const editor = editorRef.current
-    if (!editor) return
-    const snapshot = getSnapshot(editor.store)
+    const api = editorRef.current
+    if (!api) return
+    const appState = api.getAppState()
+    const snapshot = {
+      elements: api.getSceneElements(),
+      appState: {
+        viewBackgroundColor: appState.viewBackgroundColor,
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
+        zoom: appState.zoom,
+      },
+    }
     const name = fileName || `Brainstorm ${new Date().toISOString().slice(0, 10)}`
     try {
       await exportBrainstorm(JSON.stringify(snapshot), name)
@@ -47,7 +53,13 @@ export function BrainstormCanvas({
 
   return (
     <div className="min-h-[600px] min-w-full relative">
-      <Tldraw onMount={handleMount} />
+      <Whiteboard
+        initialData={initialContent}
+        onChange={() => {}}
+        onMount={(api) => {
+          editorRef.current = api
+        }}
+      />
       <div className="absolute right-3 top-3 z-50 flex items-center gap-2">
         <Button
           size="icon"

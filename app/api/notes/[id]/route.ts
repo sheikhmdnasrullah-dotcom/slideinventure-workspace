@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { getSessionUser } from "@/lib/appwrite/auth"
-import { databases } from "@/lib/appwrite/server"
+import { databases, storage } from "@/lib/appwrite/server"
 import { Query } from "node-appwrite"
 import { APPWRITE } from "@/lib/appwrite/config"
 import { ApiError, toJson } from "@/lib/api/errors"
@@ -88,6 +88,20 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       Query.equal("user_email", user.email ?? ""),
     ])
     if (res.documents.length === 0) return ApiError.notFound().toResponse()
+
+    // Best-effort: remove any images embedded in the note so they don't
+    // linger as orphaned blobs in the files bucket.
+    const content = (res.documents[0]?.content as string | undefined) ?? ""
+    const fileIds = Array.from(
+      content.matchAll(/storage\/buckets\/files\/files\/([^/?]+)/g)
+    ).map((match) => match[1])
+    for (const fileId of fileIds) {
+      try {
+        await storage.deleteFile("files", fileId)
+      } catch {
+        // ignore — the note row is being removed regardless
+      }
+    }
 
     await databases.deleteDocument(DB, COL, id)
     return Response.json({ ok: true })
