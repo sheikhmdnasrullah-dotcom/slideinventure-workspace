@@ -176,21 +176,8 @@ function CommandMenuInner() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [recent, setRecent] = useState<RecentActivity[]>([]);
 
-  console.log("[DEBUG render] query:", query, "results.length:", results.length)
-
   useEffect(() => {
-    console.log("[DEBUG lifecycle] CommandMenuInner MOUNTED")
     inputRef.current?.focus();
-    return () => console.log("[DEBUG lifecycle] CommandMenuInner UNMOUNTED")
-  }, []);
-
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      const t = e.target as HTMLElement;
-      console.log("[DEBUG docclick]", Date.now(), t.tagName, t.className?.toString().slice(0, 40), "defaultPrevented:", e.defaultPrevented)
-    }
-    document.addEventListener("click", onDocClick, true);
-    return () => document.removeEventListener("click", onDocClick, true);
   }, []);
 
   // "Open recent items" — pulled once per open from the same activities
@@ -227,10 +214,8 @@ function CommandMenuInner() {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
         const json = await res.json();
-        console.log("[DEBUG search] resolved at", Date.now(), "query:", q, "results:", json.results?.length)
         setResults(Array.isArray(json.results) ? json.results : []);
-      } catch (e) {
-        console.log("[DEBUG search] error", e)
+      } catch {
         setResults([]);
       }
     }, 250);
@@ -292,7 +277,7 @@ function CommandMenuInner() {
         hint: r.subtitle ? `${r.label} · ${r.subtitle}` : r.label,
         group: "Results" as const,
         icon: SECTION_ICONS[r.type] ?? Search,
-        run: () => { console.log("[DEBUG run] pushing", r.href); router.push(r.href); },
+        run: () => router.push(r.href),
       })),
     [results, router]
   );
@@ -321,8 +306,6 @@ function CommandMenuInner() {
     );
     return [...searchEntries, ...local];
   }, [query, searchEntries, recentEntries, createEntries, navEntries, actionEntries]);
-
-  console.log("[DEBUG filtered]", Date.now(), filtered.length, "query:", query, "results:", results.length)
 
   const safeActive = Math.min(active, Math.max(0, filtered.length - 1));
 

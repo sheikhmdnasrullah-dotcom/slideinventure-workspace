@@ -14,25 +14,29 @@ async function gotoRetry(page: any, path: string) {
   }
   return false
 }
-test("editor mounts (waitForSelector) on concepts and research", async ({ page }) => {
+test("editor mounts after opening a workspace (research=edgeless, concepts=page)", async ({ page }) => {
   test.setTimeout(240000)
   await login(page)
   const errs: string[] = []
   page.on("console", (m: any) => { if (m.type() === "error") errs.push(m.text()) })
   page.on("pageerror", (e: any) => errs.push("[pageerror] " + e.message))
 
-  await gotoRetry(page, "/concepts")
-  let cOk = true
-  try { await page.waitForSelector("affine-editor-container", { timeout: 90000 }); } catch { cOk = false }
-  const cEd = await page.locator("affine-editor-container").count()
-  console.log("CONCEPTS mounted", cOk, "edCount", cEd)
-
+  // RESEARCH (edgeless)
   await gotoRetry(page, "/research-lab")
+  await page.getByRole("button", { name: /new/i }).first().click()
   let rOk = true
   try { await page.waitForSelector("affine-editor-container", { timeout: 90000 }); } catch { rOk = false }
   const rEd = await page.locator("affine-editor-container").count()
   console.log("RESEARCH mounted", rOk, "edCount", rEd)
 
-  const rel = errs.filter((e) => /block|affine|editor|surface/i.test(e))
+  // CONCEPTS (page)
+  await gotoRetry(page, "/concepts")
+  await page.getByRole("button", { name: /new/i }).first().click()
+  let cOk = true
+  try { await page.waitForSelector("affine-editor-container", { timeout: 90000 }); } catch { cOk = false }
+  const cEd = await page.locator("affine-editor-container").count()
+  console.log("CONCEPTS mounted", cOk, "edCount", cEd)
+
+  const rel = errs.filter((e) => /block|affine|editor|surface|hydrat/i.test(e))
   console.log("REL_ERRORS", rel.length, JSON.stringify(rel.slice(0, 6)))
 })

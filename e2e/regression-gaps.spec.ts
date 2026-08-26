@@ -108,8 +108,12 @@ test.describe("Global search / command palette", () => {
     await input.fill(marker)
     await page.waitForTimeout(600)
 
-    const result = page.getByText(marker, { exact: false }).first()
-    await expect(result).toBeVisible({ timeout: 5000 })
+    // Scoped to role="option" (the actual result rows) — a plain getByText(marker)
+    // also matches the palette's "No matches for {query}" empty-state paragraph,
+    // which renders immediately (before the debounced /api/search fetch resolves)
+    // and contains the raw query text, so it wins the race and swallows the click.
+    const result = page.getByRole("option", { name: new RegExp(marker) }).first()
+    await expect(result).toBeVisible({ timeout: 8000 })
     await result.click()
     // A command-palette Result triggers a client-side router.push (no full
     // page "load" event), so poll the URL directly rather than waitForURL's
