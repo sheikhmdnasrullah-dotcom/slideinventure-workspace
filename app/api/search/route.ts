@@ -80,8 +80,51 @@ export async function GET(req: NextRequest) {
     })
   );
 
-  const results = perSection
-    .flat()
+  const substringResults = perSection.flat();
+
+  // Semantic pass: catches paraphrases/typos substring matching misses (e.g.
+  // a document whose title doesn't mention the term but whose body does).
+  // Backed by the shared LanceDB index (lib/retrieval/vector-index.ts) —
+  // scoped to the same collections substring search already covers here,
+  // excluding Research Lab/AI Venture/Brainstorm/Concepts.
+  const VECTOR_TYPES: VectorCollection[] = ["knowledge", "documents", "notes", "terminal", "links"];
+  const seen = new Set(substringResults.map((r) => `${r.type}:${r.id}`));
+  let vectorResults: typeof substringResults = [];
+  try {
+    const vectorHits = await searchVector(q, { collections: VECTOR_TYPES, limit: 20 });
+    const newHits = vectorHits.filter((h) => !seen.has(`${h.collection}:${h.docId}`));
+    const byCollection = new Map<string, string[]>();
+    for (const h of newHits) {
+      const list = byCollection.get(h.collection) ?? [];
+      list.push(h.docId);
+      byCollection.set(h.collection, list);
+    }
+    const fetched = await Promise.all(
+      [...byCollection.entries()].map(async ([type, ids]) => {
+        const s = SECTIONS.find((sec) => sec.type === type);
+        if (!s) return [];
+        try {
+          const res = await databases.listDocuments(DB, s.collection, [Query.equal("$id", ids)]);
+          return res.documents.map((d: any) => ({
+            id: d.$id,
+            type: s.type,
+            label: s.label,
+            title: pick(d, s.titleFields) || "Untitled",
+            subtitle: pick(d, s.subtitleFields),
+            href: `${s.route}?id=${encodeURIComponent(d.$id)}`,
+            updatedAt: d[s.orderBy] ?? new Date().toISOString(),
+          }));
+        } catch {
+          return [];
+        }
+      })
+    );
+    vectorResults = fetched.flat();
+  } catch {
+    vectorResults = [];
+  }
+
+  const results = [...substringResults, ...vectorResults]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 30);
 

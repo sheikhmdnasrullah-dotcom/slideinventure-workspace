@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local
+
+# local LanceDB retrieval index (lib/retrieval/vector-index.ts) — rebuilt
+# from Appwrite content, not source of truth, not worth committing
+/.lancedb-data
