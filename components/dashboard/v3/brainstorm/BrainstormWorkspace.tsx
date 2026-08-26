@@ -285,6 +285,14 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
 
   const cancelRename = () => setRenamingId(null)
 
+  // The dropdown menu restores focus to its trigger button as it closes,
+  // which races the rename input's autoFocus and steals focus right back —
+  // firing the input's onBlur commit before the user can type anything.
+  // Waiting two frames lets that restoration finish first.
+  const deferRename = (fn: () => void) => {
+    requestAnimationFrame(() => requestAnimationFrame(fn))
+  }
+
   const duplicateBoard = async (board: Board) => {
     try {
       const res = await fetch(`/api/boards/${board.id}`)
@@ -548,7 +556,7 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
                     }
                   />
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => startRename(activeBoard)}>
+                    <DropdownMenuItem onClick={() => deferRename(() => startRename(activeBoard))}>
                       <Pencil className="mr-2 size-4" /> Rename
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => duplicateBoard(activeBoard)}>
@@ -657,6 +665,14 @@ function Sidebar(props: {
     onCreate,
   } = props
 
+  // See the matching comment in BrainstormWorkspace: the dropdown menu
+  // restores focus to its trigger as it closes, which races the rename
+  // input's autoFocus and immediately blurs/commits it. Deferring two
+  // frames lets that restoration finish before the input mounts.
+  const deferStartRename = (b: Board) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => onStartRename(b)))
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between px-3 py-3">
@@ -745,7 +761,7 @@ function Sidebar(props: {
                     }
                   />
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onStartRename(b)}>
+                    <DropdownMenuItem onClick={() => deferStartRename(b)}>
                       <Pencil className="mr-2 size-4" /> Rename
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDuplicate(b)}>

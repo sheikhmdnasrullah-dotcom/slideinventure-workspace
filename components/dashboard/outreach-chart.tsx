@@ -11,6 +11,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
+import { Duration, Ease } from "@/lib/motion";
 import type { ChartPoint } from "@/lib/dashboard/types";
 
 const RANGES = [
@@ -62,7 +63,7 @@ export function OutreachChart({ data }: { data: ChartPoint[] }) {
             key={range}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            transition={{ duration: Duration.base, ease: Ease.expo }}
           >
             <ChartContainer config={chartConfig} className="aspect-auto h-72 w-full">
               <AreaChart data={visible} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>

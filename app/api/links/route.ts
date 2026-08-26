@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ data: docs.map(serialize), total, page, pageSize });
   } catch (error) {
+    console.error("LINKS_GET_ERROR", error);
     return ApiError.internal("DB_ERROR", (error as Error).message).toResponse();
   }
 }

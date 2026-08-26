@@ -63,6 +63,12 @@ test.describe("Core dashboard persistence", () => {
   test("Useful Links: save by URL only (no title), fallback title, persists", async ({ page }) => {
     const host = `links-test-${Date.now()}.example.com`
     const url = `https://${host}/page`
+    page.on("response", async (r) => {
+      if (r.url().includes("/api/links")) {
+        const body = r.status() >= 400 ? await r.text().catch(() => "") : ""
+        console.log("LINKS_RESP", r.request().method(), r.status(), body.slice(0, 400))
+      }
+    })
     await login(page)
     await page.goto("/useful-links", { waitUntil: "domcontentloaded" })
     await page.waitForTimeout(800)
@@ -71,7 +77,9 @@ test.describe("Core dashboard persistence", () => {
     await page.getByPlaceholder("https://google.com").fill(url)
     await page.getByRole("button", { name: /^Save$/ }).click()
 
-    await expect(page.getByText(host).first()).toBeVisible({ timeout: 15000 })
+    // First prove the save itself succeeded (POST 201 / "Link added").
+    await expect(page.getByText(/Link added/i).first()).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText(host).first()).toBeVisible({ timeout: 10000 })
 
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" })
     await page.waitForTimeout(500)
@@ -290,8 +298,9 @@ test.describe("Core dashboard persistence", () => {
     await page.getByPlaceholder("nc -vz example.com 25").fill("echo fail")
     await page.getByRole("button", { name: /Save Command/i }).click()
 
-    // Error communicated, sheet stays open, input preserved (no fake "Saved").
-    await expect(page.getByText(/Failed to add command/i).first()).toBeVisible({ timeout: 10000 })
+    // Error communicated (the dialog shows the failure state, not a fake success),
+    // and the user's input is preserved in the still-open sheet.
+    await expect(page.getByText(/Couldn.t save — Retry/i).first()).toBeVisible({ timeout: 10000 })
     await expect(page.getByPlaceholder("e.g. Check Port 25")).toHaveValue(title)
 
     await page.unroute("**/api/terminal")
