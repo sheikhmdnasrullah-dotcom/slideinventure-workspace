@@ -25,6 +25,8 @@ export function LinksClient() {
   const [editingLink, setEditingLink] = useState<UsefulLink | null>(null);
   const [formData, setFormData] = useState({ title: "", url: "", description: "", tags: "" });
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   async function fetchLinks() {
     setLoading(true);
@@ -112,11 +114,16 @@ export function LinksClient() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this link?")) return;
-    
+  const handleDeleteClick = (id: string) => {
+    setPendingDeleteId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    setDeleteDialogOpen(false);
     try {
-      const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/links/${pendingDeleteId}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error?.message || "Failed to delete");
@@ -125,6 +132,8 @@ export function LinksClient() {
       fetchLinks();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete link");
+    } finally {
+      setPendingDeleteId(null);
     }
   };
 
@@ -195,7 +204,7 @@ export function LinksClient() {
                     <DropdownMenuItem onClick={() => handleOpenDialog(link)} className="gap-2">
                       <Edit className="h-4 w-4" /> Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDelete(link.id)} className="text-destructive gap-2">
+                    <DropdownMenuItem onClick={() => handleDeleteClick(link.id)} className="text-destructive gap-2">
                       <Trash className="h-4 w-4" /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -280,6 +289,23 @@ export function LinksClient() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                 <Button onClick={handleSave} disabled={!formData.url || saving}>Save</Button>
               </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete link</DialogTitle>
+            <DialogDescription>
+              This will permanently remove this bookmark. This action can’t be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <div className="flex w-full items-center justify-end gap-3">
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
             </div>
           </DialogFooter>
         </DialogContent>

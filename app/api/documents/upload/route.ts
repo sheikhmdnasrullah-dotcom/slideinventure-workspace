@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 import { extractFileText } from "@/lib/knowledge/file-extract";
 import { linkDocumentToKnowledge } from "@/lib/knowledge/link-document";
 import { logActivity } from "@/lib/activities/client";
+import { upsertVector } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.documents;
@@ -91,6 +92,10 @@ export async function POST(request: NextRequest) {
           source: "documents",
           author,
         });
+        // The Knowledge mirror above already reindexes this text under its
+        // own knowledge_item_id; this second entry keys it under the
+        // document's own id so it also surfaces from the Documents section.
+        upsertVector({ collection: "documents", docId: id, text: `${title}\n${extracted.text}` }).catch(() => {});
       }
     } catch (err) {
       console.warn("Knowledge indexing skipped for document", id, err);

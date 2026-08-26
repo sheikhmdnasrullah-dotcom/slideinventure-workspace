@@ -9,6 +9,7 @@ import { z } from "zod";
 import { UsefulLinkSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 import { logActivity } from "@/lib/activities/client";
+import { upsertVector } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.usefulLinks;
@@ -142,6 +143,9 @@ export async function POST(request: NextRequest) {
       entityType: "link",
       metadata: { url, tags: d.tags ?? [] },
     }).catch(() => {});
+
+    const text = [doc.title, doc.url, doc.description].filter(Boolean).join("\n");
+    upsertVector({ collection: "links", docId: doc.$id, text }).catch(() => {});
 
     return Response.json({ id: doc.$id }, { status: 201 });
   } catch (err) {

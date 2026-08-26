@@ -5,7 +5,8 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
-import { embedTexts, rerank } from "@/lib/knowledge/nvidia";
+import { rerank } from "@/lib/knowledge/nvidia";
+import { searchVector } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 const CHUNKS = APPWRITE.collections.knowledgeChunks;
@@ -192,6 +193,10 @@ function fuseByRank(lexical: ChunkHit[], semantic: ChunkHit[], take: number): Ch
     .map((entry) => entry.hit);
 }
 
+// Real vector search via the shared LanceDB index (lib/retrieval/vector-index.ts),
+// keyed one row per knowledge_item (embedded from its full body at write time
+// — see reindexChunks). Falls back to searchExact upstream when this returns
+// no hits (no NVIDIA_API_KEY, or nothing indexed yet).
 async function searchSemantic(
   query: string,
   filters: Filters,
@@ -200,15 +205,23 @@ async function searchSemantic(
   const itemIds = await resolveFilteredItemIds(filters);
   if (itemIds !== null && itemIds.length === 0) return [];
 
-  // Keep the NVIDIA embedding external call for parity, but Appwrite has no
-  // vector store — matching is done via fulltext below (similarity fixed).
-  await embedTexts([query], "query").catch(() => null);
+  const vectorHits = await searchVector(query, { collections: ["knowledge"], limit: matchCount });
+  const allowed = itemIds ? new Set(itemIds) : null;
+  const scoped = allowed ? vectorHits.filter((h) => allowed.has(h.docId)) : vectorHits;
+  if (scoped.length === 0) return [];
 
-  const queries: string[] = [Query.search("text", query), Query.limit(matchCount)];
-  if (itemIds) queries.push(Query.equal("knowledge_item_id", itemIds));
-
-  const res = await databases.listDocuments(DB, CHUNKS, queries);
-  const hits = res.documents.map(serializeChunk).map((h) => ({ ...h, similarity: 1.0 }));
+  const hits: ChunkHit[] = scoped.map((h) => ({
+    id: `vec-${h.docId}`,
+    knowledge_item_id: h.docId,
+    chunk_index: 0,
+    heading: null,
+    text: h.text,
+    start_offset: 0,
+    end_offset: h.text.length,
+    // LanceDB's _distance is smaller-is-better (cosine distance); map to a
+    // 0-1 "higher is better" similarity for parity with the old fixed value.
+    similarity: 1 / (1 + Math.max(h.score, 0)),
+  }));
   return attachItems(hits);
 }
 

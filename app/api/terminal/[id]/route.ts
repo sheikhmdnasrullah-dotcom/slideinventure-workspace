@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { TerminalCommandSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
+import { upsertVector, deleteVector } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.terminalCommands;
@@ -82,6 +83,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (d.metadata !== undefined) payload.metadata = JSON.stringify(d.metadata);
 
     await databases.updateDocument(DB, COL, id, payload);
+
+    const text = [payload.title ?? doc.title, payload.command ?? doc.command, payload.description ?? doc.description, payload.notes ?? doc.notes]
+      .filter(Boolean)
+      .join("\n");
+    upsertVector({ collection: "terminal", docId: id, text }).catch(() => {});
+
     return Response.json({ id, status: "updated" });
   } catch (error) {
     return toJson(ApiError.internal("DB_ERROR", (error as Error).message));
@@ -101,6 +108,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (!doc) return ApiError.notFound("COMMAND_NOT_FOUND", "Command not found").toResponse();
 
     await databases.deleteDocument(DB, COL, id);
+    deleteVector({ collection: "terminal", docId: id }).catch(() => {});
     return Response.json({ id, status: "deleted" });
   } catch (error) {
     return toJson(ApiError.internal("DB_ERROR", (error as Error).message));

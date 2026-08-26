@@ -3,6 +3,7 @@ import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { NextRequest } from "next/server";
+import { searchVector, type VectorCollection } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 

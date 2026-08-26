@@ -6,6 +6,8 @@ import { APPWRITE } from "@/lib/appwrite/config"
 import { ApiError, toJson } from "@/lib/api/errors"
 import { checkRateLimit } from "@/lib/api/rate-limit"
 import { logActivity } from "@/lib/activities/client"
+import { upsertVector } from "@/lib/retrieval/vector-index"
+import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text"
 
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.notes
@@ -97,6 +99,11 @@ export async function POST(request: NextRequest) {
         entityId: doc.$id,
         entityType: "note",
       }).catch(() => {})
+    } else {
+      // AI Venture-scoped notes are out of scope for this index — that
+      // territory belongs to a separate, concurrent AFFiNE-based rebuild.
+      const text = [title, blockNoteToPlainText(doc.content as string)].filter(Boolean).join("\n")
+      upsertVector({ collection: "notes", docId: doc.$id, text }).catch(() => {})
     }
 
     return Response.json({ note: serialize(doc) }, { status: 201 })

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { TerminalCommandSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 import { logActivity } from "@/lib/activities/client";
+import { upsertVector } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.terminalCommands;
@@ -131,6 +132,9 @@ export async function POST(request: NextRequest) {
       entityType: "terminal_command",
       metadata: { command: d.command, category: d.category ?? null, exit_code: d.exitCode ?? null },
     }).catch(() => {});
+
+    const text = [d.title, d.command, d.description, d.notes].filter(Boolean).join("\n");
+    upsertVector({ collection: "terminal", docId: doc.$id, text }).catch(() => {});
 
     return Response.json({ id: doc.$id }, { status: 201 });
   } catch (err) {

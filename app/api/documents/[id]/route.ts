@@ -5,6 +5,7 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { NextRequest } from "next/server";
 import { unlinkDocumentFromKnowledge } from "@/lib/knowledge/link-document";
+import { deleteVector } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.documents;
@@ -63,6 +64,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     await unlinkDocumentFromKnowledge(doc?.knowledge_item_id);
 
     await databases.deleteDocument(DB, COL, id);
+    deleteVector({ collection: "documents", docId: id }).catch(() => {});
 
     return Response.json({ id, status: "deleted" });
   } catch (error) {

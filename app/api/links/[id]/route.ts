@@ -8,6 +8,7 @@ import { validate } from "@/lib/api/validation";
 import { UsefulLinkSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 import { logActivity } from "@/lib/activities/client";
+import { upsertVector, deleteVector } from "@/lib/retrieval/vector-index";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.usefulLinks;
@@ -107,6 +108,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       entityId: id,
       entityType: "link",
     }).catch(() => {});
+
+    const text = [nextTitle ?? doc.title, nextUrl, d.description ?? doc.description].filter(Boolean).join("\n");
+    upsertVector({ collection: "links", docId: id, text: text as string }).catch(() => {});
+
     return Response.json({ id, status: "updated" });
   } catch (error) {
     return ApiError.internal("DB_ERROR", (error as Error).message).toResponse();
@@ -134,6 +139,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       entityId: id,
       entityType: "link",
     }).catch(() => {});
+    deleteVector({ collection: "links", docId: id }).catch(() => {});
     return Response.json({ id, status: "deleted" });
   } catch (error) {
     return ApiError.internal("DB_ERROR", (error as Error).message).toResponse();

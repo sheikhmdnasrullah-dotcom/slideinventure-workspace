@@ -6,6 +6,8 @@ import { APPWRITE } from "@/lib/appwrite/config"
 import { ApiError, toJson } from "@/lib/api/errors"
 import { checkRateLimit } from "@/lib/api/rate-limit"
 import { logActivity } from "@/lib/activities/client"
+import { upsertVector, deleteVector } from "@/lib/retrieval/vector-index"
+import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text"
 
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.notes
@@ -89,6 +91,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       entityId: id,
       entityType: "note",
     }).catch(() => {})
+
+    if ((doc.scope ?? "global") !== "ai-venture") {
+      const text = [doc.title, blockNoteToPlainText(doc.content as string)].filter(Boolean).join("\n")
+      upsertVector({ collection: "notes", docId: id, text }).catch(() => {})
+    }
+
     return Response.json({ note: serialize(doc) })
   } catch (error) {
     return toJson(error)
@@ -131,6 +139,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       entityId: id,
       entityType: "note",
     }).catch(() => {})
+    deleteVector({ collection: "notes", docId: id }).catch(() => {})
     return Response.json({ ok: true })
   } catch (error) {
     return toJson(error)

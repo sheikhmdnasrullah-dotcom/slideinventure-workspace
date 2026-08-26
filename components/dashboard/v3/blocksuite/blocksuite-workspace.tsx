@@ -22,6 +22,7 @@ type Workspace = {
 export default function BlocksuiteWorkspace({
   section,
   title,
+  mode,
 }: {
   section: string;
   title: string;
