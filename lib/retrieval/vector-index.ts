@@ -1,5 +1,12 @@
 import "server-only";
-import * as lancedb from "@lancedb/lancedb";
+// Type-only: erased at compile time, so merely importing this module never
+// forces Node to load the native binding — that only happens inside
+// getConnection(), behind the dbPath() guard below, so a platform where the
+// binding can't load (or the path isn't writable) fails inside a try/catch
+// instead of throwing at module-evaluation time for every route that
+// transitively imports this file (which, via lib/knowledge/reindex.ts, is
+// most of the app's write paths).
+import type * as lancedb from "@lancedb/lancedb";
 import { embedTexts } from "@/lib/knowledge/nvidia";
 
 // A single embedded LanceDB store (local files, no separate service) acting
@@ -18,12 +25,24 @@ export type VectorCollection = "knowledge" | "documents" | "notes" | "terminal" 
 let connection: Promise<lancedb.Connection> | null = null;
 let table: Promise<lancedb.Table | null> | null = null;
 
-function dbPath(): string {
-  return process.env.LANCEDB_PATH || "./.lancedb-data";
+function dbPath(): string | null {
+  if (process.env.LANCEDB_PATH) return process.env.LANCEDB_PATH;
+  // Vercel (and serverless generally) ships a read-only function filesystem
+  // outside /tmp, and /tmp itself is ephemeral and not shared across
+  // invocations or instances — a "persistent local index" is a contradiction
+  // in terms there. Rather than have @lancedb/lancedb's native binding fail
+  // (or worse, abort the whole function) trying to open/write "./.lancedb-data"
+  // on a read-only mount, skip it entirely unless a real path is configured.
+  if (process.env.VERCEL) return null;
+  return "./.lancedb-data";
 }
 
-function getConnection(): Promise<lancedb.Connection> {
-  if (!connection) connection = lancedb.connect(dbPath());
+function getConnection(): Promise<lancedb.Connection> | null {
+  const path = dbPath();
+  if (!path) return null;
+  if (!connection) {
+    connection = import("@lancedb/lancedb").then((lancedb) => lancedb.connect(path));
+  }
   return connection;
 }
 
@@ -31,7 +50,9 @@ function getTable(): Promise<lancedb.Table | null> {
   if (table) return table;
   table = (async () => {
     try {
-      const db = await getConnection();
+      const conn = getConnection();
+      if (!conn) return null;
+      const db = await conn;
       const names = await db.tableNames();
       if (names.includes(TABLE)) return await db.openTable(TABLE);
 

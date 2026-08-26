@@ -124,12 +124,102 @@ async function searchKnowledgeChunks(query: string): Promise<RetrievalResult[]> 
   return [...map.values()];
 }
 
-// TODO(appwrite): leads / terminal / apps / useful_links retrieval was backed
-// by Supabase FTS RPCs (search_leads_fts, search_terminal_commands_fts,
-// search_apps_fts, search_useful_links_fts). Those collections are owned by
-// other migration agents and are out of scope for the Knowledge/Chat module
-// migration. Reimplement here once their Appwrite fulltext indexes exist.
-async function searchExternal(_source: string, _query: string): Promise<RetrievalResult[]> {
+// Cross-section retrieval. Terminal + useful_links use the LanceDB semantic
+// index; leads + apps use Appwrite fulltext. Every path is best-effort and
+// degrades to [] so the chat never hard-fails on a missing index.
+async function searchExternal(source: string, query: string): Promise<RetrievalResult[]> {
+  if (!query.trim()) return [];
+  try {
+    if (source === "terminal") {
+      const hits = await searchVector(query, { collections: ["terminal"], limit: 5 });
+      if (hits.length) {
+        return hits.map((h) => ({
+          source: "terminal",
+          title: "Terminal command",
+          snippet: buildExcerpt(h.text, query),
+          sourceId: h.docId,
+          path: "/terminal",
+          score: h.score,
+        }));
+      }
+      const res = await databases.listDocuments(DB, APPWRITE.collections.terminalCommands, [
+        Query.search("command", query),
+        Query.limit(5),
+      ]);
+      return res.documents.map((row: any) => ({
+        source: "terminal",
+        title: row.title || row.command || "Terminal command",
+        snippet: buildExcerpt(`${row.command || ""} ${row.description || ""}`, query),
+        sourceId: row.$id,
+        path: "/terminal",
+        score: 0,
+      }));
+    }
+
+    if (source === "links") {
+      const hits = await searchVector(query, { collections: ["links"], limit: 5 });
+      if (hits.length) {
+        return hits.map((h) => ({
+          source: "links",
+          title: "Useful link",
+          snippet: buildExcerpt(h.text, query),
+          sourceId: h.docId,
+          path: "/useful-links",
+          score: h.score,
+        }));
+      }
+      const res = await databases.listDocuments(DB, APPWRITE.collections.usefulLinks, [
+        Query.search("title", query),
+        Query.limit(5),
+      ]);
+      return res.documents.map((row: any) => ({
+        source: "links",
+        title: row.title || "Link",
+        snippet: buildExcerpt(`${row.title || ""} ${row.url || ""} ${row.description || ""}`, query),
+        sourceId: row.$id,
+        path: "/useful-links",
+        score: 0,
+      }));
+    }
+
+    if (source === "leads") {
+      const [byCompany, byEmail] = await Promise.all([
+        databases.listDocuments(DB, APPWRITE.collections.leads, [Query.search("company", query), Query.limit(5)]),
+        databases.listDocuments(DB, APPWRITE.collections.leads, [Query.search("email", query), Query.limit(5)]),
+      ]);
+      const map = new Map<string, RetrievalResult>();
+      for (const row of [...byCompany.documents, ...byEmail.documents]) {
+        if (!map.has(row.$id)) {
+          map.set(row.$id, {
+            source: "leads",
+            title: `${row.first_name || ""} ${row.last_name || ""}`.trim() || row.company || "Lead",
+            snippet: buildExcerpt(`${row.company || ""} ${row.email || ""}`, query),
+            sourceId: row.$id,
+            path: "/leads",
+            score: 0,
+          });
+        }
+      }
+      return [...map.values()];
+    }
+
+    if (source === "apps") {
+      const res = await databases.listDocuments(DB, APPWRITE.collections.apps, [
+        Query.search("name", query),
+        Query.limit(5),
+      ]);
+      return res.documents.map((row: any) => ({
+        source: "apps",
+        title: row.name || "App",
+        snippet: buildExcerpt(`${row.name || ""} ${row.description || ""}`, query),
+        sourceId: row.$id,
+        path: "/apps",
+        score: 0,
+      }));
+    }
+  } catch (err) {
+    console.warn(`searchExternal(${source}) failed (non-fatal):`, err);
+  }
   return [];
 }
 
