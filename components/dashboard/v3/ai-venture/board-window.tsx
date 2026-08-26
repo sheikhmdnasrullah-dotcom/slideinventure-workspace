@@ -137,7 +137,7 @@ export function BoardWindow({
   const handleStickyNote = async () => {
     const api = editorRef.current
     if (!api) return
-    const { convertToExcalidrawElements } = await import("@excalidraw/excalidraw")
+    const { convertToExcalidrawElements, CaptureUpdateAction } = await import("@excalidraw/excalidraw")
     const center = viewportCenter(api)
     const elements = convertToExcalidrawElements([
       {
@@ -151,9 +151,13 @@ export function BoardWindow({
         label: { text: "" },
       },
     ])
+    // captureUpdate is required here — an "EVENTUALLY" (the default) update
+    // renders but never reaches onChange/autosave until a later user edit
+    // commits it, so the note could silently vanish on refresh.
     api.updateScene({
       elements: [...api.getSceneElements(), ...elements],
       appState: { selectedElementIds: { [elements[0].id]: true } },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     })
   }
 

@@ -48,7 +48,7 @@ try {
   await page.getByRole("heading", { name: "AI Venture" }).waitFor({ timeout: 10000 });
   await page.getByRole("button", { name: /^pdfs$/i }).click();
   await page.waitForTimeout(1500);
-  const pdfCard = page.getByText("test_pricing.pdf", { exact: false }).first();
+  const pdfCard = page.getByText("test.pdf", { exact: false }).first();
   await pdfCard.waitFor({ timeout: 5000 });
   log("PDF persisted after refresh");
 
@@ -75,14 +75,14 @@ try {
   // ---- TEST 4: delete PDF -> refresh -> gone ----
   await page.getByRole("button", { name: /^pdfs$/i }).click();
   await page.waitForTimeout(1000);
-  const trashIcon = page.locator(".group:has-text('test_pricing.pdf') svg.lucide-trash2");
+  const trashIcon = page.locator(".group:has-text('test.pdf') svg.lucide-trash2");
   await trashIcon.click({ force: true });
   await page.waitForTimeout(1000);
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { name: "AI Venture" }).waitFor({ timeout: 10000 });
   await page.getByRole("button", { name: /^pdfs$/i }).click();
   await page.waitForTimeout(1500);
-  const goneCount = await page.getByText("test_pricing.pdf", { exact: false }).count();
+  const goneCount = await page.getByText("test.pdf", { exact: false }).count();
   log(`PDF gone after delete+refresh: ${goneCount === 0}`);
 
   // ---- TEST: search ----

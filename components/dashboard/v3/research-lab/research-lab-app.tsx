@@ -84,12 +84,21 @@ function viewportCenter(api: ExcalidrawImperativeAPI): { x: number; y: number } 
 }
 
 async function insertTextShape(api: ExcalidrawImperativeAPI, text: string) {
-  const { convertToExcalidrawElements } = await import("@excalidraw/excalidraw")
+  const { convertToExcalidrawElements, CaptureUpdateAction } = await import("@excalidraw/excalidraw")
   const center = viewportCenter(api)
   const [element] = convertToExcalidrawElements([
     { type: "text", x: center.x - 150, y: center.y - 40, text, width: 300 },
   ])
-  api.updateScene({ elements: [...api.getSceneElements(), element] })
+  // Without an explicit captureUpdate, Excalidraw treats a programmatic
+  // updateScene as "EVENTUALLY" captured — the shape renders immediately but
+  // never reaches the change history (or this component's onChange/autosave)
+  // until some later user-driven edit commits it. That silently drops
+  // anything landed here (Terminal/PDF "Save to Research") if the user never
+  // touches the canvas again.
+  api.updateScene({
+    elements: [...api.getSceneElements(), element],
+    captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+  })
 }
 
 export const RESEARCH_LAB_CAPTURE_KEY = "research-lab-pending-capture"
@@ -236,7 +245,7 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
   const handleStickyNote = async () => {
     const api = editorRef.current
     if (!api) return
-    const { convertToExcalidrawElements } = await import("@excalidraw/excalidraw")
+    const { convertToExcalidrawElements, CaptureUpdateAction } = await import("@excalidraw/excalidraw")
     const center = viewportCenter(api)
     const elements = convertToExcalidrawElements([
       {
@@ -253,6 +262,7 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
     api.updateScene({
       elements: [...api.getSceneElements(), ...elements],
       appState: { selectedElementIds: { [elements[0].id]: true } },
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     })
   }
 
@@ -399,8 +409,46 @@ function ResearchLabAppInner({ scope, syncUrl }: { scope: "global" | "ai-venture
                   const { workspaceId, text } = JSON.parse(pending) as { workspaceId: string; text: string }
                   if (workspaceId === activeId) {
                     sessionStorage.removeItem(CAPTURE_KEY)
-                    insertTextShape(editor, text)
-                    toast.success("Saved to this research canvas")
+                    // Two problems, not one: (1) a programmatic updateScene
+                    // called from inside the excalidrawAPI ready-callback
+                    // doesn't reliably reach Excalidraw's own onChange, so
+                    // relying on autosave to pick this up silently drops it;
+                    // (2) the canvas's own initial-mount onChange cycle
+                    // (firing with the pre-capture, empty scene) debounces on
+                    // the same shared timer persist() uses, and can still
+                    // land *after* an immediate write here and clobber it
+                    // back to empty. Waiting for that cycle to settle, then
+                    // inserting and writing directly — bypassing persist()'s
+                    // shared timer and clearing it afterward — makes this
+                    // write the last word regardless of what fired before it.
+                    setTimeout(() => {
+                      insertTextShape(editor, text).then(() => {
+                        const appState = editor.getAppState()
+                        const snapshot = JSON.stringify({
+                          elements: editor.getSceneElements(),
+                          appState: {
+                            viewBackgroundColor: appState.viewBackgroundColor,
+                            scrollX: appState.scrollX,
+                            scrollY: appState.scrollY,
+                            zoom: appState.zoom,
+                          },
+                        })
+                        setContent(snapshot)
+                        clearTimeout(saveTimer.current)
+                        fetch(`/api/research/${workspaceId}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ content: snapshot }),
+                        })
+                          .then(() => {
+                            clearTimeout(saveTimer.current)
+                            toast.success("Saved to this research canvas")
+                          })
+                          .catch(() => {
+                            toast.error("Couldn't save the capture — try again")
+                          })
+                      })
+                    }, 2000)
                   }
                 }
               } catch {
