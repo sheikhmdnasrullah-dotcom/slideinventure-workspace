@@ -275,6 +275,38 @@ export async function getDashboardPreferencesForUser(userEmail: string): Promise
   }
 }
 
+let knownAttrCache: { keys: Set<string>; at: number } | null = null
+
+/**
+ * The deployed `user_preferences` collection can drift from the attributes the
+ * code manages (e.g. it may be missing `labels`, which is instead stored in the
+ * dedicated `LABELS_COL` collection). Writing an unknown attribute makes
+ * Appwrite reject the whole document ("Unknown attribute"). To stay robust we
+ * introspect the real attribute set and only send keys that exist. Cached for
+ * a short window to avoid an extra call on every save.
+ */
+async function getKnownPreferenceAttributes(): Promise<Set<string>> {
+  if (knownAttrCache && Date.now() - knownAttrCache.at < 60_000) {
+    return knownAttrCache.keys
+  }
+  try {
+    const res = await databases.listAttributes(DB, COL)
+    const keys = new Set((res.attributes as { key: string }[]).map((a) => a.key))
+    knownAttrCache = { keys, at: Date.now() }
+    return keys
+  } catch {
+    return new Set([
+      "user_email",
+      "theme",
+      "default_landing_page",
+      "navigation_order",
+      "labels",
+      "created_at",
+      "updated_at",
+    ])
+  }
+}
+
 export async function upsertDashboardPreferencesForUser(
   userEmail: string,
   patch: Partial<DashboardPreferences>
@@ -286,14 +318,19 @@ export async function upsertDashboardPreferencesForUser(
   const next = mergeDashboardPreferences(current, patch)
   const now = new Date().toISOString()
 
-  const payload = {
+  const known = await getKnownPreferenceAttributes()
+  const full = {
     user_email: userEmail,
     theme: next.theme,
     default_landing_page: next.defaultLandingPage,
     navigation_order: JSON.stringify(next.navigationOrder),
+    labels: JSON.stringify(next.labels ?? {}),
     created_at: existingDoc?.created_at ?? now,
     updated_at: now,
   }
+  const payload = Object.fromEntries(
+    Object.entries(full).filter(([key]) => known.has(key))
+  )
 
   if (existingDoc) {
     await databases.updateDocument(DB, COL, existingDoc.$id!, payload)

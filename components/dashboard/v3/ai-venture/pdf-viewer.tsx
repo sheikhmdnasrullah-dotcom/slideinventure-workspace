@@ -12,6 +12,7 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
+  Pencil,
   Search,
   Sparkles,
   ZoomIn,
@@ -23,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { STIRLING_PDF_URL } from "@/lib/pdf-editor"
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
 
@@ -192,6 +194,15 @@ export function PdfViewer({
             </Button>
             <Button variant="ghost" size="icon-sm" onClick={handleDownload}>
               <Download className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => window.open(STIRLING_PDF_URL, "_blank", "noopener,noreferrer")}
+              title="Edit in Stirling-PDF (opens in a new tab)"
+            >
+              <Pencil className="size-4" /> Edit
             </Button>
           </div>
         </div>

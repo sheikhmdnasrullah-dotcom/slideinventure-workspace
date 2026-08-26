@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { BoardWindow } from "./board-window"
+import { BoardWindow } from "@/components/dashboard/v3/whiteboard/BoardWindow"
 
 export type SketchBoard = { id: string; title: string | null; updated_at: string }
 

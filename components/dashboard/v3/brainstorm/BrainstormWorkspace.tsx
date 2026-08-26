@@ -3,8 +3,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import * as React from "react"
-import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types"
-import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import {
   Plus,
@@ -12,19 +10,14 @@ import {
   Pencil,
   Trash2,
   Copy,
-  Download,
   MoreVertical,
   ArrowLeft,
   Loader2,
   FileText,
-  Image as ImageIcon,
-  FileJson,
-  FileType2,
   LayoutGrid,
   ArrowUpDown,
 } from "lucide-react"
 import { toast } from "sonner"
-import { jsPDF } from "jspdf"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,21 +43,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet"
-import { CanvasErrorBoundary } from "./CanvasErrorBoundary"
-
-const Whiteboard = dynamic(() => import("@/components/dashboard/v3/whiteboard/Whiteboard"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-      <Loader2 className="mr-2 size-4 animate-spin" /> Preparing canvas…
-    </div>
-  ),
-}) as unknown as React.ComponentType<{
-  boardId?: string
-  initialData?: string
-  onChange: (data: string) => void
-  onMount: (api: ExcalidrawImperativeAPI) => void
-}>
+import { BoardWindow } from "@/components/dashboard/v3/whiteboard/BoardWindow"
 
 type Board = {
   id: string
@@ -95,17 +74,6 @@ function greeting(): string {
   return "Good evening"
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1500)
-}
-
 export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   const router = useRouter()
 
@@ -113,12 +81,8 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   const [loadingBoards, setLoadingBoards] = React.useState(true)
 
   const [activeId, setActiveId] = React.useState<string | null>(boardId)
-  const [title, setTitle] = React.useState("")
-  const [content, setContent] = React.useState("{}")
-  const [loadingBoard, setLoadingBoard] = React.useState(false)
   const [notFound, setNotFound] = React.useState(false)
 
-  const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
   const [search, setSearch] = React.useState("")
   const [sort, setSort] = React.useState<"recent" | "alpha">("recent")
 
@@ -127,29 +91,6 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
 
   const [deleteTarget, setDeleteTarget] = React.useState<Board | null>(null)
   const [mobileBoardsOpen, setMobileBoardsOpen] = React.useState(false)
-
-  const editorRef = React.useRef<ExcalidrawImperativeAPI | null>(null)
-  const contentRef = React.useRef("{}")
-  const activeIdRef = React.useRef<string | null>(boardId)
-  const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  // ---- persistence ----------------------------------------------------------
-  const flushSave = React.useCallback(() => {
-    const id = activeIdRef.current
-    if (!id) return
-    clearTimeout(saveTimer.current)
-    const payload = JSON.stringify({ content: contentRef.current })
-    fetch(`/api/boards/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
-    })
-      .then(() => setStatus("saved"))
-      .catch(() => {
-        setStatus("idle")
-        toast.error("Couldn't save your latest changes")
-      })
-  }, [])
 
   // ---- data loading ---------------------------------------------------------
   const loadBoards = React.useCallback(async () => {
@@ -164,8 +105,9 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
     }
   }, [])
 
-  const loadBoard = React.useCallback(async (id: string) => {
-    setLoadingBoard(true)
+  // Just an existence check (for the not-found view) — BoardWindow does its
+  // own fetch of the board's actual content when it opens.
+  const checkBoardExists = React.useCallback(async (id: string) => {
     setNotFound(false)
     try {
       const res = await fetch(`/api/boards/${id}`)
@@ -173,21 +115,14 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
         setNotFound(true)
         return
       }
-      const data = await res.json()
-      const board = data.board as Board
-      setActiveId(board.id)
-      setTitle(board.title ?? "")
-      setContent(board.content ?? "{}")
-      contentRef.current = board.content ?? "{}"
+      setActiveId(id)
       try {
-        localStorage.setItem("brainstorm:lastBoard", board.id)
+        localStorage.setItem("brainstorm:lastBoard", id)
       } catch {
         /* ignore */
       }
     } catch {
       toast.error("Failed to open board")
-    } finally {
-      setLoadingBoard(false)
     }
   }, [])
 
@@ -197,50 +132,20 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
 
   React.useEffect(() => {
     if (boardId) {
-      activeIdRef.current = boardId
-      loadBoard(boardId)
+      checkBoardExists(boardId)
     } else {
-      activeIdRef.current = null
       setActiveId(null)
     }
-    // Reset transient UI when the route's board changes.
     setRenamingId(null)
-    return () => {
-      // flush any pending save on unmount
-      flushSave()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId])
-
-  const handleContentChange = React.useCallback((next: string) => {
-    contentRef.current = next
-    setStatus("saving")
-    clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => {
-      const id = activeIdRef.current
-      if (!id) return
-      fetch(`/api/boards/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: next }),
-      })
-        .then(() => setStatus("saved"))
-        .catch(() => {
-          setStatus("idle")
-          toast.error("Failed to save board")
-        })
-    }, 600)
-  }, [])
+  }, [boardId, checkBoardExists])
 
   // ---- navigation -----------------------------------------------------------
   const openBoard = (id: string) => {
-    flushSave()
     router.push(`/brainstorm-sketch/${id}`)
     setMobileBoardsOpen(false)
   }
 
   const backToList = () => {
-    flushSave()
     router.push("/brainstorm-sketch")
   }
 
@@ -270,7 +175,6 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   const commitRename = async (id: string, name: string) => {
     const clean = name.trim() || "Untitled"
     setBoards((prev) => prev.map((b) => (b.id === id ? { ...b, title: clean } : b)))
-    if (id === activeId) setTitle(clean)
     setRenamingId(null)
     try {
       await fetch(`/api/boards/${id}`, {
@@ -284,14 +188,6 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   }
 
   const cancelRename = () => setRenamingId(null)
-
-  // The dropdown menu restores focus to its trigger button as it closes,
-  // which races the rename input's autoFocus and steals focus right back —
-  // firing the input's onBlur commit before the user can type anything.
-  // Waiting two frames lets that restoration finish first.
-  const deferRename = (fn: () => void) => {
-    requestAnimationFrame(() => requestAnimationFrame(fn))
-  }
 
   const duplicateBoard = async (board: Board) => {
     try {
@@ -318,70 +214,13 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
       await fetch(`/api/boards/${target.id}`, { method: "DELETE" })
       setBoards((prev) => prev.filter((b) => b.id !== target.id))
       toast.success("Board deleted")
-      if (activeIdRef.current === target.id) {
+      if (activeId === target.id) {
         backToList()
       }
     } catch {
       toast.error("Failed to delete board")
     } finally {
       setDeleteTarget(null)
-    }
-  }
-
-  // ---- export ---------------------------------------------------------------
-  const exportBoard = async (format: "png" | "json" | "pdf") => {
-    const api = editorRef.current
-    if (!api) {
-      toast.error("Canvas isn't ready yet")
-      return
-    }
-    const safeName = (title || "brainstorm").replace(/[^a-z0-9-_]+/gi, "_").toLowerCase()
-    try {
-      const elements = api.getSceneElements()
-      const appState = api.getAppState()
-
-      if (format === "json") {
-        const snapshot = JSON.stringify({
-          elements,
-          appState: {
-            viewBackgroundColor: appState.viewBackgroundColor,
-            scrollX: appState.scrollX,
-            scrollY: appState.scrollY,
-            zoom: appState.zoom,
-          },
-        })
-        downloadBlob(new Blob([snapshot], { type: "application/json" }), `${safeName}.json`)
-        return
-      }
-
-      if (elements.length === 0) {
-        toast.error("Nothing drawn yet to export")
-        return
-      }
-      const { exportToBlob } = await import("@excalidraw/excalidraw")
-      const blob = await exportToBlob({ elements, appState, files: api.getFiles(), mimeType: "image/png" })
-      if (format === "png") {
-        downloadBlob(blob, `${safeName}.png`)
-        return
-      }
-      // pdf: embed the png
-      const dataUrl = await blobToDataUrl(blob)
-      const img = new Image()
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve()
-        img.onerror = () => reject(new Error("Could not render image"))
-        img.src = dataUrl
-      })
-      const pdf = new jsPDF({ orientation: img.width >= img.height ? "landscape" : "portrait" })
-      const pageW = pdf.internal.pageSize.getWidth()
-      const pageH = pdf.internal.pageSize.getHeight()
-      const ratio = Math.min(pageW / img.width, pageH / img.height)
-      const w = img.width * ratio
-      const h = img.height * ratio
-      pdf.addImage(dataUrl, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h)
-      pdf.save(`${safeName}.pdf`)
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Export failed")
     }
   }
 
@@ -405,8 +244,6 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   }, [])
   const lastBoard = lastBoardId ? boards.find((b) => b.id === lastBoardId) : undefined
   const recent = boards.slice(0, 6)
-
-  const activeBoard = boards.find((b) => b.id === activeId) ?? null
 
   // ---- render ---------------------------------------------------------------
   return (
@@ -484,110 +321,12 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
           />
         </SheetWrap>
 
-        {/* Main area */}
+        {/* Main area — always the list/landing view underneath; the open
+            board itself is a popup window (BoardWindow) on top of it, not
+            an inline section here. */}
         <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
           {boardId && notFound ? (
             <NotFountView onBack={backToList} />
-          ) : boardId && (loadingBoard || !activeBoard) ? (
-            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-              <Loader2 className="mr-2 size-4 animate-spin" /> Opening board…
-            </div>
-          ) : boardId && activeBoard ? (
-            <section className="flex min-h-0 flex-1 flex-col">
-              {/* Board top bar */}
-              <div className="flex items-center gap-3 border-b bg-background px-4 py-2.5">
-                <Button variant="ghost" size="icon-sm" onClick={backToList} aria-label="Back to boards">
-                  <ArrowLeft className="size-4" />
-                </Button>
-                {renamingId === activeId ? (
-                  <Input
-                    autoFocus
-                    data-testid="rename-input"
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onBlur={(e) => {
-                      if (activeId) commitRename(activeId, e.currentTarget.value)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && activeId) commitRename(activeId, e.currentTarget.value)
-                      if (e.key === "Escape") cancelRename()
-                    }}
-                    className="h-8 max-w-xs text-sm font-semibold"
-                  />
-                ) : (
-                  <button
-                    onClick={() => startRename(activeBoard)}
-                    className="group flex items-center gap-1.5 truncate text-sm font-semibold"
-                  >
-                    <span className="truncate">{title || "Untitled"}</span>
-                    <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                  </button>
-                )}
-                <span className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-                  {status === "saving" && <Loader2 className="size-3 animate-spin" />}
-                  {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button variant="ghost" size="icon-sm" aria-label="Export">
-                        <Download className="size-4" />
-                      </Button>
-                    }
-                  />
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => exportBoard("png")}>
-                      <ImageIcon className="mr-2 size-4" /> Export PNG
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => exportBoard("pdf")}>
-                      <FileType2 className="mr-2 size-4" /> Export PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => exportBoard("json")}>
-                      <FileJson className="mr-2 size-4" /> Export JSON
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button variant="ghost" size="icon-sm" aria-label="Board options">
-                        <MoreVertical className="size-4" />
-                      </Button>
-                    }
-                  />
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => deferRename(() => startRename(activeBoard))}>
-                      <Pencil className="mr-2 size-4" /> Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => duplicateBoard(activeBoard)}>
-                      <Copy className="mr-2 size-4" /> Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => setDeleteTarget(activeBoard)}
-                    >
-                      <Trash2 className="mr-2 size-4" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Canvas */}
-              <div className="relative min-h-0 flex-1">
-                <CanvasErrorBoundary onBack={backToList}>
-                  <Whiteboard
-                    key={activeId ?? "none"}
-                    boardId={activeId ?? undefined}
-                    initialData={content}
-                    onChange={handleContentChange}
-                    onMount={(api: ExcalidrawImperativeAPI) => {
-                      editorRef.current = api
-                    }}
-                  />
-                </CanvasErrorBoundary>
-              </div>
-             </section>
           ) : (
             <LandingView
               greeting={greeting()}
@@ -599,6 +338,17 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
           )}
         </div>
       </div>
+
+      <BoardWindow
+        boardId={activeId}
+        open={!!boardId && !notFound}
+        onOpenChange={(o) => { if (!o) backToList() }}
+        onChanged={(patch) => {
+          if (!activeId) return
+          setBoards((prev) => prev.map((b) => (b.id === activeId ? { ...b, ...patch } : b)))
+        }}
+        backLabel="Back to boards"
+      />
 
       {/* Delete confirmation */}
       <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
@@ -897,13 +647,4 @@ function SheetWrap({ open, onOpenChange, children }: { open: boolean; onOpenChan
       </SheetContent>
     </Sheet>
   )
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error("read error"))
-    reader.readAsDataURL(blob)
-  })
 }

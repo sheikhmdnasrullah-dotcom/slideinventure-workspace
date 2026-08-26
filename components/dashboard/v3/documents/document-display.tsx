@@ -1,7 +1,7 @@
 "use client"
 
 import { format } from "date-fns"
-import { Download, ExternalLink, MoreVertical, Trash2 } from "lucide-react"
+import { Download, ExternalLink, MoreVertical, Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
+import { STIRLING_PDF_URL } from "@/lib/pdf-editor"
 import { useDocuments } from "./use-documents"
 
 export function DocumentDisplay() {
@@ -44,6 +45,11 @@ export function DocumentDisplay() {
         <div className="flex items-center gap-2">
           <a  href={selectedDocument.url} target="_blank" rel="noopener noreferrer" title="Open in new tab" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><ExternalLink className="h-4 w-4" /></a>
           <a  href={selectedDocument.url} download={selectedDocument.filename} title="Download" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><Download className="h-4 w-4" /></a>
+          {selectedDocument.mime_type === "application/pdf" && (
+            <a href={STIRLING_PDF_URL} target="_blank" rel="noopener noreferrer" title="Edit PDF" className="inline-flex items-center gap-1.5 rounded-md border px-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9">
+              <Pencil className="h-4 w-4" /> Edit PDF
+            </a>
+          )}
         </div>
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>

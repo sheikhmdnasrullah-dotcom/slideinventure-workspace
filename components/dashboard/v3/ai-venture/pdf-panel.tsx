@@ -3,11 +3,12 @@
 import * as React from "react"
 import dynamic from "next/dynamic"
 import { formatDistanceToNow } from "date-fns"
-import { FileText, Loader2, Trash2, Upload } from "lucide-react"
+import { FileText, Loader2, Pencil, Trash2, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { STIRLING_PDF_URL } from "@/lib/pdf-editor"
 
 // react-pdf/pdfjs-dist reference browser-only globals (e.g. DOMMatrix) at
 // module scope — importing it directly crashes the page during SSR. Loading
@@ -103,13 +104,22 @@ export function PdfPanel({
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
                   <CardTitle className="truncate text-sm font-medium">{pdf.name}</CardTitle>
                 </div>
-                <Trash2
-                  className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDelete(pdf)
-                  }}
-                />
+                <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Pencil
+                    className="size-4 text-muted-foreground hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.open(STIRLING_PDF_URL, "_blank", "noopener,noreferrer")
+                    }}
+                  />
+                  <Trash2
+                    className="size-4 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(pdf)
+                    }}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-muted-foreground">

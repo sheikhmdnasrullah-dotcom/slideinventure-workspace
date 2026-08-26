@@ -2,16 +2,24 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
-import { ArrowLeft, Loader2, StickyNote, X } from "lucide-react"
+import { ArrowLeft, Download, FileJson, FileType2, Image as ImageIcon, Loader2, StickyNote, X } from "lucide-react"
 import { toast } from "sonner"
+import { jsPDF } from "jspdf"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types"
+import { CanvasErrorBoundary } from "./CanvasErrorBoundary"
 
 // Excalidraw touches browser-only APIs.
-const Whiteboard = dynamic(() => import("@/components/dashboard/v3/whiteboard/Whiteboard"), { ssr: false })
+const Whiteboard = dynamic(() => import("./Whiteboard"), { ssr: false })
 
 function viewportCenter(api: ExcalidrawImperativeAPI) {
   const s = api.getAppState()
@@ -22,21 +30,43 @@ function viewportCenter(api: ExcalidrawImperativeAPI) {
   }
 }
 
-// A near-fullscreen "board window" over the dashboard — same experience for
-// any AI-Venture-scoped sketch. Persistence mirrors the standalone Brainstorm
-// Sketch page (components/dashboard/v3/brainstorm/BrainstormWorkspace.tsx)
-// exactly: same `boards` collection/API, same debounce-then-flush shape —
-// just scoped to `scope: "ai-venture"` and shown in a modal instead of a route.
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error("read error"))
+    reader.readAsDataURL(blob)
+  })
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1500)
+}
+
+// The single near-fullscreen "board window" used everywhere a sketch is
+// opened for editing — standalone Brainstorm Sketch and AI Venture's
+// Sketches both use this, instead of each keeping their own inline canvas
+// section/duplicate autosave logic. Same `boards` collection/API either way;
+// callers just pass the id and a scope-appropriate onChanged handler.
 export function BoardWindow({
   boardId,
   open,
   onOpenChange,
   onChanged,
+  backLabel = "Back",
 }: {
   boardId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onChanged?: (patch: { title?: string; updated_at?: string }) => void
+  backLabel?: string
 }) {
   const [title, setTitle] = React.useState("")
   const [content, setContent] = React.useState("{}")
@@ -161,6 +191,61 @@ export function BoardWindow({
     })
   }
 
+  const handleExport = async (format: "png" | "json" | "pdf") => {
+    const api = editorRef.current
+    if (!api) {
+      toast.error("Canvas isn't ready yet")
+      return
+    }
+    const safeName = (title || "brainstorm").replace(/[^a-z0-9-_]+/gi, "_").toLowerCase()
+    try {
+      const elements = api.getSceneElements()
+      const appState = api.getAppState()
+
+      if (format === "json") {
+        const snapshot = JSON.stringify({
+          elements,
+          appState: {
+            viewBackgroundColor: appState.viewBackgroundColor,
+            scrollX: appState.scrollX,
+            scrollY: appState.scrollY,
+            zoom: appState.zoom,
+          },
+        })
+        downloadBlob(new Blob([snapshot], { type: "application/json" }), `${safeName}.json`)
+        return
+      }
+
+      if (elements.length === 0) {
+        toast.error("Nothing drawn yet to export")
+        return
+      }
+      const { exportToBlob } = await import("@excalidraw/excalidraw")
+      const blob = await exportToBlob({ elements, appState, files: api.getFiles(), mimeType: "image/png" })
+      if (format === "png") {
+        downloadBlob(blob, `${safeName}.png`)
+        return
+      }
+      const dataUrl = await blobToDataUrl(blob)
+      const img = new Image()
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error("Could not render image"))
+        img.src = dataUrl
+      })
+      const pdf = new jsPDF({ orientation: img.width >= img.height ? "landscape" : "portrait" })
+      const pageW = pdf.internal.pageSize.getWidth()
+      const pageH = pdf.internal.pageSize.getHeight()
+      const ratio = Math.min(pageW / img.width, pageH / img.height)
+      const w = img.width * ratio
+      const h = img.height * ratio
+      pdf.addImage(dataUrl, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h)
+      pdf.save(`${safeName}.pdf`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed")
+    }
+  }
+
   const handleClose = () => {
     flushSave()
     onOpenChange(false)
@@ -170,7 +255,7 @@ export function BoardWindow({
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose() }}>
       <DialogContent className="flex h-[92vh] max-h-[92vh] w-[97vw] max-w-[1400px] flex-col overflow-hidden p-0" showCloseButton={false}>
         <div className="flex items-center gap-3 border-b bg-background px-4 py-2.5">
-          <Button variant="ghost" size="icon-sm" onClick={handleClose} aria-label="Back to AI Venture">
+          <Button variant="ghost" size="icon-sm" onClick={handleClose} aria-label={backLabel}>
             <ArrowLeft className="size-4" />
           </Button>
           {renaming ? (
@@ -206,6 +291,26 @@ export function BoardWindow({
           >
             <StickyNote className="size-4" /> Sticky note
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" size="icon-sm" aria-label="Export">
+                  <Download className="size-4" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("png")}>
+                <ImageIcon className="mr-2 size-4" /> Export PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                <FileType2 className="mr-2 size-4" /> Export PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("json")}>
+                <FileJson className="mr-2 size-4" /> Export JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="ghost" size="icon-sm" onClick={handleClose} aria-label="Close">
             <X className="size-4" />
           </Button>
@@ -216,14 +321,16 @@ export function BoardWindow({
               <Loader2 className="mr-2 size-4 animate-spin" /> Opening sketch…
             </div>
           ) : (
-            <Whiteboard
-              key={boardId ?? "none"}
-              initialData={content}
-              onChange={handleContentChange}
-              onMount={(api: ExcalidrawImperativeAPI) => {
-                editorRef.current = api
-              }}
-            />
+            <CanvasErrorBoundary onBack={handleClose}>
+              <Whiteboard
+                key={boardId ?? "none"}
+                initialData={content}
+                onChange={handleContentChange}
+                onMount={(api: ExcalidrawImperativeAPI) => {
+                  editorRef.current = api
+                }}
+              />
+            </CanvasErrorBoundary>
           )}
         </div>
       </DialogContent>
