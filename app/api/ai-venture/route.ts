@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   try {
-    const tree = listTree();
+    const tree = await listTree();
     return Response.json({ tree });
   } catch (error) {
     return toJson(error);
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!path || (type !== "file" && type !== "folder")) {
       return ApiError.badRequest("BAD_REQUEST", "path and type ('file' | 'folder') are required").toResponse();
     }
-    createEntry(path, type);
+    await createEntry(path, type);
     return Response.json({ ok: true });
   } catch (error) {
     if (error instanceof VentureFsError) return new ApiError(error.status, "VENTURE_FS_ERROR", error.message).toResponse();

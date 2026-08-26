@@ -100,6 +100,7 @@ export function TodoistContent() {
     labels: [] as string[],
     priority: 1,
     dueDate: "",
+    reminder: true,
   })
 
   const loadProjects = useCallback(async () => {
@@ -127,6 +128,7 @@ export function TodoistContent() {
   }, [])
 
   const loadTasks = useCallback(async () => {
+    setLoading(true)
     try {
       const params = new URLSearchParams()
       if (projectFilter !== "all") params.set("project_id", projectFilter)
@@ -185,7 +187,7 @@ export function TodoistContent() {
 
   const handleAdd = () => {
     setEditingTask(null)
-    setForm({ content: "", description: "", projectId: "", labels: [], priority: 1, dueDate: "" })
+    setForm({ content: "", description: "", projectId: "", labels: [], priority: 1, dueDate: "", reminder: true })
     setShowForm(true)
   }
 
@@ -198,6 +200,7 @@ export function TodoistContent() {
       labels: task.labels ?? (task.metadata?.labels as string[]) ?? [],
       priority: task.priority ?? 1,
       dueDate: task.due_date ?? "",
+      reminder: true,
     })
     setShowForm(true)
   }
@@ -244,7 +247,7 @@ export function TodoistContent() {
 
       toast.success(editingTask ? "Task updated" : "Task created")
       setShowForm(false)
-      setForm({ content: "", description: "", projectId: "", labels: [], priority: 1, dueDate: "" })
+    setForm({ content: "", description: "", projectId: "", labels: [], priority: 1, dueDate: "", reminder: true })
       setEditingTask(null)
       await loadTasks()
     } catch {
@@ -565,11 +568,11 @@ export function TodoistContent() {
             <div className="flex items-center gap-2">
               <Switch
                 id="reminder"
-                checked={true}
-                disabled
+                checked={form.reminder}
+                onCheckedChange={(v) => setForm((prev) => ({ ...prev, reminder: v }))}
               />
               <Label htmlFor="reminder" className="text-xs">
-                Email reminder enabled (1 hour before deadline)
+                Email reminder {form.reminder ? "enabled" : "disabled"} (1 hour before deadline)
               </Label>
             </div>
           </div>

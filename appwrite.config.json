@@ -2609,6 +2609,15 @@
           "size": 255,
           "default": null,
           "encrypt": false
+        },
+        {
+          "key": "document_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
         }
       ],
       "indexes": [
@@ -3491,9 +3500,54 @@
           "array": false,
           "default": null,
           "format": ""
+        },
+        {
+          "key": "workspace",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 40,
+          "default": "documents",
+          "encrypt": false
+        },
+        {
+          "key": "folder_path",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 2000,
+          "default": null,
+          "encrypt": false
+        },
+        {
+          "key": "node_type",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 20,
+          "default": "file",
+          "encrypt": false
+        },
+        {
+          "key": "knowledge_item_id",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 255,
+          "default": null,
+          "encrypt": false
         }
       ],
       "indexes": [
+        {
+          "key": "by_workspace",
+          "type": "key",
+          "status": "available",
+          "columns": [
+            "workspace"
+          ],
+          "orders": []
+        },
         {
           "key": "by_status",
           "type": "key",

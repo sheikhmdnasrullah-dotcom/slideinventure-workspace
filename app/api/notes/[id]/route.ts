@@ -9,13 +9,21 @@ import { checkRateLimit } from "@/lib/api/rate-limit"
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.notes
 
-function serialize(doc: Record<string, any>) {
+type RawNote = {
+  $id: string
+  title?: string | null
+  content?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+function serialize(doc: RawNote) {
   return {
     id: doc.$id,
-    title: doc.title,
-    content: doc.content,
-    created_at: doc.created_at,
-    updated_at: doc.updated_at,
+    title: doc.title ?? null,
+    content: doc.content ?? "",
+    created_at: doc.created_at ?? "",
+    updated_at: doc.updated_at ?? "",
   }
 }
 

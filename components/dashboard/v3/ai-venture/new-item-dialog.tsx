@@ -79,20 +79,6 @@ export function NewItemDialog({ open, onOpenChange }: { open: boolean; onOpenCha
               </SelectContent>
             </Select>
           </div>
-          {type === "folder" && (
-            <div className="flex flex-col gap-2">
-              <Label>Brainstorm Target</Label>
-              <Select value={brainstormTarget} onValueChange={(v) => setBrainstormTarget(v as "brainstorm" | "brainstorm-sketches")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="brainstorm">Brainstorm</SelectItem>
-                  <SelectItem value="brainstorm-sketches">Brainstorm Sketches</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           {type === "file" && (
             <div className="flex flex-col gap-2">
               <Label>Extension</Label>

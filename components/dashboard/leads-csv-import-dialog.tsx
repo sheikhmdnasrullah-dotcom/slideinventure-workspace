@@ -100,7 +100,11 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
         }
         const h = rows[0]
         setHeaders(h)
-        setPreview(rows.slice(0, 6))
+        // Store all data rows (excluding header) for import, but only preview the first few.
+        const dataRows = rows.slice(1)
+        setAllRows(dataRows)
+        setTotalCount(dataRows.length)
+        setPreview([h, ...dataRows.slice(0, 5)])
 
         const autoMap: Record<string, string> = {}
         h.forEach((col) => {
@@ -125,15 +129,15 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
   
 
   const mappedLeads = useMemo(() => {
-    if (preview.length < 2) return []
+    if (allRows.length === 0) return []
     const result: Record<string, unknown>[] = []
-    for (let i = 1; i < preview.length; i++) {
+    for (let i = 0; i < allRows.length; i++) {
       const row: Record<string, unknown> = {}
       const customFields: Record<string, unknown> = {}
       let hasCustom = false
       headers.forEach((header, index) => {
         const field = mapping[header]
-        const value = (preview[i][index] ?? "").toString().trim()
+        const value = (allRows[i][index] ?? "").toString().trim()
         if (!value) return
         if (field && field !== "ignore" && field !== "custom") {
           if (field === "tags") {
@@ -151,7 +155,7 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
       result.push(row)
     }
     return result
-  }, [preview, mapping, headers])
+  }, [allRows, mapping, headers])
 
   const handleImport = async () => {
     if (!file || mappedLeads.length === 0) {
@@ -172,7 +176,7 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
         throw new Error(err.error || "Import failed")
       }
 
-      toast.success(`Imported ${mappedLeads.length} leads`)
+      toast.success(`Imported ${totalCount} leads`)
       onImported()
       onOpenChange(false)
     } catch (err) {
@@ -193,33 +197,59 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label>CSV File</Label>
-            <Input
-              type="file"
-              accept=".csv,text/csv"
-              onChange={handleFileChange}
-              disabled={!!file}
-            />
-            {file && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FileUp className="size-4" />
-                {file.name}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-6"
-                  onClick={() => {
-                    setFile(null)
-                    setPreview([])
-                    setHeaders([])
-                    setMapping({})
-                  }}
-                >
-                  <X className="size-3" />
-                </Button>
-              </div>
-            )}
+          {/* Modern File Upload Section */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">CSV File</Label>
+            <div className="relative">
+              <Input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleFileChange}
+                disabled={!!file}
+                className="sr-only"
+                id="csv-file-input"
+              />
+              <Label
+                htmlFor="csv-file-input"
+                className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-all cursor-pointer ${
+                  file
+                    ? "border-green-500 bg-green-50"
+                    : "border-muted-foreground/25 hover:border-muted-foreground/40 hover:bg-muted/50"
+                }`}
+              >
+                <div className="text-center space-y-3">
+                  <div className="mx-auto rounded-full bg-muted p-3">
+                    {file ? (
+                      <FileSpreadsheet className="h-6 w-6 text-green-600" />
+                    ) : (
+                      <UploadCloud className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {file ? (
+                        <span className="flex items-center gap-2">
+                          <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                          {file.name}
+                        </span>
+                      ) : (
+                        "Click to upload CSV file"
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {file ? (
+                        <span className="flex items-center gap-1">
+                          <FileUp className="h-3 w-3" />
+                          {(file.size / 1024).toFixed(1)} KB
+                        </span>
+                      ) : (
+                        "Drag and drop or browse to select a CSV file"
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </Label>
+            </div>
           </div>
 
           {headers.length > 0 && (
@@ -260,9 +290,14 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
 
               {preview.length > 1 && (
                 <div className="flex flex-col gap-2">
-                  <Label className="text-xs text-muted-foreground">
-                    Preview ({preview.length - 1} rows)
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      Preview
+                    </Label>
+                    <Badge variant="secondary" className="text-xs">
+                      {totalCount} {totalCount === 1 ? "lead" : "leads"} to import
+                    </Badge>
+                  </div>
                   <div className="overflow-hidden rounded-md border">
                     <Table>
                       <TableHeader>

@@ -34,6 +34,8 @@ function serialize(doc: Record<string, any>) {
     status: doc.status,
     author: doc.author,
     source: doc.source,
+    workspace: doc.workspace ?? "documents",
+    knowledge_item_id: doc.knowledge_item_id ?? null,
     created_at: doc.created_at,
     updated_at: doc.updated_at,
   };
@@ -51,6 +53,9 @@ export async function GET(request: NextRequest) {
   const queries = [Query.limit(query.data.pageSize), Query.offset((query.data.page - 1) * query.data.pageSize)];
   if (query.data.status) queries.push(Query.equal("status", query.data.status));
   if (query.data.tag) queries.push(Query.contains("tags", query.data.tag));
+  // AI Venture's virtual folders live in this same table (workspace="ai-venture",
+  // node_type="folder") — they're not real uploaded documents, so exclude them here.
+  queries.push(Query.notEqual("node_type", "folder"));
   queries.push(Query.orderDesc("created_at"));
 
   try {

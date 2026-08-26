@@ -4,6 +4,7 @@ import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { NextRequest } from "next/server";
+import { unlinkDocumentFromKnowledge } from "@/lib/knowledge/link-document";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.documents;
@@ -25,6 +26,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
         // best-effort cleanup
       }
     }
+
+    // This is a permanent delete of the canonical file, so its Knowledge
+    // mirror (an index entry, not an independent copy) goes with it.
+    await unlinkDocumentFromKnowledge(doc?.knowledge_item_id);
 
     try {
       await databases.deleteDocument(DB, COL, id);

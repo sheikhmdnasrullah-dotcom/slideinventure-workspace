@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   if (!filePath) return ApiError.badRequest("BAD_REQUEST", "path query param is required").toResponse();
 
   try {
-    const file = readFileContent(filePath);
+    const file = await readFileContent(filePath);
     return Response.json({ path: filePath, ...file });
   } catch (error) {
     return fsErrorToResponse(error);
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest) {
     if (!path || typeof content !== "string") {
       return ApiError.badRequest("BAD_REQUEST", "path and content are required").toResponse();
     }
-    writeFileContent(path, content, encoding === "base64" ? "base64" : "utf-8");
+    await writeFileContent(path, content, encoding === "base64" ? "base64" : "utf-8");
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);
@@ -64,7 +64,7 @@ export async function PATCH(request: NextRequest) {
     if (!path || !newPath) {
       return ApiError.badRequest("BAD_REQUEST", "path and newPath are required").toResponse();
     }
-    moveEntry(path, newPath);
+    await moveEntry(path, newPath);
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);
@@ -82,7 +82,7 @@ export async function DELETE(request: NextRequest) {
   if (!filePath) return ApiError.badRequest("BAD_REQUEST", "path query param is required").toResponse();
 
   try {
-    deleteEntry(filePath);
+    await deleteEntry(filePath);
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);

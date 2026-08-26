@@ -110,7 +110,13 @@ async function loadSessions(
     const res = await fetch("/api/chat/sessions");
     if (res.ok) {
       const data = await res.json();
-      setSessions(data);
+      setSessions(
+        (data ?? []).map((s: { id: string; title: string; updated_at: string }) => ({
+          id: s.id,
+          title: s.title,
+          updatedAt: s.updated_at,
+        }))
+      );
       if (data.length > 0 && !activeSessionId) {
         setActiveSessionId(data[0].id);
       }

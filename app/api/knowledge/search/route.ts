@@ -39,6 +39,7 @@ type ItemHit = {
   source: string | null;
   updated_at: string;
   body: string | null;
+  document_id: string | null;
 };
 
 type Filters = {
@@ -136,6 +137,7 @@ async function attachItems(rows: ChunkHit[]): Promise<ChunkHit[]> {
         source: item.source ?? null,
         status: item.status,
         updated_at: item.updated_at,
+        document_id: item.document_id ?? null,
       },
     ])
   );
@@ -249,6 +251,7 @@ function serializeItem(doc: Record<string, any>): ItemHit {
     source: doc.source ?? null,
     updated_at: doc.updated_at,
     body: doc.body ?? null,
+    document_id: doc.document_id ?? null,
   };
 }
 

@@ -5,6 +5,8 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
+import { extractFileText } from "@/lib/knowledge/file-extract";
+import { linkDocumentToKnowledge } from "@/lib/knowledge/link-document";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.documents;
@@ -62,6 +64,8 @@ export async function POST(request: NextRequest) {
         status: "active",
         author,
         source: "dashboard",
+        workspace: "documents",
+        node_type: "file",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -72,6 +76,23 @@ export async function POST(request: NextRequest) {
         // best-effort cleanup
       }
       throw dbError;
+    }
+
+    // Best-effort: mirror this document into Knowledge so it's searchable
+    // and cross-referenced. Never blocks or fails the upload itself.
+    try {
+      const extracted = await extractFileText(file);
+      if (extracted.text) {
+        await linkDocumentToKnowledge({
+          documentId: id,
+          title,
+          text: extracted.text,
+          source: "documents",
+          author,
+        });
+      }
+    } catch (err) {
+      console.warn("Knowledge indexing skipped for document", id, err);
     }
 
     return Response.json({ id, url, title, filename: file.name }, { status: 201 });

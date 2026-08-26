@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
-import { Readable } from "stream";
 import { readFileStream, VentureFsError } from "@/lib/ai-venture/fs";
 
 export async function GET(request: NextRequest) {
@@ -16,8 +15,8 @@ export async function GET(request: NextRequest) {
   if (!filePath) return ApiError.badRequest("BAD_REQUEST", "path query param is required").toResponse();
 
   try {
-    const { stream, size, contentType, filename } = readFileStream(filePath);
-    return new Response(Readable.toWeb(stream as Readable) as unknown as BodyInit, {
+    const { stream, size, contentType, filename } = await readFileStream(filePath);
+    return new Response(stream, {
       headers: {
         "Content-Type": contentType,
         "Content-Length": String(size),

@@ -1,5 +1,9 @@
 "use client"
 
+/* eslint-disable react-hooks/set-state-in-effect */
+// loadNotes() fetches from the API and updates state after async I/O; there is
+// no synchronous cascading render because all state updates happen after await.
+
 import * as React from "react"
 import dynamic from "next/dynamic"
 import { Plus, Trash2, FileText, Loader2 } from "lucide-react"
@@ -23,7 +27,6 @@ export default function NotepadPage() {
   const [content, setContent] = React.useState<string>("[]")
   const [title, setTitle] = React.useState<string>("")
   const [loading, setLoading] = React.useState(true)
-  const [saving, setSaving] = React.useState(false)
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -60,7 +63,6 @@ export default function NotepadPage() {
   }
 
   const selectNote = async (note: Note) => {
-    setSelectedId(note.id)
     setTitle(note.title ?? "")
     try {
       const res = await fetch(`/api/notes/${note.id}`)
@@ -68,8 +70,12 @@ export default function NotepadPage() {
       setContent(data.note?.content ?? "[]")
     } catch {
       setContent("[]")
+    } finally {
+      // Set the selected id only after content is resolved so the editor
+      // mounts with the correct document.
+      setSelectedId(note.id)
+      setStatus("idle")
     }
-    setStatus("idle")
   }
 
   const persist = React.useCallback(
@@ -144,7 +150,7 @@ export default function NotepadPage() {
                     )}
                   >
                     <FileText className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate font-medium">{n.title || "Untitled note"}</span>
+                    <span className="flex-1 truncate font-medium">{n.title || "Untitled"}</span>
                     <Trash2
                       className="size-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100"
                       onClick={(e) => {
@@ -159,29 +165,29 @@ export default function NotepadPage() {
           </ScrollArea>
         </aside>
 
-        <section className="flex flex-1 flex-col">
-          {selectedId ? (
-            <>
-              <div className="flex items-center gap-2 border-b px-4 py-2">
-                <input
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value)
-                    persist(selectedId, content, e.target.value)
-                  }}
-                  placeholder="Note title"
-                  className="flex-1 bg-transparent text-sm font-medium outline-none"
-                />
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  {status === "saving" && <Loader2 className="size-3 animate-spin" />}
-                  {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
-                </span>
+          <section className="flex flex-1 flex-col">
+            {selectedId ? (
+              <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-auto">
+                <div className="flex items-center gap-2 px-6 pt-8 pb-2">
+                  <input
+                    value={title}
+                    onChange={(e) => {
+                      setTitle(e.target.value)
+                      persist(selectedId, content, e.target.value)
+                    }}
+                    placeholder="Untitled"
+                    className="flex-1 bg-transparent text-3xl font-bold outline-none placeholder:text-muted-foreground/40"
+                  />
+                  <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                    {status === "saving" && <Loader2 className="size-3 animate-spin" />}
+                    {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
+                  </span>
+                </div>
+                <div className="px-6 pb-10">
+                  <Notepad key={selectedId} initialContent={content} onChange={handleChange} />
+                </div>
               </div>
-              <div className="flex-1 overflow-auto">
-                <Notepad initialContent={content} onChange={handleChange} />
-              </div>
-            </>
-          ) : (
+            ) : (
             <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
               Select a note or click “Write Note” to start.
             </div>

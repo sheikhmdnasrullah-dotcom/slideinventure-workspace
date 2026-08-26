@@ -42,9 +42,11 @@ export async function createEmailPasswordSession(email: string, password: string
     throw new Error("Invalid email or password")
   }
 
-  const setCookie =
-    res.headers.get("set-cookie") ?? ""
-  for (const c of setCookie.split(/,(?=[^ ])/)) {
+  const setCookies =
+    typeof (res.headers as { getSetCookie?: () => string[] }).getSetCookie === "function"
+      ? (res.headers as { getSetCookie: () => string[] }).getSetCookie()
+      : [res.headers.get("set-cookie") ?? ""]
+  for (const c of setCookies) {
     if (c.trim().startsWith(`a_session_${PROJECT}=`)) {
       return c.trim().slice(`a_session_${PROJECT}=`.length).split(";")[0]
     }
