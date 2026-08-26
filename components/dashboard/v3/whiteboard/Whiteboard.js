@@ -4,23 +4,28 @@ import { Tldraw, getSnapshot, loadSnapshot } from "tldraw"
 import "tldraw/tldraw.css"
 import { useEffect, useRef } from "react"
 
-export default function Whiteboard({ initialData, onChange }) {
+// A single, stable tldraw editor per mounted instance. The parent is expected
+// to give this component a `key` that is the board id, so switching boards
+// remounts the editor with the correct snapshot instead of reusing another
+// board's store (which would leak data across boards).
+export default function Whiteboard({ boardId, initialData, onChange, onMount }) {
   const editorRef = useRef(null)
-  const mountedRef = useRef(false)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  const onMountRef = useRef(onMount)
+  onMountRef.current = onMount
 
   const handleMount = (editor) => {
     editorRef.current = editor
-    if (initialData) {
-      try {
-        const snapshot = typeof initialData === "string" ? JSON.parse(initialData) : initialData
-        if (snapshot && typeof snapshot === "object" && Object.keys(snapshot).length > 0) {
-          loadSnapshot(editor.store, snapshot)
-        }
-      } catch {
-        // ignore malformed snapshot; start blank
+    try {
+      const snapshot = typeof initialData === "string" ? JSON.parse(initialData) : initialData
+      if (snapshot && typeof snapshot === "object" && Object.keys(snapshot).length > 0) {
+        loadSnapshot(editor.store, snapshot)
       }
+    } catch {
+      // ignore malformed snapshot; start blank
     }
-    mountedRef.current = true
+    onMountRef.current?.(editor)
   }
 
   useEffect(() => {
@@ -31,9 +36,13 @@ export default function Whiteboard({ initialData, onChange }) {
       () => {
         clearTimeout(timer)
         timer = setTimeout(() => {
-          const snapshot = getSnapshot(editor.store)
-          onChange?.(JSON.stringify(snapshot))
-        }, 800)
+          try {
+            const snapshot = getSnapshot(editor.store)
+            onChangeRef.current?.(JSON.stringify(snapshot))
+          } catch {
+            // ignore transient serialization errors
+          }
+        }, 700)
       },
       { source: "user", scope: "document" }
     )
@@ -41,10 +50,13 @@ export default function Whiteboard({ initialData, onChange }) {
       clearTimeout(timer)
       unlisten()
     }
-  }, [onChange])
+    // Subscribe once on mount; onChange is read through a ref so the listener
+    // never needs to be torn down and re-created on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
-    <div style={{ height: "100%", width: "100%" }}>
+    <div style={{ height: "100%", width: "100%" }} className="tldraw-host">
       <Tldraw onMount={handleMount} />
     </div>
   )

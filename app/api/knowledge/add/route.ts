@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { addKnowledgeItem } from '@/lib/knowledge/sync'
 import { getSessionUser } from '@/lib/appwrite/auth'
 import { extractFileText } from '@/lib/knowledge/file-extract'
+import { classifyKnowledgeInput } from '@/lib/knowledge/classify'
 
 function deriveTitleFromText(text?: string): string {
   if (!text) return ''
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       const form = await req.formData()
       const file = form.get('file')
       const title = (form.get('title') as string) || ''
-      const category = (form.get('category') as string) || 'note'
+      const categoryRaw = (form.get('category') as string) || ''
       const source = (form.get('source') as string) || 'upload'
       const tagsRaw = (form.get('tags') as string) || ''
       const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
@@ -32,6 +33,12 @@ export async function POST(req: NextRequest) {
 
       const extracted = await extractFileText(file)
       const finalTitle = title.trim() || extracted.title || file.name
+      // "auto"/blank means the user didn't pick a category — classify it
+      // ourselves rather than blocking on a forced choice. A category the
+      // user did pick is always respected as-is.
+      const category = categoryRaw && categoryRaw !== 'auto'
+        ? categoryRaw
+        : await classifyKnowledgeInput(finalTitle, extracted.text)
 
       const item = await addKnowledgeItem({
         title: finalTitle,
@@ -47,13 +54,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { title, content, category, tags, source } = body
+    const { title, content, category: categoryRaw, tags, source } = body
 
     if (!title?.trim() && !content?.trim()) {
       return NextResponse.json({ error: 'Nothing to save — provide some text or a file' }, { status: 400 })
     }
 
     const finalTitle = title?.trim() || deriveTitleFromText(content) || `Note — ${new Date().toLocaleDateString()}`
+    const category = categoryRaw && categoryRaw !== 'auto'
+      ? categoryRaw
+      : await classifyKnowledgeInput(finalTitle, content || '')
 
     const item = await addKnowledgeItem({
       title: finalTitle,

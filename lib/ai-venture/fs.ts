@@ -27,7 +27,25 @@ export const VENTURE_ROOT_FOLDERS = ["PDF", "Brainstormed Ideas", "Brainstorm Sk
 const TEXT_EXTENSIONS = new Set([".md", ".txt", ".tldr", ".json"]);
 const PDF_EXTENSIONS = new Set([".pdf"]);
 
-type DocumentRow = Record<string, unknown> & { $id: string };
+type DocumentRow = {
+  $id: string;
+  title?: string;
+  filename?: string;
+  mime_type?: string;
+  size_bytes?: number;
+  storage_path?: string;
+  url?: string | null;
+  tags?: string[];
+  status?: string;
+  author?: string | null;
+  source?: string | null;
+  workspace?: string;
+  folder_path?: string;
+  node_type?: string;
+  knowledge_item_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
 
 export type VentureNode = {
   id: string; // documents row $id ("" for a synthetic/implicit folder with no row yet)
@@ -93,7 +111,7 @@ async function fetchAllNodes(): Promise<DocumentRow[]> {
     const queries = [Query.equal("workspace", WORKSPACE), Query.limit(200)];
     if (cursor) queries.push(Query.cursorAfter(cursor));
     const res = await databases.listDocuments(DB, COL, queries);
-    out.push(...res.documents);
+    out.push(...(res.documents as unknown as DocumentRow[]));
     if (res.documents.length < 200) break;
     cursor = res.documents[res.documents.length - 1].$id;
   }
@@ -106,7 +124,7 @@ async function findRowByPath(path: string): Promise<DocumentRow | null> {
     Query.equal("folder_path", path),
     Query.limit(1),
   ]);
-  return res.documents[0] ?? null;
+  return (res.documents[0] as unknown as DocumentRow | undefined) ?? null;
 }
 
 async function ensureRootFolders(): Promise<void> {
@@ -203,7 +221,7 @@ function buildTree(rows: DocumentRow[]): VentureNode {
       type: isFolder ? "folder" : "file",
       ext: isFolder ? null : extOf(name),
       size: row.size_bytes || 0,
-      modifiedAt: row.updated_at || row.created_at,
+      modifiedAt: row.updated_at || row.created_at || new Date().toISOString(),
       children: isFolder ? [] : undefined,
     };
     nodeMap.set(p, node);
@@ -235,7 +253,7 @@ export async function readFileContent(
 
   if (isPdfFile(name)) {
     // PDFs stream their raw bytes via /api/ai-venture/file/raw instead.
-    return { content: "", name, size: row.size_bytes || 0, modifiedAt: row.updated_at };
+    return { content: "", name, size: row.size_bytes || 0, modifiedAt: row.updated_at || new Date().toISOString() };
   }
 
   let content = "";
@@ -247,7 +265,7 @@ export async function readFileContent(
       content = "";
     }
   }
-  return { content, name, size: row.size_bytes || 0, modifiedAt: row.updated_at };
+  return { content, name, size: row.size_bytes || 0, modifiedAt: row.updated_at || new Date().toISOString() };
 }
 
 async function replaceStorageContent(

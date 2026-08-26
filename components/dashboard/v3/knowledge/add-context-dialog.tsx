@@ -19,7 +19,7 @@ export function AddContextDialog() {
   const { addOpen, setAddOpen, refresh } = useKnowledge()
   const [title, setTitle] = React.useState("")
   const [content, setContent] = React.useState("")
-  const [category, setCategory] = React.useState("note")
+  const [category, setCategory] = React.useState("auto")
   const [tags, setTags] = React.useState("")
   const [source, setSource] = React.useState("dashboard")
   const [file, setFile] = React.useState<File | null>(null)
@@ -88,11 +88,12 @@ export function AddContextDialog() {
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="category">Category</Label>
-              <Select value={category} onValueChange={(val) => setCategory(val || "")}>
+              <Select value={category} onValueChange={(val) => setCategory(val || "auto")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="auto">Auto-detect</SelectItem>
                   <SelectItem value="note">Note</SelectItem>
                   <SelectItem value="sop">SOP</SelectItem>
                   <SelectItem value="research">Research</SelectItem>
