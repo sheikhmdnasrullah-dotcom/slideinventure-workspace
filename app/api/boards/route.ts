@@ -9,13 +9,21 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;
 
-function serialize(doc: Record<string, any>) {
+type BoardDoc = {
+  $id: string
+  title?: string | null
+  content?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+function serialize(doc: BoardDoc) {
   return {
     id: doc.$id,
-    title: doc.title,
-    content: doc.content,
-    created_at: doc.created_at,
-    updated_at: doc.updated_at,
+    title: doc.title ?? null,
+    content: doc.content ?? "{}",
+    created_at: doc.created_at ?? "",
+    updated_at: doc.updated_at ?? "",
   };
 }
 
@@ -46,7 +54,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const title = (body.title as string | undefined)?.toString().slice(0, 200) || "Untitled board";
+    const title = (body.title as string | undefined)?.toString().slice(0, 200) || "New Brainstorm";
     const now = new Date().toISOString();
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
       user_email: user.email ?? "",

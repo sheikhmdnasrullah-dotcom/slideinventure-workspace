@@ -14,8 +14,13 @@ const COL = APPWRITE.collections.terminalCommands;
 
 const JSON_KEYS = ["metadata", "variables"];
 
-function serialize(doc: Record<string, any>) {
-  const out: Record<string, any> = { id: doc.$id };
+type TerminalDocument = Record<string, unknown> & {
+  $id: string;
+  created_at?: string;
+};
+
+function serialize(doc: TerminalDocument) {
+  const out: Record<string, unknown> = { id: doc.$id };
   for (const [k, v] of Object.entries(doc)) {
     if (k.startsWith("$")) continue;
     out[k] = JSON_KEYS.includes(k) && typeof v === "string" ? JSON.parse(v) : v;
@@ -41,16 +46,17 @@ export async function GET(request: NextRequest) {
   if (!limit.allowed) return toJson(ApiError.rateLimited());
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
+  const email = user.email ?? "";
   const page = query.data.page;
   const pageSize = query.data.pageSize;
 
   try {
-    let docs: Record<string, any>[] = [];
+    let docs: TerminalDocument[] = [];
     let total = 0;
 
     if (query.data.search) {
       const term = query.data.search;
-      const base: any[] = [];
+      const base = [Query.equal("triggered_by", email)];
       if (query.data.category) base.push(Query.equal("category", query.data.category));
       if (query.data.favorite !== undefined) base.push(Query.equal("favorite", query.data.favorite));
       const searches = await Promise.all([
@@ -58,7 +64,7 @@ export async function GET(request: NextRequest) {
         databases.listDocuments(DB, COL, [...base, Query.search("command", term), Query.limit(1000)]),
         databases.listDocuments(DB, COL, [...base, Query.search("description", term), Query.limit(1000)]),
       ]);
-      const map = new Map<string, Record<string, any>>();
+      const map = new Map<string, TerminalDocument>();
       for (const res of searches) for (const d of res.documents) if (!map.has(d.$id)) map.set(d.$id, d);
       docs = [...map.values()].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -67,7 +73,7 @@ export async function GET(request: NextRequest) {
       const from = (page - 1) * pageSize;
       docs = docs.slice(from, from + pageSize);
     } else {
-      const queries: any[] = [Query.orderDesc("created_at")];
+      const queries = [Query.equal("triggered_by", email), Query.orderDesc("created_at")];
       if (query.data.category) queries.push(Query.equal("category", query.data.category));
       if (query.data.favorite !== undefined) queries.push(Query.equal("favorite", query.data.favorite));
       queries.push(Query.limit(pageSize), Query.offset((page - 1) * pageSize));
@@ -116,8 +122,8 @@ export async function POST(request: NextRequest) {
     });
 
     return Response.json({ id: doc.$id }, { status: 201 });
-  } catch (err: any) {
+  } catch (err) {
     if (err instanceof ApiError) return toJson(err);
-    return toJson(ApiError.internal("UNHANDLED", err.message || "Unknown error"));
+    return toJson(ApiError.internal("UNHANDLED", err instanceof Error ? err.message : "Unknown error"));
   }
 }

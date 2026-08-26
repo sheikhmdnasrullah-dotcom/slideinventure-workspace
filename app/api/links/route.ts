@@ -2,7 +2,7 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases } from "@/lib/appwrite/server";
 import { ID, Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
-import { ApiError, toJson } from "@/lib/api/errors";
+import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
@@ -12,8 +12,13 @@ import { NextRequest } from "next/server";
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.usefulLinks;
 
-function serialize(doc: Record<string, any>) {
-  const out: Record<string, any> = { id: doc.$id };
+type LinkDocument = Record<string, unknown> & {
+  $id: string;
+  created_at?: string;
+};
+
+function serialize(doc: LinkDocument) {
+  const out: Record<string, unknown> = { id: doc.$id };
   for (const [k, v] of Object.entries(doc)) {
     if (k.startsWith("$")) continue;
     out[k] = v;
@@ -38,22 +43,23 @@ export async function GET(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const query = validateQuery(ListSchema, request.nextUrl.searchParams);
+  const email = user.email ?? "";
   const page = query.data.page;
   const pageSize = query.data.pageSize;
 
   try {
-    let docs: Record<string, any>[] = [];
+    let docs: LinkDocument[] = [];
     let total = 0;
 
     if (query.data.search) {
       const term = query.data.search;
-      const base: any[] = [];
+      const base = [Query.equal("created_by", email)];
       if (query.data.tag) base.push(Query.contains("tags", [query.data.tag]));
       const searches = await Promise.all([
         databases.listDocuments(DB, COL, [...base, Query.search("title", term), Query.limit(1000)]),
         databases.listDocuments(DB, COL, [...base, Query.search("url", term), Query.limit(1000)]),
       ]);
-      const map = new Map<string, Record<string, any>>();
+      const map = new Map<string, LinkDocument>();
       for (const res of searches) for (const d of res.documents) if (!map.has(d.$id)) map.set(d.$id, d);
       docs = [...map.values()].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -62,7 +68,7 @@ export async function GET(request: NextRequest) {
       const from = (page - 1) * pageSize;
       docs = docs.slice(from, from + pageSize);
     } else {
-      const queries: any[] = [Query.orderDesc("created_at")];
+      const queries = [Query.equal("created_by", email), Query.orderDesc("created_at")];
       if (query.data.tag) queries.push(Query.contains("tags", [query.data.tag]));
       queries.push(Query.limit(pageSize), Query.offset((page - 1) * pageSize));
       const res = await databases.listDocuments(DB, COL, queries);
@@ -109,8 +115,8 @@ export async function POST(request: NextRequest) {
     });
 
     return Response.json({ id: doc.$id }, { status: 201 });
-  } catch (err: any) {
+  } catch (err) {
     if (err instanceof ApiError) return err.toResponse();
-    return ApiError.internal("UNHANDLED", err.message || "Unknown error").toResponse();
+    return ApiError.internal("UNHANDLED", err instanceof Error ? err.message : "Unknown error").toResponse();
   }
 }

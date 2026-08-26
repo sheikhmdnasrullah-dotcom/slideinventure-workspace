@@ -1,9 +1,9 @@
-// @ts-nocheck
 export const APPWRITE = {
   endpoint: process.env.APPWRITE_ENDPOINT ?? "https://cloud.appwrite.io/v1",
   projectId: process.env.APPWRITE_PROJECT_ID ?? "",
   databaseId: process.env.APPWRITE_DATABASE_ID ?? "workspace",
   collections: {
+    userPreferences: "user_preferences",
     notes: "notes",
     boards: "boards",
     vault: "secret_vault_entries",

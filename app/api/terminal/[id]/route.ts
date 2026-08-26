@@ -5,7 +5,6 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
-import { z } from "zod";
 import { TerminalCommandSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
 
@@ -14,8 +13,12 @@ const COL = APPWRITE.collections.terminalCommands;
 
 const JSON_KEYS = ["metadata", "variables"];
 
-function serialize(doc: Record<string, any>) {
-  const out: Record<string, any> = { id: doc.$id };
+type TerminalDocument = Record<string, unknown> & {
+  $id: string;
+};
+
+function serialize(doc: TerminalDocument) {
+  const out: Record<string, unknown> = { id: doc.$id };
   for (const [k, v] of Object.entries(doc)) {
     if (k.startsWith("$")) continue;
     out[k] = JSON_KEYS.includes(k) && typeof v === "string" ? JSON.parse(v) : v;
@@ -23,9 +26,9 @@ function serialize(doc: Record<string, any>) {
   return out;
 }
 
-async function fetchOwned(id: string) {
-  const res = await databases.listDocuments(DB, COL, [Query.equal("$id", id)]);
-  return res.documents[0] ?? null;
+async function fetchOwned(id: string, email: string) {
+  const res = await databases.listDocuments(DB, COL, [Query.equal("$id", id), Query.equal("triggered_by", email)]);
+  return (res.documents[0] as TerminalDocument | undefined) ?? null;
 }
 
 const UpdateSchema = TerminalCommandSchema.partial().omit({ id: true, createdAt: true, updatedAt: true });
@@ -36,7 +39,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { id } = await params;
   try {
-    const doc = await fetchOwned(id);
+    const doc = await fetchOwned(id, user.email ?? "");
     if (!doc) return ApiError.notFound("COMMAND_NOT_FOUND", "Command not found").toResponse();
     return Response.json(serialize(doc));
   } catch (error) {
@@ -53,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
   try {
-    const doc = await fetchOwned(id);
+    const doc = await fetchOwned(id, user.email ?? "");
     if (!doc) return ApiError.notFound("COMMAND_NOT_FOUND", "Command not found").toResponse();
 
     const body = await request.json().catch(() => ({}));
@@ -73,7 +76,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (d.cwd !== undefined) payload.cwd = d.cwd;
     if (d.stdout !== undefined) payload.stdout = d.stdout;
     if (d.stderr !== undefined) payload.stderr = d.stderr;
-    if (d.triggeredBy !== undefined) payload.triggered_by = d.triggeredBy;
+    payload.triggered_by = user.email ?? doc.triggered_by ?? null;
     if (d.exitCode !== undefined) payload.exit_code = d.exitCode;
     if (d.durationMs !== undefined) payload.duration_ms = d.durationMs;
     if (d.metadata !== undefined) payload.metadata = JSON.stringify(d.metadata);
@@ -94,7 +97,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { id } = await params;
   try {
-    const doc = await fetchOwned(id);
+    const doc = await fetchOwned(id, user.email ?? "");
     if (!doc) return ApiError.notFound("COMMAND_NOT_FOUND", "Command not found").toResponse();
 
     await databases.deleteDocument(DB, COL, id);

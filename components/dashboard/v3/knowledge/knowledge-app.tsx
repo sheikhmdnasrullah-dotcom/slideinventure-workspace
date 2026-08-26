@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BookOpen, FileText, Plus, RefreshCw, FileCode2, LibraryBig, PanelRightClose, PanelRightOpen } from "lucide-react"
+import { BookOpen, FileText, NotebookPen, Plus, RefreshCw, FileCode2, LibraryBig, PanelRightClose, PanelRightOpen } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import { KnowledgeList } from "./knowledge-list"
 import { KnowledgeDisplay } from "./knowledge-display"
 import { AddContextDialog } from "./add-context-dialog"
 import { useKnowledge, KnowledgeProvider } from "./use-knowledge"
+import { SectionErrorBoundary } from "@/components/system/error-boundary"
 
 const CATEGORIES = [
   { title: "All Items", icon: FileText, cat: "All" },
@@ -27,8 +28,18 @@ function KnowledgeAppInner() {
   const [collapsed, setCollapsed] = React.useState(false)
   const {
     loading, searchQuery, setSearchQuery,
-    setCategory, category, setAddOpen, syncFilesystem
+    setCategory, category, setAddOpen, syncFilesystem, createNote
   } = useKnowledge()
+  const [creatingNote, setCreatingNote] = React.useState(false)
+
+  const handleNewNote = async () => {
+    setCreatingNote(true)
+    try {
+      await createNote()
+    } finally {
+      setCreatingNote(false)
+    }
+  }
 
   return (
     <TooltipProvider delay={0}>
@@ -57,8 +68,19 @@ function KnowledgeAppInner() {
             </Button>
           </div>
           <Separator />
-          <div className="p-2">
+          <div className="flex flex-col gap-1.5 p-2">
             <Button
+              className={cn("w-full justify-start gap-2", collapsed && "justify-center px-0")}
+              size="sm"
+              onClick={handleNewNote}
+              disabled={creatingNote}
+              title="New Note"
+            >
+              <NotebookPen className="h-4 w-4" />
+              {!collapsed && <span>{creatingNote ? "Creating..." : "New Note"}</span>}
+            </Button>
+            <Button
+              variant="outline"
               className={cn("w-full justify-start gap-2", collapsed && "justify-center px-0")}
               size="sm"
               onClick={() => setAddOpen(true)}
@@ -140,9 +162,11 @@ function KnowledgeDetailSheet() {
 
 export function KnowledgeApp(_props: KnowledgeAppProps) {
   return (
-    <KnowledgeProvider>
-      <KnowledgeAppInner />
-    </KnowledgeProvider>
+    <SectionErrorBoundary label="Knowledge">
+      <KnowledgeProvider>
+        <KnowledgeAppInner />
+      </KnowledgeProvider>
+    </SectionErrorBoundary>
   )
 }
 

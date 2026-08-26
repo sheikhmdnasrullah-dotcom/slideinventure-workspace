@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases } from "@/lib/appwrite/server";
-import { ID, Query } from "node-appwrite";
+import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
@@ -9,13 +9,21 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;
 
-function serialize(doc: Record<string, any>) {
+type BoardDoc = {
+  $id: string
+  title?: string | null
+  content?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+function serialize(doc: BoardDoc) {
   return {
     id: doc.$id,
-    title: doc.title,
-    content: doc.content,
-    created_at: doc.created_at,
-    updated_at: doc.updated_at,
+    title: doc.title ?? null,
+    content: doc.content ?? "{}",
+    created_at: doc.created_at ?? "",
+    updated_at: doc.updated_at ?? "",
   };
 }
 

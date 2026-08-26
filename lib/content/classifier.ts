@@ -195,10 +195,16 @@ export async function classifyFileArtifact(
  */
 async function classifyPDF(buffer: Buffer, filename: string, metadata?: Record<string, unknown>): Promise<ClassificationResult> {
   try {
-    const pdfParse = (await import("pdf-parse")) as unknown as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
-    const data = await pdfParse(buffer);
+    // pdf-parse 2.x replaced the old callable-function API with a class;
+    // `new PDFParse({ data }).getText()` is the current shape. Requires
+    // pdf-parse/pdfjs-dist to stay in next.config.ts's
+    // serverExternalPackages — bundling them breaks the worker script's
+    // self-relative import at runtime.
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: buffer });
+    const data = await parser.getText();
     const text = data.text || "";
-    const pageCount = data.numpages || 0;
+    const pageCount = data.total || 0;
 
     analyzeTextContent(text, "PDF");
 

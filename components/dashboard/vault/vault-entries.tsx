@@ -1,21 +1,17 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Copy, Eye, EyeOff, Plus, Search, Trash2, X, ExternalLink } from "lucide-react"
+import { Copy, Eye, EyeOff, Plus, Search, Trash2, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { AddVaultDialog, type VaultFormValues } from "./add-vault-dialog"
-import { cn } from "@/lib/utils"
+import { AddVaultDialog } from "./add-vault-dialog"
 
 export type VaultEntry = {
   id: string
@@ -33,19 +29,6 @@ export type VaultEntry = {
   updatedAt?: string
 }
 
-const CATEGORIES = [
-  "cloud",
-  "database",
-  "email",
-  "hosting",
-  "monitoring",
-  "payment",
-  "saas",
-  "security",
-  "social",
-  "other",
-]
-
 const SECRET_TYPES = [
   { value: "password", label: "Password" },
   { value: "api_key", label: "API Key" },
@@ -58,6 +41,7 @@ const SECRET_TYPES = [
 export function VaultEntries() {
   const [entries, setEntries] = useState<VaultEntry[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingEntry, setEditingEntry] = useState<VaultEntry | null>(null)
   const [search, setSearch] = useState("")
@@ -66,25 +50,30 @@ export function VaultEntries() {
 
   const loadEntries = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (search) params.set("search", search)
       if (categoryFilter !== "all") params.set("category", categoryFilter)
 
       const res = await fetch(`/api/vault?${params.toString()}`, { cache: "no-store" })
-      if (res.ok) {
-        const json = await res.json()
-        setEntries(json.data ?? [])
+      if (!res.ok) {
+        const json = await res.json().catch(() => null)
+        throw new Error(json?.error?.message || "Failed to load vault")
       }
-    } catch {
-      // silent
+      const json = await res.json()
+      setEntries(json.data ?? [])
+    } catch (loadError) {
+      setError((loadError as Error).message)
     } finally {
       setLoading(false)
     }
   }, [search, categoryFilter])
 
   useEffect(() => {
-    loadEntries()
+    queueMicrotask(() => {
+      void loadEntries()
+    })
   }, [loadEntries])
 
   const handleDelete = async (id: string) => {
@@ -165,7 +154,7 @@ export function VaultEntries() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2">
           <Label className="text-xs font-medium">Category</Label>
-          <Select value={categoryFilter} onValueChange={(val: any) => setCategoryFilter(val || "all")}>
+          <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value ?? "all")}>
             <SelectTrigger className="h-9">
               <SelectValue placeholder="All categories" />
             </SelectTrigger>
@@ -181,7 +170,7 @@ export function VaultEntries() {
         </div>
         <div className="space-y-2">
           <Label className="text-xs font-medium">Type</Label>
-          <Select value={secretTypeFilter} onValueChange={(val: any) => setSecretTypeFilter(val || "all")}>
+          <Select value={secretTypeFilter} onValueChange={(value) => setSecretTypeFilter(value ?? "all")}>
             <SelectTrigger className="h-9">
               <SelectValue placeholder="All types" />
             </SelectTrigger>
@@ -202,6 +191,13 @@ export function VaultEntries() {
           <CardContent className="flex h-32 items-center justify-center text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             <span className="ml-2 text-sm">Loading vault...</span>
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="flex h-32 items-center justify-center gap-3 text-muted-foreground">
+            <span className="text-sm">{error}</span>
+            <Button size="sm" variant="outline" onClick={() => void loadEntries()}>Retry</Button>
           </CardContent>
         </Card>
       ) : filteredEntries.length === 0 ? (
@@ -228,20 +224,12 @@ export function VaultEntries() {
           ))}
         </div>
       )}
-
-      <Sheet open={showForm} onOpenChange={setShowForm}>
-        <SheetContent className="sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingEntry ? "Edit Secret" : "Add Secret"}</SheetTitle>
-          </SheetHeader>
-          <AddVaultDialog
-            open={showForm}
-            onOpenChange={setShowForm}
-            onSaved={handleSaved}
-            editingEntry={editingEntry as any}
-          />
-        </SheetContent>
-      </Sheet>
+      <AddVaultDialog
+        open={showForm}
+        onOpenChange={setShowForm}
+        onSaved={handleSaved}
+        editingEntry={editingEntry}
+      />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Copy, Edit3, Plus, Search, Star, Trash2, X } from "lucide-react"
+import { Copy, Edit3, Plus, Search, Star } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -9,11 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { AddCommandDialog, type CommandFormValues } from "./add-command-dialog"
+import { AddCommandDialog } from "./add-command-dialog"
 
 export type TerminalCommand = {
   id: string
@@ -36,22 +35,10 @@ export type TerminalCommand = {
   updatedAt?: string
 }
 
-const CATEGORIES = [
-  "network",
-  "docker",
-  "git",
-  "kubernetes",
-  "aws",
-  "database",
-  "system",
-  "dev",
-  "security",
-  "other",
-]
-
 export function TerminalCommands() {
   const [commands, setCommands] = useState<TerminalCommand[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingCommand, setEditingCommand] = useState<TerminalCommand | null>(null)
   const [search, setSearch] = useState("")
@@ -60,6 +47,7 @@ export function TerminalCommands() {
 
   const loadCommands = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (search) params.set("search", search)
@@ -67,19 +55,23 @@ export function TerminalCommands() {
       if (favoriteFilter) params.set("favorite", "true")
 
       const res = await fetch(`/api/terminal?${params.toString()}`, { cache: "no-store" })
-      if (res.ok) {
-        const json = await res.json()
-        setCommands(json.data ?? [])
+      if (!res.ok) {
+        const json = await res.json().catch(() => null)
+        throw new Error(json?.error?.message || "Failed to load commands")
       }
-    } catch {
-      // silent
+      const json = await res.json()
+      setCommands(json.data ?? [])
+    } catch (loadError) {
+      setError((loadError as Error).message)
     } finally {
       setLoading(false)
     }
   }, [search, categoryFilter, favoriteFilter])
 
   useEffect(() => {
-    loadCommands()
+    queueMicrotask(() => {
+      void loadCommands()
+    })
   }, [loadCommands])
 
   const handleCopy = useCallback(async (command: string) => {
@@ -195,7 +187,7 @@ export function TerminalCommands() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-2">
           <Label className="text-xs font-medium">Category</Label>
-          <Select value={categoryFilter} onValueChange={(val: any) => setCategoryFilter(val || "all")}>
+          <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value ?? "all")}>
             <SelectTrigger className="h-9">
               <SelectValue placeholder="All categories" />
             </SelectTrigger>
@@ -224,6 +216,13 @@ export function TerminalCommands() {
           <CardContent className="flex h-32 items-center justify-center text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             <span className="ml-2 text-sm">Loading commands...</span>
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="flex h-32 items-center justify-center gap-3 text-muted-foreground">
+            <span className="text-sm">{error}</span>
+            <Button size="sm" variant="outline" onClick={() => void loadCommands()}>Retry</Button>
           </CardContent>
         </Card>
       ) : filteredCommands.total === 0 ? (
@@ -259,20 +258,12 @@ export function TerminalCommands() {
           ))}
         </div>
       )}
-
-      <Sheet open={showForm} onOpenChange={setShowForm}>
-        <SheetContent className="sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingCommand ? "Edit Command" : "Add Command"}</SheetTitle>
-          </SheetHeader>
-          <AddCommandDialog
-            open={showForm}
-            onOpenChange={setShowForm}
-            onSaved={handleSaved}
-            editingCommand={editingCommand as any}
-          />
-        </SheetContent>
-      </Sheet>
+      <AddCommandDialog
+        open={showForm}
+        onOpenChange={setShowForm}
+        onSaved={handleSaved}
+        editingCommand={editingCommand}
+      />
     </div>
   )
 }
@@ -357,6 +348,12 @@ function CommandCard({
         {command.notes && (
           <p className="text-xs text-muted-foreground line-clamp-2">{command.notes}</p>
         )}
+        {showActions ? (
+          <div className="flex items-center gap-2 border-t pt-3">
+            <Button size="sm" variant="outline" onClick={() => onEdit(command)}>Edit</Button>
+            <Button size="sm" variant="destructive" onClick={() => onDelete(command.id)}>Delete</Button>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )

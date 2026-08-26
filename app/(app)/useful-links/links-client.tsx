@@ -9,37 +9,48 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, MoreVertical, ExternalLink, Link as LinkIcon, Search, Trash, Edit, Star } from "lucide-react";
+import { Plus, MoreVertical, Link as LinkIcon, Search, Trash, Edit } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { Reveal, Stagger, StaggerItem } from "@/components/system/motion";
 
 export function LinksClient() {
   const [links, setLinks] = useState<UsefulLink[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<UsefulLink | null>(null);
   const [formData, setFormData] = useState({ title: "", url: "", description: "", tags: "" });
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchLinks();
-  }, []);
-
-  const fetchLinks = async () => {
+  async function fetchLinks() {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/links?pageSize=100");
-      if (res.ok) {
-        const json = await res.json();
-        setLinks(json.data || []);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error?.message || "Failed to fetch links");
       }
+      const json = await res.json();
+      setLinks(json.data || []);
     } catch (e) {
-      toast.error("Failed to fetch links");
+      const message = e instanceof Error ? e.message : "Failed to fetch links";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void fetchLinks();
+    });
+  }, []);
 
   const filteredLinks = links.filter(link => 
     link.title.toLowerCase().includes(search.toLowerCase()) || 
@@ -60,10 +71,13 @@ export function LinksClient() {
       setEditingLink(null);
       setFormData({ title: "", url: "", description: "", tags: "" });
     }
+    setSaveError(null);
     setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
+    setSaveError(null);
+    setSaving(true);
     try {
       const payload = {
         title: formData.title,
@@ -89,8 +103,12 @@ export function LinksClient() {
       toast.success(editingLink ? "Link updated" : "Link added");
       setIsDialogOpen(false);
       fetchLinks();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to save link");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to save link";
+      setSaveError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -105,27 +123,27 @@ export function LinksClient() {
       }
       toast.success("Link deleted");
       fetchLinks();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to delete link");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete link");
     }
   };
 
   return (
     <div className="flex flex-col h-full space-y-6">
-      <div className="flex items-center justify-between">
+      <Reveal className="flex items-center justify-between">
         <div className="relative max-w-sm w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search links..." 
-            className="pl-9 bg-background" 
+          <Input
+            placeholder="Search links..."
+            className="pl-9 bg-background"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2">
+        <Button onClick={() => handleOpenDialog()} className="gap-2 motion-card">
           <Plus className="h-4 w-4" /> Add Link
         </Button>
-      </div>
+      </Reveal>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -133,16 +151,24 @@ export function LinksClient() {
             <Card key={i} className="animate-pulse bg-muted/20 h-40" />
           ))}
         </div>
+      ) : error ? (
+        <Card>
+          <CardContent className="flex h-32 items-center justify-center gap-3 text-sm text-muted-foreground">
+            <span>{error}</span>
+            <Button size="sm" variant="outline" onClick={() => void fetchLinks()}>Retry</Button>
+          </CardContent>
+        </Card>
       ) : filteredLinks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 py-12 text-center text-muted-foreground">
+        <Reveal className="flex flex-col items-center justify-center flex-1 py-12 text-center text-muted-foreground">
           <LinkIcon className="h-12 w-12 mb-4 text-muted-foreground/30" />
           <p>No links found.</p>
           {search && <p className="text-sm">Try adjusting your search query.</p>}
-        </div>
+        </Reveal>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Stagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLinks.map(link => (
-            <Card key={link.id} className="group relative overflow-hidden transition-all hover:shadow-md border-border/50 bg-background/50 backdrop-blur-sm">
+            <StaggerItem key={link.id}>
+            <Card className="motion-card group relative overflow-hidden border-border/50 bg-background/50 backdrop-blur-sm">
               <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -195,8 +221,9 @@ export function LinksClient() {
                 <span className="sr-only">Visit {link.title}</span>
               </Link>
             </Card>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -247,8 +274,13 @@ export function LinksClient() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!formData.url}>Save</Button>
+            <div className="flex w-full items-center justify-between gap-3">
+              <div className="text-xs text-muted-foreground">{saving ? "Saving…" : saveError ? "Couldn’t save — Retry" : ""}</div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleSave} disabled={!formData.url || saving}>Save</Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

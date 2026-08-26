@@ -24,6 +24,7 @@ import { AIVentureDisplay } from "./ai-venture-display"
 import { AIVentureList } from "./ai-venture-list"
 import { NewItemDialog } from "./new-item-dialog"
 import { useAIVenture, AIVentureProvider } from "./use-ai-venture"
+import { SectionErrorBoundary } from "@/components/system/error-boundary"
 
 interface AIVentureAppProps {
   defaultLayout?: number[]
@@ -165,8 +166,10 @@ function AIVentureAppInner({ }: AIVentureAppProps) {
 
 export function AIVentureApp(props: AIVentureAppProps) {
   return (
-    <AIVentureProvider>
-      <AIVentureAppInner {...props} />
-    </AIVentureProvider>
+    <SectionErrorBoundary label="AI Venture">
+      <AIVentureProvider>
+        <AIVentureAppInner {...props} />
+      </AIVentureProvider>
+    </SectionErrorBoundary>
   )
 }

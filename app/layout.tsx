@@ -42,9 +42,9 @@ export default function RootLayout({
         <DatadogInit />
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          forcedTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
+          storageKey="dashboard-theme"
           disableTransitionOnChange
         >
           {children}

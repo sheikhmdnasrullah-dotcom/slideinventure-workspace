@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 
 export type VaultFormValues = {
   id?: string
@@ -44,39 +43,56 @@ interface AddVaultDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSaved: () => void
-  editingEntry?: VaultFormValues & { id: string } | null
+  editingEntry?: {
+    id: string
+    name: string
+    category?: string | null
+    serviceName?: string | null
+    username?: string | null
+    secretType?: string | null
+    url?: string | null
+    notes?: string | null
+    tags?: string[]
+    expiresAt?: string | null
+    favorite?: boolean
+  } | null
 }
 
 export function AddVaultDialog({ open, onOpenChange, onSaved, editingEntry }: AddVaultDialogProps) {
   const [form, setForm] = useState<VaultFormValues>(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
-      if (editingEntry) {
-        setForm({
-          id: editingEntry.id,
-          name: editingEntry.name,
-          category: editingEntry.category ?? "",
-          serviceName: editingEntry.serviceName ?? "",
-          username: editingEntry.username ?? "",
-          secretType: editingEntry.secretType ?? "password",
-          url: editingEntry.url ?? "",
-          notes: editingEntry.notes ?? "",
-          tags: editingEntry.tags ?? [],
-          encryptedValue: "",
-          expiresAt: editingEntry.expiresAt ?? "",
-          favorite: editingEntry.favorite ?? false,
-        })
-      } else {
-        setForm(emptyForm)
-      }
+      queueMicrotask(() => {
+        setSaveError(null)
+        if (editingEntry) {
+          setForm({
+            id: editingEntry.id,
+            name: editingEntry.name,
+            category: editingEntry.category ?? "",
+            serviceName: editingEntry.serviceName ?? "",
+            username: editingEntry.username ?? "",
+            secretType: editingEntry.secretType ?? "password",
+            url: editingEntry.url ?? "",
+            notes: editingEntry.notes ?? "",
+            tags: editingEntry.tags ?? [],
+            encryptedValue: "",
+            expiresAt: editingEntry.expiresAt ?? "",
+            favorite: editingEntry.favorite ?? false,
+          })
+        } else {
+          setForm(emptyForm)
+        }
+      })
     }
   }, [open, editingEntry])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    setSaveError(null)
     try {
       const payload = {
         ...form,
@@ -93,7 +109,9 @@ export function AddVaultDialog({ open, onOpenChange, onSaved, editingEntry }: Ad
       })
 
       if (!res.ok) {
-        toast.error(editingEntry ? "Failed to update secret" : "Failed to add secret")
+        const message = editingEntry ? "Failed to update secret" : "Failed to add secret"
+        setSaveError(message)
+        toast.error(message)
         return
       }
 
@@ -101,6 +119,7 @@ export function AddVaultDialog({ open, onOpenChange, onSaved, editingEntry }: Ad
       onSaved()
       onOpenChange(false)
     } catch {
+      setSaveError("Something went wrong")
       toast.error("Something went wrong")
     } finally {
       setSaving(false)
@@ -241,14 +260,19 @@ export function AddVaultDialog({ open, onOpenChange, onSaved, editingEntry }: Ad
             />
           </div>
           <SheetFooter className="px-0">
-            <Button type="submit" disabled={saving}>
-              {saving ? (
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <EditIcon />
-              )}
-              {editingEntry ? "Update Secret" : "Save Secret"}
-            </Button>
+            <div className="flex w-full items-center justify-between gap-3">
+              <div className="text-xs text-muted-foreground">
+                {saving ? "Saving…" : saveError ? "Couldn’t save — Retry" : ""}
+              </div>
+              <Button type="submit" disabled={saving}>
+                {saving ? (
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <EditIcon />
+                )}
+                {editingEntry ? "Update Secret" : "Save Secret"}
+              </Button>
+            </div>
           </SheetFooter>
         </form>
       </SheetContent>

@@ -14,9 +14,14 @@ export async function extractFileText(file: File): Promise<ExtractedFile> {
 
   if (ext === "pdf") {
     try {
-      const mod: any = await import("pdf-parse")
-      const pdfParse = mod.default ?? mod
-      const parsed = await pdfParse(buffer)
+      // pdf-parse 2.x replaced the old callable-function API with a class;
+      // `new PDFParse({ data }).getText()` is the current shape. Requires
+      // pdf-parse/pdfjs-dist to stay in next.config.ts's
+      // serverExternalPackages — bundling them breaks the worker script's
+      // self-relative import at runtime.
+      const { PDFParse } = await import("pdf-parse")
+      const parser = new PDFParse({ data: buffer })
+      const parsed = await parser.getText()
       return {
         text: parsed.text || "",
         title: name.replace(/\.pdf$/i, ""),

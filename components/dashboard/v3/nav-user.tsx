@@ -91,7 +91,7 @@ export function NavUser({
                 <CreditCard />
                 Leads
              </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/automations" />}>
+              <DropdownMenuItem render={<Link href="/integrations" />}>
                 <Share2 />
                 Integrations
              </DropdownMenuItem>

@@ -1,7 +1,7 @@
 import "server-only";
 import { ID, Query } from "node-appwrite";
 import { InputFile } from "node-appwrite/file";
-import { databases, storage } from "@/lib/appwrite/server";
+import { databases, storage, Permission, Role } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { extractFileText } from "@/lib/knowledge/file-extract";
 import { linkDocumentToKnowledge, unlinkDocumentFromKnowledge } from "@/lib/knowledge/link-document";
@@ -268,11 +268,15 @@ export async function readFileContent(
   return { content, name, size: row.size_bytes || 0, modifiedAt: row.updated_at || new Date().toISOString() };
 }
 
+function publicFileUrl(fileId: string): string {
+  return `${APPWRITE.endpoint}/storage/buckets/${BUCKET}/files/${fileId}/view?project=${APPWRITE.projectId}`;
+}
+
 async function replaceStorageContent(
   existingStoragePath: string | null | undefined,
   buffer: Buffer,
   filename: string
-): Promise<string> {
+): Promise<{ fileId: string; url: string }> {
   if (existingStoragePath) {
     try {
       await storage.deleteFile(BUCKET, existingStoragePath);
@@ -281,8 +285,8 @@ async function replaceStorageContent(
     }
   }
   const fileId = ID.unique();
-  await storage.createFile(BUCKET, fileId, InputFile.fromBuffer(buffer, filename));
-  return fileId;
+  await storage.createFile(BUCKET, fileId, InputFile.fromBuffer(buffer, filename), [Permission.read(Role.any())]);
+  return { fileId, url: publicFileUrl(fileId) };
 }
 
 // Best-effort: keep this file's Knowledge mirror in sync after a save.
@@ -328,7 +332,7 @@ export async function writeFileContent(
   const now = new Date().toISOString();
   const existing = await findRowByPath(p);
 
-  const fileId = await replaceStorageContent(existing?.storage_path, buffer, name);
+  const { fileId, url } = await replaceStorageContent(existing?.storage_path, buffer, name);
 
   let row: DocumentRow;
   if (existing) {
@@ -336,6 +340,7 @@ export async function writeFileContent(
       storage_path: fileId,
       size_bytes: buffer.byteLength,
       mime_type: mimeMap[extOf(name) || ""] || "application/octet-stream",
+      url,
       updated_at: now,
     });
     row = { ...existing, storage_path: fileId, size_bytes: buffer.byteLength };
@@ -348,7 +353,7 @@ export async function writeFileContent(
       mime_type: mimeMap[extOf(name) || ""] || "application/octet-stream",
       size_bytes: buffer.byteLength,
       storage_path: fileId,
-      url: null,
+      url,
       tags: [],
       status: "active",
       author: null,

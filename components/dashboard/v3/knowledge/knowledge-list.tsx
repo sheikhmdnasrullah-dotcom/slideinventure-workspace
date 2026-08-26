@@ -6,6 +6,7 @@ import { FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Stagger, StaggerItem } from "@/components/system/motion"
 import { useKnowledge } from "./use-knowledge"
 
 export function KnowledgeList() {
@@ -13,12 +14,12 @@ export function KnowledgeList() {
 
   return (
     <ScrollArea className="h-screen">
-      <div className="flex flex-col gap-2 p-4 pt-0">
+      <Stagger className="flex flex-col gap-2 p-4 pt-0">
         {items.map((item) => (
+          <StaggerItem key={item.id}>
           <button
-            key={item.id}
             className={cn(
-              "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent/20",
+              "motion-card flex w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm hover:bg-accent/20",
               selected === item.id && "bg-muted"
             )}
             onClick={() => setSelected(item.id)}
@@ -56,13 +57,14 @@ export function KnowledgeList() {
               </div>
             )}
           </button>
+          </StaggerItem>
         ))}
         {items.length === 0 && (
           <div className="p-8 text-center text-sm text-muted-foreground">
             No knowledge items found
           </div>
         )}
-      </div>
+      </Stagger>
     </ScrollArea>
   )
 }

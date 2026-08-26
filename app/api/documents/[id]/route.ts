@@ -9,6 +9,27 @@ import { unlinkDocumentFromKnowledge } from "@/lib/knowledge/link-document";
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.documents;
 
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getSessionUser();
+  if (!user) return ApiError.unauthorized().toResponse();
+
+  const { id } = await params;
+  try {
+    const doc = await databases.getDocument(DB, COL, id);
+    return Response.json({
+      id: doc.$id,
+      title: doc.title,
+      filename: doc.filename,
+      mime_type: doc.mime_type,
+      url: doc.url,
+      workspace: doc.workspace ?? "documents",
+      folder_path: doc.folder_path ?? null,
+    });
+  } catch {
+    return ApiError.notFound("DOCUMENT_NOT_FOUND", "Document not found").toResponse();
+  }
+}
+
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();

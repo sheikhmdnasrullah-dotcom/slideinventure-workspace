@@ -41,7 +41,7 @@ type CmdEntry = {
 };
 
 const NAV_ENTRIES: Omit<CmdEntry, "run">[] = [
-  { id: "nav-home", label: "Command Center", group: "Navigate", icon: LayoutDashboard, hint: "/" },
+  { id: "nav-home", label: "Command Center", group: "Navigate", icon: LayoutDashboard, hint: "/dashboard" },
   { id: "nav-activity", label: "Activity", group: "Navigate", icon: Activity, hint: "/activity" },
   { id: "nav-knowledge", label: "Knowledge", group: "Navigate", icon: BookOpen, hint: "/knowledge" },
   { id: "nav-outreach", label: "Outreach", group: "Navigate", icon: Send, hint: "/cold-outreach" },
@@ -49,7 +49,7 @@ const NAV_ENTRIES: Omit<CmdEntry, "run">[] = [
   { id: "nav-research", label: "Research", group: "Navigate", icon: BookOpen, hint: "/research" },
   { id: "nav-insights", label: "Insights", group: "Navigate", icon: Lightbulb, hint: "/insights" },
   { id: "nav-agents", label: "Agents", group: "Navigate", icon: Terminal, hint: "/agents" },
-  { id: "nav-integrations", label: "Integrations", group: "Navigate", icon: Cable, hint: "/automations" },
+  { id: "nav-integrations", label: "Integrations", group: "Navigate", icon: Cable, hint: "/integrations" },
 ];
 
 export function CommandMenu() {

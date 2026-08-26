@@ -22,6 +22,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { DocumentDisplay } from "./document-display"
 import { DocumentList } from "./document-list"
 import { useDocuments, DocumentsProvider } from "./use-documents"
+import { SectionErrorBoundary } from "@/components/system/error-boundary"
 
 const FOLDERS = [
   { title: "All Documents", folder: "All" },
@@ -223,9 +224,11 @@ function DocumentPreviewSheet() {
 
 export function DocumentsApp(_props: DocumentsAppProps) {
   return (
-    <DocumentsProvider>
-      <DocumentsAppInner />
-    </DocumentsProvider>
+    <SectionErrorBoundary label="Documents">
+      <DocumentsProvider>
+        <DocumentsAppInner />
+      </DocumentsProvider>
+    </SectionErrorBoundary>
   )
 }
 

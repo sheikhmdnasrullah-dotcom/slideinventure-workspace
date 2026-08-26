@@ -8,12 +8,15 @@ import { useEffect, useRef } from "react"
 // to give this component a `key` that is the board id, so switching boards
 // remounts the editor with the correct snapshot instead of reusing another
 // board's store (which would leak data across boards).
-export default function Whiteboard({ boardId, initialData, onChange, onMount }) {
+export default function Whiteboard({ initialData, onChange, onMount }) {
   const editorRef = useRef(null)
   const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
   const onMountRef = useRef(onMount)
-  onMountRef.current = onMount
+
+  useEffect(() => {
+    onChangeRef.current = onChange
+    onMountRef.current = onMount
+  }, [onChange, onMount])
 
   const handleMount = (editor) => {
     editorRef.current = editor
@@ -50,9 +53,6 @@ export default function Whiteboard({ boardId, initialData, onChange, onMount }) 
       clearTimeout(timer)
       unlisten()
     }
-    // Subscribe once on mount; onChange is read through a ref so the listener
-    // never needs to be torn down and re-created on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

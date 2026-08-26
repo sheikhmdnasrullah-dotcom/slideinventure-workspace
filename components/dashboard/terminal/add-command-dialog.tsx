@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Copy, Save, Star } from "lucide-react"
+import { Save } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
 
 export type CommandFormValues = {
   id?: string
@@ -20,7 +19,7 @@ export type CommandFormValues = {
   category: string
   tags: string[]
   notes: string
-  variables: Record<string, string>
+  variables: Record<string, unknown>
   favorite: boolean
 }
 
@@ -39,42 +38,57 @@ interface AddCommandDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSaved: () => void
-  editingCommand?: CommandFormValues & { id: string } | null
+  editingCommand?: {
+    id: string
+    title: string
+    command: string
+    description?: string | null
+    category?: string | null
+    tags?: string[]
+    notes?: string | null
+    variables?: Record<string, unknown>
+    favorite?: boolean
+  } | null
 }
 
 export function AddCommandDialog({ open, onOpenChange, onSaved, editingCommand }: AddCommandDialogProps) {
   const [form, setForm] = useState<CommandFormValues>(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
-      if (editingCommand) {
-        setForm({
-          id: editingCommand.id,
-          title: editingCommand.title,
-          command: editingCommand.command,
-          description: editingCommand.description ?? "",
-          category: editingCommand.category ?? "",
-          tags: editingCommand.tags ?? [],
-          notes: editingCommand.notes ?? "",
-          variables: editingCommand.variables ?? {},
-          favorite: editingCommand.favorite ?? false,
-        })
-      } else {
-        setForm(emptyForm)
-      }
+      queueMicrotask(() => {
+        setSaveError(null)
+        if (editingCommand) {
+          setForm({
+            id: editingCommand.id,
+            title: editingCommand.title,
+            command: editingCommand.command,
+            description: editingCommand.description ?? "",
+            category: editingCommand.category ?? "",
+            tags: editingCommand.tags ?? [],
+            notes: editingCommand.notes ?? "",
+            variables: editingCommand.variables ?? {},
+            favorite: editingCommand.favorite ?? false,
+          })
+        } else {
+          setForm(emptyForm)
+        }
+      })
     }
   }, [open, editingCommand])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    setSaveError(null)
     try {
       const payload = {
         ...form,
         tags: (form.tags ?? []).filter(Boolean),
         variables: Object.fromEntries(
-          Object.entries(form.variables ?? {}).filter(([, v]) => v.trim() !== "")
+          Object.entries(form.variables ?? {}).filter(([, value]) => String(value ?? "").trim() !== "")
         ),
       }
 
@@ -89,15 +103,19 @@ export function AddCommandDialog({ open, onOpenChange, onSaved, editingCommand }
 
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        toast.error(data?.error?.message || (editingCommand ? "Failed to update command" : "Failed to add command"))
+        const message = data?.error?.message || (editingCommand ? "Failed to update command" : "Failed to add command")
+        setSaveError(message)
+        toast.error(message)
         return
       }
 
       toast.success(editingCommand ? "Command updated" : "Command added")
       onSaved()
       onOpenChange(false)
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong"
+      setSaveError(message)
+      toast.error(message)
     } finally {
       setSaving(false)
     }
@@ -209,14 +227,19 @@ export function AddCommandDialog({ open, onOpenChange, onSaved, editingCommand }
             />
           </div>
           <SheetFooter className="px-0">
-            <Button type="submit" disabled={saving}>
-              {saving ? (
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Save className="mr-2 size-4" />
-              )}
-              {editingCommand ? "Update Command" : "Save Command"}
-            </Button>
+            <div className="flex w-full items-center justify-between gap-3">
+              <div className="text-xs text-muted-foreground">
+                {saving ? "Saving…" : saveError ? "Couldn’t save — Retry" : ""}
+              </div>
+              <Button type="submit" disabled={saving}>
+                {saving ? (
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Save className="mr-2 size-4" />
+                )}
+                {editingCommand ? "Update Command" : "Save Command"}
+              </Button>
+            </div>
           </SheetFooter>
         </form>
       </SheetContent>
