@@ -8,6 +8,7 @@ import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
 import { TerminalCommandSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
+import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.terminalCommands;
@@ -120,6 +121,16 @@ export async function POST(request: NextRequest) {
       created_at: now,
       updated_at: now,
     });
+
+    logActivity({
+      category: "terminal",
+      action: "created",
+      title: d.title || d.command,
+      description: d.description ?? d.command,
+      entityId: doc.$id,
+      entityType: "terminal_command",
+      metadata: { command: d.command, category: d.category ?? null, exit_code: d.exitCode ?? null },
+    }).catch(() => {});
 
     return Response.json({ id: doc.$id }, { status: 201 });
   } catch (err) {

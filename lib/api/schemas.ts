@@ -154,7 +154,10 @@ export type KnowledgeItem = z.infer<typeof KnowledgeItemSchema>;
 export const UsefulLinkSchema = z.object({
   id: z.string().uuid(),
   title: z.string().optional().default(""),
-  url: z.string().url(),
+  // Not `.url()` — that rejects anything typed without an explicit scheme
+  // (e.g. "google.com"), which is exactly what most people type. The route
+  // normalizes (adds https:// if missing) before this is used.
+  url: z.string().min(1, "A URL is required"),
   description: z.string().optional().nullable(),
   tags: z.array(z.string()).default([]),
   favicon: z.string().url().optional().nullable(),

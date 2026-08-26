@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { deleteEntry, moveEntry, readFileContent, VentureFsError, writeFileContent } from "@/lib/ai-venture/fs";
+import { logActivity } from "@/lib/activities/client";
 
 function fsErrorToResponse(error: unknown) {
   if (error instanceof VentureFsError) return new ApiError(error.status, "VENTURE_FS_ERROR", error.message).toResponse();
@@ -45,6 +46,15 @@ export async function PUT(request: NextRequest) {
       return ApiError.badRequest("BAD_REQUEST", "path and content are required").toResponse();
     }
     await writeFileContent(path, content, encoding === "base64" ? "base64" : "utf-8");
+    logActivity({
+      category: "ai_venture",
+      action: "updated",
+      title: "AI Venture file updated",
+      description: path,
+      entityId: path,
+      entityType: "file",
+      metadata: { encoding },
+    }).catch(() => {});
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);
@@ -65,6 +75,15 @@ export async function PATCH(request: NextRequest) {
       return ApiError.badRequest("BAD_REQUEST", "path and newPath are required").toResponse();
     }
     await moveEntry(path, newPath);
+    logActivity({
+      category: "ai_venture",
+      action: "moved",
+      title: path === newPath ? "AI Venture file renamed" : "AI Venture file moved",
+      description: `${path} → ${newPath}`,
+      entityId: newPath,
+      entityType: "file",
+      metadata: { from: path, to: newPath },
+    }).catch(() => {});
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);
@@ -83,6 +102,14 @@ export async function DELETE(request: NextRequest) {
 
   try {
     await deleteEntry(filePath);
+    logActivity({
+      category: "ai_venture",
+      action: "deleted",
+      title: "AI Venture file deleted",
+      description: filePath,
+      entityId: filePath,
+      entityType: "file",
+    }).catch(() => {});
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);

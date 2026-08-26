@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 /**
  * End-to-end flow for the rebuilt Brainstorm Sketch workspace.
  *
- * Covers: login, create board, draw (tldraw), autosave, rename, leave/return,
+ * Covers: login, create board, draw (Excalidraw), autosave, rename, leave/return,
  * board isolation on switch, delete, and persistence across refresh.
  *
  * Note: the app's shared sidebar has a pre-existing Base UI <Tooltip> console
@@ -27,11 +27,11 @@ async function login(page: import("@playwright/test").Page) {
 async function newBoard(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: "New Board" }).first().click();
   await page.waitForURL(/\/brainstorm-sketch\/.+/, { timeout: 15000 });
-  await expect(page.locator(".tl-canvas")).toBeVisible({ timeout: 20000 });
+  await expect(page.locator(".excalidraw__canvas")).toBeVisible({ timeout: 20000 });
 }
 
 async function drawRectangle(page: import("@playwright/test").Page) {
-  const canvas = page.locator(".tl-canvas");
+  const canvas = page.locator(".excalidraw__canvas");
   await canvas.click(); // focus the editor
   await page.keyboard.press("r"); // rectangle tool
   const box = (await canvas.boundingBox())!;
@@ -86,7 +86,7 @@ test("brainstorm sketch: full create → draw → rename → switch → delete f
   // Reopen the board and confirm the canvas reloads (persistence).
   await page.getByText("Alpha Board").first().click();
   await page.waitForURL(/\/brainstorm-sketch\/.+/);
-  await expect(page.locator(".tl-canvas")).toBeVisible();
+  await expect(page.locator(".excalidraw__canvas")).toBeVisible();
   await expect(page.getByRole("button", { name: "Alpha Board" }).first()).toBeVisible();
 
   // Create a second board and draw, to test isolation when switching back.
@@ -108,7 +108,7 @@ test("brainstorm sketch: full create → draw → rename → switch → delete f
 
   // Refresh the page; the board (and its title) should persist.
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator(".tl-canvas")).toBeVisible({ timeout: 20000 });
+  await expect(page.locator(".excalidraw__canvas")).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("button", { name: "Alpha Board" }).first()).toBeVisible();
 
   // Delete the board via its row actions.

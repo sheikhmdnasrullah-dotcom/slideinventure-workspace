@@ -1,5 +1,5 @@
 import "server-only"
-import { Client, Databases, Users, Storage, Functions, ID, Permission, Role } from "node-appwrite"
+import { Client, Databases, Users, Storage, Functions, ID, Permission, Role, Query } from "node-appwrite"
 
 const client = new Client()
   .setEndpoint((process.env.APPWRITE_ENDPOINT || "https://nyc.cloud.appwrite.io/v1"))
@@ -12,4 +12,4 @@ export const users = new Users(client)
 export const storage = new Storage(client)
 export const functions = new Functions(client)
 
-export { ID, Permission, Role }
+export { ID, Permission, Role, Query }

@@ -62,22 +62,30 @@ export function DashboardPreferencesProvider({
   const pendingRef = useRef<Partial<DashboardPreferences> | null>(null)
   const failedRef = useRef<Partial<DashboardPreferences> | null>(null)
   const savedStateTimerRef = useRef<number | null>(null)
+  const preferencesRef = useRef(preferences)
 
-  useEffect(() => {
-    if (!isBrowser()) return
-    window.localStorage.setItem(storageKey, JSON.stringify(preferences))
-  }, [preferences, storageKey])
+  function persistLocal(next: DashboardPreferences) {
+    preferencesRef.current = next
+    if (isBrowser()) {
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(next))
+      } catch {
+        // ignore unavailable storage
+      }
+    }
+  }
 
-  // Apply the locally-cached preferences after mount so the first client
-  // render matches the server (no hydration mismatch), then layers the
-  // browser copy on top.
+  // Load any locally-cached preferences after mount. This runs once and does
+  // not write back, so it never clobbers the cached value on reload.
   useEffect(() => {
     if (!isBrowser()) return
     const raw = window.localStorage.getItem(storageKey)
     if (!raw) return
     try {
       const parsed = JSON.parse(raw)
-      setPreferences((current) => mergeDashboardPreferences(current, parsed))
+      const next = mergeDashboardPreferences(preferencesRef.current, parsed)
+      setPreferences(next)
+      preferencesRef.current = next
     } catch {
       window.localStorage.removeItem(storageKey)
     }
@@ -95,44 +103,32 @@ export function DashboardPreferencesProvider({
     setSaveState("saving")
 
     try {
-      while (pendingRef.current) {
-        const patch = pendingRef.current
-        pendingRef.current = null
+      const patch = pendingRef.current
+      pendingRef.current = null
 
-        const res = await fetch("/api/preferences", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patch),
-        })
+      const res = await fetch("/api/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      })
 
-        if (!res.ok) {
-          const json = await res.json().catch(() => null)
-          throw new Error(json?.error?.message || json?.message || "Could not save preferences")
-        }
-
-        failedRef.current = null
+      if (!res.ok) {
+        pendingRef.current = patch
+        const json = await res.json().catch(() => null)
+        throw new Error(json?.error?.message || json?.message || "Could not save preferences")
       }
 
+      failedRef.current = null
       setSaveState("saved")
       if (savedStateTimerRef.current) window.clearTimeout(savedStateTimerRef.current)
       savedStateTimerRef.current = window.setTimeout(() => setSaveState("idle"), 1800)
     } catch (error) {
-      failedRef.current = {
-        ...(failedRef.current ?? {}),
-        ...(pendingRef.current ?? {}),
-      }
-      if (!pendingRef.current) {
-        pendingRef.current = failedRef.current
-      }
       setSaveState("error")
       toast.error((error as Error).message || "Could not save preferences")
     } finally {
       savingRef.current = false
-      if (pendingRef.current && saveState !== "error") {
-        void flushPending()
-      }
     }
-  }, [saveState])
+  }, [])
 
   const schedulePersist = useCallback((patch: Partial<DashboardPreferences>) => {
     pendingRef.current = {
@@ -148,7 +144,11 @@ export function DashboardPreferencesProvider({
   }, [flushPending])
 
   const updatePreferences = useCallback((patch: Partial<DashboardPreferences>) => {
-    setPreferences((current) => mergeDashboardPreferences(current, patch))
+    setPreferences((current) => {
+      const next = mergeDashboardPreferences(current, patch)
+      persistLocal(next)
+      return next
+    })
     schedulePersist(patch)
   }, [schedulePersist])
 
@@ -165,8 +165,10 @@ export function DashboardPreferencesProvider({
       const nextOrder = [...current.navigationOrder]
       const [item] = nextOrder.splice(index, 1)
       nextOrder.splice(targetIndex, 0, item)
+      const next = mergeDashboardPreferences(current, { navigationOrder: nextOrder })
+      persistLocal(next)
       schedulePersist({ navigationOrder: nextOrder })
-      return mergeDashboardPreferences(current, { navigationOrder: nextOrder })
+      return next
     })
   }, [schedulePersist])
 

@@ -15,6 +15,7 @@ const UpdatePreferencesSchema = z.object({
   theme: z.enum(["system", "light", "dark"]).optional(),
   defaultLandingPage: z.string().optional(),
   navigationOrder: z.array(z.string()).optional(),
+  labels: z.record(z.string(), z.string()).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -49,6 +50,7 @@ export async function PUT(request: NextRequest) {
       navigationOrder: validated.data.navigationOrder
         ? mergeNavigationOrder(validated.data.navigationOrder)
         : undefined,
+      labels: validated.data.labels,
     })
     return Response.json({ data: preferences, status: "updated" })
   } catch (error) {

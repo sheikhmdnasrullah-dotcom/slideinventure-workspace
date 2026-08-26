@@ -11,6 +11,7 @@ import {
   deleteTask,
 } from "@/lib/todoist/client";
 import { NextRequest } from "next/server";
+import { logActivity } from "@/lib/activities/client";
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -98,6 +99,16 @@ export async function POST(request: NextRequest) {
       due_date: validated.data.dueDate ?? undefined,
     });
 
+    logActivity({
+      category: "todoist",
+      action: "created",
+      title: `Task created`,
+      description: validated.data.content,
+      entityId: task.id,
+      entityType: "todoist_task",
+      metadata: { priority: validated.data.priority, due_date: validated.data.dueDate },
+    }).catch(() => {});
+
     return Response.json({ id: task.id }, { status: 201 });
   } catch (error) {
     return ApiError.internal("TODOIST_ERROR", (error as Error).message).toResponse();
@@ -133,6 +144,16 @@ export async function PUT(request: NextRequest) {
       completed: validated.data.completed,
     });
 
+    logActivity({
+      category: "todoist",
+      action: "updated",
+      title: `Task updated`,
+      description: task.content,
+      entityId: task.id,
+      entityType: "todoist_task",
+      metadata: { completed: validated.data.completed },
+    }).catch(() => {});
+
     return Response.json({ id: task.id, status: "updated" });
   } catch (error) {
     return ApiError.internal("TODOIST_ERROR", (error as Error).message).toResponse();
@@ -156,6 +177,14 @@ export async function DELETE(request: NextRequest) {
 
   try {
     await deleteTask(id);
+    logActivity({
+      category: "todoist",
+      action: "deleted",
+      title: `Task deleted`,
+      description: id,
+      entityId: id,
+      entityType: "todoist_task",
+    }).catch(() => {});
     return Response.json({ id, status: "deleted" });
   } catch (error) {
     return ApiError.internal("TODOIST_ERROR", (error as Error).message).toResponse();
@@ -182,6 +211,14 @@ export async function PATCH(request: NextRequest) {
   try {
     if (body.complete === true) {
       await completeTask(id);
+      logActivity({
+        category: "todoist",
+        action: "completed",
+        title: `Task completed`,
+        description: id,
+        entityId: id,
+        entityType: "todoist_task",
+      }).catch(() => {});
       return Response.json({ id, status: "completed" });
     }
 
@@ -195,6 +232,16 @@ export async function PATCH(request: NextRequest) {
       due_date: validated.data.dueDate ?? undefined,
       completed: validated.data.completed,
     });
+
+    logActivity({
+      category: "todoist",
+      action: "updated",
+      title: `Task updated`,
+      description: task.content,
+      entityId: task.id,
+      entityType: "todoist_task",
+      metadata: { completed: validated.data.completed },
+    }).catch(() => {});
 
     return Response.json({ id: task.id, status: "updated" });
   } catch (error) {

@@ -3,6 +3,7 @@ import { addKnowledgeItem } from '@/lib/knowledge/sync'
 import { getSessionUser } from '@/lib/appwrite/auth'
 import { extractFileText } from '@/lib/knowledge/file-extract'
 import { classifyKnowledgeInput } from '@/lib/knowledge/classify'
+import { logActivity } from '@/lib/activities/client'
 
 function deriveTitleFromText(text?: string): string {
   if (!text) return ''
@@ -50,6 +51,16 @@ export async function POST(req: NextRequest) {
         contentType: extracted.contentType,
       })
 
+      logActivity({
+        category: "knowledge",
+        action: "created",
+        title: `Knowledge item created`,
+        description: finalTitle,
+        entityId: item.id,
+        entityType: "knowledge",
+        metadata: { category, source, contentType: extracted.contentType },
+      }).catch(() => {})
+
       return NextResponse.json({ ok: true, item })
     }
 
@@ -74,6 +85,16 @@ export async function POST(req: NextRequest) {
       author: user.email || 'user',
       contentType: 'markdown',
     })
+
+    logActivity({
+      category: "knowledge",
+      action: "created",
+      title: `Knowledge item created`,
+      description: finalTitle,
+      entityId: item.id,
+      entityType: "knowledge",
+      metadata: { category, source, contentType: "markdown" },
+    }).catch(() => {})
 
     return NextResponse.json({ ok: true, item })
   } catch (error) {

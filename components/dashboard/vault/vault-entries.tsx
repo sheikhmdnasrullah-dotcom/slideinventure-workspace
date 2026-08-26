@@ -263,7 +263,7 @@ function VaultCard({
       const res = await fetch(`/api/vault/${entry.id}/reveal`, { method: "POST" })
       if (res.status === 400) {
         const json = await res.json().catch(() => ({}))
-        if (json.error === "REAUTH_REQUIRED") {
+        if (json.code === "REAUTH_REQUIRED") {
           setReauthRequired(true)
           return
         }

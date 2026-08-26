@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { createEntry, listTree, VentureFsError } from "@/lib/ai-venture/fs";
+import { logActivity } from "@/lib/activities/client";
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
@@ -33,6 +34,15 @@ export async function POST(request: NextRequest) {
       return ApiError.badRequest("BAD_REQUEST", "path and type ('file' | 'folder') are required").toResponse();
     }
     await createEntry(path, type);
+    logActivity({
+      category: "ai_venture",
+      action: "created",
+      title: `${type === "folder" ? "Folder" : "File"} created`,
+      description: path,
+      entityId: path,
+      entityType: type,
+      metadata: { type },
+    }).catch(() => {});
     return Response.json({ ok: true });
   } catch (error) {
     if (error instanceof VentureFsError) return new ApiError(error.status, "VENTURE_FS_ERROR", error.message).toResponse();

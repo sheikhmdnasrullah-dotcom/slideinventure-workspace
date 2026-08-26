@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { NextRequest } from "next/server";
 import { extractFileText } from "@/lib/knowledge/file-extract";
 import { linkDocumentToKnowledge } from "@/lib/knowledge/link-document";
+import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.documents;
@@ -94,6 +95,16 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.warn("Knowledge indexing skipped for document", id, err);
     }
+
+    logActivity({
+      category: "documents",
+      action: "uploaded",
+      title: `Document uploaded`,
+      description: `${file.name}`,
+      entityId: id,
+      entityType: "document",
+      metadata: { filename: file.name, mime_type: file.type, size_bytes: file.size },
+    }).catch(() => {});
 
     return Response.json({ id, url, title, filename: file.name }, { status: 201 });
   } catch (error) {

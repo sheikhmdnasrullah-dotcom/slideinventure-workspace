@@ -8,6 +8,7 @@ import { validateQuery, validate } from "@/lib/api/validation";
 import { z } from "zod";
 import { UsefulLinkSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
+import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.usefulLinks;
@@ -34,6 +35,22 @@ const ListSchema = z.object({
 });
 
 const CreateSchema = UsefulLinkSchema.omit({ id: true, createdAt: true, updatedAt: true });
+
+// Accept whatever shape of URL the user actually typed — "google.com",
+// "www.example.com/path" — and make it a real, fetchable URL rather than
+// rejecting it. Only genuinely empty input is refused.
+function normalizeUrl(raw: string): string {
+  const trimmed = raw.trim();
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    try {
+      return new URL(`https://${trimmed}`).toString();
+    } catch {
+      return trimmed;
+    }
+  }
+}
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();
@@ -94,18 +111,19 @@ export async function POST(request: NextRequest) {
     const validated = validate(CreateSchema, body);
     const d = validated.data;
     const now = new Date().toISOString();
+    const url = normalizeUrl(d.url);
     const fallbackTitle = (() => {
       try {
-        const u = new URL(d.url);
+        const u = new URL(url);
         return (u.hostname + u.pathname).replace(/\/$/, "");
       } catch {
-        return d.url;
+        return url;
       }
     })();
 
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
       title: d.title?.trim() || fallbackTitle,
-      url: d.url,
+      url,
       description: d.description ?? null,
       tags: d.tags ?? [],
       favicon: d.favicon ?? null,
@@ -113,6 +131,16 @@ export async function POST(request: NextRequest) {
       created_at: now,
       updated_at: now,
     });
+
+    logActivity({
+      category: "links",
+      action: "created",
+      title: `Link saved`,
+      description: d.title?.trim() || fallbackTitle,
+      entityId: doc.$id,
+      entityType: "link",
+      metadata: { url, tags: d.tags ?? [] },
+    }).catch(() => {});
 
     return Response.json({ id: doc.$id }, { status: 201 });
   } catch (err) {

@@ -88,11 +88,11 @@ export function EvidenceBlock({
     <div
       data-slot="evidence-block"
       className={cn(
-        "flex flex-col gap-2 border-l border-rule pl-3",
+        "flex min-w-0 flex-col gap-2 border-l border-rule pl-3",
         className
       )}
     >
-      <p className="font-body text-sm leading-relaxed text-ink-default">
+      <p className="break-words font-body text-sm leading-relaxed text-ink-default">
         {query ? <Highlight text={text} query={query} /> : text}
       </p>
       <SourceCitation type={type} source={source} position={position} href={href} />

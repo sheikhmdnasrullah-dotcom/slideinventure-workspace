@@ -1,6 +1,7 @@
 import { databases } from "@/lib/appwrite/server"
 import { ID, Query } from "node-appwrite"
 import { APPWRITE } from "@/lib/appwrite/config"
+import { logActivity } from "@/lib/activities/client"
 
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.leads
@@ -77,6 +78,14 @@ export async function POST(request: Request) {
     }
 
     const imported = toCreate.length + toUpdate.length
+    logActivity({
+      category: "leads",
+      action: "imported",
+      title: `Lead import completed`,
+      description: `${imported} leads imported (${toCreate.length} new, ${toUpdate.length} updated)`,
+      entityType: "leads",
+      metadata: { imported, created: toCreate.length, updated: toUpdate.length },
+    }).catch(() => {})
 
     return Response.json({ imported, created: toCreate.length, updated: toUpdate.length }, { status: 201 })
   } catch (error) {

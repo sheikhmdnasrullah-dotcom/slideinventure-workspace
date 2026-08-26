@@ -36,6 +36,7 @@ export const APPWRITE = {
     notionActivity: "notion_activity",
     todoistTasks: "todoist_tasks",
     auditLogs: "audit_logs",
+    activities: "activities",
     mailMessages: "mail_messages",
     users: "users",
   },

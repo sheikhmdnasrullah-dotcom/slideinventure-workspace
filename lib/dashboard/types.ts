@@ -18,7 +18,7 @@ export type ChartPoint = {
   replies: number;
 };
 
-export type ActivityType = "research" | "prospects" | "sops" | "decisions" | "system" | "script" | "cold_email" | "automation";
+export type ActivityType = "research" | "prospects" | "sops" | "decisions" | "system" | "script" | "cold_email" | "automation" | "documents" | "notes" | "terminal" | "links" | "chat" | "ai_venture" | "todoist" | "knowledge" | "leads";
 export type ActivityStatus = "ai_inferred" | "proposed" | "active" | "completed" | "failed" | "running";
 
 export type ActivityRow = {
@@ -36,3 +36,29 @@ export type DashboardResponse = {
   activity: ActivityRow[];
   syncedAt: string;
 };
+
+export type DashboardWidget =
+  | "kpis"
+  | "chart"
+  | "activity"
+  | "research"
+  | "ai_venture"
+  | "brainstorm"
+  | "terminal"
+  | "leads"
+  | "knowledge"
+  | "suggestions"
+  | "documents"
+  | "notes"
+  | "chat"
+  | "todoist"
+  | "links";
+
+export type DashboardWidgetProps = {
+  title: string;
+  description?: string;
+  href?: string;
+  count?: number;
+  emptyText?: string;
+};
+

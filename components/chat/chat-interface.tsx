@@ -386,7 +386,7 @@ export function ChatInterface() {
       </aside>
 
       {/* Main chat area */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
         <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
           <h1 className="truncate text-sm font-semibold">
@@ -432,14 +432,14 @@ export function ChatInterface() {
                           </Avatar>
                         )}
 
-                        <div className={cn("max-w-[70%] min-w-0", msg.role === "user" && "flex flex-col items-end")}>
+                         <div className={cn("max-w-[70%] min-w-0 break-words", msg.role === "user" && "flex flex-col items-end")}>
                           <div
                             className={cn(
                               "rounded-lg px-3 py-2 text-sm break-words",
                               msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
                             )}
                           >
-                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                           </div>
 
                           {msg.retrievalSources && (

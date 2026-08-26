@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import * as React from "react"
-import type { Editor } from "tldraw"
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import {
@@ -63,7 +63,7 @@ const Whiteboard = dynamic(() => import("@/components/dashboard/v3/whiteboard/Wh
   boardId?: string
   initialData?: string
   onChange: (data: string) => void
-  onMount: (editor: Editor) => void
+  onMount: (api: ExcalidrawImperativeAPI) => void
 }>
 
 type Board = {
@@ -128,7 +128,7 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
   const [deleteTarget, setDeleteTarget] = React.useState<Board | null>(null)
   const [mobileBoardsOpen, setMobileBoardsOpen] = React.useState(false)
 
-  const editorRef = React.useRef<Editor | null>(null)
+  const editorRef = React.useRef<ExcalidrawImperativeAPI | null>(null)
   const contentRef = React.useRef("{}")
   const activeIdRef = React.useRef<string | null>(boardId)
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -322,25 +322,36 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
 
   // ---- export ---------------------------------------------------------------
   const exportBoard = async (format: "png" | "json" | "pdf") => {
-    const editor = editorRef.current
-    if (!editor) {
+    const api = editorRef.current
+    if (!api) {
       toast.error("Canvas isn't ready yet")
       return
     }
     const safeName = (title || "brainstorm").replace(/[^a-z0-9-_]+/gi, "_").toLowerCase()
     try {
+      const elements = api.getSceneElements()
+      const appState = api.getAppState()
+
       if (format === "json") {
-        const snapshot = JSON.stringify(editor.getSnapshot())
+        const snapshot = JSON.stringify({
+          elements,
+          appState: {
+            viewBackgroundColor: appState.viewBackgroundColor,
+            scrollX: appState.scrollX,
+            scrollY: appState.scrollY,
+            zoom: appState.zoom,
+          },
+        })
         downloadBlob(new Blob([snapshot], { type: "application/json" }), `${safeName}.json`)
         return
       }
 
-      const ids = Array.from(editor.getCurrentPageShapeIds())
-      if (ids.length === 0) {
+      if (elements.length === 0) {
         toast.error("Nothing drawn yet to export")
         return
       }
-      const { blob } = await editor.toImage(ids, { format: "png", background: true })
+      const { exportToBlob } = await import("@excalidraw/excalidraw")
+      const blob = await exportToBlob({ elements, appState, files: api.getFiles(), mimeType: "image/png" })
       if (format === "png") {
         downloadBlob(blob, `${safeName}.png`)
         return
@@ -562,9 +573,9 @@ export function BrainstormWorkspace({ boardId }: { boardId: string | null }) {
                     boardId={activeId ?? undefined}
                     initialData={content}
                     onChange={handleContentChange}
-                      onMount={(editor: Editor) => {
-                        editorRef.current = editor
-                      }}
+                    onMount={(api: ExcalidrawImperativeAPI) => {
+                      editorRef.current = api
+                    }}
                   />
                 </CanvasErrorBoundary>
               </div>

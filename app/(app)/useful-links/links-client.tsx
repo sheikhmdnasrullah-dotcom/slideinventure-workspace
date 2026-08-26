@@ -246,10 +246,10 @@ export function LinksClient() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="url">URL</Label>
-              <Input 
-                id="url" 
-                type="url"
-                value={formData.url} 
+              <Input
+                id="url"
+                type="text"
+                value={formData.url}
                 onChange={e => setFormData({ ...formData, url: e.target.value })} 
                 placeholder="https://google.com"
               />

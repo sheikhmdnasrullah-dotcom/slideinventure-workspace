@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { UsefulLinkSchema } from "@/lib/api/schemas";
 import { NextRequest } from "next/server";
+import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.usefulLinks;
@@ -23,6 +24,19 @@ function serialize(doc: LinkDocument) {
     out[k] = v;
   }
   return out;
+}
+
+function normalizeUrl(raw: string): string {
+  const trimmed = raw.trim()
+  try {
+    return new URL(trimmed).toString()
+  } catch {
+    try {
+      return new URL(`https://${trimmed}`).toString()
+    } catch {
+      return trimmed
+    }
+  }
 }
 
 function buildFallbackTitle(url: string) {
@@ -71,19 +85,28 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const validated = validate(UpdateSchema, body);
     const d = validated.data;
     const now = new Date().toISOString();
-    const nextUrl = d.url ?? doc.url;
+    const normalizedUrl = d.url !== undefined ? normalizeUrl(d.url) : undefined;
+    const nextUrl = normalizedUrl ?? doc.url;
     const nextTitle = d.title !== undefined || d.url !== undefined
       ? (d.title?.trim() || buildFallbackTitle(nextUrl ?? ""))
       : undefined;
 
     const payload: Record<string, unknown> = { updated_at: now };
-    if (d.url !== undefined) payload.url = d.url;
+    if (normalizedUrl !== undefined) payload.url = normalizedUrl;
     if (nextTitle !== undefined) payload.title = nextTitle;
     if (d.description !== undefined) payload.description = d.description;
     if (d.tags !== undefined) payload.tags = d.tags;
     if (d.favicon !== undefined) payload.favicon = d.favicon;
 
     await databases.updateDocument(DB, COL, id, payload);
+    logActivity({
+      category: "links",
+      action: "updated",
+      title: `Link updated`,
+      description: (payload.title as string | undefined) ?? doc.url ?? "",
+      entityId: id,
+      entityType: "link",
+    }).catch(() => {});
     return Response.json({ id, status: "updated" });
   } catch (error) {
     return ApiError.internal("DB_ERROR", (error as Error).message).toResponse();
@@ -103,6 +126,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (!doc) return ApiError.notFound("LINK_NOT_FOUND", "Link not found").toResponse();
 
     await databases.deleteDocument(DB, COL, id);
+    logActivity({
+      category: "links",
+      action: "deleted",
+      title: `Link deleted`,
+      description: doc.url ?? "",
+      entityId: id,
+      entityType: "link",
+    }).catch(() => {});
     return Response.json({ id, status: "deleted" });
   } catch (error) {
     return ApiError.internal("DB_ERROR", (error as Error).message).toResponse();

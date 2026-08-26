@@ -69,19 +69,29 @@ test.describe("Dashboard polish pass", () => {
     expect(before.length).toBeGreaterThan(3)
 
     const handles = page.locator('[data-testid="sidebar-drag-handle"]')
-    const first = handles.nth(0)
-    const third = handles.nth(2)
-    await first.dragTo(third, { targetPosition: { x: 10, y: 10 } })
+    const h0 = await handles.nth(0).boundingBox()
+    const h2 = await handles.nth(2).boundingBox()
+    if (!h0 || !h2) throw new Error("drag handles not found")
+
+    const startX = h0.x + h0.width / 2
+    const startY = h0.y + h0.height / 2
+    await page.mouse.move(startX, startY)
+    await page.mouse.down()
+    // exceed dnd-kit activation distance, then move to the target handle
+    await page.mouse.move(startX, startY + 20, { steps: 5 })
+    await page.mouse.move(h2.x + h2.width / 2, h2.y + h2.height / 2, { steps: 12 })
+    await page.waitForTimeout(300)
+    await page.mouse.up()
     await page.waitForTimeout(1000)
 
     const after = await sidebarLabels(page)
-    expect(after[1], `order before=${before.join(",")} after=${after.join(",")}`).toBe(before[0])
+    expect(after[2], `order before=${before.join(",")} after=${after.join(",")}`).toBe(before[0])
 
-    // Reset to default so we don't leave the layout shuffled.
-    await page.goto("/settings", { waitUntil: "domcontentloaded" })
-    await page.waitForTimeout(600)
-    await page.getByRole("button", { name: /Reset to default/i }).first().click()
-    await page.waitForTimeout(600)
+    // Persists across a full refresh (localStorage + server preference).
+    await page.reload({ waitUntil: "domcontentloaded" })
+    await page.waitForTimeout(1000)
+    const afterReload = await sidebarLabels(page)
+    expect(afterReload[2], `after reload ${afterReload.join(",")}`).toBe(before[0])
   })
 
   test("leads pagination supports 50/100/150/All and shows all rows (Test 8)", async ({ page }) => {

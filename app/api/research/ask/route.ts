@@ -7,7 +7,7 @@ import { nvidiaComplete } from "@/lib/llm/nvidia"
 // Reuses the same NVIDIA-backed LLM that already powers Chat — no new
 // provider, no new API key. `context` is a short plain-text snapshot of
 // what's already on the research canvas (the caller extracts it from the
-// tldraw shapes), so the answer can build on what's already there.
+// canvas elements), so the answer can build on what's already there.
 export async function POST(request: NextRequest) {
   const user = await getSessionUser()
   if (!user) return ApiError.unauthorized().toResponse()
