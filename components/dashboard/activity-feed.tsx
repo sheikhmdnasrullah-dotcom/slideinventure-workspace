@@ -6,7 +6,9 @@ import { Loader2 } from "lucide-react"
 import { SiteHeader } from "@/components/dashboard/site-header"
 import { PageHeader, Surface, Timeline, FilterBar, EmptyState, type TimelineItem } from "@/components/system"
 import { Button } from "@/components/ui/button"
-import type { Activity, ActivityCategory } from "@/lib/activities/types"
+import { useLiveEvents } from "@/components/providers/event-stream"
+import type { Activity, ActivityCategory, ActivityAction } from "@/lib/activities/types"
+import type { DomainEvent } from "@/lib/events/types"
 
 const CATEGORY_LABEL: Record<ActivityCategory, string> = {
   leads: "Leads",
@@ -56,6 +58,45 @@ const ACTION_TONE: Record<string, TimelineItem["tone"]> = {
   exported: "neutral",
 }
 
+// Reverse of the source->category mapping in lib/events/types so a live domain
+// event can be folded into the activity list without a refetch.
+const CATEGORY_BY_SOURCE: Partial<Record<string, ActivityCategory>> = {
+  leads: "leads",
+  documents: "documents",
+  knowledge: "knowledge",
+  chat: "chat",
+  "ai-venture": "ai_venture",
+  todoist: "todoist",
+  notes: "notes",
+  terminal: "terminal",
+  links: "links",
+  vault: "vault",
+  integrations: "integrations",
+  agents: "agents",
+  ideas: "brainstorm",
+  brainstorm: "brainstorm",
+  "research-lab": "ai_venture",
+}
+
+function dedupeKey(a: Activity): string {
+  return `${a.entityId ?? a.id}__${a.category}.${a.action}__${a.timestamp}`
+}
+
+function eventToActivity(e: DomainEvent): Activity {
+  const [subject, action] = e.type.split(".")
+  return {
+    id: e.id,
+    category: CATEGORY_BY_SOURCE[e.source] ?? "notes",
+    action: (action as ActivityAction) ?? "created",
+    title: e.title,
+    description: e.description,
+    entityId: e.entityId,
+    entityType: e.entityType,
+    timestamp: e.timestamp,
+  }
+}
+
+
 function toTimelineItem(a: Activity): TimelineItem {
   return {
     id: a.id,
@@ -74,6 +115,27 @@ export function ActivityFeed() {
   const [category, setCategory] = React.useState<string | null>(null)
   const [cursor, setCursor] = React.useState<string | null>(null)
   const [hasMore, setHasMore] = React.useState(false)
+
+  // Fold live domain events into the list in place. Dedupe by
+  // entityId + category.action + timestamp so a live event and its later
+  // refetch do not appear twice.
+  const { events } = useLiveEvents()
+  React.useEffect(() => {
+    if (events.length === 0) return
+    setActivities((prev) => {
+      const merged = [...events.map(eventToActivity), ...prev]
+      const seen = new Set<string>()
+      const out: Activity[] = []
+      for (const a of merged) {
+        const key = dedupeKey(a)
+        if (!seen.has(key)) {
+          seen.add(key)
+          out.push(a)
+        }
+      }
+      return out
+    })
+  }, [events])
 
   const load = React.useCallback(async (opts?: { append?: boolean; after?: string | null }) => {
     const params = new URLSearchParams({ limit: "40" })
@@ -142,13 +204,13 @@ export function ActivityFeed() {
         <Surface variant="inset">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-ink-faint">
-              <Loader2 className="size-4 animate-spin" /> Loading…
+              <Loader2 className="size-4 animate-spin" /> Loading
             </div>
           ) : items.length === 0 ? (
             <EmptyState
               eyebrow="No events yet"
-              title="Nothing here yet"
-              description="Every write across the system (knowledge, documents, links, vault, boards, notes, terminal, todoist, leads) shows up here automatically. Start working in any section."
+              title="No activity yet"
+              description="Work done in any section appears here as it happens."
             />
           ) : (
             <>

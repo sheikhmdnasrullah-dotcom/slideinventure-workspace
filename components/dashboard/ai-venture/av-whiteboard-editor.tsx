@@ -10,11 +10,11 @@ import { SaveIndicator } from "@/components/dashboard/v3/whiteboard/save-indicat
 
 const ExcalidrawCanvas = dynamic(() => import("@/components/dashboard/v3/whiteboard/Whiteboard"), {
   ssr: false,
-  loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading canvas…</div>,
+  loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading canvas</div>,
 });
 const BlocksuiteEditor = dynamic(() => import("@/components/dashboard/v3/blocksuite/blocksuite-editor"), {
   ssr: false,
-  loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading editor…</div>,
+  loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading editor</div>,
 });
 
 export type BoardEngine = "excalidraw" | "affine";
@@ -148,7 +148,7 @@ export function AvWhiteboardEditor({
       </div>
       <div className="relative flex-1">
         {!ready ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading board…</div>
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading board</div>
         ) : engine === "excalidraw" ? (
           <ExcalidrawCanvas
             key={boardId}

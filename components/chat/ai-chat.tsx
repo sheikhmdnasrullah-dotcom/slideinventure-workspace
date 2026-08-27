@@ -31,10 +31,7 @@ export function AiChat() {
     <div className="flex h-[560px] flex-col rounded-xl border bg-card/60">
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Ask anything, powered by DeepSeek through the Vercel AI SDK
-            (useChat + streamText).
-          </p>
+          <p className="text-sm text-muted-foreground">Ask a question.</p>
         )}
         {messages.map((m) => (
           <div

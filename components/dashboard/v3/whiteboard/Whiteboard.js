@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react"
 // another board's scene (which would leak data across boards).
 //
 // `onMount` receives Excalidraw's imperative API object (not a class
-// instance like tldraw's Editor) — callers use `.getSceneElements()`,
+// instance like tldraw's Editor). Callers use `.getSceneElements()`,
 // `.updateScene()`, `.getAppState()`, etc. See the Excalidraw docs for the
 // full ExcalidrawImperativeAPI surface.
 export default function Whiteboard({ initialData, onChange, onMount }) {

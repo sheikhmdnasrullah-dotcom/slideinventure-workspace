@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SLIDEIN VENTURE OS — TOKEN LAYER · single source of truth
+   SLIDEIN VENTURE OS: TOKEN LAYER. Single source of truth
    ---------------------------------------------------------------------------
    Every value in a component comes from here. A raw hex, px or ms literal in
-   a .tsx file is a bug. OKLCH throughout — perceptually uniform ramps read as
+   a .tsx file is a bug. OKLCH throughout. Perceptually uniform ramps read as
    one material under different light. Contrast figures are measured against
    WCAG 2 relative luminance, see scripts/verify-contrast.mjs (ported later).
 
-   This is the CONSOLE token set — denser and tighter than the marketing site.
+   This is the CONSOLE token set. Denser and tighter than the marketing site.
    Marketing (../app/styles/tokens.css) uses 18px card radius and a 1.26 type
    ratio for editorial pages; the OS uses 8px cards and a smaller, denser type
    ladder because an operator reads many rows, not one headline. Brand orange
@@ -14,7 +14,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── PAPER RAMP — day surfaces, ink type ─────────────────────────────────
+  /* ── PAPER RAMP: day surfaces, ink type ─────────────────────────────────
      Warm pulled grey. Never #FFFFFF (Rule 2): paper-25 is the lightest surface
      in the app. paper-50 is the page; paper-25 is a raised card; paper-100 is
      an inset well; paper-200 the deepest day ground (terminal/execution). */
@@ -25,10 +25,10 @@
   --color-bone-300:     oklch(0.868 0.012 82);   /* hairlines */
   --color-bone-400:     oklch(0.790 0.014 80);   /* disabled, placeholder */
 
-  /* ── INK RAMP — day text + dark surfaces ────────────────────────────────
+  /* ── INK RAMP: day text + dark surfaces ────────────────────────────────
      Used for day-mode primary text AND as the dark-theme surface ramp (graphite
      is ink read at higher lightness; ink-deep is the darkest value in the app). */
-  --color-slate-500:    oklch(0.545 0.016 75);   /* 4.52:1 on paper-50 — AA */
+  --color-slate-500:    oklch(0.545 0.016 75);   /* 4.52:1 on paper-50. AA */
   --color-slate-600:    oklch(0.470 0.018 74);   /* body on light panels */
   --color-graphite-700: oklch(0.290 0.013 72);   /* raised card on dark */
   --color-graphite-800: oklch(0.235 0.012 70);   /* dark panel tint */
@@ -36,15 +36,15 @@
   --color-ink:          oklch(0.155 0.010 66);   /* 17.83:1 on paper-50 */
   --color-ink-deep:     oklch(0.115 0.009 64);   /* darkest in the app */
 
-  /* ── ASH RAMP — muted text on dark tones ──────────────────────────────── */
+  /* ── ASH RAMP: muted text on dark tones ──────────────────────────────── */
   --color-ash-200:      oklch(0.850 0.010 80);   /* primary text on graphite */
   --color-ash-300:      oklch(0.780 0.010 80);   /* 8.48:1 on graphite-900 */
   --color-ash-400:      oklch(0.720 0.010 80);   /* 8.20:1 on ink-deep */
   --color-ash-500:      oklch(0.620 0.012 80);   /* muted on dark */
 
-  /* ── BRAND — hue 42.28 is held constant across every derived token ───────
+  /* ── BRAND: hue 42.28 is held constant across every derived token ───────
        #FF6200 -> oklch(0.6908 0.2074 42.28)
-     MEASURED CONTRAST — this is where orange brands fail:
+     MEASURED CONTRAST. This is where orange brands fail:
        brand    on paper-50      2.73:1  ✗ fails as text at any size
        brand    on graphite-900  6.22:1  ✓
        signal   on paper-50      4.50:1  ✓ AA at any size                  */
@@ -58,7 +58,7 @@
   --color-brand-lift:   oklch(0.760 0.170 42.28);  /* gradient highlight */
   --color-brand-pale:   oklch(0.855 0.098 42.28);  /* ramp far end */
 
-  /* ── STATUS — desaturated to sit inside the warm palette ──────────────── */
+  /* ── STATUS: desaturated to sit inside the warm palette ──────────────── */
   --color-live:         oklch(0.530 0.148 149);   /* 4.50:1 on paper-50 */
   --color-live-deep:    oklch(0.430 0.120 149);
   --color-live-hi:      oklch(0.780 0.130 149);   /* on dark chips */
@@ -70,14 +70,14 @@
   --color-danger:       oklch(0.577 0.245 27.325); /* shadcn destructive */
   --color-danger-hi:    oklch(0.708 0.180 20);    /* on dark */
 
-  /* ── RADII — four values. Tighter than marketing: a console is read in
+  /* ── RADII: four values. Tighter than marketing: a console is read in
      rows, not in posters. 8px cards read as software, 18px reads as SaaS. ─ */
   --radius-xs:          3px;     /* tags, tiny chips */
   --radius-sm:          5px;     /* inputs, badges */
   --radius-md:          8px;     /* cards, panels, media */
   --radius-lg:          10px;    /* dialogs, sheets */
   --radius-pill:        999px;   /* buttons, nav, status dots */
-  /* Legacy aliases — collapse shadcn's lg/xl/2xl/3xl/4xl onto the deliberate
+  /* Legacy aliases. Collapse shadcn's lg/xl/2xl/3xl/4xl onto the deliberate
      scale. Migrate call sites to xs/sm/md/lg/pill, then trim this block. */
   --radius-xs-2:        var(--radius-xs);
   --radius-lg-2:        var(--radius-md);
@@ -86,22 +86,22 @@
   --radius-3xl:         var(--radius-lg);
   --radius-4xl:         var(--radius-lg);
 
-  /* ── TYPE SCALE — modular ratio 1.2, fluid but tighter than marketing.
+  /* ── TYPE SCALE: modular ratio 1.2, fluid but tighter than marketing.
      Base is 14px (operator density), not 16px (editorial). ─────────────── */
-  --text-micro:         clamp(0.625rem, 0.605rem + 0.1vw, 0.6875rem);  /* 10–11px */
-  --text-xs:            clamp(0.6875rem, 0.675rem + 0.12vw, 0.75rem);   /* 11–12px */
-  --text-sm:            clamp(0.8125rem, 0.80rem + 0.12vw, 0.875rem);    /* 13–14px */
-  --text-base:          clamp(0.875rem, 0.86rem + 0.15vw, 0.9375rem);    /* 14–15px */
-  --text-md:            clamp(1rem, 0.98rem + 0.2vw, 1.0625rem);         /* 16–17px */
-  --text-lg:            clamp(1.125rem, 1.08rem + 0.3vw, 1.25rem);       /* 18–20px */
-  --text-xl:            clamp(1.3125rem, 1.22rem + 0.5vw, 1.625rem);    /* 21–26px */
-  --text-2xl:           clamp(1.625rem, 1.45rem + 0.9vw, 2.125rem);     /* 26–34px */
-  --text-display:       clamp(2rem, 1.6rem + 2vw, 3rem);                /* 32–48px */
+  --text-micro:         clamp(0.625rem, 0.605rem + 0.1vw, 0.6875rem);  /* 10-11px */
+  --text-xs:            clamp(0.6875rem, 0.675rem + 0.12vw, 0.75rem);   /* 11-12px */
+  --text-sm:            clamp(0.8125rem, 0.80rem + 0.12vw, 0.875rem);    /* 13-14px */
+  --text-base:          clamp(0.875rem, 0.86rem + 0.15vw, 0.9375rem);    /* 14-15px */
+  --text-md:            clamp(1rem, 0.98rem + 0.2vw, 1.0625rem);         /* 16-17px */
+  --text-lg:            clamp(1.125rem, 1.08rem + 0.3vw, 1.25rem);       /* 18-20px */
+  --text-xl:            clamp(1.3125rem, 1.22rem + 0.5vw, 1.625rem);    /* 21-26px */
+  --text-2xl:           clamp(1.625rem, 1.45rem + 0.9vw, 2.125rem);     /* 26-34px */
+  --text-display:       clamp(2rem, 1.6rem + 2vw, 3rem);                /* 32-48px */
   /* legacy */
   --text-3xl:           var(--text-display);
   --text-4xl:           var(--text-display);
 
-  /* ── TRACKING — inverse relationship: display tight, body open, labels wide */
+  /* ── TRACKING: inverse relationship: display tight, body open, labels wide */
   --tracking-display:    -0.018em;
   --tracking-display-tight: -0.024em;
   --tracking-body:        0.002em;
@@ -120,7 +120,7 @@
   --font-weight-label:   500;
   --font-weight-display: 600;
 
-  /* ── SPACING — 4px base, console-tuned. Maps to Tailwind spacing scale. ─ */
+  /* ── SPACING: 4px base, console-tuned. Maps to Tailwind spacing scale. ─ */
   --spacing-1:  4px;
   --spacing-2:  8px;
   --spacing-3:  12px;
@@ -132,7 +132,7 @@
   --spacing-12: 48px;
   --spacing-16: 64px;
 
-  /* ── MOTION — two easings, not five. Expo for reveals, std for hovers. ─ */
+  /* ── MOTION: two easings, not five. Expo for reveals, std for hovers. ─ */
   --ease-expo:          cubic-bezier(0.16, 1, 0.30, 1);
   --ease-std:           cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring: linear(
@@ -146,7 +146,7 @@
   --dur-slow:           420ms;
   --dur-reveal:         620ms;
 
-  /* ── ELEVATION — two-layer warm-tinted shadows; single-layer reads fake ─ */
+  /* ── ELEVATION: two-layer warm-tinted shadows; single-layer reads fake ─ */
   --shadow-contact:     0 1px 2px -1px oklch(0.155 0.010 66 / 10%);
   --shadow-raised:
     0 1px 2px -1px oklch(0.155 0.010 66 / 8%),
@@ -164,7 +164,7 @@
 /* ── Non-namespaced tokens ───────────────────────────────────────────────
    Tailwind v4's @theme only emits custom properties for known namespaces
    (--color-*, --radius-*, --text-*, --shadow-*, --ease-*, --spacing-*).
-   --dur-* and ring widths are not Tailwind namespaces — declare on :root too. */
+   --dur-* and ring widths are not Tailwind namespaces. Declare on :root too. */
 :root {
   --dur-instant: 80ms;
   --dur-fast:    140ms;
@@ -188,7 +188,7 @@
   );
 }
 
-/* ── Focus ring — one visible treatment, everywhere ────────────────────── */
+/* ── Focus ring: one visible treatment, everywhere ────────────────────── */
 @layer base {
   :focus-visible {
     outline: var(--ring-width) solid var(--accent);
@@ -197,7 +197,7 @@
   }
 }
 
-/* ── Reduced motion — global backstop ──────────────────────────────────── */
+/* ── Reduced motion: global backstop ──────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-instant: 0.001s;

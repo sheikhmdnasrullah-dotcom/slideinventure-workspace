@@ -209,7 +209,7 @@ export function ResearchLabWorkspace() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="What are you researching? Hypotheses, key questions…"
+                  placeholder="What are you researching? Hypotheses, key questions"
                   value={active.description}
                   onChange={(e) => setActive({ ...active, description: e.target.value })}
                   onBlur={() => patch({ description: active.description })}
@@ -224,7 +224,7 @@ export function ResearchLabWorkspace() {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="Links, references, raw material for this project…"
+                  placeholder="Links, references, raw material for this project"
                   value={active.sources}
                   onChange={(e) => setActive({ ...active, sources: e.target.value })}
                   onBlur={() => patch({ sources: active.sources })}

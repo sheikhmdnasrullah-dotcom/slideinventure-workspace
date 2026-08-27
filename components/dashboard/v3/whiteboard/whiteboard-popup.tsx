@@ -14,7 +14,7 @@ const BlocksuiteEditor = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Loading editor…
+        Loading editor
       </div>
     ),
   }
@@ -143,7 +143,7 @@ export default function WhiteboardPopup() {
         {activeId ? (
           <SaveIndicator state={state} lastSavedAt={lastSavedAt} onRetry={() => flush()} />
         ) : (
-          <span className="text-xs text-muted-foreground">Loading…</span>
+          <span className="text-xs text-muted-foreground">Loading</span>
         )}
         <div className="ml-auto flex items-center gap-2">
           <Button
@@ -163,7 +163,7 @@ export default function WhiteboardPopup() {
           <BlocksuiteEditor snapshot={snapshot} onChange={handleChange} mode="edgeless" />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Preparing whiteboard…
+            Preparing whiteboard
           </div>
         )}
       </main>

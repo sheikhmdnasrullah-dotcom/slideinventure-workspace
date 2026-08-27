@@ -17,7 +17,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { ShimmerButton } from "@/components/ui/magicui/shimmer-button";
 
-type NodeKind = "trigger" | "research" | "reason" | "output" | "tool";
+type NodeKind = "trigger" | "research" | "reason" | "output" | "tool" | "youtube";
 type Status = "idle" | "running" | "done" | "error";
 
 type AgentNodeData = {
@@ -34,6 +34,7 @@ const KIND_META: Record<NodeKind, { icon: string; color: string }> = {
   research: { icon: "🌐", color: "#3b82f6" },
   reason: { icon: "🧠", color: "#6366f1" },
   tool: { icon: "🛠", color: "#f59e0b" },
+  youtube: { icon: "📺", color: "#ef4444" },
   output: { icon: "📤", color: "#10b981" },
 };
 
@@ -170,9 +171,9 @@ export function AgentWorkflowCanvas({
       let prev = "trigger";
       steps.forEach((s, i) => {
         const id = `n${i}`;
-        const kind = (["research", "reason", "output", "tool"].includes(s.kind)
-          ? s.kind
-          : "reason") as NodeKind;
+      const kind = (["research", "reason", "output", "tool", "youtube"].includes(s.kind)
+        ? s.kind
+        : "reason") as NodeKind;
         built.push(mkNode(id, kind, s.label || kind, s.instruction || "", (i + 1) * 260));
         builtEdges.push({ id: `e${i}`, source: prev, target: id });
         prev = id;
@@ -213,6 +214,19 @@ export function AgentWorkflowCanvas({
           : "Done.";
         setResult(n.id, finalOut.slice(0, 400));
         setOutput(finalOut);
+      } else if (d.kind === "youtube") {
+        const channel = (d.instruction || input).match(/https?:\/\/\S+/)?.[0] || d.instruction || input;
+        const res = await fetch("/api/youtube-email", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ channel }),
+        });
+        const data = await res.json();
+        const r0 = data.results?.[0];
+        const found = r0?.emails?.length ? r0.emails.join(", ") : r0?.email;
+        setResult(n.id, found || "(no email found)");
+        setLog((l) => [...l, `📺 ${d.label}: ${found || "no email"}`]);
+        researchRef.current += `\n[${d.label}] ${found || "no email"}\n`;
       } else {
         const ctx = researchRef.current ? `\n\nWeb research:\n${researchRef.current}` : "";
         const res = await fetch("/api/agents/chat", {

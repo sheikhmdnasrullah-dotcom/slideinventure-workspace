@@ -6,13 +6,13 @@ import "@copilotkit/react-ui/styles.css";
 import { Bot } from "lucide-react";
 
 /**
- * The copilot's own chat surface. The CopilotKit provider in the app layout
- * only exposes the runtime; without a chat component the registered actions
- * and readables are never reachable by the model. This popup is the surface
- * that actually drives them.
+ * The copilot's chat surface.
  *
- * Its launcher sits bottom-left so it does not collide with the existing
- * bottom-right FloatingAiChat widget.
+ * The CopilotKit provider in the app layout only exposes the runtime; without a
+ * chat component the registered actions and readables are never reachable by the
+ * model. This popup is that surface, and it is the app's single floating
+ * assistant. It sits bottom right, the conventional spot, and the agent status
+ * indicator is offset above it so the two never overlap.
  */
 function CopilotLauncher(props: { onClick?: () => void }) {
   return (
@@ -20,9 +20,9 @@ function CopilotLauncher(props: { onClick?: () => void }) {
       type="button"
       onClick={props.onClick}
       aria-label="Open copilot"
-      className="fixed bottom-4 left-4 z-50 flex size-12 items-center justify-center rounded-full border bg-card text-foreground shadow-lg transition-transform hover:scale-105"
+      className="fixed right-4 bottom-4 z-50 flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md transition-[transform,box-shadow] duration-150 hover:shadow-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:scale-[0.97] motion-reduce:transition-none"
     >
-      <Bot className="size-6" />
+      <Bot className="size-5" />
     </button>
   );
 }
@@ -34,7 +34,7 @@ export function CopilotChat() {
       hitEscapeToClose
       labels={{
         title: "Copilot",
-        initial: "Ask the copilot to search, take notes, or run an agent.",
+        initial: "Ask a question, or ask the copilot to search, take a note, or run an agent.",
       }}
       Button={CopilotLauncher}
     />

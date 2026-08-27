@@ -67,7 +67,7 @@ export function EvalConsole() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         rows={3}
-        placeholder="Question to evaluate against retrieved knowledge…"
+        placeholder="Question to evaluate against retrieved knowledge"
       />
       <div className="flex flex-wrap gap-2">
         {SAMPLES.map((s) => (
@@ -81,7 +81,7 @@ export function EvalConsole() {
         ))}
       </div>
       <Button onClick={run} disabled={running || !query.trim()} className="self-start">
-        {running ? "Evaluating…" : "Run RAG eval"}
+        {running ? "Evaluating" : "Run RAG eval"}
       </Button>
 
       {result && (

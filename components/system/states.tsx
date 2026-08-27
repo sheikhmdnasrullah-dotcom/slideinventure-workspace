@@ -70,7 +70,7 @@ export function LoadingState({
 }
 
 /**
- * ErrorState — the "degrade gracefully" surface. Today every route silently
+ * ErrorState. The "degrade gracefully" surface. Today every route silently
  * catches Supabase errors and renders empty data (see api/dashboard, api/knowledge/search).
  * This primitive makes the failure VISIBLE so an operator can tell "nothing
  * matched" from "the DB is down", the distinction the audit flagged as missing.

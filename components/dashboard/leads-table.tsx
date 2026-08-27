@@ -533,7 +533,7 @@ export function LeadsTable() {
               const lead = row.original
               return (
                 <div className="flex flex-col">
-                  <span className="font-medium">{lead.company || "–"}</span>
+                  <span className="font-medium">{lead.company || ""}</span>
                   {lead.job_title && (
                     <span className="text-sm text-muted-foreground">{lead.job_title}</span>
                   )}
@@ -565,11 +565,11 @@ export function LeadsTable() {
       if (config.type === "custom") {
         return {
           id: config.id,
-          accessorFn: (row: Lead) => (row.custom_fields?.[config.key] as string) ?? "–",
+          accessorFn: (row: Lead) => (row.custom_fields?.[config.key] as string) ?? "",
           header: config.label,
           cell: ({ row }: { row: Row<Lead> }) => {
             const value = row.original.custom_fields?.[config.key]
-            return <span className="text-sm">{value !== undefined && value !== null ? String(value) : "–"}</span>
+            return <span className="text-sm">{value !== undefined && value !== null ? String(value) : ""}</span>
           },
           enableSorting: false,
           enableFiltering: false,
@@ -581,7 +581,7 @@ export function LeadsTable() {
         id: config.id,
         accessorKey: config.key,
         header: config.label,
-        cell: ({ row }: { row: Row<Lead> }) => <span className="text-sm">{String(row.getValue(config.key) ?? "–")}</span>,
+        cell: ({ row }: { row: Row<Lead> }) => <span className="text-sm">{String(row.getValue(config.key) ?? "")}</span>,
         size: config.width,
       }
     })

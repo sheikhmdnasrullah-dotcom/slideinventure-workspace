@@ -50,7 +50,7 @@ export function LeadHarvest() {
           disabled={running}
         />
         <Button onClick={run} disabled={running || !topic.trim()}>
-          {running ? "Harvesting…" : "Harvest leads"}
+          {running ? "Harvesting" : "Harvest leads"}
         </Button>
       </div>
       <p className="text-xs text-foreground/40">

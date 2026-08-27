@@ -111,7 +111,7 @@ const TREND_TONE: Record<TrendDirection, StatusTone> = {
 const TREND_GLYPH: Record<TrendDirection, string> = {
   up: "↑",
   down: "↓",
-  flat: "–",
+  flat: "",
 };
 
 export function TrendBadge({

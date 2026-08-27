@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // Animated connecting beam between two elements (MagicUI-style).
@@ -14,15 +14,17 @@ export function AnimatedBeam({
   reverse = false,
   duration = 4,
 }: {
+  // Refs come from useRef<HTMLDivElement>(null), whose current is nullable.
   className?: string;
-  containerRef: React.RefObject<HTMLElement>;
-  fromRef: React.RefObject<HTMLElement>;
-  toRef: React.RefObject<HTMLElement>;
+  containerRef: React.RefObject<HTMLElement | null>;
+  fromRef: React.RefObject<HTMLElement | null>;
+  toRef: React.RefObject<HTMLElement | null>;
   curvature?: number;
   reverse?: boolean;
   duration?: number;
 }) {
   const [path, setPath] = React.useState("");
+  const reduceMotion = useReducedMotion();
 
   React.useEffect(() => {
     const update = () => {
@@ -62,9 +64,18 @@ export function AnimatedBeam({
         stroke={`url(#beam-${id})`}
         strokeWidth={2}
         strokeDasharray="6 6"
-        initial={{ pathLength: 0 }}
+        initial={{ pathLength: reduceMotion ? 1 : 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ duration, repeat: Infinity, ease: "linear", direction: reverse ? "reverse" : "normal" }}
+        transition={
+          reduceMotion
+            ? { duration: 0 }
+            : {
+                duration,
+                repeat: Infinity,
+                ease: "linear",
+                repeatType: reverse ? "reverse" : "loop",
+              }
+        }
       />
     </svg>
   );

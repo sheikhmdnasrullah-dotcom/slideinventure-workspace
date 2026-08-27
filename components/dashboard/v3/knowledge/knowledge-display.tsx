@@ -137,7 +137,7 @@ export function KnowledgeDisplay() {
             </a>
           )}
           <span className="ml-auto text-xs text-muted-foreground">
-            {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
+            {status === "saving" ? "Saving" : status === "saved" ? "Saved" : ""}
           </span>
           {selectedItem.updated_at && (
             <span className="text-sm text-muted-foreground">

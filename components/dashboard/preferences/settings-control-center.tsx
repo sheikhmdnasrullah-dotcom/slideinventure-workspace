@@ -116,7 +116,7 @@ export function SettingsControlCenter() {
       <SettingsSection title="Section names" description="Rename any section to match how you think. Names are saved and stay after refresh or logout.">
         <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
           <span>
-            {saveState === "saving" ? "Saving names…" : saveState === "saved" ? "Names saved" : saveState === "error" ? "Couldn’t save yet" : "Names save automatically"}
+            {saveState === "saving" ? "Saving names" : saveState === "saved" ? "Names saved" : saveState === "error" ? "Couldn’t save yet" : "Names save automatically"}
           </span>
           <Button size="sm" variant="outline" onClick={() => updatePreferences({ labels: {} })}>
             <RotateCcw className="mr-2 size-4" />
@@ -148,7 +148,7 @@ export function SettingsControlCenter() {
       <SettingsSection title="Navigation" description="Drag in the sidebar for the fastest path, or reorder here with buttons.">
         <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
           <span>
-            {saveState === "saving" ? "Saving navigation…" : saveState === "saved" ? "Navigation saved" : saveState === "error" ? "Couldn’t save navigation yet" : "Navigation saves automatically"}
+            {saveState === "saving" ? "Saving navigation" : saveState === "saved" ? "Navigation saved" : saveState === "error" ? "Couldn’t save navigation yet" : "Navigation saves automatically"}
           </span>
           {saveState === "error" ? (
             <Button size="sm" variant="outline" onClick={retrySave}>Retry</Button>

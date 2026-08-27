@@ -1,13 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SLIDEIN VENTURE OS — TYPE LAYER
+   SLIDEIN VENTURE OS: TYPE LAYER
    ---------------------------------------------------------------------------
    Roles, not sizes. A component picks a role class; every number resolves to
    a token in tokens.css. Geist Sans (body/UI) + Geist Mono (labels, figures).
-   Geist is a variable font with a `wght` axis only — no Fraunces opsz/SOFT/WONK
+   Geist is a variable font with a `wght` axis only. No Fraunces opsz/SOFT/WONK
    axes to dial here, so this is simpler than the marketing type.css.
 
    The five things that separate print typography from web typography:
-     1. inverse tracking — negative at display, positive at body, wide at labels
+     1. inverse tracking: negative at display, positive at body, wide at labels
      2. text-wrap balance on headings, pretty on paragraphs
      3. tabular figures anywhere a number can change
      4. a deliberate leading ladder
@@ -20,7 +20,7 @@
 }
 
 /* ── 1 · DISPLAY ──────────────────────────────────────────────────────────
-   Used sparingly in a console — page titles and the empty-state headline. */
+   Used sparingly in a console: page titles and the empty-state headline. */
 .font-display {
   font-family: var(--font-sans);
   font-weight: var(--font-weight-display);
@@ -38,7 +38,7 @@
 }
 
 /* ── 2 · BODY ─────────────────────────────────────────────────────────────
-   Positive tracking at small sizes — the opposite of display. Default UI
+   Positive tracking at small sizes. The opposite of display. Default UI
    face for everything that isn't a label or a number. */
 .font-body {
   font-family: var(--font-sans);
@@ -59,7 +59,7 @@
 
 /* ── 3 · LABEL ─────────────────────────────────────────────────────────────
    Mono, uppercase, small, widely tracked. The ONE place wide tracking
-   belongs. This is the console's signature register — section eyebrows,
+   belongs. This is the console's signature register: section eyebrows,
    column headers, metadata coordinates, status legends. */
 .font-label {
   font-family: var(--font-mono);

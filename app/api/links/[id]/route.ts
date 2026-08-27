@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const d = validated.data;
     const now = new Date().toISOString();
     // title/tags default in UsefulLinkSchema, so a partial update always
-    // sees them as "defined" even when omitted — check raw body presence.
+    // sees them as "defined" even when omitted. Check raw body presence.
     const normalizedUrl = d.url !== undefined ? normalizeUrl(d.url) : undefined;
     const nextUrl = normalizedUrl ?? doc.url;
     const titleProvided = "title" in body;

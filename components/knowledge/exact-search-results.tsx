@@ -53,7 +53,7 @@ export function ExactSearchResults({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-foreground/40">
-        {total} match{total === 1 ? "" : "es"}, showing {from}–{to}
+        {total} match{total === 1 ? "" : "es"}, showing {from} to {to}
       </p>
 
       <Stagger className="flex flex-col gap-2">

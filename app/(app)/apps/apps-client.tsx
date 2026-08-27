@@ -32,41 +32,10 @@ export function AppsClient() {
       const res = await fetch("/api/apps?pageSize=100");
       if (res.ok) {
         const json = await res.json();
-        const apiApps = json.data || [];
-        
-        // Add hardcoded Mailgo app
-        const mailgoApp: App = {
-          id: "hardcoded-mailgo",
-          name: "Mailgo",
-          slug: "mailgo",
-          description: "Admin Ops Console and Email",
-          icon: "lucide:Mail",
-          url: "https://admin.tanim.tech",
-          category: "Admin",
-          enabled: true,
-          config: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        
-        setApps([mailgoApp, ...apiApps]);
+        setApps(json.data || []);
       }
     } catch (e) {
       toast.error("Failed to fetch apps");
-      // Fallback if API fails (e.g. missing migrations)
-      setApps([{
-        id: "hardcoded-mailgo",
-        name: "Mailgo",
-        slug: "mailgo",
-        description: "Admin Ops Console and Email",
-        icon: "lucide:Mail",
-        url: "https://admin.tanim.tech",
-        category: "Admin",
-        enabled: true,
-        config: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }]);
     } finally {
       setLoading(false);
     }

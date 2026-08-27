@@ -284,7 +284,7 @@ export function LinksClient() {
           </div>
           <DialogFooter>
             <div className="flex w-full items-center justify-between gap-3">
-              <div className="text-xs text-muted-foreground">{saving ? "Saving…" : saveError ? "Couldn’t save. Retry." : ""}</div>
+              <div className="text-xs text-muted-foreground">{saving ? "Saving" : saveError ? "Couldn’t save. Retry." : ""}</div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                 <Button onClick={handleSave} disabled={!formData.url || saving}>Save</Button>

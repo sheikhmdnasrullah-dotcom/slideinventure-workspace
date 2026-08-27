@@ -79,7 +79,7 @@ export function TruemailPanel() {
         />
         <Button onClick={run} disabled={running} className="self-start">
           {running ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
-          {running ? "Verifying…" : "Verify with TrueMail"}
+          {running ? "Verifying" : "Verify with TrueMail"}
         </Button>
 
         {results.length > 0 && (

@@ -99,7 +99,7 @@ export function AvQuery() {
               ask()
             }
           }}
-          placeholder="Ask about your AI Venture material…"
+          placeholder="Ask about your AI Venture material"
           className="min-h-10 flex-1 resize-none text-sm"
         />
         <Button size="icon" onClick={ask} disabled={busy || !input.trim()}>

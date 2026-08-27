@@ -3,7 +3,6 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 import { useCopilotReadable } from "@copilotkit/react-core";
-import { FloatingAiChat } from "@/components/chat/floating-ai-chat";
 import { CopilotActions } from "@/components/copilot/copilot-actions";
 import { CopilotChat } from "@/components/copilot/copilot-chat";
 import { AgentActivityIndicator } from "@/components/copilot/agent-activity-indicator";
@@ -50,12 +49,15 @@ export function AgentCopilot() {
     value: recentAgents,
   });
 
+  // One assistant surface, not two. The CopilotKit popup is the only floating
+  // chat: it is the surface that can actually act on the workspace (search,
+  // create, run an agent) and it already knows the current section. A second
+  // bubble that could only talk made the app feel like two products.
   return (
     <>
       <CopilotActions />
       <AgentActivityIndicator />
       <CopilotChat />
-      <FloatingAiChat />
     </>
   );
 }

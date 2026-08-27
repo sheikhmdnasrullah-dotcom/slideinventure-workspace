@@ -1,6 +1,6 @@
 import "server-only";
 
-// Infisical — secrets management. Optional: when INFISICAL_TOKEN (+ project) is
+// Infisical. Secrets management. Optional: when INFISICAL_TOKEN (+ project) is
 // set, load secrets into process.env at boot (see lib/vault/infisical-load.ts,
 // invoked from the server bootstrap). Degrades to no-op otherwise.
 export function infisicalEnabled(): boolean {

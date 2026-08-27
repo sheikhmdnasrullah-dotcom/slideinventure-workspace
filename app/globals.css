@@ -14,10 +14,10 @@
    call site quietly defeats the system). */
 @import "./styles/type.css";
 
-/* The app has TWO themes — day (.no class, default) and night (.dark on <html>).
+/* The app has TWO themes: day (.no class, default) and night (.dark on <html>).
    next-themes applies .dark persistently. Tailwind v4's built-in dark variant
    is `@media (prefers-color-scheme)`, so we override it to read the .dark class
-   the same way the marketing site does — except here we actually render it. */
+   the same way the marketing site does. Except here we actually render it. */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -89,10 +89,10 @@
      `--color-brand-soft`, the orange family) are declared in
      app/styles/tokens.css `@theme` and emitted to :root from that block.
      Aliasing them here as `var(--color-brand)` self-references and resolves
-     to nothing — do not re-declare them here. ──────────────────────── */
+     to nothing. Do not re-declare them here. ──────────────────────── */
 
   /* ── radii (deliberate scale in tokens.css; collapse legacy names onto
-     it — `md`/`sm` are primitives there, don't re-alias them here) ──── */
+     it. `md`/`sm` are primitives there, don't re-alias them here) ──── */
   --radius-lg: var(--radius-md);
   --radius-xl: var(--radius-lg);
   --radius-2xl: var(--radius-lg);
@@ -119,7 +119,7 @@
 
 @layer components {
   /* Clickable cards: subtle lift on hover, settle on press. GPU-friendly
-     transform only — never animate layout properties. */
+     transform only. Never animate layout properties. */
   .motion-card {
     transition:
       transform var(--dur-fast) var(--ease-std),
@@ -194,7 +194,7 @@
 }
 
 /* Lenis smooth-scroll required styles. Without `html.lenis body { height:
-   auto }` the document collapses and the window cannot scroll at all — this is
+   auto }` the document collapses and the window cannot scroll at all. This is
    what was breaking scrolling site-wide. */
 html.lenis,
 html.lenis body {

@@ -1,5 +1,5 @@
 // Notes store their body as a JSON-serialized BlockNote document (see
-// components/dashboard/v3/notepad/Notepad.js). This walks the block tree
+// components/dashboard/notepad-view). This walks the block tree
 // generically (by "text" / "content" / "children" shape) rather than
 // depending on BlockNote's exact block-type union, so it stays correct as
 // new block types are added.

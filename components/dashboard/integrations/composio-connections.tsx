@@ -16,7 +16,7 @@ export function ComposioConnections() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-sm text-foreground/40">Loading Composio…</p>;
+  if (loading) return <p className="text-sm text-foreground/40">Loading Composio</p>;
   if (conns === null) return <p className="text-sm text-foreground/40">Composio not configured.</p>;
   if (conns.length === 0)
     return <p className="text-sm text-foreground/40">No Composio connections yet (set COMPOSIO_API_KEY).</p>;

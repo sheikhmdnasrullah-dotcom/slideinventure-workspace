@@ -6,7 +6,7 @@ export default async function InsightsPage() {
   return (
     <ComingSoon
       title="Insights"
-      description="AI-discovered, citable statements derived from the knowledge base. Each insight links back to the chunk that produced it. Status = proposed until the founder marks confirmed."
+      description="Statements derived from the knowledge base. Each links back to the chunk that produced it. Status stays proposed until confirmed."
     />
   );
 }

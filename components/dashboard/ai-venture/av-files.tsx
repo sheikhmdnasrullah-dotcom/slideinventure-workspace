@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Folder, FileText, File, Image as ImageIcon, ChevronRight, Home, Upload } from "lucide-react"
+import { Folder, FileText, File, Image as ImageIcon, ChevronRight, Home, Upload, Pencil } from "lucide-react"
 import { toast } from "sonner"
+import { useLiveRefresh } from "@/components/providers/event-stream"
 
 type VentureNode = {
   id: string
@@ -67,6 +68,8 @@ export function AvFiles() {
     load()
   }, [load])
 
+  useLiveRefresh(load, { types: ["file."] })
+
   const selectedExt = selected ? extOf(selected) : ""
   const isBinarySelected = BINARY_EXT.includes(selectedExt)
   const isImageSelected = IMAGE_EXT.includes(selectedExt)
@@ -81,7 +84,7 @@ export function AvFiles() {
       const json = await res.json()
       setContent(json.content ?? "")
     } catch {
-      // ignore
+      toast.error("Could not open file")
     } finally {
       setBusy(false)
     }
@@ -107,22 +110,65 @@ export function AvFiles() {
     const name = window.prompt(`New ${type} name (e.g. notes.md)`)
     if (!name) return
     const path = currentPath ? `${currentPath}/${name}` : name
-    await fetch("/api/ai-venture", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path, type }),
-    }).catch(() => {})
-    load()
+    try {
+      const res = await fetch("/api/ai-venture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, type }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error?.message || "Create failed")
+      }
+      toast.success(`Created ${name}`)
+      load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Create failed")
+    }
   }
 
   const del = async (path: string) => {
     if (!window.confirm(`Delete ${path}?`)) return
-    await fetch(`/api/ai-venture/file?path=${encodeURIComponent(path)}`, { method: "DELETE" }).catch(() => {})
-    if (selected === path) {
-      setSelected(null)
-      setContent("")
+    try {
+      const res = await fetch(`/api/ai-venture/file?path=${encodeURIComponent(path)}`, { method: "DELETE" })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error?.message || "Delete failed")
+      }
+      toast.success(`Deleted ${path}`)
+      if (selected === path) {
+        setSelected(null)
+        setContent("")
+      }
+      load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed")
     }
-    load()
+  }
+
+  const rename = async (path: string) => {
+    const currentName = path.split("/").pop() ?? path
+    const name = window.prompt("Rename to", currentName)
+    if (name === null || !name.trim()) return
+    const base = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : ""
+    const newPath = base + name.trim()
+    if (newPath === path) return
+    try {
+      const res = await fetch("/api/ai-venture/file", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, newPath }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error?.message || "Rename failed")
+      }
+      toast.success(`Renamed to ${name.trim()}`)
+      if (selected === path) setSelected(newPath)
+      load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Rename failed")
+    }
   }
 
   const handleUploadClick = () => fileInputRef.current?.click()
@@ -177,7 +223,7 @@ export function AvFiles() {
           <div className="ml-auto flex gap-1">
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelected} />
             <Button size="xs" onClick={handleUploadClick} disabled={uploading}>
-              <Upload className="size-3.5" /> {uploading ? "Uploading…" : "Upload"}
+              <Upload className="size-3.5" /> {uploading ? "Uploading" : "Upload"}
             </Button>
             <Button size="xs" variant="outline" onClick={() => create("file")}>
               New file
@@ -195,22 +241,35 @@ export function AvFiles() {
               {items.map((item) => {
                 const Icon = item.type === "folder" ? Folder : fileIcon(item.name)
                 return (
-                  <button
+                  <div
                     key={item.id || item.path}
-                    onClick={() => {
-                      if (item.type === "folder") {
-                        setCurrentPath(item.path)
-                      } else {
-                        openFile(item.path)
-                      }
-                    }}
-                    className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center text-xs hover:bg-accent ${
+                    className={`group relative flex flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center text-xs hover:bg-accent ${
                       selected === item.path ? "border-primary bg-accent" : "border-border"
                     }`}
                   >
-                    <Icon className="size-8 text-muted-foreground" />
-                    <span className="line-clamp-2">{item.name}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (item.type === "folder") {
+                          setCurrentPath(item.path)
+                        } else {
+                          openFile(item.path)
+                        }
+                      }}
+                      className="flex flex-col items-center justify-center gap-2"
+                    >
+                      <Icon className="size-8 text-muted-foreground" />
+                      <span className="line-clamp-2">{item.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Rename"
+                      onClick={() => rename(item.path)}
+                      className="absolute right-1.5 top-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -228,6 +287,9 @@ export function AvFiles() {
             )}
             {selected && (
               <>
+                <Button size="xs" variant="outline" onClick={() => rename(selected)}>
+                  Rename
+                </Button>
                 <Button size="xs" variant="outline" render={<a href={`/api/ai-venture/file/raw?path=${encodeURIComponent(selected)}`} download target="_blank" rel="noreferrer" />}>
                   Download
                 </Button>

@@ -50,7 +50,7 @@ export default function NotionEditor({ onChange, initialContent }) {
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
-    const toastId = toast.loading("Uploading image…")
+    const toastId = toast.loading("Uploading image")
     try {
       const url = await uploadFile(file)
       editor.insertBlocks(

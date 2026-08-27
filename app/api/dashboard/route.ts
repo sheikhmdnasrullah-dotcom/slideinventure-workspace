@@ -2,7 +2,7 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
-import type { DashboardResponse, ChartPoint, ActivityRow, KpiCard, ActivityStatus } from "@/lib/dashboard/types";
+import type { DashboardResponse, ChartPoint, ActivityRow, KpiCard, ActivityStatus, DashboardCounts, VolumePoint } from "@/lib/dashboard/types";
 import { logActivity } from "@/lib/activities/client";
 
 const DB = APPWRITE.databaseId;
@@ -11,9 +11,28 @@ const KI = APPWRITE.collections.knowledgeItems;
 const LEADS = APPWRITE.collections.leads;
 const DOCS = APPWRITE.collections.documents;
 const NOTES = APPWRITE.collections.notes;
+const BOARDS = APPWRITE.collections.boards;
 const TERMINAL = APPWRITE.collections.terminalCommands;
 const CHAT = APPWRITE.collections.chatSessions;
+const ACTIVITIES = APPWRITE.collections.activities;
 const AI_VENTURE = "ai_venture_files";
+
+/** Bucket timestamps into one count per day for the trailing `days` window. */
+function buildVolume(days: number, timestamps: string[]): VolumePoint[] {
+  const points: VolumePoint[] = [];
+  const today = new Date();
+  const counts = new Map<string, number>();
+  for (const ts of timestamps) {
+    const key = new Date(ts).toISOString().slice(0, 10);
+    if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    points.push({ date: key, count: counts.get(key) ?? 0 });
+  }
+  return points;
+}
 
 function buildChart(days: number, runs: any[]): ChartPoint[] {
   const points: ChartPoint[] = [];
@@ -194,6 +213,63 @@ export async function GET() {
   const completedRuns = runs.filter((r) => r.status === "completed");
   const failedRuns = runs.filter((r) => r.status === "failed");
 
+  // Real per-collection totals (Appwrite `total` is the true count regardless of
+  // the query limit). Used by the dashboard metric tiles so a number is never an
+  // artifact of a `limit(8)` query.
+  const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const since14 = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  let totalNotes = 0;
+  let totalDocs = 0;
+  let totalKnowledge = 0;
+  let totalBoards = 0;
+  let totalRuns = 0;
+  let activities7d = 0;
+  let volumeDocs: any[] = [];
+  try {
+    totalNotes = (await databases.listDocuments(DB, NOTES, [Query.limit(1)])).total;
+  } catch {}
+  try {
+    totalDocs = (await databases.listDocuments(DB, DOCS, [Query.limit(1)])).total;
+  } catch {}
+  try {
+    totalKnowledge = (await databases.listDocuments(DB, KI, [Query.limit(1)])).total;
+  } catch {}
+  try {
+    totalBoards = (await databases.listDocuments(DB, BOARDS, [Query.limit(1)])).total;
+  } catch {}
+  try {
+    totalRuns = (await databases.listDocuments(DB, RUNS, [Query.limit(1)])).total;
+  } catch {}
+  try {
+    activities7d = (
+      await databases.listDocuments(DB, APPWRITE.collections.activities, [
+        Query.equal("user_email", user.email ?? ""),
+        Query.greaterThanEqual("timestamp", since7),
+        Query.limit(1),
+      ])
+    ).total;
+  } catch {}
+  try {
+    const res = await databases.listDocuments(DB, APPWRITE.collections.activities, [
+      Query.equal("user_email", user.email ?? ""),
+      Query.greaterThanEqual("timestamp", since14),
+      Query.orderDesc("timestamp"),
+      Query.limit(500),
+    ]);
+    volumeDocs = res.documents;
+  } catch {}
+
+  const counts: DashboardCounts = {
+    notes: totalNotes,
+    documents: totalDocs,
+    knowledge: totalKnowledge,
+    leads: activeLeads,
+    boards: totalBoards,
+    agentRuns: totalRuns,
+    activities7d,
+  };
+  const activityVolume = buildVolume(14, volumeDocs.map((d: any) => d.timestamp));
+
   const kpis: KpiCard[] = [
     {
       id: "emails-sent",
@@ -214,15 +290,15 @@ export async function GET() {
     {
       id: "knowledge-items",
       label: "Knowledge Items",
-      value: String(items.length),
-      trend: { direction: items.length > 0 ? "up" : "flat", label: `${items.filter((i) => i.status === "active").length} active` },
+      value: String(totalKnowledge),
+      trend: { direction: totalKnowledge > 0 ? "up" : "flat", label: `total synced` },
       context: "Total synced items",
       subline: "Live from knowledge base",
     },
     {
       id: "task-runs",
       label: "Task Runs",
-      value: String(runs.length),
+      value: String(totalRuns),
       trend: { direction: "flat", label: `${completedRuns.length} completed, ${failedRuns.length} failed` },
       context: "Total backend executions",
       subline: "Live from task_runs",
@@ -230,16 +306,16 @@ export async function GET() {
     {
       id: "recent-documents",
       label: "Documents",
-      value: String(recentDocs.length),
-      trend: { direction: recentDocs.length > 0 ? "up" : "flat", label: "recent uploads" },
+      value: String(totalDocs),
+      trend: { direction: totalDocs > 0 ? "up" : "flat", label: "total files" },
       context: "Recently uploaded files",
       subline: "Live from documents",
     },
     {
       id: "recent-notes",
       label: "Notes",
-      value: String(recentNotes.length),
-      trend: { direction: recentNotes.length > 0 ? "up" : "flat", label: "recent edits" },
+      value: String(totalNotes),
+      trend: { direction: totalNotes > 0 ? "up" : "flat", label: "total notes" },
       context: "Recently edited notes",
       subline: "Live from notes",
     },
@@ -268,6 +344,9 @@ export async function GET() {
       type: (d.category as ActivityRow["type"]) ?? "system",
       status: mapActivityStatus(d.action),
       source: d.entity_type || d.category || "workspace",
+      category: d.category,
+      entityId: d.entity_id ?? undefined,
+      entityType: d.entity_type ?? undefined,
       updatedAt: d.timestamp ?? new Date().toISOString(),
     })),
     // Chat isn't yet wired into logActivity; keep recent sessions so the
@@ -278,6 +357,9 @@ export async function GET() {
       type: "chat" as ActivityRow["type"],
       status: "active" as ActivityRow["status"],
       source: "chat",
+      category: "chat",
+      entityId: session.id,
+      entityType: "chat_session",
       updatedAt: session.updated_at ?? session.created_at,
     })),
   ]
@@ -296,6 +378,8 @@ export async function GET() {
     chart: buildChart(90, runs),
     activity,
     syncedAt: new Date().toISOString(),
+    counts,
+    activityVolume,
   };
 
   return Response.json(response);

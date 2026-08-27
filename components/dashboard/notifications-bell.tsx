@@ -47,19 +47,35 @@ export function NotificationsBell() {
   }, [load]);
 
   const markAll = async () => {
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnread(0);
     await fetch("/api/notifications", {
-      method: "POST",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ all: true }),
-    });
+    }).catch(() => {});
     load();
   };
+
   const markOne = async (id: string) => {
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    setUnread((u) => Math.max(0, u - 1));
     await fetch("/api/notifications", {
-      method: "POST",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
-    });
+    }).catch(() => {});
+    load();
+  };
+
+  const clearAll = async () => {
+    setItems([]);
+    setUnread(0);
+    await fetch("/api/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true }),
+    }).catch(() => {});
     load();
   };
 
@@ -89,6 +105,15 @@ export function NotificationsBell() {
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Mark all read
+              </button>
+            )}
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="text-xs text-muted-foreground hover:text-destructive"
+              >
+                Clear all
               </button>
             )}
           </div>

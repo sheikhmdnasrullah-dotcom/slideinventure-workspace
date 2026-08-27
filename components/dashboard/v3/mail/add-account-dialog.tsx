@@ -100,10 +100,10 @@ export function AddAccountDialog({ open, onOpenChange, onCreated }: AddAccountDi
               <SelectContent>
                 <SelectItem value="imap_smtp">IMAP / SMTP</SelectItem>
                 <SelectItem value="google" disabled>
-                  Google Workspace: Coming soon
+                  Google Workspace: Not available
                 </SelectItem>
                 <SelectItem value="microsoft" disabled>
-                  Microsoft 365: Coming soon
+                  Microsoft 365: Not available
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -149,7 +149,7 @@ export function AddAccountDialog({ open, onOpenChange, onCreated }: AddAccountDi
 
           <div className="flex justify-end">
             <Button onClick={handleSubmit} disabled={saving}>
-              {saving ? "Adding…" : "Add account"}
+              {saving ? "Adding" : "Add account"}
             </Button>
           </div>
         </div>

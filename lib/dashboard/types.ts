@@ -28,6 +28,24 @@ export type ActivityRow = {
   status: ActivityStatus;
   source: string;
   updatedAt: string;
+  category?: string;
+  entityId?: string;
+  entityType?: string;
+};
+
+export type DashboardCounts = {
+  notes: number;
+  documents: number;
+  knowledge: number;
+  leads: number;
+  boards: number;
+  agentRuns: number;
+  activities7d: number;
+};
+
+export type VolumePoint = {
+  date: string;
+  count: number;
 };
 
 export type DashboardResponse = {
@@ -35,6 +53,8 @@ export type DashboardResponse = {
   chart: ChartPoint[];
   activity: ActivityRow[];
   syncedAt: string;
+  counts?: DashboardCounts;
+  activityVolume?: VolumePoint[];
 };
 
 export type DashboardWidget =

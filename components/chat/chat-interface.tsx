@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { format, isToday, isYesterday } from "date-fns";
-import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink, Trash2, BookOpen, User, Terminal, Puzzle, Link as LinkIcon, FileText } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,12 +93,12 @@ function groupMessagesByDay(messages: Message[]) {
   return groups;
 }
 
-const SOURCE_ICONS: Record<string, string> = {
-  knowledge: "📚",
-  leads: "👤",
-  terminal: "💻",
-  apps: "🧩",
-  links: "🔗",
+const SOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  knowledge: BookOpen,
+  leads: User,
+  terminal: Terminal,
+  apps: Puzzle,
+  links: LinkIcon,
 };
 
 async function loadSessions(
@@ -187,6 +187,22 @@ export function ChatInterface() {
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
+
+  const deleteSession = async (sessionId: string) => {
+    if (!confirm("Delete this conversation and all its messages?")) return;
+    try {
+      const res = await fetch(`/api/chat/sessions/${sessionId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(null);
+        setMessages([]);
+      }
+      toast.success("Conversation deleted");
+    } catch {
+      toast.error("Failed to delete conversation");
+    }
+  };
 
   const newSession = () => {
     setInput("");
@@ -365,21 +381,30 @@ export function ChatInterface() {
             </Button>
 
             {sessions.map((session) => (
-              <button
-                key={session.id}
-                onClick={() => setActiveSessionId(session.id)}
-                className={cn(
-                  "w-full rounded-md px-2 py-2 text-left text-sm transition-colors",
-                  activeSessionId === session.id
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                )}
-              >
-                <span className="block truncate">{session.title}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(session.updatedAt).toLocaleDateString()}
-                </span>
-              </button>
+              <div key={session.id} className="group relative">
+                <button
+                  onClick={() => setActiveSessionId(session.id)}
+                  className={cn(
+                    "w-full rounded-md px-2 py-2 pr-8 text-left text-sm transition-colors",
+                    activeSessionId === session.id
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  )}
+                >
+                  <span className="block truncate">{session.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(session.updatedAt).toLocaleDateString()}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Delete conversation"
+                  onClick={() => deleteSession(session.id)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
             ))}
           </div>
         </ScrollArea>
@@ -406,7 +431,7 @@ export function ChatInterface() {
               <div className="flex h-full min-h-[50vh] flex-col items-center justify-center text-center text-muted-foreground">
                 <Sparkles className="mb-4 size-10 text-muted-foreground/60" />
                 <p className="text-base">Start a conversation</p>
-                <p className="mt-1 text-sm">Ask about knowledge, research, SOPs, decisions…</p>
+                 <p className="mt-1 text-sm">Ask about knowledge, research, SOPs, or decisions</p>
               </div>
             ) : (
               messageGroups.map((group) => (
@@ -458,7 +483,7 @@ export function ChatInterface() {
                                 {msg.retrievalSources.map((group) => (
                                   <div key={group.source} className="min-w-0 p-3">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm">{SOURCE_ICONS[group.source] || "📄"}</span>
+                                       <span className="text-muted-foreground">{(() => { const Icon = SOURCE_ICONS[group.source] ?? FileText; return <Icon className="size-4" />; })()}</span>
                                       <span className="text-xs font-medium">{group.label}</span>
                                       <Badge variant="secondary" className="text-[10px]">
                                         {group.matchCount} match{group.matchCount !== 1 ? "es" : ""}
@@ -544,7 +569,7 @@ export function ChatInterface() {
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               disabled={streaming}
-              placeholder={streaming ? "Sending…" : "Ask about knowledge, research, SOPs…"}
+              placeholder={streaming ? "Sending" : "Ask about knowledge, research, or SOPs"}
               rows={1}
               className="max-h-40 min-h-[40px] flex-1 resize-none"
             />

@@ -6,17 +6,26 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
-import { Plus, Trash2, FileText, Loader2 } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+import { Plus, Trash2, FileText, Loader2, Pencil, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { useLiveRefresh } from "@/components/providers/event-stream"
 
 const Notepad = dynamic(() => import("@/components/dashboard/v3/note/dynamic"), {
   ssr: false,
-  loading: () => <div className="p-6 text-muted-foreground">Loading editor…</div>,
+  loading: () => <div className="p-6 text-muted-foreground">Loading editor</div>,
 })
 
 type Note = { id: string; title: string | null; content: string; updated_at: string }
@@ -32,6 +41,9 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
   const [title, setTitle] = React.useState<string>("")
   const [loading, setLoading] = React.useState(true)
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
+  const [renamingId, setRenamingId] = React.useState<string | null>(null)
+  const [draftTitle, setDraftTitle] = React.useState("")
+  const [deleteId, setDeleteId] = React.useState<string | null>(null)
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Always pass scope explicitly (never omit it): /api/notes returns every
@@ -54,6 +66,8 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
   React.useEffect(() => {
     loadNotes()
   }, [loadNotes])
+
+  useLiveRefresh(loadNotes, { types: ["note."] })
 
   const handleWrite = async () => {
     try {
@@ -114,7 +128,29 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
     if (selectedId) persist(selectedId, next, title)
   }
 
-  const handleDelete = async (id: string) => {
+  const renameNote = async (id: string, value: string) => {
+    const next = value.trim() || "Untitled note"
+    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, title: next } : n)))
+    if (selectedId === id) setTitle(next)
+    setRenamingId(null)
+    try {
+      await fetch(`/api/notes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: next }),
+      })
+    } catch {
+      toast.error("Failed to rename note")
+      void loadNotes()
+    }
+  }
+
+  const requestDelete = (id: string) => setDeleteId(id)
+
+  const confirmDelete = async () => {
+    if (!deleteId) return
+    const id = deleteId
+    setDeleteId(null)
     try {
       await fetch(`/api/notes/${id}`, { method: "DELETE" })
       setNotes((prev) => prev.filter((n) => n.id !== id))
@@ -136,38 +172,80 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
           <p className="text-sm text-muted-foreground">Rich-text notes, autosaved to your workspace.</p>
         </div>
         <Button onClick={handleWrite} className="gap-2">
-          <Plus className="size-4" /> Write Note
+          <Plus className="size-4" /> New note
         </Button>
       </div>
       <Separator />
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-72 shrink-0 border-r">
-          <ScrollArea className="h-full">
+          <ScrollArea className="h-full" data-lenis-prevent>
             <div className="flex flex-col gap-1 p-3">
               {loading ? (
-                <div className="p-4 text-sm text-muted-foreground">Loading…</div>
+                <div className="p-4 text-sm text-muted-foreground">Loading</div>
               ) : notes.length === 0 ? (
                 <div className="p-4 text-sm text-muted-foreground">No notes yet. Click "Write Note".</div>
               ) : (
                 notes.map((n) => (
-                  <button
+                  <div
                     key={n.id}
-                    onClick={() => selectNote(n)}
                     className={cn(
                       "group flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent/20",
                       selectedId === n.id && "bg-muted"
                     )}
                   >
                     <FileText className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate font-medium">{n.title || "Untitled"}</span>
-                    <Trash2
-                      className="size-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(n.id)
-                      }}
-                    />
-                  </button>
+                    {renamingId === n.id ? (
+                      <input
+                        autoFocus
+                        value={draftTitle}
+                        onChange={(e) => setDraftTitle(e.target.value)}
+                        onBlur={() => renameNote(n.id, draftTitle)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            renameNote(n.id, draftTitle)
+                          } else if (e.key === "Escape") {
+                            e.preventDefault()
+                            setRenamingId(null)
+                          }
+                        }}
+                        className="flex-1 truncate bg-transparent font-medium outline-none"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => selectNote(n)}
+                        className="flex-1 truncate text-left font-medium hover:underline"
+                      >
+                        {n.title || "Untitled"}
+                      </button>
+                    )}
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {n.updated_at
+                        ? formatDistanceToNow(new Date(n.updated_at), { addSuffix: true })
+                        : ""}
+                    </span>
+                    {renamingId !== n.id && (
+                      <button
+                        type="button"
+                        aria-label="Rename"
+                        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={() => {
+                          setRenamingId(n.id)
+                          setDraftTitle(n.title || "Untitled")
+                        }}
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      aria-label="Delete"
+                      className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => requestDelete(n.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -176,7 +254,7 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
 
         <section className="flex flex-1 flex-col">
           {selectedId ? (
-            <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-auto">
+              <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-auto" data-lenis-prevent>
               <div className="flex items-center gap-2 px-6 pt-8 pb-2">
                 <input
                   value={title}
@@ -189,7 +267,7 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                 />
                 <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                   {status === "saving" && <Loader2 className="size-3 animate-spin" />}
-                  {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
+                  {status === "saving" ? "Saving" : status === "saved" ? "Saved" : ""}
                 </span>
               </div>
               <div className="px-6 pb-10">
@@ -203,6 +281,25 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
           )}
         </section>
       </div>
+
+      <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete note</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This removes the note and its contents. This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>
+              <X className="size-3" /> Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              <Trash2 className="size-3" /> Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -98,7 +98,7 @@ function TemporalControl() {
       <Textarea
         value={task}
         onChange={(e) => setTask(e.target.value)}
-        placeholder="Agent task to run as a durable workflow…"
+        placeholder="Agent task to run as a durable workflow"
         className="min-h-20 text-xs"
       />
       <Input
@@ -108,7 +108,7 @@ function TemporalControl() {
         className="text-xs"
       />
       <Button onClick={start} disabled={busy || !task.trim()} size="sm">
-        {busy ? "Starting…" : "Start workflow"}
+        {busy ? "Starting" : "Start workflow"}
       </Button>
       {out && <pre className="max-h-40 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs" data-lenis-prevent>{out}</pre>}
     </div>
@@ -133,7 +133,7 @@ function NovuControl() {
   return (
     <div className="flex flex-col gap-2">
       <Button onClick={send} disabled={busy} size="sm">
-        {busy ? "Sending…" : "Send test notification"}
+        {busy ? "Sending" : "Send test notification"}
       </Button>
       {out && <pre className="max-h-32 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs" data-lenis-prevent>{out}</pre>}
     </div>
@@ -158,7 +158,7 @@ function Mem0Control() {
   return (
     <div className="flex flex-col gap-2">
       <Button onClick={test} disabled={busy} size="sm">
-        {busy ? "Testing…" : "Test remember / recall"}
+        {busy ? "Testing" : "Test remember / recall"}
       </Button>
       {out && <pre className="max-h-32 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs" data-lenis-prevent>{out}</pre>}
     </div>

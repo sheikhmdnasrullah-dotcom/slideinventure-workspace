@@ -159,7 +159,7 @@ export function KnowledgeSearchPanel({ initialItems }: { initialItems?: Knowledg
         <FilterBar.Search
           value={query}
           onChange={setQuery}
-          placeholder="Search knowledge base…"
+          placeholder="Search knowledge base"
         />
         <FilterBar.Button
           active={mode === "exact"}

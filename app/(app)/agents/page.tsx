@@ -181,7 +181,7 @@ export default async function AgentsPage() {
                         </Badge>
                       </td>
                       <td className="py-2 px-3 font-mono text-xs text-ink-muted truncate max-w-xs">
-                        {run.command ?? "–"}
+                        {run.command ?? ""}
                       </td>
                       <td className="text-center py-2 px-3">
                         <Badge
@@ -200,7 +200,7 @@ export default async function AgentsPage() {
                         {started.toLocaleTimeString()}
                       </td>
                       <td className="text-right py-2 px-3 font-label text-[10px] text-ink-muted tabular-nums">
-                        {duration !== null ? `${duration}s` : "–"}
+                        {duration !== null ? `${duration}s` : ""}
                       </td>
                     </tr>
                   );
@@ -216,7 +216,7 @@ export default async function AgentsPage() {
         <PageHeader
           eyebrow="Roster"
           title="Agent roster"
-          meta={roster.length > 0 ? `${roster.length} specialist agents across ${rosterDivisions.length} divisions — click one to open its visual canvas` : undefined}
+          meta={roster.length > 0 ? `${roster.length} specialist agents across ${rosterDivisions.length} divisions. Click one to open its visual canvas` : undefined}
         />
         <Surface variant="raised">
           {roster.length === 0 ? (

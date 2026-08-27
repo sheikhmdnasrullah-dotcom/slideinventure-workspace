@@ -80,7 +80,7 @@ function BoardList({ engine, onOpen }: { engine: BoardEngine; onOpen: (id: strin
         </Button>
       </div>
       {loading ? (
-        <p className="text-xs text-muted-foreground">Loading…</p>
+        <p className="text-xs text-muted-foreground">Loading</p>
       ) : boards.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
           <PenTool className="size-8" />

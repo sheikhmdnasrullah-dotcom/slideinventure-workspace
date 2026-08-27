@@ -1,6 +1,6 @@
 import "server-only";
 
-// Windmill — self-hosted workflow/automation engine. Optional orchestration
+// Windmill. Self-hosted workflow/automation engine. Optional orchestration
 // layer. No official JS client on npm, so we use the REST API. Active only when
 // WINDMILL_API_URL + WINDMILL_TOKEN are set.
 export function windmillEnabled(): boolean {

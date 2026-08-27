@@ -427,7 +427,7 @@ export function MailDisplay({ onBack }: MailDisplayProps = {}) {
                         disabled={replySending}
                         onClick={replyMode === "forward" ? handleSendForward : handleSendReply}
                       >
-                        {replySending ? "Sending…" : "Send"}
+                        {replySending ? "Sending" : "Send"}
                       </Button>
                     </div>
                   </div>

@@ -1,15 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SLIDEIN VENTURE OS — THEME LAYER
+   SLIDEIN VENTURE OS: THEME LAYER
    Macro contrast via ONE axis: THEME (day | night). A user choice, persisted
    by next-themes and applied as a `.dark` class on <html>.
 
-   THE CONTRACT — the only colour names a new component may consume. Components
+   THE CONTRACT. The only colour names a new component may consume. Components
    write `text-[var(--text-muted)]`, never `dark:text-neutral-400`.
 
      --page-fill      what the document is painted with under/around surfaces
      --surface        raised card fill sitting on this page
      --surface-2      inset / nested fill (a well INSIDE a card)
-     --text-strong    headings — darkest ink on this theme
+     --text-strong    headings. Darkest ink on this theme
      --text-default   body text
      --text-muted     secondary text (≥4.5:1 on --surface)
      --text-faint     NOT TEXT. Icons, ticks, disabled, decorative hairlines
@@ -29,22 +29,22 @@
      --scrim         the veil behind a modal
 
    RULE 1 HOLDS ON BOTH THEMES. --text-accent and --accent-vivid are always
-   hue 42.28. A dark surface does not get a second orange — it gets the same
+   hue 42.28. A dark surface does not get a second orange. It gets the same
    orange read at the lightness that clears AA against it (brand-hi, 6.47:1 on
    graphite-900). Never #FFFFFF or #000000 anywhere: paper-25 is the lightest
    value; ink-deep the darkest.
 
-   LEGACY ALIASES — the shadcn primitives (built on @base-ui/react) ship
+   LEGACY ALIASES. The shadcn primitives (built on @base-ui/react) ship
    `dark:` variants and read `--background / --foreground / --card / --muted /
    --accent / --border / --primary` etc. We point every one at the semantic
    contract so the stock components pick the theme up for free, WITHOUT
    colliding with our text/surface split (shadcn's --muted and --accent are
-   SURFACES — `bg-muted`, `bg-accent` hover states — not text colors, so they
+   SURFACES. `bg-muted`, `bg-accent` hover states. Not text colors, so they
    map to --surface-2, not to the text contract).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────────────────────
-   DAY — paper surfaces, ink type, orange accent.
+   DAY. Paper surfaces, ink type, orange accent.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
   --page-fill:       var(--color-paper-50);
@@ -120,9 +120,9 @@ html {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   NIGHT — graphite surfaces, ash type, the same orange read up.
+   NIGHT. Graphite surfaces, ash type, the same orange read up.
    A console gets a dark mode because long sessions deserve one. The marketing
-   site deliberately has none — the two apps are different products.
+   site deliberately has none. The two apps are different products.
    ───────────────────────────────────────────────────────────────────────── */
 .dark {
   --page-fill:       var(--color-graphite-900);

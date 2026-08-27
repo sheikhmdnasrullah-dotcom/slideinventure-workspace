@@ -10,7 +10,7 @@ const Whiteboard = dynamic(() => import("@/components/dashboard/v3/whiteboard/Wh
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-      Loading canvas…
+      Loading canvas
     </div>
   ),
 });
@@ -138,7 +138,7 @@ export default function ExcalidrawPopup() {
         {activeId ? (
           <SaveIndicator state={state} lastSavedAt={lastSavedAt} onRetry={() => flush()} />
         ) : (
-          <span className="text-xs text-muted-foreground">Loading…</span>
+          <span className="text-xs text-muted-foreground">Loading</span>
         )}
       </header>
       <main className="relative flex-1">
@@ -146,7 +146,7 @@ export default function ExcalidrawPopup() {
           <Whiteboard initialData={initial ?? "{}"} onChange={handleChange} onMount={() => {}} />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Preparing canvas…
+            Preparing canvas
           </div>
         )}
       </main>

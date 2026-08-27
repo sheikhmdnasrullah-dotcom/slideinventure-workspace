@@ -61,7 +61,7 @@ export function BrowseConsole() {
           disabled={running || !task.trim()}
           className="mt-1 self-start rounded-md bg-[var(--text-accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {running ? "Browsing…" : "Run browse task"}
+          {running ? "Browsing" : "Run browse task"}
         </button>
       </div>
 

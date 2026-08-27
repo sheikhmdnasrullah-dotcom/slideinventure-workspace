@@ -261,7 +261,7 @@ export function Mail({
               </div>
               <div className="flex justify-end pb-[env(safe-area-inset-bottom)]">
                 <Button onClick={handleComposeSend} disabled={composeSending}>
-                  {composeSending ? "Sending…" : "Send"}
+                  {composeSending ? "Sending" : "Send"}
                 </Button>
               </div>
             </div>
@@ -446,7 +446,7 @@ export function Mail({
             </div>
             <div className="flex justify-end">
               <Button onClick={handleComposeSend} disabled={composeSending}>
-                {composeSending ? "Sending…" : "Send"}
+                {composeSending ? "Sending" : "Send"}
               </Button>
             </div>
           </div>

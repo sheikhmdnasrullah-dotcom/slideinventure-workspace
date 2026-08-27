@@ -85,7 +85,7 @@ export function AvPlayground() {
         <p className="text-xs text-muted-foreground">Every whiteboard you've made, in one library: nothing duplicated, just a view onto your boards.</p>
       </div>
       {loading ? (
-        <p className="text-xs text-muted-foreground">Loading…</p>
+        <p className="text-xs text-muted-foreground">Loading</p>
       ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
           <PenTool className="size-8" />

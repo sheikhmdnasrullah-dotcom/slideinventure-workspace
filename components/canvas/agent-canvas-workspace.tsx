@@ -94,13 +94,13 @@ export function AgentCanvasWorkspace() {
         <textarea
           value={details}
           onChange={(e) => setDetails(e.target.value)}
-          placeholder="Company, domain, location…"
+          placeholder="Company, domain, location"
           rows={3}
           className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="mt-4">
           <ShimmerButton onClick={run} disabled={running}>
-            {running ? "Running…" : "Run Agent Pipeline"}
+            {running ? "Running" : "Run Agent Pipeline"}
           </ShimmerButton>
         </div>
 

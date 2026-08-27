@@ -91,7 +91,7 @@ export function EmailCrawler() {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-foreground/50">Prospect details</label>
             <Textarea
-              placeholder="Name, company, role, anything you know about the prospect…"
+              placeholder="Name, company, role, anything you know about the prospect"
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               rows={3}
@@ -100,7 +100,7 @@ export function EmailCrawler() {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-foreground/50">Extra instructions (optional)</label>
             <Textarea
-              placeholder="e.g. prefer personal email, check the team page first…"
+              placeholder="e.g. prefer personal email, check the team page first"
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               rows={2}
@@ -108,7 +108,7 @@ export function EmailCrawler() {
           </div>
           <Button onClick={run} disabled={running} className="self-start">
             {running ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
-            {running ? "Surfing the web…" : "Crawl for email"}
+            {running ? "Surfing the web" : "Crawl for email"}
           </Button>
         </CardContent>
       </Card>

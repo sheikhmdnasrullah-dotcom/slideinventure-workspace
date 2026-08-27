@@ -229,7 +229,7 @@ export function AddCommandDialog({ open, onOpenChange, onSaved, editingCommand }
           <SheetFooter className="px-0">
             <div className="flex w-full items-center justify-between gap-3">
               <div className="text-xs text-muted-foreground">
-                {saving ? "Saving…" : saveError ? "Couldn’t save. Retry." : ""}
+                {saving ? "Saving" : saveError ? "Couldn’t save. Retry." : ""}
               </div>
               <Button type="submit" disabled={saving}>
                 {saving ? (

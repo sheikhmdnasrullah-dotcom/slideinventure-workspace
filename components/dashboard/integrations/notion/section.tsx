@@ -1,56 +1,75 @@
-"use client"
-import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { toast } from 'sonner'
-import { X, Settings, LogOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { X, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+type Integration = {
+  id: string;
+  name: string;
+  provider: string;
+  status: string;
+};
+
+async function loadNotionIntegration(): Promise<Integration | null> {
+  const res = await fetch("/api/integrations?provider=notion&pageSize=10", {
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  const items: Integration[] = json.data ?? [];
+  return (
+    items.find((i) => i.status === "active" || i.status === "needs_reauth") ?? null
+  );
+}
 
 export default function NotionSection() {
-  const router = useRouter()
-  const [searchParams] = useSearchParams()
-  const [connected, setConnected] = useState(false)
-  const [workspaceName, setWorkspaceName] = useState('')
+  const router = useRouter();
+  const [connected, setConnected] = useState(false);
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const supabase = createClient()
-        const { data } = await supabase
-          .from('notion_connections')
-          .select('workspace_name, status')
-          .eq('status', 'active')
-          .limit(1)
-
-        if (data && data.length > 0) {
-          setConnected(true)
-          setWorkspaceName(data[0].workspace_name || 'Notion Workspace')
+        const integration = await loadNotionIntegration();
+        if (integration) {
+          setConnected(true);
+          setWorkspaceName(integration.name || "Notion");
         }
-      } catch (e) {
-        console.error('Connection check error:', e)
+      } catch {
+        // keep disconnected
+      } finally {
+        setLoading(false);
       }
-    }
-
-    checkConnection()
-  }, [])
+    };
+    checkConnection();
+  }, []);
 
   const handleConnect = () => {
-    router.replace('/dashboard?notion_connect=start')
-  }
+    router.replace("/dashboard?notion_connect=start");
+  };
 
   const handleDisconnect = async () => {
     try {
-      const supabase = createClient()
-      await supabase
-        .from('notion_connections')
-        .update({ status: 'revoked' })
-        .eq('status', 'active')
-      setConnected(false)
-      setWorkspaceName('')
-      toast.success('Notion disconnected')
-    } catch (e) {
-      toast.error('Failed to disconnect')
+      const integration = await loadNotionIntegration();
+      if (!integration) return;
+      const res = await fetch(`/api/integrations/${integration.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("delete failed");
+      setConnected(false);
+      setWorkspaceName("");
+      toast.success("Notion disconnected");
+    } catch {
+      toast.error("Failed to disconnect");
     }
+  };
+
+  if (loading) {
+    return <span className="text-xs text-muted-foreground">Notion</span>;
   }
 
   if (connected) {
@@ -66,7 +85,7 @@ export default function NotionSection() {
           <X className="size-4" />
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -81,5 +100,5 @@ export default function NotionSection() {
       </Button>
       <span className="text-xs text-muted-foreground">Notion</span>
     </div>
-  )
+  );
 }

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Terminal, Play, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useLiveRefresh } from "@/components/providers/event-stream";
 
 type TaskRun = {
   id: string;
@@ -40,15 +40,9 @@ export function ExecutionPanel() {
 
   useEffect(() => {
     loadRuns();
-    const supabase = createClient();
-    const channel = supabase
-      .channel("task_runs-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "task_runs" }, () => loadRuns())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [loadRuns]);
+
+  useLiveRefresh(loadRuns, { types: ["agent.", "task."] });
 
   const execute = useCallback(async () => {
     if (!command.trim()) return;

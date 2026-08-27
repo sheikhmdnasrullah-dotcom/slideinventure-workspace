@@ -41,7 +41,7 @@ export function FilterBar({
 FilterBar.Search = function FilterBarSearch({
   value,
   onChange,
-  placeholder = "Search…",
+  placeholder = "Search",
   className,
 }: {
   value: string;

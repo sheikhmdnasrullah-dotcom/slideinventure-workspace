@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
-import { CalendarRange, Plus, RefreshCw, Search } from "lucide-react"
+import { Plus, RefreshCw, Search } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -93,10 +93,6 @@ export function SiteHeader({
               ⌘K
            </kbd>
          </Button>
-          <span className="hidden items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 font-mono text-xs text-muted-foreground lg:flex">
-            <CalendarRange className="size-3.5" />
-            Aug 1 – Aug 21, 2026
-         </span>
           {onSync && (
             <Button size="sm" variant="outline" onClick={onSync} disabled={syncing}>
               <motion.span

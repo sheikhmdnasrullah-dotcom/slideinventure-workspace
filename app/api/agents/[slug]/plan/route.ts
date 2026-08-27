@@ -9,10 +9,11 @@ Given a user request, return an ordered list of steps to execute it.
 Each step kind is one of:
 - "research": browse the web with a headless browser to gather facts/links
 - "reason": think through the problem using the LLM
+- "youtube": extract a business email from a YouTube channel's About page (put the channel URL in instruction)
 - "output": produce the final deliverable/answer
 - "tool": invoke a specialist tool for the task
 Return ONLY minified JSON, no markdown, in this shape:
-{"steps":[{"kind":"research|reason|output|tool","label":"short title","instruction":"what this step should accomplish"}]}
+{"steps":[{"kind":"research|reason|youtube|output|tool","label":"short title","instruction":"what this step should accomplish"}]}
 Use 2-5 steps. The first step is usually research, the last is usually output.`;
 
 function extractJson(text: string): any {

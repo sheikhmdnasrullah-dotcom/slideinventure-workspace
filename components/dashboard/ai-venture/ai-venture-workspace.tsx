@@ -1,64 +1,156 @@
 "use client"
 
-import { useState } from "react"
-import { FolderOpen, Sparkles, PenTool, LayoutGrid, NotebookPen } from "lucide-react"
-import { AppWindow } from "./app-window"
-import { AvFiles } from "./av-files"
-import { AvQuery } from "./av-query"
-import { AvWhiteboard } from "./av-whiteboard"
-import { AvPlayground } from "./av-playground"
-import { NotepadView } from "@/components/dashboard/notepad-view"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import dynamic from "next/dynamic"
+import {
+  FolderOpen,
+  Sparkles,
+  FlaskConical,
+  LayoutGrid,
+  PenTool,
+  NotebookPen,
+  Lightbulb,
+  Bot,
+  Activity,
+  type LucideIcon,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
 
-type ToolId = "files" | "query" | "whiteboard" | "playground" | "notepad"
+const AvFiles = dynamic(() => import("./av-files").then((m) => m.AvFiles), {
+  ssr: false,
+  loading: () => <Loading label="Files" />,
+})
+const AvQuery = dynamic(() => import("./av-query").then((m) => m.AvQuery), {
+  ssr: false,
+  loading: () => <Loading label="Query" />,
+})
+const AvResearch = dynamic(() => import("./av-research").then((m) => m.AvResearch), {
+  ssr: false,
+  loading: () => <Loading label="Research" />,
+})
+const AvPlayground = dynamic(() => import("./av-playground").then((m) => m.AvPlayground), {
+  ssr: false,
+  loading: () => <Loading label="Playground" />,
+})
+const AvWhiteboard = dynamic(() => import("./av-whiteboard").then((m) => m.AvWhiteboard), {
+  ssr: false,
+  loading: () => <Loading label="Brainstorm" />,
+})
+const NotepadView = dynamic(
+  () => import("@/components/dashboard/notepad-view").then((m) => m.NotepadView),
+  { ssr: false, loading: () => <Loading label="Notepad" /> }
+)
+const IdeaMapsPanel = dynamic(
+  () => import("@/components/dashboard/ideas/idea-maps-panel").then((m) => m.IdeaMapsPanel),
+  { ssr: false, loading: () => <Loading label="Connected Ideas" /> }
+)
+const AvAgents = dynamic(() => import("./av-agents").then((m) => m.AvAgents), {
+  ssr: false,
+  loading: () => <Loading label="Agents" />,
+})
+const AvActivity = dynamic(() => import("./av-activity").then((m) => m.AvActivity), {
+  ssr: false,
+  loading: () => <Loading label="Activity" />,
+})
 
-const TOOLS: { id: ToolId; label: string; description: string; icon: typeof FolderOpen }[] = [
-  { id: "files", label: "Files", description: "Upload, organize, and open your PDFs, sheets, images, and docs", icon: FolderOpen },
-  { id: "query", label: "Query", description: "Ask anything, grounded in what you've uploaded and written here", icon: Sparkles },
-  { id: "whiteboard", label: "Whiteboard", description: "Sketch and brainstorm with Excalidraw or AFFiNE", icon: PenTool },
-  { id: "playground", label: "Playground", description: "Every saved board, in one visual library", icon: LayoutGrid },
-  { id: "notepad", label: "Notepad", description: "Quick rich-text notes, autosaved", icon: NotebookPen },
+type SectionId =
+  | "files"
+  | "query"
+  | "research"
+  | "playground"
+  | "brainstorm"
+  | "notepad"
+  | "connected"
+  | "agents"
+  | "activity"
+
+const SECTIONS: { id: SectionId; label: string; icon: LucideIcon }[] = [
+  { id: "files", label: "Files", icon: FolderOpen },
+  { id: "query", label: "Query", icon: Sparkles },
+  { id: "research", label: "Research", icon: FlaskConical },
+  { id: "playground", label: "Playground", icon: LayoutGrid },
+  { id: "brainstorm", label: "Brainstorm", icon: PenTool },
+  { id: "notepad", label: "Notepad", icon: NotebookPen },
+  { id: "connected", label: "Connected Ideas", icon: Lightbulb },
+  { id: "agents", label: "Agents", icon: Bot },
+  { id: "activity", label: "Activity", icon: Activity },
 ]
 
-// AI Venture home: a small, fixed set of large application-style icons
-// rather than a table/column-heavy dashboard. Each opens as a large floating
-// window over the dashboard (AppWindow): never a new tab, never a route
-// change that would lose the surrounding context.
+const VALID = new Set(SECTIONS.map((s) => s.id))
+
+function Loading({ label }: { label: string }) {
+  return (
+    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      Loading {label}
+    </div>
+  )
+}
+
+// One workspace for this venture: a persistent rail on the left selects which
+// section is mounted (only the active one mounts). The active section is
+// reflected in the URL (?tab=) so a refresh or a shared link restores it.
 export function AiVentureWorkspace() {
-  const [open, setOpen] = useState<ToolId | null>(null)
-  const active = TOOLS.find((t) => t.id === open)
+  const router = useRouter()
+  const params = useSearchParams()
+  const tabParam = params.get("tab")
+
+  const [active, setActive] = useState<SectionId>("research")
+
+  useEffect(() => {
+    if (tabParam && VALID.has(tabParam as SectionId)) {
+      setActive(tabParam as SectionId)
+    }
+  }, [tabParam])
+
+  const select = (id: SectionId) => {
+    setActive(id)
+    const q = new URLSearchParams(Array.from(params.entries()))
+    q.set("tab", id)
+    router.replace(`/concepts?${q.toString()}`, { scroll: false })
+  }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] w-full flex-col items-center justify-center gap-10 p-8">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">AI Venture</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Your workstation for this venture. Pick a tool to get started.</p>
-      </div>
+    <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden">
+      <nav className="flex w-44 shrink-0 flex-col gap-1 border-r border-border bg-card/40 p-2">
+        <div className="px-2 py-2">
+          <h1 className="text-sm font-semibold tracking-tight">AI Venture</h1>
+        </div>
+        <div className="flex flex-col gap-0.5 overflow-y-auto" data-lenis-prevent>
+          {SECTIONS.map((s) => {
+            const Icon = s.icon
+            const isActive = active === s.id
+            return (
+              <button
+                key={s.id}
+                onClick={() => select(s.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                  isActive
+                    ? "bg-accent text-foreground"
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                )}
+              >
+                <Icon className="size-4 shrink-0" strokeWidth={1.5} />
+                <span className="truncate">{s.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
 
-      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
-        {TOOLS.map((tool) => (
-          <button
-            key={tool.id}
-            onClick={() => setOpen(tool.id)}
-            className="group flex w-36 flex-col items-center gap-3 rounded-2xl p-4 text-center transition-all hover:bg-accent/60 active:scale-[0.97]"
-          >
-            <div className="flex size-20 items-center justify-center rounded-2xl bg-[var(--surface-2)] shadow-sm ring-1 ring-rule transition-transform group-hover:scale-105 group-hover:shadow-md">
-              <tool.icon className="size-9 text-ink-strong" strokeWidth={1.5} />
-            </div>
-            <div>
-              <div className="text-sm font-medium">{tool.label}</div>
-              <div className="mt-0.5 line-clamp-2 text-[11px] leading-tight text-muted-foreground">{tool.description}</div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <AppWindow open={!!open} onClose={() => setOpen(null)} title={active?.label ?? ""}>
-        {open === "files" && <AvFiles />}
-        {open === "query" && <AvQuery />}
-        {open === "whiteboard" && <AvWhiteboard />}
-        {open === "playground" && <AvPlayground />}
-        {open === "notepad" && <NotepadView scope="ai-venture" />}
-      </AppWindow>
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {active === "files" && <AvFiles />}
+        {active === "query" && <AvQuery />}
+        {active === "research" && <AvResearch />}
+        {active === "playground" && <AvPlayground />}
+        {active === "brainstorm" && <AvWhiteboard />}
+        {active === "notepad" && <NotepadView scope="ai-venture" />}
+        {active === "connected" && <IdeaMapsPanel scope="ideas" title="Connected ideas" />}
+        {active === "agents" && <AvAgents />}
+        {active === "activity" && <AvActivity />}
+      </main>
     </div>
   )
 }

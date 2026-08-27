@@ -50,7 +50,7 @@ export function SignupForm({
         <CardHeader>
           <CardTitle className="text-gray-900 dark:text-white">Create an account</CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enter your details to get started
+            Create your account
           </CardDescription>
         </CardHeader>
         <CardContent className="bg-white dark:bg-gray-900">

@@ -11,7 +11,7 @@ export default async function EmailCrawlerPage() {
           Email Crawler
         </h1>
         <p className="text-xs text-foreground/40">
-          Autonomous web agent that finds a prospect&apos;s email from any link or details.
+          Finds a prospect&apos;s email from any link or details.
         </p>
       </div>
       <EmailCrawler />

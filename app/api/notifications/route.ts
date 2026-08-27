@@ -73,3 +73,77 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ error: "Bad request" }, { status: 400 });
 }
+
+async function listOwned(email: string, unreadOnly = false) {
+  const queries = [
+    Query.equal("user_email", email),
+    Query.limit(100),
+  ];
+  if (unreadOnly) queries.push(Query.equal("read", false));
+  const res = await databases.listDocuments(DB, COL, queries);
+  return res.documents;
+}
+
+export async function PATCH(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureNotificationsCollection();
+
+  const body = await req.json().catch(() => ({}));
+  const email = user.email ?? "";
+
+  if (body.all) {
+    const docs = await listOwned(email, true);
+    for (const d of docs) {
+      try {
+        await databases.updateDocument(DB, COL, d.$id, { read: true });
+      } catch {
+        /* ignore */
+      }
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.id) {
+    const doc = await databases.getDocument(DB, COL, body.id).catch(() => null);
+    if (!doc || doc.user_email !== email) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    await databases.updateDocument(DB, COL, body.id, { read: true });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "Bad request" }, { status: 400 });
+}
+
+export async function DELETE(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureNotificationsCollection();
+
+  const body = await req.json().catch(() => ({}));
+  const email = user.email ?? "";
+
+  if (body.all) {
+    const docs = await listOwned(email);
+    for (const d of docs) {
+      try {
+        await databases.deleteDocument(DB, COL, d.$id);
+      } catch {
+        /* ignore */
+      }
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.id) {
+    const doc = await databases.getDocument(DB, COL, body.id).catch(() => null);
+    if (!doc || doc.user_email !== email) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    await databases.deleteDocument(DB, COL, body.id);
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "Bad request" }, { status: 400 });
+}

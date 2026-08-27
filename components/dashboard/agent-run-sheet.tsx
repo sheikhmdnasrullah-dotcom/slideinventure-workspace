@@ -141,7 +141,7 @@ export function AgentRunSheet({
               ))}
               {loading && (
                 <div className="flex items-center gap-2 text-ink-faint text-sm">
-                  <Loader2 className="size-3.5 animate-spin" /> Thinking…
+                  <Loader2 className="size-3.5 animate-spin" /> Thinking
                 </div>
               )}
               {error && <p className="text-sm text-[var(--status-danger)]">{error}</p>}
@@ -183,7 +183,7 @@ export function AgentRunSheet({
                       send();
                     }
                   }}
-                  placeholder={`Ask ${agent.name}…`}
+                  placeholder={`Ask ${agent.name}`}
                   className="min-h-16 resize-none"
                   disabled={loading}
                 />

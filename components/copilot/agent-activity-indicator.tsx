@@ -42,7 +42,7 @@ export function AgentActivityIndicator() {
       transition={{ duration: Duration.fast, ease: Ease.expo }}
       aria-hidden={!show}
       className={cn(
-        "pointer-events-none fixed bottom-20 left-4 z-40 flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-xs shadow-lg",
+        "pointer-events-none fixed right-4 bottom-18 z-40 flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-md",
         !show && "opacity-0"
       )}
     >

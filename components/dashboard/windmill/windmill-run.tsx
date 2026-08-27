@@ -39,7 +39,7 @@ export function WindmillRun() {
           disabled={running}
         />
         <Button onClick={run} disabled={running || !path.trim()}>
-          {running ? "Running…" : "Run on Windmill"}
+          {running ? "Running" : "Run on Windmill"}
         </Button>
       </div>
       <p className="text-xs text-foreground/40">

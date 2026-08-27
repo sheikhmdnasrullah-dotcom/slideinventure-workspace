@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { ActivityRow, ActivityStatus, ActivityType } from "@/lib/dashboard/types";
 
-const TYPE_LABELS: Record<ActivityType, string> = {
+const TYPE_LABELS: Partial<Record<ActivityType, string>> = {
   research: "Research",
   prospects: "Prospects",
   sops: "SOP",
@@ -24,6 +24,18 @@ const TYPE_LABELS: Record<ActivityType, string> = {
   script: "Script",
   cold_email: "Cold Email",
   automation: "Automation",
+  documents: "Documents",
+  notes: "Notes",
+  terminal: "Terminal",
+  links: "Links",
+  chat: "Chat",
+  ai_venture: "Concepts",
+  todoist: "Todoist",
+  knowledge: "Knowledge",
+  leads: "Leads",
+  vault: "Vault",
+  integrations: "Integrations",
+  agents: "Agents",
 };
 
 const STATUS_STYLES: Record<ActivityStatus, string> = {
@@ -103,12 +115,12 @@ export function ActivityTable({ data }: { data: ActivityRow[] }) {
                 <TableCell className="font-medium text-foreground">{row.item}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className="border-border bg-transparent text-muted-foreground">
-                    {TYPE_LABELS[row.type]}
+                    {TYPE_LABELS[row.type] ?? String(row.type).replace(/_/g, " ")}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={STATUS_STYLES[row.status]}>
-                    {STATUS_LABELS[row.status]}
+                  <Badge variant="outline" className={STATUS_STYLES[row.status] ?? "border-border bg-muted text-muted-foreground"}>
+                    {STATUS_LABELS[row.status] ?? row.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{row.source}</TableCell>

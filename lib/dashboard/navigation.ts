@@ -18,6 +18,7 @@ import {
   Terminal,
   Vault,
   Workflow,
+  Video,
   BarChart3,
   Component,
   type LucideIcon,
@@ -47,6 +48,8 @@ export type DashboardSectionId =
   | "analytics"
   | "ai-chat"
   | "ui-kit"
+  | "youtube-email"
+  | "csv-discovery"
 
 export type DashboardSectionChild = {
   id: string
@@ -119,6 +122,18 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
       { id: "email-crawler-run", label: "Find emails", route: "/email-crawler" },
       { id: "email-crawler-verify", label: "Verify Leads", route: "/leads/verify", icon: ShieldCheck },
     ],
+  },
+  {
+    id: "youtube-email",
+    label: "YouTube Email",
+    route: "/youtube-email",
+    icon: Video,
+  },
+  {
+    id: "csv-discovery",
+    label: "Lead Discovery",
+    route: "/csv-discovery",
+    icon: Network,
   },
   {
     id: "agent-canvas",

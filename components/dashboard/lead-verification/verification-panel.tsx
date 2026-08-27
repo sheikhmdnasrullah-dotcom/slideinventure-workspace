@@ -309,7 +309,7 @@ export function VerificationPanel() {
               {phase === "uploading" ? (
                 <>
                   <Loader2 className="size-6 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Uploading &amp; starting job…</p>
+                  <p className="text-sm text-muted-foreground">Uploading &amp; starting job</p>
                 </>
               ) : (
                 <>
@@ -345,7 +345,7 @@ export function VerificationPanel() {
           <CardHeader>
             <CardTitle>Verification Running</CardTitle>
             <CardDescription>
-              {jobId ? `job ${jobId.slice(0, 8)}…` : ""} · checking leads against Reacher
+              {jobId ? `job ${jobId.slice(0, 8)}` : ""} · checking leads against Reacher
             </CardDescription>
             <CardAction>
               <Badge variant="outline" className="gap-1.5 !border-emerald-500/30 !text-emerald-500">
@@ -431,7 +431,7 @@ export function VerificationPanel() {
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Input
-                  placeholder="Search email…"
+                  placeholder="Search email"
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value)
@@ -492,7 +492,7 @@ export function VerificationPanel() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-xs text-muted-foreground">
-                                {r.checked_at ? new Date(r.checked_at).toLocaleString() : "–"}
+                                {r.checked_at ? new Date(r.checked_at).toLocaleString() : ""}
                               </TableCell>
                             </TableRow>
                           )
@@ -565,7 +565,7 @@ function LiveTable({ rows, total }: { rows: ResultRow[]; total: number }) {
           {rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="h-20 text-center text-sm text-muted-foreground">
-                Waiting for first result…
+                Waiting for first result
               </TableCell>
             </TableRow>
           ) : (
@@ -581,7 +581,7 @@ function LiveTable({ rows, total }: { rows: ResultRow[]; total: number }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {r.checked_at ? new Date(r.checked_at).toLocaleString() : "–"}
+                    {r.checked_at ? new Date(r.checked_at).toLocaleString() : ""}
                   </TableCell>
                 </TableRow>
               )
@@ -633,7 +633,7 @@ function HistoryCard({ jobs, onChanged }: { jobs: HistoryJob[]; onChanged?: () =
                       {j.filename ?? j.job_id.slice(0, 8)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {j.created_at ? new Date(j.created_at).toLocaleString() : "–"}
+                      {j.created_at ? new Date(j.created_at).toLocaleString() : ""}
                     </TableCell>
                     <TableCell>
                       <Badge

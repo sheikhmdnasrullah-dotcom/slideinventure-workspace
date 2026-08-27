@@ -67,7 +67,7 @@ export function MemoryConsole() {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={3}
-          placeholder="Anything the agent should remember this session…"
+          placeholder="Anything the agent should remember this session"
         />
         <div className="flex items-center gap-2">
           <Input
@@ -77,13 +77,13 @@ export function MemoryConsole() {
             className="max-w-xs"
           />
           <Button onClick={add} disabled={saving || !content.trim()}>
-            {saving ? "Saving…" : "Add memory"}
+            {saving ? "Saving" : "Add memory"}
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <p className="text-sm text-foreground/40">Loading…</p>
+        <p className="text-sm text-foreground/40">Loading</p>
       ) : entries.length === 0 ? (
         <p className="text-sm text-foreground/40">No working memory yet.</p>
       ) : (
