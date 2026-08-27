@@ -8,5 +8,15 @@
   { "slug": "cold-outreach", "division": "Growth", "team": "Revenue" },
   { "slug": "knowledge-synth", "division": "Knowledge", "team": "Intelligence" },
   { "slug": "workflow-runner", "division": "Automation", "team": "Platform" },
-  { "slug": "brainstorm-facilitator", "division": "Product", "team": "Studio" }
+  { "slug": "brainstorm-facilitator", "division": "Product", "team": "Studio" },
+  { "slug": "browse-agent", "division": "Browse", "team": "Intelligence" },
+  { "slug": "temporal-orchestrator", "division": "Automation", "team": "Platform" },
+  { "slug": "stagehand-agent", "division": "Infrastructure", "team": "Platform" },
+  { "slug": "steel-browser-agent", "division": "Infrastructure", "team": "Platform" },
+  { "slug": "composio-agent", "division": "Automation", "team": "Platform" },
+  { "slug": "novu-notifier", "division": "Automation", "team": "Revenue" },
+  { "slug": "eval-agent", "division": "Research", "team": "Intelligence" },
+  { "slug": "litellm-router", "division": "Infrastructure", "team": "Platform" },
+  { "slug": "agui-agent", "division": "Infrastructure", "team": "Platform" },
+  { "slug": "copilot-agent", "division": "Product", "team": "Studio" }
 ]
