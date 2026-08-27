@@ -1,5 +1,5 @@
-import BlocksuiteWorkspace from "@/components/dashboard/v3/blocksuite/blocksuite-workspace"
+import WhiteboardLauncher from "@/components/dashboard/v3/whiteboard/whiteboard-launcher";
 
 export default function ResearchLabPage() {
-  return <BlocksuiteWorkspace section="research" title="Research" mode="edgeless" />
+  return <WhiteboardLauncher section="research" title="Research Lab" />;
 }

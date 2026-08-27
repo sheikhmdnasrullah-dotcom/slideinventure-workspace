@@ -1,5 +1,7 @@
-import BlocksuiteWorkspace from "@/components/dashboard/v3/blocksuite/blocksuite-workspace"
+import { requireUser } from "@/lib/supabase/server";
+import { AiVentureWorkspace } from "@/components/dashboard/ai-venture/ai-venture-workspace";
 
-export default function ConceptsPage() {
-  return <BlocksuiteWorkspace section="concepts" title="Concepts" />
+export default async function ConceptsPage() {
+  await requireUser();
+  return <AiVentureWorkspace />;
 }

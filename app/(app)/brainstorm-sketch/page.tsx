@@ -1,5 +1,5 @@
-import BlocksuiteWorkspace from "@/components/dashboard/v3/blocksuite/blocksuite-workspace"
+import WhiteboardLauncher from "@/components/dashboard/v3/whiteboard/whiteboard-launcher";
 
 export default function BrainstormSketchPage() {
-  return <BlocksuiteWorkspace section="brainstorm" title="Brainstorm" />
+  return <WhiteboardLauncher section="brainstorm" title="Brainstorm" />;
 }
