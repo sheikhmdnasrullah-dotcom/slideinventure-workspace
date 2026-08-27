@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SlideIn Venture — Ops Console",
+  title: "SlideIn Venture: Ops Console",
   description: "SlideIn Venture operations dashboard",
 };
 

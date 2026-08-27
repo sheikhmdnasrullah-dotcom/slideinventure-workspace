@@ -80,7 +80,7 @@ export function AgentRunSheet({
               {messages.length === 0 && (
                 <p className="font-body text-sm text-ink-faint">
                   Send a message to work with this agent. It responds in-character using its
-                  persona prompt — no chat history is saved after you close this panel.
+                  persona prompt. No chat history is saved after you close this panel.
                 </p>
               )}
               {messages.map((m, i) => (
@@ -112,7 +112,7 @@ export function AgentRunSheet({
                   onChange={(e) => setTools(e.target.checked)}
                   className="accent-[var(--text-accent)]"
                 />
-                Tools (Mastra) — retrieve, browse, remember, recall
+                Tools (Mastra): retrieve, browse, remember, recall
               </label>
               {toolLog.length > 0 && (
                 <div className="flex flex-col gap-1 pb-2">

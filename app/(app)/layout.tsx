@@ -1,3 +1,4 @@
+import { CopilotKit } from "@copilotkit/react-core";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -17,30 +18,32 @@ export default async function AppLayout({
   const preferences = await getDashboardPreferencesForUser(user.email);
 
   return (
-    <TooltipProvider>
-      <DashboardPreferencesProvider
-        userEmail={user.email ?? "unknown"}
-        initialPreferences={preferences}
-      >
-        <SmoothScroll>
-          <SidebarProvider
-            style={
-              {
-                "--sidebar-width": "calc(var(--spacing) * 64)",
-                "--header-height": "calc(var(--spacing) * 12 + 1px)",
-              } as React.CSSProperties
-            }
-          >
-            <AppSidebar userEmail={user.email ?? "unknown"} />
-            <SidebarInset>
-              <PageTransition>{children}</PageTransition>
-            </SidebarInset>
-            <Toaster />
-            <CommandMenu />
-            <AgentCopilot />
-          </SidebarProvider>
-        </SmoothScroll>
-      </DashboardPreferencesProvider>
-    </TooltipProvider>
+    <CopilotKit runtimeUrl="/api/copilot">
+      <TooltipProvider>
+        <DashboardPreferencesProvider
+          userEmail={user.email ?? "unknown"}
+          initialPreferences={preferences}
+        >
+          <SmoothScroll>
+            <SidebarProvider
+              style={
+                {
+                  "--sidebar-width": "calc(var(--spacing) * 64)",
+                  "--header-height": "calc(var(--spacing) * 12 + 1px)",
+                } as React.CSSProperties
+              }
+            >
+              <AppSidebar userEmail={user.email ?? "unknown"} />
+              <SidebarInset>
+                <PageTransition>{children}</PageTransition>
+              </SidebarInset>
+              <Toaster />
+              <CommandMenu />
+              <AgentCopilot />
+            </SidebarProvider>
+          </SmoothScroll>
+        </DashboardPreferencesProvider>
+      </TooltipProvider>
+    </CopilotKit>
   );
 }

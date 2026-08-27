@@ -147,7 +147,7 @@ export function KnowledgeDisplay() {
         </div>
         {isMirror && (
           <p className="text-xs text-muted-foreground italic">
-            This entry mirrors a file stored in Documents/AI Venture — editing the text here won&apos;t change the original file.
+            This entry mirrors a file stored in Documents/AI Venture. Editing the text here won&apos;t change the original file.
           </p>
         )}
       </div>

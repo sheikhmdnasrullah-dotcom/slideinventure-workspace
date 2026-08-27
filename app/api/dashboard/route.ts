@@ -286,9 +286,9 @@ export async function GET() {
 
   const suggestions: string[] = [];
   if (items.length === 0) suggestions.push("Your knowledge base is empty. Add your first note.");
-  if (activeLeads === 0 && recentDocs.length === 0) suggestions.push("No active leads or recent documents — start by importing leads or uploading a document.");
-  if (failedRuns.length > 0) suggestions.push(`${failedRuns.length} failed task run${failedRuns.length === 1 ? "" : "s"} — check the task log.`);
-  if (recentTerminal.length > 0 && recentNotes.length === 0) suggestions.push("You saved terminal findings but no notes yet — consider turning findings into notes.");
+  if (activeLeads === 0 && recentDocs.length === 0) suggestions.push("No active leads or recent documents. Start by importing leads or uploading a document.");
+  if (failedRuns.length > 0) suggestions.push(`${failedRuns.length} failed task run${failedRuns.length === 1 ? "" : "s"}. Check the task log.`);
+  if (recentTerminal.length > 0 && recentNotes.length === 0) suggestions.push("You saved terminal findings but no notes yet. Consider turning findings into notes.");
   if (suggestions.length === 0) suggestions.push("All systems active. Keep exploring.");
 
   const response: DashboardResponse = {

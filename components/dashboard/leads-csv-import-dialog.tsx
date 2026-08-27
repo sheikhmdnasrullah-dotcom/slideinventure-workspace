@@ -142,7 +142,7 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
         <DialogHeader>
           <DialogTitle>Import Leads from CSV</DialogTitle>
           <DialogDescription>
-            Upload a CSV file. Columns are matched to lead fields automatically — review or correct the mapping below before importing.
+            Upload a CSV file. Columns are matched to lead fields automatically. Review or correct the mapping below before importing.
           </DialogDescription>
         </DialogHeader>
 

@@ -100,10 +100,10 @@ export function AddAccountDialog({ open, onOpenChange, onCreated }: AddAccountDi
               <SelectContent>
                 <SelectItem value="imap_smtp">IMAP / SMTP</SelectItem>
                 <SelectItem value="google" disabled>
-                  Google Workspace — Coming soon
+                  Google Workspace: Coming soon
                 </SelectItem>
                 <SelectItem value="microsoft" disabled>
-                  Microsoft 365 — Coming soon
+                  Microsoft 365: Coming soon
                 </SelectItem>
               </SelectContent>
             </Select>

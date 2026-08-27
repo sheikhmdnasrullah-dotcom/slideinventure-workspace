@@ -186,7 +186,7 @@ function ActionArea({ item }: { item: IntegrationStatus }) {
     default:
       return (
         <p className="text-xs text-foreground/40">
-          {item.enabled ? "Active — wired into the agent pipeline." : "Not configured — set its env vars to enable."}
+          {item.enabled ? "Active, wired into the agent pipeline." : "Not configured. Set its env vars to enable."}
         </p>
       );
   }

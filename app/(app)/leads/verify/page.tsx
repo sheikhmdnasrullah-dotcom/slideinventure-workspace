@@ -3,7 +3,7 @@ import { VerificationPanel } from "@/components/dashboard/lead-verification/veri
 import { TruemailPanel } from "@/components/dashboard/lead-verification/truemail-panel";
 
 export const metadata = {
-  title: "Lead Verification — SlideIn Venture",
+  title: "Lead Verification: SlideIn Venture",
   description: "Bulk email deliverability verification for lead lists",
 };
 

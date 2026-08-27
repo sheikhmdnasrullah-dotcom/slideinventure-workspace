@@ -119,7 +119,7 @@ export function AppSidebar({
         <div className="px-2 text-[11px] text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
           {saveState === "saving" ? "Saving workspace…" : saveState === "saved" ? "Workspace saved" : saveState === "error" ? (
             <button type="button" onClick={retrySave} className="underline underline-offset-2 hover:text-sidebar-foreground">
-              Couldn’t save workspace — Retry
+              Couldn’t save workspace. Retry.
             </button>
           ) : "Workspace remembers your layout"}
         </div>

@@ -27,7 +27,7 @@ export default function AppSegmentError({
       </div>
       <p className="text-sm font-medium text-[color:var(--ink-strong)]">This section hit a problem</p>
       <p className="max-w-sm text-sm text-[color:var(--ink-muted)]">
-        The rest of the dashboard is unaffected. Try again, or come back to it later — your data hasn&apos;t been touched.
+        The rest of the dashboard is unaffected. Try again, or come back to it later. Your data hasn&apos;t been touched.
       </p>
       <Button size="sm" variant="outline" className="gap-1.5" onClick={() => reset()}>
         <RotateCcw className="size-3.5" /> Try again

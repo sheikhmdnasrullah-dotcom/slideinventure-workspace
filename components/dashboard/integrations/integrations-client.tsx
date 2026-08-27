@@ -261,7 +261,7 @@ export function IntegrationsClient() {
           </div>
           <DialogFooter className="items-center justify-between sm:justify-between">
             <div className="text-xs text-muted-foreground">
-              {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Couldn’t save — retry" : ""}
+              {saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Couldn’t save. Retry." : ""}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

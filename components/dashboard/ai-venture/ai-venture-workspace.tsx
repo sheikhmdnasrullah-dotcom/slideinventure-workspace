@@ -13,7 +13,7 @@ type ToolId = "files" | "query" | "whiteboard" | "playground" | "notepad"
 
 const TOOLS: { id: ToolId; label: string; description: string; icon: typeof FolderOpen }[] = [
   { id: "files", label: "Files", description: "Upload, organize, and open your PDFs, sheets, images, and docs", icon: FolderOpen },
-  { id: "query", label: "Query", description: "Ask anything — grounded in what you've uploaded and written here", icon: Sparkles },
+  { id: "query", label: "Query", description: "Ask anything, grounded in what you've uploaded and written here", icon: Sparkles },
   { id: "whiteboard", label: "Whiteboard", description: "Sketch and brainstorm with Excalidraw or AFFiNE", icon: PenTool },
   { id: "playground", label: "Playground", description: "Every saved board, in one visual library", icon: LayoutGrid },
   { id: "notepad", label: "Notepad", description: "Quick rich-text notes, autosaved", icon: NotebookPen },
@@ -31,7 +31,7 @@ export function AiVentureWorkspace() {
     <div className="flex h-[calc(100vh-4rem)] w-full flex-col items-center justify-center gap-10 p-8">
       <div className="text-center">
         <h1 className="text-2xl font-semibold tracking-tight">AI Venture</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Your workstation for this venture — pick a tool to get started.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Your workstation for this venture. Pick a tool to get started.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">

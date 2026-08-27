@@ -6,7 +6,7 @@ export default async function ResearchPage() {
   return (
     <ComingSoon
       title="Research"
-      description="Agent research outputs rendered as evidence blocks — sources, key findings, citations, entity links. Backed by knowledge_items WHERE type = 'research'."
+      description="Agent research outputs rendered as evidence blocks: sources, key findings, citations, entity links. Backed by knowledge_items WHERE type = 'research'."
     />
   );
 }

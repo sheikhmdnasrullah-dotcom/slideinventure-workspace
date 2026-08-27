@@ -255,7 +255,7 @@ export function AvFiles() {
           <iframe src={`/api/ai-venture/file/raw?path=${encodeURIComponent(selected)}`} className="flex-1 rounded-none border-0" />
         ) : isBinarySelected ? (
           <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
-            No inline preview for this file type — use Download.
+            No inline preview for this file type. Use Download.
           </div>
         ) : (
           <Textarea

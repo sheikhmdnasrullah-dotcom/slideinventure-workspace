@@ -245,7 +245,7 @@ export function LinksClient() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Title (optional — inferred from the URL if left blank)</Label>
+              <Label htmlFor="title">Title (optional: inferred from the URL if left blank)</Label>
               <Input 
                 id="title" 
                 value={formData.title} 
@@ -284,7 +284,7 @@ export function LinksClient() {
           </div>
           <DialogFooter>
             <div className="flex w-full items-center justify-between gap-3">
-              <div className="text-xs text-muted-foreground">{saving ? "Saving…" : saveError ? "Couldn’t save — Retry" : ""}</div>
+              <div className="text-xs text-muted-foreground">{saving ? "Saving…" : saveError ? "Couldn’t save. Retry." : ""}</div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                 <Button onClick={handleSave} disabled={!formData.url || saving}>Save</Button>

@@ -108,7 +108,7 @@ export function ResearchLabWorkspace() {
     const res = await fetch("/api/boards", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: `${active?.title || "Project"} — Excel Draw`, scope: SCOPE }),
+      body: JSON.stringify({ title: `${active?.title || "Project"}: Excel Draw`, scope: SCOPE }),
     });
     const json = await res.json();
     const id = json.board?.id ?? null;
@@ -121,7 +121,7 @@ export function ResearchLabWorkspace() {
     const res = await fetch("/api/affine", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ section: SCOPE, title: `${active?.title || "Project"} — Affine` }),
+      body: JSON.stringify({ section: SCOPE, title: `${active?.title || "Project"}: Affine` }),
     });
     const json = await res.json();
     const id = json.workspace?.id ?? null;
@@ -257,7 +257,7 @@ export function ResearchLabWorkspace() {
                   </Button>
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Opens as an embedded popup — not a new browser window.
+                  Opens as an embedded popup, not a new browser window.
                 </p>
               </CardContent>
             </Card>

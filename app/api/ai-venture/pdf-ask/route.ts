@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (!extracted.text || extracted.text.startsWith("[Uploaded PDF:")) {
       return Response.json({
         answer:
-          "I couldn't extract readable text from this PDF — it may be a scanned/image-only document, which this app doesn't run OCR on.",
+          "I couldn't extract readable text from this PDF. It may be a scanned/image-only document, which this app doesn't run OCR on.",
       })
     }
 

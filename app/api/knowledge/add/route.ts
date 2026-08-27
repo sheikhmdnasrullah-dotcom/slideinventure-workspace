@@ -68,10 +68,10 @@ export async function POST(req: NextRequest) {
     const { title, content, category: categoryRaw, tags, source } = body
 
     if (!title?.trim() && !content?.trim()) {
-      return NextResponse.json({ error: 'Nothing to save — provide some text or a file' }, { status: 400 })
+      return NextResponse.json({ error: 'Nothing to save. Provide some text or a file' }, { status: 400 })
     }
 
-    const finalTitle = title?.trim() || deriveTitleFromText(content) || `Note — ${new Date().toLocaleDateString()}`
+    const finalTitle = title?.trim() || deriveTitleFromText(content) || `Note: ${new Date().toLocaleDateString()}`
     const category = categoryRaw && categoryRaw !== 'auto'
       ? categoryRaw
       : await classifyKnowledgeInput(finalTitle, content || '')

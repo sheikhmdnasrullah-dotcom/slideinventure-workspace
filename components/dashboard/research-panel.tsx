@@ -33,7 +33,7 @@ export function ResearchPanel() {
         return;
       }
 
-      toast.success("Research started — check activity feed");
+      toast.success("Research started. Check activity feed");
     } catch {
       toast.error("Research failed");
     } finally {

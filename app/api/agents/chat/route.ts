@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { getAgentPrompt } from "@/lib/agents/roster";
 import { runMastraAgent } from "@/lib/agents/mastra";
+import { logActivity } from "@/lib/activities/client";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { NextRequest } from "next/server";
@@ -49,7 +50,27 @@ export async function POST(request: NextRequest) {
   // Opt-in Mastra mode: persona + tools (retrieve/browse/remember/recall).
   if (tools) {
     const res = await runMastraAgent({ slug, message, history, userEmail: user.email });
-    if (!res.ok) return ApiError.internal("MASTRA_AGENT_FAILED", res.error ?? "agent failed").toResponse();
+    if (!res.ok) {
+      await logActivity({
+        category: "agents",
+        action: "failed",
+        title: `${agent.name} run failed`,
+        description: res.error ?? "Agent run failed",
+        entityId: slug,
+        entityType: "agent",
+        metadata: { agent: slug, tools: true },
+      }).catch(() => {});
+      return ApiError.internal("MASTRA_AGENT_FAILED", res.error ?? "agent failed").toResponse();
+    }
+    await logActivity({
+      category: "agents",
+      action: "completed",
+      title: `${agent.name} run completed`,
+      description: res.answer.slice(0, 280),
+      entityId: slug,
+      entityType: "agent",
+      metadata: { agent: slug, tools: res.toolCalls },
+    }).catch(() => {});
     return Response.json({ answer: res.answer, agent: res.agentName, tools: res.toolCalls });
   }
 
@@ -70,8 +91,27 @@ export async function POST(request: NextRequest) {
       model: deepseek(process.env.DEEPSEEK_MODEL || "deepseek-chat"),
       messages,
     });
+    await logActivity({
+      category: "agents",
+      action: "completed",
+      title: `${agent.name} run completed`,
+      description: answer.slice(0, 280),
+      entityId: slug,
+      entityType: "agent",
+      metadata: { agent: slug, tools: false },
+    }).catch(() => {});
     return Response.json({ answer, agent: agent.name });
   } catch (err) {
-    return ApiError.internal("AGENT_CHAT_FAILED", err instanceof Error ? err.message : "Agent chat failed").toResponse();
+    const errorMessage = err instanceof Error ? err.message : "Agent chat failed";
+    await logActivity({
+      category: "agents",
+      action: "failed",
+      title: `${agent.name} run failed`,
+      description: errorMessage,
+      entityId: slug,
+      entityType: "agent",
+      metadata: { agent: slug, tools: false },
+    }).catch(() => {});
+    return ApiError.internal("AGENT_CHAT_FAILED", errorMessage).toResponse();
   }
 }

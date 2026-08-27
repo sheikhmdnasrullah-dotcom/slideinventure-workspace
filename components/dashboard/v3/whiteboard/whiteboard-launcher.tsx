@@ -87,7 +87,7 @@ export default function WhiteboardLauncher({
       </aside>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
-        <p className="text-sm">Pick a {title.toLowerCase()} or create one — it opens in a dedicated window.</p>
+        <p className="text-sm">Pick a {title.toLowerCase()} or create one. It opens in a dedicated window.</p>
         <Button onClick={create}>
           <Plus className="size-4" /> New {title.replace(/s$/, "")}
         </Button>

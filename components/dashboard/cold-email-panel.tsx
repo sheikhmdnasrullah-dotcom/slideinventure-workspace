@@ -37,7 +37,7 @@ export function ColdEmailPanel() {
         return;
       }
 
-      toast.success("Email queued — check activity feed");
+      toast.success("Email queued. Check activity feed");
       setTo("");
       setSubject("");
       setBody("");

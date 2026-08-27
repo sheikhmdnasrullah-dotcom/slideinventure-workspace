@@ -133,7 +133,7 @@ export function ActivityFeed() {
         />
         <FilterBar>
           <FilterBar.Chips
-            ariaLabel="Filter by category — click the active one again to clear"
+            ariaLabel="Filter by category. Click the active one again to clear"
             value={category}
             onChange={setCategory}
             options={categoryOptions}
@@ -148,7 +148,7 @@ export function ActivityFeed() {
             <EmptyState
               eyebrow="No events yet"
               title="Nothing here yet"
-              description="Every write across the system — knowledge, documents, links, vault, boards, notes, terminal, todoist, leads — shows up here automatically. Start working in any section."
+              description="Every write across the system (knowledge, documents, links, vault, boards, notes, terminal, todoist, leads) shows up here automatically. Start working in any section."
             />
           ) : (
             <>

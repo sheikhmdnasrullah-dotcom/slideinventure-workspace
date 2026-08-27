@@ -81,7 +81,7 @@ export function AddContextDialog() {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="title">Title (optional — inferred if left blank)</Label>
+            <Label htmlFor="title">Title (optional: inferred if left blank)</Label>
             <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Supabase Auth Flow" />
           </div>
           
@@ -127,13 +127,13 @@ export function AddContextDialog() {
             />
             {file && (
               <p className="text-xs text-muted-foreground">
-                Selected: {file.name} — content will be read from this file.
+                Selected: {file.name}. Content will be read from this file.
               </p>
             )}
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="content">Content (optional if you uploaded a file — Markdown supported)</Label>
+            <Label htmlFor="content">Content (optional if you uploaded a file; Markdown supported)</Label>
             <Textarea 
               id="content" 
               value={content} 

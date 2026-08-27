@@ -5,10 +5,12 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   ArrowRight,
+  BarChart3,
   Beaker,
   BookOpen,
   Bot,
   Cable,
+  Component,
   FileText,
   Grid,
   LayoutDashboard,
@@ -24,6 +26,7 @@ import {
   Search,
   Send,
   Settings,
+  ShieldCheck,
   Sparkles,
   Target,
   Terminal,
@@ -74,6 +77,11 @@ const NAV_ENTRIES: Omit<CmdEntry, "run">[] = [
   { id: "nav-integrations", label: "Integrations", group: "Navigate", icon: Cable, hint: "/integrations" },
   { id: "nav-automations", label: "Automations", group: "Navigate", icon: Workflow, hint: "/automations" },
   { id: "nav-apps", label: "Apps", group: "Navigate", icon: Grid, hint: "/apps" },
+  { id: "nav-email-crawler", label: "Email Crawler", group: "Navigate", icon: ShieldCheck, hint: "/email-crawler" },
+  { id: "nav-agent-canvas", label: "Agent Canvas", group: "Navigate", icon: Workflow, hint: "/agent-canvas" },
+  { id: "nav-analytics", label: "Analytics", group: "Navigate", icon: BarChart3, hint: "/analytics" },
+  { id: "nav-ai-chat", label: "AI SDK Chat", group: "Navigate", icon: MessageSquare, hint: "/ai-chat" },
+  { id: "nav-ui-kit", label: "UI Kit", group: "Navigate", icon: Component, hint: "/ui-kit" },
   { id: "nav-settings", label: "Settings", group: "Navigate", icon: Settings, hint: "/settings" },
 ];
 

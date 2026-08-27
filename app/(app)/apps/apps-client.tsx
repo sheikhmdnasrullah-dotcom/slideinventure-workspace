@@ -252,7 +252,7 @@ export function AppsClient() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">App Name (optional — inferred from the URL if left blank)</Label>
+              <Label htmlFor="name">App Name (optional: inferred from the URL if left blank)</Label>
               <Input 
                 id="name" 
                 value={formData.name} 

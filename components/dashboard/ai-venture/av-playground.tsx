@@ -82,14 +82,14 @@ export function AvPlayground() {
     <div className="flex h-full flex-col gap-4 p-4">
       <div>
         <h2 className="text-sm font-medium">Playground</h2>
-        <p className="text-xs text-muted-foreground">Every whiteboard you've made, in one library — nothing duplicated, just a view onto your boards.</p>
+        <p className="text-xs text-muted-foreground">Every whiteboard you've made, in one library: nothing duplicated, just a view onto your boards.</p>
       </div>
       {loading ? (
         <p className="text-xs text-muted-foreground">Loading…</p>
       ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
           <PenTool className="size-8" />
-          <p className="text-sm">Nothing here yet — drawings you save in Whiteboard show up here.</p>
+          <p className="text-sm">Nothing here yet. Drawings you save in Whiteboard show up here.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">

@@ -76,7 +76,7 @@ export function EmailCrawler() {
           <CardDescription>
             Drop a link and/or details about a prospect. The agent surfs the web,
             solves any CAPTCHA with 2captcha, and returns the prospect&apos;s email.
-            No prerequisites — it starts immediately.
+            No prerequisites. It starts immediately.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

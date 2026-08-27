@@ -55,7 +55,7 @@ export async function createCard(formData: FormData) {
 
   let title = ((formData.get("title") as string) || "").trim();
   if (!title) {
-    title = body.split("\n")[0]?.slice(0, 80) || `Untitled ${type} — ${new Date().toLocaleDateString()}`;
+    title = body.split("\n")[0]?.slice(0, 80) || `Untitled ${type}: ${new Date().toLocaleDateString()}`;
   }
   if (!STRATEGY_TYPES.includes(type)) {
     throw new Error(`Invalid type: ${type}`);

@@ -84,7 +84,7 @@ function BoardList({ engine, onOpen }: { engine: BoardEngine; onOpen: (id: strin
       ) : boards.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
           <PenTool className="size-8" />
-          <p className="text-sm">No {engine} boards yet — create one.</p>
+          <p className="text-sm">No {engine} boards yet. Create one.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
