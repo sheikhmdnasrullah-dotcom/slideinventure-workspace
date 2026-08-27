@@ -1,12 +1,10 @@
 /**
  * pm2 process definitions for the workstation.
- * Next.js app + the sandboxed terminal WebSocket bridge.
  *
  * Start everything:   pm2 start ecosystem.config.cjs
  * Reload after deploy: pm2 reload ecosystem.config.cjs
  *
- * The Next app reads .env.local from cwd. The terminal-ws server runs as the
- * `sandbox` user when the host is root (created by deploy/setup-vps.sh).
+ * The Next app reads .env.local from cwd.
  */
 module.exports = {
   apps: [
@@ -20,18 +18,6 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 3000,
-      },
-    },
-    {
-      name: "terminal-ws",
-      cwd: "/var/www/workspace-app",
-      script: "server/terminal-ws.mjs",
-      instances: 1,
-      autorestart: true,
-      env: {
-        TERMINAL_WS_PORT: 3001,
-        SANDBOX_DIR: "/var/www/workspace-app/sandbox",
-        TERMINAL_IDLE_MS: 1800000,
       },
     },
     {

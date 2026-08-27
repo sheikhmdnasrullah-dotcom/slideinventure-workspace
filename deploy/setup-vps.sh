@@ -4,31 +4,14 @@
 #   sudo bash deploy/setup-vps.sh
 #
 # What it does:
-#   1. Creates a non-login `sandbox` user for the terminal PTY to drop into
-#      (the terminal-ws server refuses to spawn a shell as root otherwise).
-#   2. Creates the sandbox working directory, owned by `sandbox`.
-#   3. Installs pm2 globally (if missing) and enables it at boot.
-#   4. Installs Caddy (if missing) and deploys the Caddyfile.
+#   1. Installs pm2 globally (if missing) and enables it at boot.
+#   2. Installs Caddy (if missing) and deploys the Caddyfile.
 #
 # It is idempotent where practical. Re-running is safe.
 set -euo pipefail
 
 APP_DIR="/var/www/workspace-app"
-SANDBOX_DIR="$APP_DIR/sandbox"
 CADDY_SRC="$(cd "$(dirname "$0")/.." && pwd)/Caddyfile"
-
-echo "==> Creating sandbox user"
-if ! id sandbox >/dev/null 2>&1; then
-  useradd --system --shell /bin/bash --home-dir "$SANDBOX_DIR" --create-home sandbox
-  echo "    created user 'sandbox'"
-else
-  echo "    user 'sandbox' already exists"
-fi
-
-echo "==> Sandbox directory"
-mkdir -p "$SANDBOX_DIR"
-chown -R sandbox:sandbox "$SANDBOX_DIR"
-chmod 750 "$SANDBOX_DIR"
 
 echo "==> pm2"
 if ! command -v pm2 >/dev/null 2>&1; then

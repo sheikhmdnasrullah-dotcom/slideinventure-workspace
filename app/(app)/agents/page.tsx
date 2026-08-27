@@ -216,20 +216,12 @@ export default async function AgentsPage() {
         <PageHeader
           eyebrow="Roster"
           title="Agent roster"
-          meta={`${roster.length} specialist agents across ${rosterDivisions.length} divisions — click one to chat`}
+          meta={roster.length > 0 ? `${roster.length} specialist agents across ${rosterDivisions.length} divisions — click one to chat` : undefined}
         />
         <Surface variant="raised">
           {roster.length === 0 ? (
             <p className="font-body text-sm text-ink-muted py-4">
-              No agent personas installed. Run{" "}
-              <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">
-                CLAUDE_CONFIG_DIR=.claude/agents ./scripts/install.sh --tool claude-code
-              </code>{" "}
-              from a clone of{" "}
-              <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">
-                msitarzewski/agency-agents
-              </code>
-              .
+              No agents configured yet.
             </p>
           ) : (
             <>

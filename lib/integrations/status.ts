@@ -41,16 +41,6 @@ export function getIntegrationStatuses(): IntegrationStatus[] {
 
   return [
     {
-      id: "terminal",
-      name: "Terminal",
-      repo: "xterm.js",
-      description: "Sandboxed PTY shell in the browser with session-scoped auth and idle kill.",
-      group: "Agent surfaces",
-      enabled: true,
-      pageHref: "/terminal",
-      action: "link",
-    },
-    {
       id: "browse",
       name: "Browse",
       repo: "Playwright + Stagehand + browser-use + Steel",

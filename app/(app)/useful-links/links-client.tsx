@@ -197,7 +197,7 @@ export function LinksClient() {
                 </div>
                 
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground z-10 relative">
+                  <DropdownMenuTrigger className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground z-10 relative">
                     <MoreVertical className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">

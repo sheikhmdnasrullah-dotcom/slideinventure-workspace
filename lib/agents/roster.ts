@@ -1,7 +1,9 @@
 /**
- * Agent roster — reads the installed Claude Code subagent persona files
- * (`.claude/agents/*.md`, from github.com/msitarzewski/agency-agents) and
- * pairs each with its division/team from `agent-divisions.json`.
+ * Agent roster — reads persona files from `.claude/agents/*.md` (empty by
+ * default; the bulk community roster this used to ship with was removed) and
+ * pairs each with its division/team from `agent-divisions.json`. Add a
+ * `.md` persona file + a matching entry in `agent-divisions.json` to give it
+ * a division, then it shows up here automatically.
  *
  * This is a read-only reference catalog for the dashboard. It is unrelated
  * to the task_runs-backed AgentType/AgentRunner system in `./registry.ts`.
