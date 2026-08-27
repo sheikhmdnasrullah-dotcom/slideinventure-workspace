@@ -75,6 +75,7 @@ import {
 } from "@/components/ui/table"
 import { ColumnConfigDialog, type LeadColumnConfig } from "./leads-column-config-dialog"
 import { CsvImportDialog } from "./leads-csv-import-dialog"
+import { FilterBar } from "@/components/system"
 
 export type Lead = {
   id: string
@@ -688,93 +689,47 @@ export function LeadsTable() {
         </div>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="status-filter" className="text-sm font-medium">
-            Status
-          </Label>
-          <Select
-            value={(table.getColumn("status")?.getFilterValue() as string | undefined) ?? ""}
-            onValueChange={(value) => {
-              table.getColumn("status")?.setFilterValue(value === "all" ? "" : value)
-            }}
-          >
-            <SelectTrigger className="cursor-pointer w-full" id="status-filter">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {statuses.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
+      <FilterBar className="py-0">
+        <FilterBar.Select
+          ariaLabel="Filter by status"
+          value={(table.getColumn("status")?.getFilterValue() as string | undefined) ?? "all"}
+          onChange={(value) => table.getColumn("status")?.setFilterValue(value === "all" ? "" : value)}
+          options={[{ value: "all", label: "All statuses" }, ...statuses.map((s) => ({ value: s, label: s }))]}
+        />
+        <FilterBar.Select
+          ariaLabel="Filter by source"
+          value={(table.getColumn("source")?.getFilterValue() as string | undefined) ?? "all"}
+          onChange={(value) => table.getColumn("source")?.setFilterValue(value === "all" ? "" : value)}
+          options={[{ value: "all", label: "All sources" }, ...sources.map((s) => ({ value: s, label: s }))]}
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <FilterBar.Button onClick={() => {}}>
+              Columns <ChevronDown className="ml-1 inline size-3.5" />
+            </FilterBar.Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {columns
+              .filter((column) => column.type !== "select" && column.type !== "actions")
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={table.getColumn(column.id)?.getIsVisible() ?? column.visible}
+                  onCheckedChange={(value) =>
+                    table.getColumn(column.id)?.toggleVisibility(!!value)
+                  }
+                >
+                  {column.label || column.key}
+                </DropdownMenuCheckboxItem>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="source-filter" className="text-sm font-medium">
-            Source
-          </Label>
-          <Select
-            value={(table.getColumn("source")?.getFilterValue() as string | undefined) ?? ""}
-            onValueChange={(value) => {
-              table.getColumn("source")?.setFilterValue(value === "all" ? "" : value)
-            }}
-          >
-            <SelectTrigger className="cursor-pointer w-full" id="source-filter">
-              <SelectValue placeholder="All sources" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All sources</SelectItem>
-              {sources.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="column-visibility" className="text-sm font-medium">
-            Columns
-          </Label>
-          <DropdownMenu>
-            <DropdownMenuTrigger id="column-visibility">
-              <Button variant="outline" className="cursor-pointer w-full">
-                Columns <ChevronDown className="ml-2 size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {columns
-                .filter((column) => column.type !== "select" && column.type !== "actions")
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={table.getColumn(column.id)?.getIsVisible() ?? column.visible}
-                    onCheckedChange={(value) =>
-                      table.getColumn(column.id)?.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.label || column.key}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Manage</Label>
-          <Button
-            variant="outline"
-            className="cursor-pointer w-full"
-            onClick={() => setShowColumnConfig(true)}
-          >
-            <Settings2 className="mr-2 size-4" />
-            Customize Columns
-          </Button>
-        </div>
-      </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <FilterBar.Button onClick={() => setShowColumnConfig(true)}>
+          <Settings2 className="mr-1 inline size-3.5" />
+          Customize columns
+        </FilterBar.Button>
+      </FilterBar>
 
       <div className="rounded-md border">
         <Table>

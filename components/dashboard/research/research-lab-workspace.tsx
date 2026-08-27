@@ -4,11 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { FileText, FolderOpen, LayoutGrid, PenTool, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog";
+import { SiteHeader } from "@/components/dashboard/site-header";
+import { EmptyState } from "@/components/system";
+import { cn } from "@/lib/utils";
 
 const SCOPE = "research";
 
@@ -146,126 +148,120 @@ export function ResearchLabWorkspace() {
   };
 
   return (
-    <div className="flex flex-1 w-full">
-      <aside className="flex w-64 shrink-0 flex-col gap-1 border-r border-border bg-card/40 p-2">
-        <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Projects
-          </span>
-          <Button size="xs" variant="outline" onClick={newProject}>
-            <Plus className="size-3" /> New
-          </Button>
-        </div>
-        <ScrollArea className="flex-1">
-          {projects.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => selectProject(p.id)}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-accent ${
-                active?.id === p.id ? "bg-accent" : ""
-              }`}
-            >
-              <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className="truncate">{p.title}</span>
-            </button>
-          ))}
-          {projects.length === 0 && (
-            <p className="px-2 py-2 text-xs text-muted-foreground">No projects yet.</p>
-          )}
-        </ScrollArea>
-      </aside>
-
-      <main className="flex-1 p-6">
-        {!active ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
-            <p className="text-sm">Create or open a research project.</p>
-            <Button onClick={newProject}>
-              <Plus className="size-4" /> New Research Project
+    <>
+      <SiteHeader crumbs={[{ label: "Research Lab" }]} subtitle="Active investigation" />
+      <div className="flex flex-1 w-full">
+        <aside className="flex w-64 shrink-0 flex-col gap-1 border-r border-rule bg-[var(--surface-2)]/40 p-2">
+          <div className="flex items-center justify-between px-2 py-1">
+            <span className="font-label text-ink-faint">Projects</span>
+            <Button size="xs" variant="outline" onClick={newProject}>
+              <Plus className="size-3" /> New
             </Button>
           </div>
-        ) : (
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">
-                Research Lab
-              </h1>
-              <p className="text-xs text-foreground/40">
-                Dedicated project workspace. Notes autosave. Open a drawing app in a popup to sketch ideas.
-              </p>
-            </div>
+          <ScrollArea className="flex-1">
+            {projects.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => selectProject(p.id)}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left font-body-tight text-sm transition-colors hover:bg-[var(--surface-2)]",
+                  active?.id === p.id ? "bg-[var(--surface-2)] text-ink-strong" : "text-ink-muted"
+                )}
+              >
+                <FolderOpen className="size-3.5 shrink-0 text-ink-faint" />
+                <span className="truncate">{p.title}</span>
+              </button>
+            ))}
+            {projects.length === 0 && (
+              <p className="px-2 py-2 font-body text-xs text-ink-muted">No projects yet.</p>
+            )}
+          </ScrollArea>
+        </aside>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-foreground/50">Project title</label>
-              <Input
-                value={active.title}
-                onChange={(e) => setActive({ ...active, title: e.target.value })}
-                onBlur={() => patch({ title: active.title })}
-              />
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Brief &amp; Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="What are you researching? Hypotheses, key questions"
-                  value={active.description}
-                  onChange={(e) => setActive({ ...active, description: e.target.value })}
-                  onBlur={() => patch({ description: active.description })}
-                  rows={5}
+        <main className="flex-1 overflow-y-auto p-8" data-lenis-prevent>
+          {!active ? (
+            <EmptyState
+              eyebrow="Research Lab"
+              title="Open desk, no fixed order"
+              description="Create a project to start writing, gathering sources and sketching. Nothing here is required before another."
+              action={{
+                label: (
+                  <>
+                    <Plus className="size-3.5" /> New research project
+                  </>
+                ),
+                onClick: newProject,
+              }}
+            />
+          ) : (
+            <div className="mx-auto flex max-w-3xl flex-col gap-8">
+              <div className="flex flex-col gap-1">
+                <Input
+                  value={active.title}
+                  onChange={(e) => setActive({ ...active, title: e.target.value })}
+                  onBlur={() => patch({ title: active.title })}
+                  className="h-auto border-none bg-transparent px-0 font-display text-2xl text-ink-strong shadow-none focus-visible:ring-0"
                 />
-              </CardContent>
-            </Card>
+                <p className="font-body text-sm text-ink-muted">
+                  Notes autosave. Sketch ideas in a tool without leaving this project.
+                </p>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Sources</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Links, references, raw material for this project"
-                  value={active.sources}
-                  onChange={(e) => setActive({ ...active, sources: e.target.value })}
-                  onBlur={() => patch({ sources: active.sources })}
-                  rows={4}
-                />
-              </CardContent>
-            </Card>
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <span className="font-label text-ink-faint">Brief &amp; notes</span>
+                  <Textarea
+                    placeholder="What are you researching? Hypotheses, key questions"
+                    value={active.description}
+                    onChange={(e) => setActive({ ...active, description: e.target.value })}
+                    onBlur={() => patch({ description: active.description })}
+                    rows={8}
+                    className="resize-none border-rule bg-[var(--surface)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="font-label text-ink-faint">Sources</span>
+                  <Textarea
+                    placeholder="Links, references, raw material for this project"
+                    value={active.sources}
+                    onChange={(e) => setActive({ ...active, sources: e.target.value })}
+                    onBlur={() => patch({ sources: active.sources })}
+                    rows={8}
+                    className="resize-none border-rule bg-[var(--surface)]"
+                  />
+                </div>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Research with an app</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Button
-                    variant="outline"
-                    className="h-24 flex-col gap-2"
+              <div className="flex flex-col gap-2">
+                <span className="font-label text-ink-faint">Open a tool</span>
+                <div className="flex flex-wrap gap-3">
+                  <button
                     onClick={openExcel}
                     disabled={busy}
+                    className="motion-card flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
                   >
-                    <PenTool className="size-6" /> Excel Draw
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-24 flex-col gap-2"
+                    <PenTool className="size-4 text-ink-muted" />
+                    <span className="font-body-tight text-sm text-ink-strong">Excel Draw</span>
+                  </button>
+                  <button
                     onClick={openAffine}
                     disabled={busy}
+                    className="motion-card flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
                   >
-                    <LayoutGrid className="size-6" /> Affine
-                  </Button>
+                    <LayoutGrid className="size-4 text-ink-muted" />
+                    <span className="font-body-tight text-sm text-ink-strong">Affine</span>
+                  </button>
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground">
+                <p className="font-body text-xs text-ink-faint">
                   Opens as an embedded popup, not a new browser window.
                 </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </main>
+              </div>
+            </div>
+          )}
+        </main>
 
-      <AppFrameDialog url={frame} onClose={() => setFrame(null)} title="Research app" />
-    </div>
+        <AppFrameDialog url={frame} onClose={() => setFrame(null)} title="Research app" />
+      </div>
+    </>
   );
 }

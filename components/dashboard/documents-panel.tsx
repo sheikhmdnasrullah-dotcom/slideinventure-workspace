@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Upload, FileText, Trash2, ExternalLink } from "lucide-react";
+import { PdfEditorLink } from "@/components/dashboard/v3/documents/pdf-editor-link";
 
 type Document = {
   id: string;
@@ -110,9 +111,12 @@ export function DocumentsPanel() {
     <div className="flex flex-col gap-4">
       <Card>
         <CardContent className="flex flex-col gap-3 p-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Upload className="size-4" />
-            Upload PDF
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Upload className="size-4" />
+              Upload PDF
+            </div>
+            <PdfEditorLink label="PDF Editor" />
           </div>
 
           <Input

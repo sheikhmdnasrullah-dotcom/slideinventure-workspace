@@ -28,12 +28,14 @@ export function SiteHeader({
   syncing = false,
   primaryAction,
   title,
+  subtitle,
 }: {
   crumbs?: Crumb[]
   onSync?: () => void
   syncing?: boolean
   primaryAction?: { label: string; href?: string; onClick?: () => void }
   title?: string
+  subtitle?: string
 }) {
   const pathname = usePathname()
   const resolvedCrumbs = React.useMemo(() => {
@@ -78,6 +80,9 @@ export function SiteHeader({
             })}
          </BreadcrumbList>
        </Breadcrumb>
+        {subtitle && (
+          <span className="hidden truncate font-label text-ink-faint sm:inline">{subtitle}</span>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <NotificationsBell />
           <Button

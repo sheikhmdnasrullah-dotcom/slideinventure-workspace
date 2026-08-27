@@ -32,7 +32,6 @@ import {
   GripVertical,
   Loader,
   MoreHorizontal,
-  Plus,
 } from "lucide-react"
 import {
   columnFilteringFeature,
@@ -82,12 +81,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
 const features = tableFeatures({
@@ -361,81 +354,46 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
   }
 
   return (
-    <Tabs
-      defaultValue="outline"
-      className="w-full flex-col justify-start gap-6"
-    >
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-       </Label>
-         <select
-           defaultValue="outline"
-           className="flex w-fit @4xl/main:hidden rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-           id="view-selector"
-         >
-           <option value="outline">Outline</option>
-           <option value="past-performance">Past Performance</option>
-           <option value="key-personnel">Key Personnel</option>
-           <option value="focus-documents">Focus Documents</option>
-         </select>
-        <TabsList className="hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
-         </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
-         </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
-       </TabsList>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button variant="outline" size="sm" />
-          }
-        >
-          <Columns2 />
-          <span className="hidden lg:inline">Customize Columns</span>
-          <span className="lg:hidden">Columns</span>
-          <ChevronDown />
-        </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex items-center justify-end px-4 pt-4 lg:px-6">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="outline" size="sm" />
+            }
+          >
+            <Columns2 />
+            <span className="hidden lg:inline">Customize columns</span>
+            <span className="lg:hidden">Columns</span>
+            <ChevronDown />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {table
+              .getAllColumns()
+              .filter(
+                (column) =>
+                  typeof column.accessorFn !== "undefined" &&
+                  column.getCanHide()
+              )
+              .map((column) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id}
+                 </DropdownMenuCheckboxItem>
                 )
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                   </DropdownMenuCheckboxItem>
-                  )
-                })}
-           </DropdownMenuContent>
-         </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <Plus />
-            <span className="hidden lg:inline">Add Section</span>
-         </Button>
-       </div>
+              })}
+         </DropdownMenuContent>
+       </DropdownMenu>
      </div>
-      <TabsContent
-        value="outline"
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
-      >
-        <div className="overflow-hidden rounded-lg border">
+      <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
+        <div className="overflow-hidden rounded-md border border-rule">
           <DndContext
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
@@ -553,23 +511,8 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
            </div>
          </div>
        </div>
-     </TabsContent>
-      <TabsContent
-        value="past-performance"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
-     </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
-     </TabsContent>
-      <TabsContent
-        value="focus-documents"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
-     </TabsContent>
-   </Tabs>
+      </div>
+    </div>
   )
 }
 

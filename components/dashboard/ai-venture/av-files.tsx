@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Folder, FileText, File, Image as ImageIcon, ChevronRight, Home, Upload, Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { useLiveRefresh } from "@/components/providers/event-stream"
+import { PdfEditorLink } from "@/components/dashboard/v3/documents/pdf-editor-link"
 
 type VentureNode = {
   id: string
@@ -296,6 +297,7 @@ export function AvFiles() {
                 <Button size="xs" variant="outline" onClick={() => del(selected)}>
                   Delete
                 </Button>
+                {selectedExt === "pdf" && <PdfEditorLink label="PDF Editor" size="xs" />}
               </>
             )}
           </div>

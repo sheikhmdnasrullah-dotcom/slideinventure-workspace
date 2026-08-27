@@ -170,6 +170,13 @@ function categoryIcon(category: string) {
   return <Icon className="size-3.5 text-muted-foreground" />
 }
 
+function greetingFor(hour: number): string {
+  if (hour < 5) return "Still up."
+  if (hour < 12) return "Good morning."
+  if (hour < 18) return "Good afternoon."
+  return "Good evening."
+}
+
 export async function DashboardHome() {
   // Forward the incoming session cookie so the internal API call authenticates
   // (a raw server fetch would 401 and render an empty dashboard).
@@ -185,46 +192,43 @@ export async function DashboardHome() {
 
   const activity = data?.activity ?? []
   const tableItems: ActivityItem[] = activity.map(toDataTableItem)
+  const now = new Date()
 
   return (
     <>
       <SiteHeader crumbs={[{ label: "Dashboard" }]} />
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <div className="px-4 lg:px-6">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Command Center</h1>
-            <p className="text-sm text-muted-foreground">
-              Live workspace overview
-              {data?.syncedAt
-                ? ` • Updated ${new Date(data.syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                : ""}
-            </p>
-          </div>
+      <div className="flex flex-1 flex-col gap-6 p-6">
+        <div className="flex flex-col gap-1">
+          <span className="font-label text-ink-faint">
+            {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+          </span>
+          <h1 className="font-display text-2xl text-ink-strong sm:text-3xl">
+            {greetingFor(now.getHours())}
+          </h1>
+          <p className="font-body text-sm text-ink-muted">
+            Here&apos;s what happened while you were away.
+            {data?.syncedAt
+              ? ` Synced ${new Date(data.syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`
+              : ""}
+          </p>
         </div>
 
-        <div className="px-4 lg:px-6">
+        <Section tone="base" className="py-0">
           <DashboardMetrics initial={data} />
-        </div>
+        </Section>
 
-        <div className="px-4 lg:px-6">
-          <QuickActions />
-        </div>
+        <QuickActions />
 
-        <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2">
           <LiveActivity />
           <RecentWork activity={activity} />
         </div>
 
-        <div className="px-4 lg:px-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Activity</CardTitle>
-              <CardDescription>Unified timeline from all modules</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DataTableLazy data={tableItems} />
-            </CardContent>
-          </Card>
+        <div>
+          <SectionRule label="All activity" coordinate={`${tableItems.length} item${tableItems.length === 1 ? "" : "s"}`} />
+          <Surface variant="raised" className="px-0 py-0">
+            <DataTableLazy data={tableItems} />
+          </Surface>
         </div>
       </div>
     </>
@@ -234,25 +238,20 @@ export async function DashboardHome() {
 function RecentWork({ activity }: { activity: ActivityRow[] }) {
   if (activity.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Recent work</CardTitle>
-          <CardDescription>From every section</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No work recorded yet. Notes, documents, boards, research and idea maps appear here as you create them.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button render={<Link href="/notepad" />} variant="outline" size="sm">
-              New note <ArrowRight className="size-3.5" />
-            </Button>
-            <Button render={<Link href="/documents" />} variant="outline" size="sm">
-              Upload document <ArrowRight className="size-3.5" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-1 flex-col">
+        <p className="font-label pb-3 text-ink-faint">Work in progress</p>
+        <p className="font-body text-sm text-ink-muted">
+          No work recorded yet. Notes, documents, boards, research and idea maps appear here as you create them.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button render={<Link href="/notepad" />} variant="outline" size="sm">
+            New note <ArrowRight className="size-3.5" />
+          </Button>
+          <Button render={<Link href="/documents" />} variant="outline" size="sm">
+            Upload document <ArrowRight className="size-3.5" />
+          </Button>
+        </div>
+      </div>
     )
   }
 
@@ -271,18 +270,13 @@ function RecentWork({ activity }: { activity: ActivityRow[] }) {
   }))
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-base">Recent work</CardTitle>
-        <CardDescription>From every section</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-4">
+    <div className="flex flex-1 flex-col">
+      <p className="font-label pb-3 text-ink-faint">Work in progress</p>
+      <div className="flex flex-1 flex-col gap-4">
         {sections.map((section) => (
           <div key={section.label} className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {section.label}
-              </span>
+              <span className="font-label text-ink-faint">{section.label}</span>
               <Button render={<Link href={section.href} />} variant="ghost" size="xs">
                 View
               </Button>
@@ -291,11 +285,11 @@ function RecentWork({ activity }: { activity: ActivityRow[] }) {
               <Link
                 key={item.id}
                 href={section.href}
-                className="flex items-center gap-2 rounded-md border p-2 text-sm transition-colors hover:bg-muted"
+                className="flex items-center gap-2 border-l border-rule py-1.5 pl-3 transition-colors hover:bg-[var(--surface-2)]/50"
               >
                 {categoryIcon(item.category ?? item.source)}
-                <span className="flex-1 truncate">{item.item}</span>
-                <span className="text-[11px] text-muted-foreground" suppressHydrationWarning>
+                <span className="flex-1 truncate font-body-tight text-sm text-ink-strong">{item.item}</span>
+                <span className="font-label text-ink-faint" suppressHydrationWarning>
                   {new Date(item.updatedAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -305,7 +299,7 @@ function RecentWork({ activity }: { activity: ActivityRow[] }) {
             ))}
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

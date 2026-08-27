@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator"
 import { STIRLING_PDF_URL } from "@/lib/pdf-editor"
 import { useDocuments } from "./use-documents"
 import { PdfEditorDialog } from "./pdf-editor-dialog"
+import { PdfEditorLink } from "./pdf-editor-link"
 
 export function DocumentDisplay() {
   const { selectedDocument, deleteDocument } = useDocuments()
@@ -57,6 +58,7 @@ export function DocumentDisplay() {
               >
                 <Pencil className="h-4 w-4" /> Edit PDF
               </button>
+              <PdfEditorLink label="PDF Editor" />
               <PdfEditorDialog
                 open={pdfOpen}
                 onClose={() => setPdfOpen(false)}

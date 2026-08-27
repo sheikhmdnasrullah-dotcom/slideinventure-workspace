@@ -152,6 +152,9 @@ export function CommandMenu() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         commandMenuStore.toggle();
+      } else if (e.key === "Escape" && commandMenuStore.getSnapshot().open) {
+        e.preventDefault();
+        commandMenuStore.close();
       }
     }
     window.addEventListener("keydown", onKey);
@@ -418,6 +421,12 @@ function CommandMenuBody() {
         ref={inputRef}
         value={query}
         onValueChange={setQuery}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            commandMenuStore.close();
+          }
+        }}
         placeholder="Search the workspace"
       />
       <CommandList>

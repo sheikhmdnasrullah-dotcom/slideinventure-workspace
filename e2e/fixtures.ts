@@ -94,10 +94,18 @@ export type Diagnostics = {
   pageErrors: string[];
 };
 
+/**
+ * Authenticate every test's context regardless of which fixtures it requests.
+ * Every page is derived from `context`, so injecting the session cookie here
+ * guarantees the app is reachable (not redirected to login) for all specs.
+ */
 export const test = base.extend<{ diagnostics: Diagnostics }>({
-  diagnostics: async ({ page, context }, use) => {
-    await authenticate(context, base.info().project.use.baseURL as string);
-
+  context: async ({ context }, use) => {
+    await authenticate(context, process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000");
+    console.log("[fixtures] context authenticated for", context.browser()?.browserType().name());
+    await use(context);
+  },
+  diagnostics: async ({ page }, use) => {
     const diagnostics: Diagnostics = { consoleErrors: [], pageErrors: [] };
 
     page.on("console", (msg) => {
