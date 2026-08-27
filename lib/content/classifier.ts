@@ -1,5 +1,5 @@
 /**
- * Content Classifier — rule-based first, NVIDIA LLM later.
+ * Content Classifier: rule-based first, NVIDIA LLM later.
  *
  * Takes a raw artifact (file, text, metadata) and returns a classified
  * content object with `content_type` + extracted structure. No LLM codegen;
@@ -191,14 +191,14 @@ export async function classifyFileArtifact(
 }
 
 /**
- * Classify PDF — extract text + metadata using pdf-parse.
+ * Classify PDF: extract text + metadata using pdf-parse.
  */
 async function classifyPDF(buffer: Buffer, filename: string, metadata?: Record<string, unknown>): Promise<ClassificationResult> {
   try {
     // pdf-parse 2.x replaced the old callable-function API with a class;
     // `new PDFParse({ data }).getText()` is the current shape. Requires
     // pdf-parse/pdfjs-dist to stay in next.config.ts's
-    // serverExternalPackages — bundling them breaks the worker script's
+    // serverExternalPackages. Bundling them breaks the worker script's
     // self-relative import at runtime.
     const { PDFParse } = await import("pdf-parse");
     const parser = new PDFParse({ data: buffer });
@@ -239,7 +239,7 @@ async function classifyPDF(buffer: Buffer, filename: string, metadata?: Record<s
 }
 
 /**
- * Classify image — metadata only (OCR later).
+ * Classify image: metadata only (OCR later).
  */
 async function classifyImage(buffer: Buffer, filename: string, metadata?: Record<string, unknown>): Promise<ClassificationResult> {
   const content = {
@@ -259,7 +259,7 @@ async function classifyImage(buffer: Buffer, filename: string, metadata?: Record
 }
 
 /**
- * Classify spreadsheet — not implemented (no xlsx dep due to vulns).
+ * Classify spreadsheet: not implemented (no xlsx dep due to vulns).
  */
 async function classifySpreadsheet(buffer: Buffer, filename: string, metadata?: Record<string, unknown>): Promise<ClassificationResult> {
   return {
@@ -276,7 +276,7 @@ async function classifySpreadsheet(buffer: Buffer, filename: string, metadata?: 
 }
 
 /**
- * Classify CSV — parse headers + rows.
+ * Classify CSV: parse headers + rows.
  */
 async function classifyCSV(buffer: Buffer, filename: string, metadata?: Record<string, unknown>): Promise<ClassificationResult> {
   try {
@@ -329,7 +329,7 @@ export function classifyAgentExecution(
 ): ClassificationResult {
   const content = {
     content_type: "AGENT_EXECUTION",
-    title: `${agentType} execution${taskId ? ` — ${taskId}` : ""}`,
+    title: `${agentType} execution${taskId ? `: ${taskId}` : ""}`,
     source: "agent",
     author: "system",
     tags: ["agent", agentType],
@@ -375,7 +375,7 @@ export function classifyWebResearch(
 }
 
 /**
- * Main classify entry point — routes by artifact kind.
+ * Main classify entry point: routes by artifact kind.
  */
 export async function classifyArtifact(input: ArtifactInput): Promise<ClassificationResult> {
   switch (input.kind) {

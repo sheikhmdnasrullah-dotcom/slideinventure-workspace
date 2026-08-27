@@ -1,5 +1,5 @@
 /**
- * Entity/Relation extensions — business entities beyond Obsidian wikilinks.
+ * Entity/Relation extensions: business entities beyond Obsidian wikilinks.
  * Provides typed entity types, properties, and relation kinds.
  */
 

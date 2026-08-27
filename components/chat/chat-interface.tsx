@@ -241,7 +241,7 @@ export function ChatInterface() {
         return;
       }
 
-      // No retrieval matches — ask the LLM directly. The backend creates a
+      // No retrieval matches: ask the LLM directly. The backend creates a
       // session automatically when none exists yet, so this works for a
       // brand new conversation too.
       const res = await fetch("/api/chat", {

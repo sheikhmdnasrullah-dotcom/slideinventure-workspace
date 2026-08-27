@@ -22,7 +22,7 @@ function getModel() {
     return provider(process.env.DEEPSEEK_MODEL || "deepseek-chat");
   }
   const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) throw new Error("No agent model configured — set DEEPSEEK_API_KEY or NVIDIA_API_KEY");
+  if (!apiKey) throw new Error("No agent model configured: set DEEPSEEK_API_KEY or NVIDIA_API_KEY");
   const provider = createOpenAI({
     baseURL: "https://integrate.api.nvidia.com/v1",
     apiKey,

@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 // For routes called by trusted external callers with no user session
-// (n8n webhooks, terminal/CLI scripts) — checks `Authorization: Bearer <secret>`
+// (n8n webhooks, terminal/CLI scripts), checks `Authorization: Bearer <secret>`
 // against INTERNAL_API_SECRET.
 export function verifyInternalSecret(request: Request): boolean {
   const secret = process.env.INTERNAL_API_SECRET;

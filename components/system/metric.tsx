@@ -3,18 +3,18 @@ import { TrendBadge, type TrendDirection } from "@/components/system/status-badg
 import { cn } from "@/lib/utils";
 
 /**
- * Metric — the disciplined replacement for KpiCard. A status/statement row,
+ * Metric: the disciplined replacement for KpiCard. A status/statement row,
  * not a metric wall. Each Metric is: label · value · delta · provenance.
  *
  *   label       what this is (mono eyebrow)
- *   value       the number — set with .font-value (mono, semibold, tabular)
- *   direction   optional trend — renders a TrendBadge (up/down/flat + caption)
+ *   value       the number, set with .font-value (mono, semibold, tabular)
+ *   direction   optional trend: renders a TrendBadge (up/down/flat + caption)
  *   delta       the trend caption (e.g. "from task log")
  *   provenance  the muted subline: where this number came from. Carries the
  *               brief's "evidence-first" principle onto a number itself.
  *   href        optional link to a filtered view that explains the number
  *
- * NO Card wrapper — a Metric is rendered on a Surface (or its own grid cell),
+ * NO Card wrapper: a Metric is rendered on a Surface (or its own grid cell),
  * which is what stops the page reading as "a 4-up wall of rounded rectangles".
  */
 export function Metric({
@@ -65,7 +65,7 @@ export function Metric({
 }
 
 /**
- * MetricRow — the grid that holds a set of Metrics without boxing each in a
+ * MetricRow: the grid that holds a set of Metrics without boxing each in a
  * Card. A 1/2/4-col responsive row separated by vertical hairlines instead
  * of rounded rectangles. This is the construction the audit called for in
  * place of "stack of KPI cards".
@@ -91,7 +91,7 @@ export function MetricRow({
 }
 
 /**
- * MetricCell — the cell inside a MetricRow. Pads so the divide-x reads as a
+ * MetricCell: the cell inside a MetricRow. Pads so the divide-x reads as a
  * hairline between values, not as a border boxing the value.
  */
 export function MetricCell({

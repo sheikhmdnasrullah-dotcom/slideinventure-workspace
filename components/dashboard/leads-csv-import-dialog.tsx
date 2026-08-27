@@ -76,7 +76,7 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
     setFile(selected)
 
     // header:true hands back row/column/value already correctly associated
-    // by PapaParse's own (well-tested) CSV parser — quoted commas, ragged
+    // by PapaParse's own (well-tested) CSV parser. Quoted commas, ragged
     // rows, and column order are all handled by the library rather than by
     // hand-zipping a raw header array against positional row arrays.
     Papa.parse<Record<string, string>>(selected, {

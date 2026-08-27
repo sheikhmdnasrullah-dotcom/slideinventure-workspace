@@ -24,7 +24,7 @@ function splitLeadName(lead: Record<string, unknown>): { firstName: string; last
     }
   }
 
-  // A full name landed in first_name with no last_name — split it.
+  // A full name landed in first_name with no last_name: split it.
   if (!lastName && firstName.includes(" ")) {
     const parts = firstName.split(/\s+/)
     lastName = parts.slice(1).join(" ")
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     ]
 
     // Appwrite rejects a Query.equal array value over 100 entries AND the
-    // serialized query string over 4096 chars — a CSV with more than ~100
+    // serialized query string over 4096 chars. A CSV with more than ~100
     // distinct emails (exactly the "100+ leads" case this importer needs to
     // handle) made every import fail outright, and with real-length emails
     // even 100-per-batch can blow the 4096-char cap. Batch by both.
@@ -91,8 +91,8 @@ export async function POST(request: Request) {
 
     const toCreate: Array<Record<string, unknown>> = []
     const toUpdate: Array<{ id: string; row: Record<string, unknown> }> = []
-    // Tracks emails not yet in the DB but already queued in this batch —
-    // without this, two rows sharing an email (a real "verify duplicate
+    // Tracks emails not yet in the DB but already queued in this batch.
+    // Without this, two rows sharing an email (a real "verify duplicate
     // handling" case, not just re-imports of an existing lead) both looked
     // up against the same pre-import snapshot and both created, producing
     // two leads with the same email instead of the second updating the
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
     }
 
     // A 121-row import took 114s running one createDocument/updateDocument
-    // call at a time in sequence — well past what a Vercel serverless
+    // call at a time in sequence, well past what a Vercel serverless
     // function is given, so any realistically-sized ("100+ leads") import
     // would time out and fail outright in production. Run a bounded number
     // of writes in flight at once instead of fully serializing them.

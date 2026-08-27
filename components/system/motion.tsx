@@ -10,13 +10,13 @@ import { Duration, Ease, MotionDiv } from "@/lib/motion";
  * One cohesive motion system for the dashboard. Built on the existing
  * `lib/motion.tsx` tokens (expo easing, 80/140/220/420/620ms scale) and the
  * Base UI `data-starting/ending-style` primitives already used by
- * dialogs/popovers/drawers — so popovers, modals, tabs and page transitions
+ * dialogs/popovers/drawers. So popovers, modals, tabs and page transitions
  * all share the same timing language.
  */
 
 /**
  * Page/section transition. Mounted once in the (app) layout, keyed by pathname.
- * The sidebar/header shell stays mounted, so only the content swaps — navigation
+ * The sidebar/header shell stays mounted, so only the content swaps. Navigation
  * reads as movement inside one app rather than a full reload. Respecting
  * `prefers-reduced-motion` by rendering a static wrapper.
  */

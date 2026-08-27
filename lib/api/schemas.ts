@@ -19,7 +19,7 @@ export type User = z.infer<typeof UserSchema>;
 // ---------------------------------------------------------------
 // 2. Leads
 // ---------------------------------------------------------------
-// Wire format matches the DB columns (snake_case) — the same shape used by
+// Wire format matches the DB columns (snake_case): the same shape used by
 // /api/leads/import and serializeLead, so create/update/import all agree on
 // field names instead of silently dropping mismatched keys.
 export const LeadSchema = z.object({
@@ -154,7 +154,7 @@ export type KnowledgeItem = z.infer<typeof KnowledgeItemSchema>;
 export const UsefulLinkSchema = z.object({
   id: z.string().uuid(),
   title: z.string().optional().default(""),
-  // Not `.url()` — that rejects anything typed without an explicit scheme
+  // Not `.url()`: that rejects anything typed without an explicit scheme
   // (e.g. "google.com"), which is exactly what most people type. The route
   // normalizes (adds https:// if missing) before this is used.
   url: z.string().min(1, "A URL is required"),

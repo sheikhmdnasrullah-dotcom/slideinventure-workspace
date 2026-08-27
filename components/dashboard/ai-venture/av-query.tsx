@@ -10,7 +10,7 @@ type Msg = { role: "user" | "assistant"; content: string }
 
 // Reuses the SAME /api/chat endpoint (and its NVIDIA-powered gateway +
 // cross-section retrieval over Knowledge/Documents/Notes/Terminal/Links) as
-// the main dashboard Chat — no separate/isolated AI system, no new API key.
+// the main dashboard Chat: no separate/isolated AI system, no new API key.
 // AI-Venture-sourced material is reachable here because uploaded files and
 // notes are already mirrored into Knowledge by the existing pipeline.
 export function AvQuery() {

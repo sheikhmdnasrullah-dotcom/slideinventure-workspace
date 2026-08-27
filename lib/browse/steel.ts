@@ -1,7 +1,7 @@
 import "server-only";
 import type { Browser, Page } from "playwright";
 
-// Steel — hosted browser for the Browse agent. Optional: when STEEL_API_KEY is
+// Steel: hosted browser for the Browse agent. Optional: when STEEL_API_KEY is
 // set, runBrowseTask uses Steel's managed Chromium instead of a local
 // Playwright browser (better for headless CAPTCHA handling at scale).
 export function steelEnabled(): boolean {
@@ -22,7 +22,7 @@ export async function createSteelBrowser(): Promise<SteelBrowserHandle | null> {
     ]);
     const client = new Steel({ steelAPIKey: process.env.STEEL_API_KEY });
     const session = await client.sessions.create();
-    // Steel exposes a CDP endpoint per session — connect Playwright to it
+    // Steel exposes a CDP endpoint per session: connect Playwright to it
     // rather than launching a local browser.
     const browser: Browser = await chromium.connectOverCDP(session.websocketUrl);
 

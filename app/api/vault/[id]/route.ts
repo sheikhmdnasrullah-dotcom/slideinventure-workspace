@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const validated = validate(UpdateSchema, body);
   const now = new Date().toISOString();
 
-  // This previously wrote every field unconditionally on every PUT — since
+  // This previously wrote every field unconditionally on every PUT. Since
   // secretType/tags default in SecretVaultEntrySchema (and the rest default
   // to null via `?? null`), any partial update (e.g. just a rename) silently
   // wiped category/serviceName/username/url/notes/tags/secretType back to

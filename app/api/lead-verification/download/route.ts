@@ -7,7 +7,7 @@ const JOB_API_SECRET = process.env.LEAD_JOB_API_SECRET ?? "";
 /**
  * GET /api/lead-verification/download?jobId=<uuid>
  * Proxies the CSV download from the VPS job API.
- * The x-job-secret header is injected server-side — never reaches the browser.
+ * The x-job-secret header is injected server-side, never reaches the browser.
  */
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();

@@ -3,21 +3,21 @@ import { databases, ID, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { embedTexts } from "@/lib/knowledge/nvidia";
 
-// Real semantic/cross-section retrieval layer for the app — Knowledge's own
+// Real semantic/cross-section retrieval layer for the app: Knowledge's own
 // "semantic" mode previously computed an embedding and threw it away,
 // falling back to fulltext (see app/api/knowledge/search/route.ts).
 //
 // Storage: rows live in Appwrite (collection `search_vectors`, self-provisioned
-// below the same way lib/affine/ensure.ts and lib/notifications/ensure.ts do —
+// below the same way lib/affine/ensure.ts and lib/notifications/ensure.ts do,
 // not tracked in appwrite.config.json, created lazily on first write). A prior
 // version of this file used an embedded LanceDB file-store, which cannot work
 // on Vercel (read-only filesystem outside /tmp, and /tmp isn't shared across
-// invocations) — Appwrite is already the source of truth for every other
+// invocations). Appwrite is already the source of truth for every other
 // collection in this app and works identically in dev and on Vercel since
 // it's just network calls, no local disk involved.
 //
 // Similarity: rows are fetched per query (bounded by CANDIDATE_LIMIT) and
-// scored in Node with brute-force cosine similarity — no ANN index needed at
+// scored in Node with brute-force cosine similarity: no ANN index needed at
 // this data scale (a personal workspace, not a bulk dataset).
 //
 // Every function here degrades to a no-op instead of throwing: retrieval is
@@ -33,13 +33,13 @@ export type VectorCollection = "knowledge" | "documents" | "notes" | "terminal" 
 type AppwriteAttribute = { key: string };
 
 // Stored under the Appwrite attribute name "section" rather than
-// "collection" — a custom attribute literally named "collection" on this
+// "collection": a custom attribute literally named "collection" on this
 // project silently fails to round-trip (createDocument's response echoes it
-// back, but a subsequent listDocuments never returns it — almost certainly a
+// back, but a subsequent listDocuments never returns it, almost certainly a
 // collision with the legacy Databases API's internal `$collectionId`
 // concept). "section" mirrors the working precedent in
 // lib/affine/ensure.ts's `section` column. The public interface below still
-// calls it `collection` — only the Appwrite-side column name differs.
+// calls it `collection`. Only the Appwrite-side column name differs.
 const ATTRS: Array<{ key: string; size: number; required: boolean }> = [
   { key: "section", size: 32, required: true },
   { key: "doc_id", size: 255, required: true },

@@ -10,7 +10,7 @@ import { useSyncExternalStore } from "react";
  * The sidebar and the header ⌘K trigger both need to open the menu without
  * prop-drilling through the layout, so a module-level store is the honest
  * choice. Two actions only: open(), close(). The menu itself owns its query
- * state internally — this is only the open/close signal.
+ * state internally. This is only the open/close signal.
  */
 
 type State = { open: boolean };

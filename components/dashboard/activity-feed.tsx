@@ -106,7 +106,7 @@ export function ActivityFeed() {
     load({ append: true, after: cursor })
   }
 
-  // ai_venture/concepts share a label (the section was renamed) — collapse
+  // ai_venture/concepts share a label (the section was renamed): collapse
   // to one chip, filtering by whichever tag comes first.
   const categoryOptions = React.useMemo(() => {
     const seenLabels = new Set<string>()

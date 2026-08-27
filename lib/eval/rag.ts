@@ -40,7 +40,7 @@ const JUDGE = (system: string, user: string) =>
  * Ragas-style RAG evaluation (LLM-as-judge). The official Ragas JS SDK is not
  * published for Node, so this reproduces the three canonical metrics using our
  * NVIDIA gateway: faithfulness, answer relevancy, context relevancy. Internal
- * eval only — not user-facing scoring of production answers.
+ * eval only: not user-facing scoring of production answers.
  */
 export async function evaluateRag(opts: {
   query: string;

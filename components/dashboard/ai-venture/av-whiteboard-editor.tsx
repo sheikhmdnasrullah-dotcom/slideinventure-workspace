@@ -19,7 +19,7 @@ export type BoardEngine = "excalidraw" | "affine"
 
 export const AFFINE_SECTION = "concepts" // preserves boards created before this rewrite
 
-// Shared by both the Whiteboard tool and Playground — a single editor
+// Shared by both the Whiteboard tool and Playground: a single editor
 // implementation so opening a board from either place uses identical
 // load/save logic against the same persistent record.
 export function AvWhiteboardEditor({

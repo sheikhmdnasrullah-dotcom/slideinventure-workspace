@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { AlertTriangle, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-// Next.js route-group error boundary — catches a render error anywhere under
+// Next.js route-group error boundary: catches a render error anywhere under
 // app/(app)/* that doesn't have its own error.tsx. This keeps a crash in one
 // workspace section from taking down the whole dashboard: the sidebar/shell
 // in the parent layout stays mounted, only this segment's content is

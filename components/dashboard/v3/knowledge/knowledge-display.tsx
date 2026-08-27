@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 // Resetting the edit buffers when `selectedItem` changes is a deliberate
-// derived-state sync (switching notes), not an update loop — there is no
+// derived-state sync (switching notes), not an update loop. There is no
 // cascading render because these are the only state writes for this id.
 
 import * as React from "react"

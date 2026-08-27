@@ -1,9 +1,9 @@
 /**
- * Adaptive Content System — Registry + Schemas
+ * Adaptive Content System: Registry + Schemas
  *
  * The brief's central conceptual feature: artifacts arrive in arbitrary formats
  * (CSV, PDF, image, research, etc.), get classified, structure is extracted,
- * and an existing UI schema renders them. No LLM codegen — the renderer is
+ * and an existing UI schema renders them. No LLM codegen: the renderer is
  * picked from a fixed registry keyed by `content_type`.
  *
  * Extend this file when a new content type lands. The classifier writes the
@@ -387,7 +387,7 @@ export function validateContent(raw: unknown): {
   if (result.success) {
     return { success: true, data: result.data };
   }
-  // Validation failed — build UNKNOWN fallback preserving the raw payload
+  // Validation failed: build UNKNOWN fallback preserving the raw payload
   const fallback = UnknownContentSchema.parse({
     content_type: ContentType.UNKNOWN,
     title: `Unvalidated: ${ct}`,

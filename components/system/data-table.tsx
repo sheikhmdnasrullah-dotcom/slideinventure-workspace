@@ -14,7 +14,7 @@ import { ArrowUpDown } from "lucide-react";
 import { EmptyState } from "@/components/system/states";
 
 /**
- * DataTable — the generic typed table. Generalizes ActivityTable's sortable
+ * DataTable: the generic typed table. Generalizes ActivityTable's sortable
  * header + status badge + mono dates pattern into one reusable surface. This
  * is the density reference for the console: every list that can be a table
  * should be a table, not a stack of Cards.

@@ -9,7 +9,7 @@ export function blockNoteToPlainText(raw: string | null | undefined): string {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return raw; // not JSON — treat as already-plain text
+    return raw; // not JSON, treat as already-plain text
   }
 
   const out: string[] = [];

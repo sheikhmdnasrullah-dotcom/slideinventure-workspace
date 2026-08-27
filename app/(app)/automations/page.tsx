@@ -191,7 +191,7 @@ export default async function AutomationsPage() {
                           </Badge>
                         </td>
                         <td className="py-2 px-3 font-mono text-xs text-ink-muted truncate max-w-xs">
-                          {run.command ?? "—"}
+                          {run.command ?? "–"}
                         </td>
                         <td className="text-center py-2 px-3">
                           <Badge
@@ -211,7 +211,7 @@ export default async function AutomationsPage() {
                           {started.toLocaleTimeString()}
                         </td>
                         <td className="text-right py-2 px-3 font-label text-[10px] text-ink-muted tabular-nums">
-                          {duration !== null ? `${duration}s` : "—"}
+                          {duration !== null ? `${duration}s` : "–"}
                         </td>
                       </tr>
                     );

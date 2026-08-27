@@ -38,7 +38,7 @@ function tryParseLayout(value: string | undefined): number[] | undefined {
       return parsed
     }
   } catch {
-    // corrupted cookie — fall back to the component's own default
+    // corrupted cookie: fall back to the component's own default
   }
   return undefined
 }

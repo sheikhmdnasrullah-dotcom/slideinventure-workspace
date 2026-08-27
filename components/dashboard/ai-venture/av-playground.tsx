@@ -8,7 +8,7 @@ import { AvWhiteboardEditor, AFFINE_SECTION, type BoardEngine } from "./av-white
 type Engine = BoardEngine
 type PlaygroundItem = { id: string; engine: Engine; title: string; updated_at: string }
 
-// A view over the SAME persistent boards Whiteboard already writes to — no
+// A view over the SAME persistent boards Whiteboard already writes to: no
 // separate storage, just a combined listing across both engines.
 async function loadAll(): Promise<PlaygroundItem[]> {
   const [boardsRes, affineRes] = await Promise.all([

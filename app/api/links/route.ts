@@ -37,8 +37,8 @@ const ListSchema = z.object({
 
 const CreateSchema = UsefulLinkSchema.omit({ id: true, createdAt: true, updatedAt: true });
 
-// Accept whatever shape of URL the user actually typed — "google.com",
-// "www.example.com/path" — and make it a real, fetchable URL rather than
+// Accept whatever shape of URL the user actually typed: "google.com",
+// "www.example.com/path", and make it a real, fetchable URL rather than
 // rejecting it. Only genuinely empty input is refused.
 function normalizeUrl(raw: string): string {
   const trimmed = raw.trim();

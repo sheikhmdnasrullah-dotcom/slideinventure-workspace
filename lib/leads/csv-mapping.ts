@@ -7,14 +7,14 @@
 // header like "Lastname" or "LastName" (no space/underscore, so it missed
 // the exact "Last Name" check) would score an equal match against both
 // first_name and last_name on the substring "last", and first_name won the
-// tie purely because it was declared first in the table — silently swapping
+// tie purely because it was declared first in the table, silently swapping
 // first/last names on exactly the header variations this importer is
 // supposed to handle.
 //
 // This version normalizes a header down to its bare alphanumeric characters
 // (so "First Name" / "first_name" / "FirstName" / "first-name" all collapse
 // to the identical string "firstname") and only maps a header to a field
-// when it EXACTLY equals one of that field's known synonyms — no substring
+// when it EXACTLY equals one of that field's known synonyms: no substring
 // scoring, no ties, no cross-field collisions.
 
 export type DedicatedField =
@@ -31,7 +31,7 @@ export type DedicatedField =
   | "tags";
 
 // Recognized semantically, but the leads schema has no dedicated column for
-// these — they're routed into custom_fields under a clean canonical key
+// these. They're routed into custom_fields under a clean canonical key
 // (e.g. every LinkedIn-ish header becomes custom_fields.linkedin) instead of
 // either guessing at a dedicated field or keeping the raw, inconsistent
 // header text as the key.
@@ -163,7 +163,7 @@ function splitFullName(fullName: string): { firstName: string; lastName: string 
 // Applies a resolved mapping to one raw CSV row (header -> string value),
 // producing a normalized lead object ready for /api/leads/import. Every
 // header that isn't a dedicated/custom target, plus every recognized
-// "custom" target, lands in custom_fields — nothing from the source row is
+// "custom" target, lands in custom_fields. Nothing from the source row is
 // ever silently dropped.
 export function mapRowToLead(
   row: Record<string, string>,
@@ -196,7 +196,7 @@ export function mapRowToLead(
       continue;
     }
 
-    // Unmapped — preserve under its original header text so nothing from
+    // Unmapped: preserve under its original header text so nothing from
     // the source CSV is discarded.
     customFields[header] = value;
   }

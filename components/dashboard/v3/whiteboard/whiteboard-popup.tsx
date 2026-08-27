@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// AFFiNE edgeless editor — loaded client-only (custom elements + WASM).
+// AFFiNE edgeless editor: loaded client-only (custom elements + WASM).
 const BlocksuiteEditor = dynamic(
   () => import("@/components/dashboard/v3/blocksuite/blocksuite-editor"),
   {

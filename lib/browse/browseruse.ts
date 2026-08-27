@@ -36,7 +36,7 @@ export async function runBrowserUseTask(
     const history = await agent.run(opts.maxSteps ?? 20);
 
     // AgentHistoryList's per-step `result` is an ActionResult[], not a single
-    // object — reaching in as `.result.extracted_content` (an earlier version
+    // object. Reaching in as `.result.extracted_content` (an earlier version
     // of this code did) always misses and stringifies the whole list instead
     // ("[object Object]"). Use the library's own public accessors, which
     // already flatten this correctly: final_result() is sync (not a promise),
@@ -58,7 +58,7 @@ export async function runBrowserUseTask(
         "";
     }
 
-    // Only claim success when we have a real answer — otherwise the caller
+    // Only claim success when we have a real answer; otherwise the caller
     // falls through to the next browse backend instead of a dead end.
     const usable = result.trim().length > 0;
     return { ok: usable, backend: "browser-use", steps, result: usable ? result : "" };

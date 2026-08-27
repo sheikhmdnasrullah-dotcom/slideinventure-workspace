@@ -24,8 +24,8 @@ const DIAL_SIZE = 176
 const DIAL_CENTER = DIAL_SIZE / 2
 const DIAL_RADIUS = 80
 
-// Angle convention: 0 rad points at 12 o'clock, increasing clockwise —
-// matches how a clock face reads, so hour/minute math below stays intuitive.
+// Angle convention: 0 rad points at 12 o'clock, increasing clockwise.
+// Matches how a clock face reads, so hour/minute math below stays intuitive.
 function pointToAngle(x: number, y: number, cx: number, cy: number): number {
   const angle = Math.atan2(x - cx, -(y - cy))
   return angle < 0 ? angle + Math.PI * 2 : angle
@@ -190,7 +190,7 @@ export function DeadlinePicker({ value, onChange, id, className }: DeadlinePicke
     setOpen(false)
   }
 
-  // Up increases, down decreases — matches every other stepper in the app.
+  // Up increases, down decreases. Matches every other stepper in the app.
   function bump(field: "hour" | "minute", delta: number) {
     const next = new Date(draft)
     if (field === "hour") next.setHours(next.getHours() + delta)

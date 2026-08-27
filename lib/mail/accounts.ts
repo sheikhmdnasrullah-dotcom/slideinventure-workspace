@@ -66,10 +66,10 @@ function loadAccounts(): MailAccount[] {
   return accounts
 }
 
-// Env accounts are static for the process lifetime — cache once.
+// Env accounts are static for the process lifetime. Cache once.
 let _envAccounts: MailAccount[] | null = null
 
-// DB-backed accounts (user-added via the UI) — fetched fresh each call so
+// DB-backed accounts (user-added via the UI), fetched fresh each call so
 // add/remove reflects immediately with no cache-invalidation logic needed.
 async function loadDbAccounts(): Promise<MailAccount[]> {
   const res = await databases.listDocuments(DB, COL, [Query.orderDesc('created_at')])

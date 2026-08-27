@@ -81,7 +81,7 @@ export default function BlocksuiteWorkspace({
         // state variable, captured once since this callback has an empty
         // dependency array) instead of `id` (the up-to-date value read from
         // activeIdRef.current above). That made every save request target
-        // `/api/affine/null` — autosave has been silently 404ing since this
+        // `/api/affine/null`. Autosave has been silently 404ing since this
         // page loaded, never persisting a single edit.
         await fetch(`/api/affine/${id}`, {
           method: "PUT",

@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const now = new Date().toISOString();
 
   // status/config default in IntegrationSchema, so a partial update always
-  // sees them as "defined" even when omitted — check raw body presence.
+  // sees them as "defined" even when omitted. Check raw body presence.
   const update: Record<string, unknown> = { updated_at: now };
   if (v.name !== undefined) update.name = v.name;
   if (v.provider !== undefined) update.provider = v.provider;

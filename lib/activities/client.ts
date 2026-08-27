@@ -43,7 +43,7 @@ export async function listActivities(
 // /api/activities/log endpoint. A self-fetch from inside another route
 // handler doesn't carry the original request's session cookie, so
 // getSessionUser() there always came back empty and the write silently
-// 401'd — every logActivity call across the app (links, vault, knowledge,
+// 401'd. Every logActivity call across the app (links, vault, knowledge,
 // boards, notes, ai-venture, terminal, todoist, leads, documents) was a
 // no-op. Every caller already runs server-side, so a direct DB write is
 // both correct and one fewer network hop.
@@ -56,7 +56,7 @@ export async function logActivity(entry: {
   entityType?: string;
   metadata?: Record<string, unknown>;
   // When true, also surfaces an in-app notification (only for meaningful
-  // events — never used for noisy internal operations).
+  // events, never used for noisy internal operations).
   notify?: boolean;
 }): Promise<void> {
   try {

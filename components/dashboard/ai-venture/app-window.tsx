@@ -4,7 +4,7 @@ import * as React from "react"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// A large, centered floating window over the dashboard — used by every AI
+// A large, centered floating window over the dashboard, used by every AI
 // Venture tool (Files, Query, Whiteboard, Playground, Notepad) instead of a
 // new tab/window or a slide-in side panel. The dashboard behind it stays
 // mounted and untouched; closing this never navigates anywhere.

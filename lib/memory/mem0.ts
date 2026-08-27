@@ -1,6 +1,6 @@
 import "server-only";
 
-// Mem0 — managed memory layer. Optional: when MEM0_API_KEY is set, the agent's
+// Mem0: managed memory layer. Optional: when MEM0_API_KEY is set, the agent's
 // remember/recall tools use Mem0 instead of (or in addition to) working_memory.
 export function mem0Enabled(): boolean {
   return Boolean(process.env.MEM0_API_KEY);

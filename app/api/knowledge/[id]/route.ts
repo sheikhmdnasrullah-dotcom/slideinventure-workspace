@@ -40,7 +40,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   return Response.json(serialize(doc as Record<string, unknown> & { $id: string }));
 }
 
-// Notes/SOPs/System Docs all go through this one PUT — every field is
+// Notes/SOPs/System Docs all go through this one PUT. Every field is
 // optional so a title-only rename and a body-only autosave are both valid,
 // cheap requests instead of needing the full record round-tripped.
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// Deleting a Knowledge item only removes its index entry — if it mirrors a
+// Deleting a Knowledge item only removes its index entry. If it mirrors a
 // Documents/AI-Venture file (document_id set), that canonical file and its
 // storage bytes are untouched; deleting the file itself happens from
 // Documents/AI Venture, which cascades to remove this mirror in turn.

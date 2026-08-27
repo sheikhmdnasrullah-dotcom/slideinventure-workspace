@@ -16,7 +16,7 @@ export type AIVentureSearchHit = {
   updatedAt: string
 }
 
-// Personal-scale data (one user's AI Venture workspace) — a bounded fetch
+// Personal-scale data (one user's AI Venture workspace): a bounded fetch
 // per collection plus an in-memory substring filter is simpler and more
 // reliable than requiring fulltext indexes on every searched column, and
 // avoids sending anything to the LLM for a plain search.

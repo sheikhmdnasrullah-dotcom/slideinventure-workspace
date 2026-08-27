@@ -29,8 +29,8 @@ function extractTerms(query: string): string[] {
 }
 
 // Renders `text` with every case-insensitive occurrence of the query (or its
-// significant words) wrapped in <mark>. Plain React text nodes only — no
-// dangerouslySetInnerHTML — so this is safe against XSS by construction.
+// significant words) wrapped in <mark>. Plain React text nodes only: no
+// dangerouslySetInnerHTML, so this is safe against XSS by construction.
 export function Highlight({
   text,
   query,

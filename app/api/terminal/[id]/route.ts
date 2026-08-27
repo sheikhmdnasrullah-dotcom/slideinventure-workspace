@@ -66,7 +66,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const now = new Date().toISOString();
 
     // `d` comes back from a `.partial()` schema whose fields carry `.default()`
-    // (tags, variables, favorite, metadata) — Zod fills those defaults in even
+    // (tags, variables, favorite, metadata). Zod fills those defaults in even
     // for keys the request never sent, so `d.field !== undefined` is always
     // true and silently wipes the field on every update. Check the raw body
     // for actual presence instead.

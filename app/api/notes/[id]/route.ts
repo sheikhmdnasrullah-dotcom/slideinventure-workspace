@@ -125,7 +125,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       try {
         await storage.deleteFile("files", fileId)
       } catch {
-        // ignore — the note row is being removed regardless
+        // ignore: the note row is being removed regardless
       }
     }
 

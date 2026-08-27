@@ -16,7 +16,7 @@ export async function harvestLeads(opts: {
   topic: string;
   userEmail: string;
 }): Promise<{ ok: boolean; harvested: number; candidates: number; emails: string[]; error?: string }> {
-  const task = `Search YouTube for "${opts.topic}". Open several channel "About" pages and find their public contact or business email addresses (look for mailto: links or visible emails; solve any CAPTCHA you encounter). Note the channel name too. Return a concise bulleted list, one item per line, formatted exactly as: email — Channel Name. Only include real email addresses. Skip channels with no public email.`;
+  const task = `Search YouTube for "${opts.topic}". Open several channel "About" pages and find their public contact or business email addresses (look for mailto: links or visible emails; solve any CAPTCHA you encounter). Note the channel name too. Return a concise bulleted list, one item per line, formatted exactly as: email: Channel Name. Only include real email addresses. Skip channels with no public email.`;
 
   const startUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(opts.topic)}`;
 

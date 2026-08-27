@@ -16,7 +16,7 @@ export function captchaProviderAvailable(): boolean {
 }
 
 export type CaptchaRequest = {
-  // reCAPTCHA site key (googlekey) — for userrecaptcha method
+  // reCAPTCHA site key (googlekey): for userrecaptcha method
   siteKey: string;
   pageUrl: string;
   // Optional: proxy/cookies not handled here; extend as needed.

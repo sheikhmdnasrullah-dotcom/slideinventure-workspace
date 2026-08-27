@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (validated.data.fullName !== undefined) update.full_name = validated.data.fullName;
     if (validated.data.avatarUrl !== undefined) update.avatar_url = validated.data.avatarUrl;
     // role defaults in UserSchema, so a partial update always sees it as
-    // "defined" even when omitted — check raw body presence.
+    // "defined" even when omitted. Check raw body presence.
     if ("role" in body) update.role = validated.data.role;
 
     await databases.updateDocument(DB, COL, id, update);

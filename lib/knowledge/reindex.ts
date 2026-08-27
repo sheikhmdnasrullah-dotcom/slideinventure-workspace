@@ -8,11 +8,11 @@ const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.knowledgeChunks
 
 // Rebuilds knowledge_chunks for one item from its current body. Call after
-// every successful knowledge_items insert/update — same wiring shape as
+// every successful knowledge_items insert/update: same wiring shape as
 // recordVersion(), so chunks never drift out of sync with content. Every
 // caller already funnels through here (add/ingest/publish/[id] update+delete,
 // document mirroring), so this is also the single choke point for keeping
-// the LanceDB semantic index in sync — real semantic search for Knowledge,
+// the LanceDB semantic index in sync: real semantic search for Knowledge,
 // replacing the fulltext-only fallback in app/api/knowledge/search/route.ts.
 export async function reindexChunks(knowledgeItemId: string, body: string) {
   upsertVector({ collection: "knowledge", docId: knowledgeItemId, text: body }).catch(() => {})

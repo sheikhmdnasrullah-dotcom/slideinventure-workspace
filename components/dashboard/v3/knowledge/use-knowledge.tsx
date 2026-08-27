@@ -88,7 +88,7 @@ export function KnowledgeProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = React.useCallback(() => fetchItems(searchQuery, category), [fetchItems, searchQuery, category])
 
-  // The list only carries search-result fields (no body) — opening an item
+  // The list only carries search-result fields (no body). Opening an item
   // fetches the full record so editing always starts from real content.
   React.useEffect(() => {
     let cancelled = false

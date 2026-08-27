@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   if (query.data.status) queries.push(Query.equal("status", query.data.status));
   if (query.data.tag) queries.push(Query.contains("tags", query.data.tag));
   // AI Venture's virtual folders live in this same table (workspace="ai-venture",
-  // node_type="folder") — they're not real uploaded documents, so exclude them here.
+  // node_type="folder"). They're not real uploaded documents, so exclude them here.
   queries.push(Query.notEqual("node_type", "folder"));
   queries.push(Query.orderDesc("created_at"));
 

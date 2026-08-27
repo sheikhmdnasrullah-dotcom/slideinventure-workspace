@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest) {
   try {
     // required/visible/sortable/filterable/order all default in
     // CustomLeadFieldSchema, so a partial update always sees them as
-    // "defined" even when omitted — check the raw payload for presence.
+    // "defined" even when omitted. Check the raw payload for presence.
     const update: Record<string, unknown> = { updated_at: now };
     if (changes.key !== undefined) update.key = changes.key;
     if (changes.label !== undefined) update.label = changes.label;

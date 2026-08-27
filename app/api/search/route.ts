@@ -20,7 +20,7 @@ type SectionDef = {
 
 // Global, cross-section search. We pull a recent window from each collection
 // and filter by substring in code rather than relying on per-attribute fulltext
-// indexes (which aren't uniformly configured) — robust and uniform across
+// indexes (which aren't uniformly configured): robust and uniform across
 // sections for a personal workspace.
 const SECTIONS: SectionDef[] = [
   { type: "knowledge", collection: APPWRITE.collections.knowledgeItems, titleFields: ["title"], subtitleFields: ["category", "source"], route: "/knowledge", orderBy: "updated_at", label: "Knowledge" },
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
 
   // Semantic pass: catches paraphrases/typos substring matching misses (e.g.
   // a document whose title doesn't mention the term but whose body does).
-  // Backed by the shared LanceDB index (lib/retrieval/vector-index.ts) —
+  // Backed by the shared LanceDB index (lib/retrieval/vector-index.ts):
   // scoped to the same collections substring search already covers here,
   // excluding Research Lab/AI Venture/Brainstorm/Concepts.
   const VECTOR_TYPES: VectorCollection[] = ["knowledge", "documents", "notes", "terminal", "links"];

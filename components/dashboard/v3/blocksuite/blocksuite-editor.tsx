@@ -8,7 +8,7 @@ export type AffineSnapshot = Record<string, unknown> | null;
 
 // effects() calls customElements.define(...) for every AFFiNE/BlockSuite tag.
 // Calling it more than once throws ("has already been used with this
-// registry") — and this component remounts every time the user switches
+// registry"). This component remounts every time the user switches
 // workspaces (snapshot/mode change), so it must run at most once per page.
 let effectsRegistered: Promise<void> | null = null;
 function ensureEffectsRegistered(): Promise<void> {
@@ -63,7 +63,7 @@ export default function BlocksuiteEditor({
 
     // The autosave listener must always be attached to whichever Doc object
     // is actually being rendered/edited. Loading a snapshot produces a brand
-    // new Doc instance distinct from any placeholder created earlier — a
+    // new Doc instance distinct from any placeholder created earlier. A
     // previous version of this component attached the listener to a
     // throwaway blank doc before the snapshot finished restoring, so edits
     // to a *reopened* board (i.e. the restored doc) never fired it and were
@@ -95,7 +95,7 @@ export default function BlocksuiteEditor({
       job = new Job({ collection });
 
       // Restore the snapshot FIRST when one exists, rather than bootstrapping
-      // a blank doc and swapping it out afterward — that gap is exactly what
+      // a blank doc and swapping it out afterward. That gap is exactly what
       // let edits land on the wrong (soon-to-be-discarded) doc.
       let doc: any = snapshot ? await job.snapshotToDoc(snapshot as any).catch(() => undefined) : undefined;
 

@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         entityType: "note",
       }).catch(() => {})
     } else {
-      // AI Venture-scoped notes are out of scope for this index — that
+      // AI Venture-scoped notes are out of scope for this index. That
       // territory belongs to a separate, concurrent AFFiNE-based rebuild.
       const text = [title, blockNoteToPlainText(doc.content as string)].filter(Boolean).join("\n")
       upsertVector({ collection: "notes", docId: doc.$id, text }).catch(() => {})

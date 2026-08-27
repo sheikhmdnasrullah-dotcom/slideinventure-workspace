@@ -1,5 +1,5 @@
 /**
- * Agent roster — reads persona files from `.claude/agents/*.md` (empty by
+ * Agent roster. Reads persona files from `.claude/agents/*.md` (empty by
  * default; the bulk community roster this used to ship with was removed) and
  * pairs each with its division/team from `agent-divisions.json`. Add a
  * `.md` persona file + a matching entry in `agent-divisions.json` to give it
@@ -96,7 +96,7 @@ const SLUG_RE = /^[a-z0-9-]+$/;
 
 /**
  * Full system-prompt body (frontmatter stripped) for one installed agent,
- * looked up by slug. Returns null for an unknown or invalid slug — callers
+ * looked up by slug. Returns null for an unknown or invalid slug; callers
  * must treat that as 404, not fall back to a default prompt.
  */
 export function getAgentPrompt(slug: string): { name: string; prompt: string } | null {

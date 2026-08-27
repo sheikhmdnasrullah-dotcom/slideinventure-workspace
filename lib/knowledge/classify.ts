@@ -4,7 +4,7 @@ import { nvidiaComplete } from "@/lib/llm/nvidia";
 export type KnowledgeCategory = "note" | "sop" | "system" | "research";
 const VALID: KnowledgeCategory[] = ["note", "sop", "system", "research"];
 
-// Cheap keyword heuristic — used when the LLM call fails, times out, or
+// Cheap keyword heuristic: used when the LLM call fails, times out, or
 // there isn't enough text to bother with a model call at all. Never blocks:
 // worst case it falls through to "note", the general bucket.
 function heuristicClassify(text: string): KnowledgeCategory {
@@ -21,7 +21,7 @@ function heuristicClassify(text: string): KnowledgeCategory {
 
 /**
  * Best-effort classification of freeform input into a Knowledge category.
- * Never throws and never blocks the caller — on any failure, timeout, or an
+ * Never throws and never blocks the caller. On any failure, timeout, or an
  * unrecognized answer, it falls back to the heuristic (which itself always
  * resolves, defaulting to "note"). Accept first, organize intelligently
  * after: the caller should never surface this as a required decision.

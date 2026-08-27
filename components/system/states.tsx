@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
 /**
- * EmptyState — the disciplined empty surface. An icon (or a label eyebrow),
+ * EmptyState: the disciplined empty surface. An icon (or a label eyebrow),
  * a short title, one line of description, an optional CTA. NOT a giant
  * illustration of a person wondering where their data went.
  */
@@ -40,7 +40,7 @@ export function EmptyState({
 }
 
 /**
- * LoadingState — a skeleton matching the row/grid shape it stands in for.
+ * LoadingState: a skeleton matching the row/grid shape it stands in for.
  * The default renders N rows of a typical list (an avatar-less line + a
  * muted line), which is the common case across the console.
  */
@@ -73,7 +73,7 @@ export function LoadingState({
  * ErrorState — the "degrade gracefully" surface. Today every route silently
  * catches Supabase errors and renders empty data (see api/dashboard, api/knowledge/search).
  * This primitive makes the failure VISIBLE so an operator can tell "nothing
- * matched" from "the DB is down" — the distinction the audit flagged as missing.
+ * matched" from "the DB is down", the distinction the audit flagged as missing.
  */
 export function ErrorState({
   title = "Something went wrong",

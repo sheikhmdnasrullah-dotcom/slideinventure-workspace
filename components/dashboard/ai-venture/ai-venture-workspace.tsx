@@ -21,7 +21,7 @@ const TOOLS: { id: ToolId; label: string; description: string; icon: typeof Fold
 
 // AI Venture home: a small, fixed set of large application-style icons
 // rather than a table/column-heavy dashboard. Each opens as a large floating
-// window over the dashboard (AppWindow) — never a new tab, never a route
+// window over the dashboard (AppWindow): never a new tab, never a route
 // change that would lose the surrounding context.
 export function AiVentureWorkspace() {
   const [open, setOpen] = useState<ToolId | null>(null)

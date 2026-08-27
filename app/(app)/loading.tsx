@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton"
 
-// Route-group loading fallback — shown while a segment under app/(app)/* is
+// Route-group loading fallback: shown while a segment under app/(app)/* is
 // server-rendering, for any route that doesn't define its own loading.tsx.
 // Mirrors the shape most workspace pages settle into (toolbar + list) so
 // there's no layout shift once real content swaps in.

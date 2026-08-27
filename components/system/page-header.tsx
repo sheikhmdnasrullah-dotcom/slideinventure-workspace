@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * PageHeader — the standard top-of-page header. Replaces per-page hand-rolled
+ * PageHeader: the standard top-of-page header. Replaces per-page hand-rolled
  * muted-uppercase headers with one disciplined component.
  *
  *   eyebrow  mono label above the title (a section coordinate: "Knowledge Base")
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  *   meta     right-aligned metadata (counts, last-synced, a chip)
  *   actions  right-aligned controls (sync, filter toggle)
  *
- * Tight by design — an ops console header is a coordinate, not a billboard.
+ * Tight by design: an ops console header is a coordinate, not a billboard.
  */
 export function PageHeader({
   eyebrow,

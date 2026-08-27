@@ -26,7 +26,7 @@ export type TokenUsage = {
 };
 
 // In-memory token accounting for visible cost/token tracking (Datadog also
-// ingests the span). Reset on server restart — fine for a single-process VPS.
+// ingests the span). Reset on server restart, fine for a single-process VPS.
 const usageStore = {
   total: { prompt: 0, completion: 0 },
   last: null as TokenUsage | null,
@@ -57,7 +57,7 @@ function buildProviders(opts: ChatOptions): Provider[] {
     });
   }
 
-  // DeepSeek (dedicated key) — strong reasoning model for the multi-agent
+  // DeepSeek (dedicated key): strong reasoning model for the multi-agent
   // workflows. Used alongside NVIDIA: preferred here, NVIDIA/OpenRouter are the
   // fallbacks if DeepSeek is unavailable.
   if (deepseekKey) {

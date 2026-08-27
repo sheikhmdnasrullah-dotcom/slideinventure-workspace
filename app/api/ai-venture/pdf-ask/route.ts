@@ -11,7 +11,7 @@ const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.documents
 
 // Reuses the same NVIDIA-backed LLM as Chat/Research Lab and the same
-// pdf-parse extraction Knowledge uses for PDF imports — no new AI provider,
+// pdf-parse extraction Knowledge uses for PDF imports: no new AI provider,
 // no OCR. If pdf-parse can't pull text (an image-only scan, for example)
 // this says so plainly instead of pretending to have read it.
 export async function POST(request: NextRequest) {

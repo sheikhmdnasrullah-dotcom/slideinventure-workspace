@@ -1,5 +1,5 @@
 /**
- * Working Memory — short-lived scratch space for agent runs and user notes.
+ * Working Memory: short-lived scratch space for agent runs and user notes.
  * TTL-based expiry prevents unbounded growth. Promotion to knowledge_items
  * creates audit trail.
  */

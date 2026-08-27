@@ -32,7 +32,7 @@ import type { IntegrationStatus, IntegrationGroup } from "@/lib/integrations/sta
 
 const GROUP_ORDER: IntegrationGroup[] = ["Agent surfaces", "Connected services"];
 
-// One glanceable icon per card — status.ts stays plain data (it's imported
+// One glanceable icon per card. status.ts stays plain data (it's imported
 // server-side), so the id -> icon mapping lives here on the client instead.
 const ICONS: Record<string, LucideIcon> = {
   browse: Globe,

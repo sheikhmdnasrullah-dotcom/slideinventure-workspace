@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * FilterBar — a tight row of filter controls. Not a Card. Not a Dialog. Just
+ * FilterBar: a tight row of filter controls. Not a Card. Not a Dialog. Just
  * a horizontal row that keeps the search input + type/status/tag/date filters
  * + a clear button on one line (wrapping on narrow viewports).
  *
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  *   </FilterBar>
  *
  * Subcomponents are exposed via FilterBar.* so a page composes only the filter
- * controls it needs. All controls read the semantic tokens — no per-filter
+ * controls it needs. All controls read the semantic tokens: no per-filter
  * custom styling.
  */
 export function FilterBar({
@@ -161,7 +161,7 @@ FilterBar.Clear = function FilterBarClear({
   );
 };
 
-/** ControlledButton — a plain button that fits the bar's visual register. */
+/** ControlledButton: a plain button that fits the bar's visual register. */
 FilterBar.Button = function FilterBarButton({
   active = false,
   onClick,

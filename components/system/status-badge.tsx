@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /**
- * StatusBadge — the one tokenized status indicator. Folds the per-component
+ * StatusBadge: the one tokenized status indicator. Folds the per-component
  * STATUS_STYLES + TREND_STYLES maps (scattered through activity-table.tsx,
  * kpi-card.tsx, execution-panel.tsx) into one source of truth.
  *
@@ -96,7 +96,7 @@ export function StatusBadge({
 }
 
 /**
- * TrendBadge — the small up/down/flat indicator on a Metric. Maps to the
+ * TrendBadge: the small up/down/flat indicator on a Metric. Maps to the
  * status palette: up = live, down = danger, flat = neutral. The arrow glyph
  * is the clearest directional indicator at small sizes.
  */

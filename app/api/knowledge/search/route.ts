@@ -103,7 +103,7 @@ async function recordSearchHistory(
       created_at: new Date().toISOString(),
     });
   } catch {
-    // history is a convenience feature, not load-bearing — don't fail the search over it
+    // history is a convenience feature, not load-bearing. Don't fail the search over it
   }
 }
 
@@ -120,7 +120,7 @@ function serializeChunk(doc: Record<string, any>): ChunkHit {
 }
 
 // Attaches parent knowledge_items to chunk hits, giving every mode the same
-// shape lexical hits already had — one results component for every mode.
+// shape lexical hits already had: one results component for every mode.
 async function attachItems(rows: ChunkHit[]): Promise<ChunkHit[]> {
   if (rows.length === 0) return [];
   const ids = [...new Set(rows.map((r) => r.knowledge_item_id))];
@@ -194,8 +194,8 @@ function fuseByRank(lexical: ChunkHit[], semantic: ChunkHit[], take: number): Ch
 }
 
 // Real vector search via the shared LanceDB index (lib/retrieval/vector-index.ts),
-// keyed one row per knowledge_item (embedded from its full body at write time
-// — see reindexChunks). Falls back to searchExact upstream when this returns
+// keyed one row per knowledge_item (embedded from its full body at write time,
+// see reindexChunks). Falls back to searchExact upstream when this returns
 // no hits (no NVIDIA_API_KEY, or nothing indexed yet).
 async function searchSemantic(
   query: string,

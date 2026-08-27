@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const now = new Date().toISOString();
 
     // name/slug/enabled/config default in AppSchema, so a partial update
-    // always sees them as "defined" even when omitted — check raw body presence.
+    // always sees them as "defined" even when omitted. Check raw body presence.
     const payload: Record<string, unknown> = { updated_at: now };
     if ("name" in body) payload.name = d.name;
     if ("slug" in body) payload.slug = d.slug;

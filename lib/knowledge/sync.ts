@@ -159,7 +159,7 @@ export async function addKnowledgeItem(data: {
     console.warn(`Skipping local filesystem mirror for ${uniqueSlug}:`, err)
   }
 
-  // Sync to database — this is the source of truth for the running app.
+  // Sync to database: this is the source of truth for the running app.
   const item = {
     item_id: uniqueSlug,
     slug: uniqueSlug,
@@ -177,7 +177,7 @@ export async function addKnowledgeItem(data: {
   const id = await upsertItem(item)
 
   // Every other write path (ingest/publish/[id] update) reindexes chunks
-  // right after writing the item — this one never did, so anything added
+  // right after writing the item. This one never did, so anything added
   // through the "Add Context" dialog was invisible to both lexical chunk
   // search and (now) semantic search. Best-effort: never block the add.
   reindexChunks(id, data.body || '').catch(() => {})

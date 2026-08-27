@@ -492,7 +492,7 @@ export function VerificationPanel() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-xs text-muted-foreground">
-                                {r.checked_at ? new Date(r.checked_at).toLocaleString() : "—"}
+                                {r.checked_at ? new Date(r.checked_at).toLocaleString() : "–"}
                               </TableCell>
                             </TableRow>
                           )
@@ -581,7 +581,7 @@ function LiveTable({ rows, total }: { rows: ResultRow[]; total: number }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {r.checked_at ? new Date(r.checked_at).toLocaleString() : "—"}
+                    {r.checked_at ? new Date(r.checked_at).toLocaleString() : "–"}
                   </TableCell>
                 </TableRow>
               )
@@ -633,7 +633,7 @@ function HistoryCard({ jobs, onChanged }: { jobs: HistoryJob[]; onChanged?: () =
                       {j.filename ?? j.job_id.slice(0, 8)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {j.created_at ? new Date(j.created_at).toLocaleString() : "—"}
+                      {j.created_at ? new Date(j.created_at).toLocaleString() : "–"}
                     </TableCell>
                     <TableCell>
                       <Badge

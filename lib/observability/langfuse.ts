@@ -1,6 +1,6 @@
 import "server-only";
 
-// Langfuse — LLM observability/tracing. Optional: active when LANGFUSE_* keys
+// Langfuse: LLM observability/tracing. Optional: active when LANGFUSE_* keys
 // are set. Used to trace LLM generations alongside (or instead of) Datadog.
 export function langfuseEnabled(): boolean {
   return Boolean(process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY);

@@ -1,15 +1,15 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Section — a band of the page. Adapted from the marketing site's tone system
+ * Section: a band of the page. Adapted from the marketing site's tone system
  * (design-system.md) for a console: three tones, no theme axis.
  *
- *   base    the page's own value (transparent — inherits --page-fill)
+ *   base    the page's own value (transparent: inherits --page-fill)
  *   inset   a well: --surface-2 with a hairline border (the non-card container)
  *   anchor  the signature band: a deeper value that anchors the page
  *
  * A console is denser than a marketing page, so the rhythm is tighter: padding
- * is py-8, not py-44. The point is the same — a page is composed of bands, not
+ * is py-8, not py-44. The point is the same: a page is composed of bands, not
  * one continuous surface, and the rhythm is what reads as "designed".
  *
  * `seam` draws a 1px optical hairline at the top join. `bleed` runs a short
@@ -54,7 +54,7 @@ export function Section({
 }
 
 /**
- * SectionRule — the "NN — Label" + hairline + coordinate row from
+ * SectionRule: the "NN: Label" + hairline + coordinate row from
  * design-system.md's System primitives. A label that sits on a rule,
  * with an optional right-side coordinate.
  */
@@ -78,7 +78,7 @@ export function SectionRule({
       )}
     >
       <span className="font-label whitespace-nowrap">
-        {index != null && <span className="tabular-nums">{index} — </span>}
+        {index != null && <span className="tabular-nums">{index}: </span>}
         {label}
       </span>
       <span className="h-px flex-1 bg-rule" />

@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (validated.data.accountId !== undefined) update.account_id = validated.data.accountId;
     if (validated.data.to !== undefined) update.to = validated.data.to;
     // cc/bcc default to [] in EmailDraftSchema, so a partial update always
-    // sees them as "defined" even when omitted — check raw body presence.
+    // sees them as "defined" even when omitted. Check raw body presence.
     if ("cc" in body) update.cc = validated.data.cc;
     if ("bcc" in body) update.bcc = validated.data.bcc;
     if (validated.data.subject !== undefined) update.subject = validated.data.subject;

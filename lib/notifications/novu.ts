@@ -1,6 +1,6 @@
 import "server-only";
 
-// Novu — notification delivery (in-app / email / push). Used alongside the
+// Novu: notification delivery (in-app / email / push). Used alongside the
 // existing Appwrite notifications. Optional: active only when NOVU_SECRET_KEY
 // is set; otherwise notifyViaNovu is a no-op.
 export function novuEnabled(): boolean {

@@ -117,7 +117,7 @@ export type CrossSectionHit = { collection: string; docId: string; text: string 
 const CROSS_SECTION_COLLECTIONS: VectorCollection[] = ["documents", "notes", "terminal", "links"];
 const CROSS_SECTION_LIMIT = 5;
 
-// This assistant used to only ever see knowledge_chunks — Documents, Notes,
+// This assistant used to only ever see knowledge_chunks. Documents, Notes,
 // Terminal, and Links were invisible to it even though the same semantic
 // index (lib/retrieval/vector-index.ts) already covers them for the Mastra
 // agents and the global search bar. Reuse it here so Chat can answer from
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
     created_at: new Date().toISOString(),
   });
 
-  // Retrieve evidence — Knowledge (fulltext chunks) plus every other section
+  // Retrieve evidence: Knowledge (fulltext chunks) plus every other section
   // (Documents, Notes, Terminal, Links) via the shared semantic index, so the
   // assistant can actually answer from what's stored across the workspace,
   // not just Knowledge.
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
   const context = contextParts.join("\n\n---\n\n");
 
   const systemPrompt = `You are the SlideIn Venture OS assistant. Answer using ONLY the provided evidence, which may
-be drawn from Knowledge, Documents, Notes, Terminal, or Links — each item not from Knowledge is labeled with its source.
+be drawn from Knowledge, Documents, Notes, Terminal, or Links. Each item not from Knowledge is labeled with its source.
 If the evidence is insufficient, say "I couldn't find enough evidence in the knowledge base."
 Cite evidence by number [1], [2], etc. Do not hallucinate.`;
 
@@ -244,7 +244,7 @@ Cite evidence by number [1], [2], etc. Do not hallucinate.`;
   });
 
   // Every other write path in the app logs to the shared activities feed
-  // (surfaced on the Dashboard) — chat exchanges never did, so a
+  // (surfaced on the Dashboard). Chat exchanges never did, so a
   // conversation here was invisible outside the Chat page itself.
   await logActivity({
     category: "chat",

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
       const extracted = await extractFileText(file)
       const finalTitle = title.trim() || extracted.title || file.name
-      // "auto"/blank means the user didn't pick a category — classify it
+      // "auto"/blank means the user didn't pick a category. Classify it
       // ourselves rather than blocking on a forced choice. A category the
       // user did pick is always respected as-is.
       const category = categoryRaw && categoryRaw !== 'auto'

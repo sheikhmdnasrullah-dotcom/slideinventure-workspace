@@ -18,7 +18,7 @@ const deepseek = createOpenAI({
 
 /**
  * Stateless chat with one installed agent persona (`.claude/agents/<slug>.md`
- * as system prompt). No session/message persistence — the client holds the
+ * as system prompt). No session/message persistence. The client holds the
  * conversation and resends it each turn. Separate from `/api/chat`, which is
  * the knowledge-base RAG assistant.
  */

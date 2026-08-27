@@ -18,8 +18,8 @@ function slugify(text: string): string {
 
 /**
  * Mirrors a Documents/AI-Venture file into Knowledge so it becomes
- * searchable and cross-referenced, without duplicating the underlying file
- * — the documents row stays canonical; this only creates/updates a
+ * searchable and cross-referenced, without duplicating the underlying file.
+ * The documents row stays canonical; this only creates/updates a
  * knowledge_items row pointing back at it via `document_id`, and reindexes
  * its chunks. Best-effort: a failure here must never fail the upload it's
  * attached to, so every error is caught and logged, never thrown.

@@ -1,6 +1,6 @@
 import "server-only";
 
-// Composio — tool/action marketplace for agents (Tools & Connections section).
+// Composio: tool/action marketplace for agents (Tools & Connections section).
 // Optional: only active when COMPOSIO_API_KEY is set. Degrades to no-op.
 export function composioEnabled(): boolean {
   return Boolean(process.env.COMPOSIO_API_KEY);

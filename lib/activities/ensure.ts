@@ -20,7 +20,7 @@ const ATTRS: Array<{ key: string; type: string; size?: number; required?: boolea
 let ensured = false;
 
 // Newly created attributes report status "processing" for a moment before
-// "available" — a write attempted in that window is rejected. Poll instead
+// "available". A write attempted in that window is rejected. Poll instead
 // of assuming readiness right after creation (same shape as
 // waitForCollectionShape() in lib/dashboard/preferences.server.ts).
 async function waitForAttributes() {

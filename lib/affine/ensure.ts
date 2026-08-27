@@ -22,7 +22,7 @@ export async function ensureAffineCollection() {
     ensured = true;
     return;
   } catch {
-    // not found — create it
+    // not found, create it
   }
   try {
     await databases.createCollection(DB, COL, COL, [

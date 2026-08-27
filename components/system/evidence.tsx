@@ -5,7 +5,7 @@ import { Highlight } from "@/components/knowledge/highlight";
 import { cn } from "@/lib/utils";
 
 /**
- * Evidence primitives — the brief's central "search results as evidence"
+ * Evidence primitives: the brief's central "search results as evidence"
  * requirement. Two components:
  *
  *   SourceCitation  the small reference strip below an answer/result: a type
@@ -16,12 +16,12 @@ import { cn } from "@/lib/utils";
  *   EvidenceBlock   the larger unit: the highlighted passage text (with the
  *                  query highlighted at exact offsets) + the SourceCitation
  *                  strip below. An evidence-first search result card or a
- *                  chat citation — the SAME shape, intentionally, so the two
+ *                  chat citation: the SAME shape, intentionally, so the two
  *                  surfaces (search + chat) read as one evidence system.
  *
  * Both consume knowledge_chunks' offsets and the /knowledge/[slug]?q=&chunk=
  * deep link the existing search already builds. This is the unified evidence
- * renderer the audit proposed (Phase E) — here in primitive form so Phase E
+ * renderer the audit proposed (Phase E), here in primitive form so Phase E
  * can compose it without re-building the chrome.
  */
 

@@ -13,7 +13,7 @@ type Props = {
 
 type State = { error: Error | null }
 
-// Error boundaries must be class components — React has no hook equivalent.
+// Error boundaries must be class components. React has no hook equivalent.
 // Use this to wrap one workspace subtree (a sidebar app, a heavy panel) so a
 // render error there degrades to an inline message instead of taking out
 // everything else mounted alongside it (the app shell's route-level

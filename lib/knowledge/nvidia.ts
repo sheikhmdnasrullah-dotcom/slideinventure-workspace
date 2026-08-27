@@ -1,11 +1,11 @@
 // NVIDIA NIM client for embeddings + reranking. Every function here returns
-// null instead of throwing on missing key / API failure — semantic search is
+// null instead of throwing on missing key / API failure. Semantic search is
 // an optional enhancement over lexical search, never a hard dependency.
 // NVIDIA_API_KEY is read server-side only and never sent to the browser.
 
 const BASE_URL = "https://integrate.api.nvidia.com/v1";
 // nvidia/llama-3.2-nv-embedqa-1b-v2 reached end-of-life 2026-05-18 (NVIDIA's
-// API now returns HTTP 410 for it) — every embedding call in the app was
+// API now returns HTTP 410 for it). Every embedding call in the app was
 // silently failing until this was caught while wiring up lib/retrieval/
 // vector-index.ts. This model is the same "nemotron ... vl ... v2" family as
 // the rerank model below and, like the old one, honors the `dimensions`

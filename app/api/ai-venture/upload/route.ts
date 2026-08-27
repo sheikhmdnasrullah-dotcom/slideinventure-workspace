@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { writeFileContent, VentureFsError } from "@/lib/ai-venture/fs";
 import { logActivity } from "@/lib/activities/client";
 
-// A real "pick a file from your device" upload — the AI Venture file system
+// A real "pick a file from your device" upload. The AI Venture file system
 // previously only supported creating an empty text file at a path via a
 // prompt() dialog. No required title/description/category: the file itself
 // is the only input.

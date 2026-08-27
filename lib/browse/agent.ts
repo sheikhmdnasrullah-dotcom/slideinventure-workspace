@@ -24,18 +24,18 @@ export type BrowseResult = {
 
 const ACTION_SYSTEM = `You are a web-browsing agent. Given a task and the current page state, decide the NEXT single action.
 Respond with ONLY a JSON object, no markdown, one of:
-{"action":"extract"} — read the page and extract information relevant to the task
-{"action":"goto","url":"<full url>"} — navigate to a URL
-{"action":"click","selector":"<css selector>"} — click an element
-{"action":"type","selector":"<css selector>","text":"<text>"} — type into a field
-{"action":"submit","selector":"<form css selector>"} — submit a form
-{"action":"done","answer":"<final answer to the task>"} — finish
+{"action":"extract"}: read the page and extract information relevant to the task
+{"action":"goto","url":"<full url>"}: navigate to a URL
+{"action":"click","selector":"<css selector>"}: click an element
+{"action":"type","selector":"<css selector>","text":"<text>"}: type into a field
+{"action":"submit","selector":"<form css selector>"}: submit a form
+{"action":"done","answer":"<final answer to the task>"}: finish
 Keep selectors simple. Prefer links/buttons by visible text via :has-text().`;
 
 async function llmAction(task: string, pageState: string): Promise<any> {
   const prompt = `TASK: ${task}\n\nCURRENT PAGE STATE:\n${pageState}\n\nChoose the next action.`;
   // chatCompletion returns the completion text directly (no OpenAI-style
-  // `.choices[0].message.content` wrapper, and no `json` mode option) — the
+  // `.choices[0].message.content` wrapper, and no `json` mode option). The
   // ACTION_SYSTEM prompt already instructs JSON-only output.
   const text = (
     await chatCompletion(
@@ -101,7 +101,7 @@ export async function runBrowseTask(opts: {
 }): Promise<BrowseResult> {
   const maxSteps = opts.maxSteps ?? 5;
 
-  // Preferred backends (when enabled) — graceful fallthrough to the local
+  // Preferred backends (when enabled): graceful fallthrough to the local
   // Playwright agent below if any of them fail.
   if (opts.task) {
     try {
@@ -218,7 +218,7 @@ export async function runBrowseTask(opts: {
     }
 
     // logActivity derives the user from the current request's session itself
-    // (it doesn't take a userEmail param) — safe to call unconditionally.
+    // (it doesn't take a userEmail param), safe to call unconditionally.
     await logActivity({
       category: "agents",
       action: "executed",

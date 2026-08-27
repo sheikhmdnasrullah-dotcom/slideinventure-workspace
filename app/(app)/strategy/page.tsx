@@ -13,7 +13,7 @@ const COL = APPWRITE.collections.knowledgeItems;
 export default async function StrategyPage() {
   await requireUser();
 
-  // ponytail: same RLS gap as the knowledge pages — page is already gated by
+  // ponytail: same RLS gap as the knowledge pages. Page is already gated by
   // requireUser(); Appwrite server client uses the API key (admin scope).
   let cards: StrategyCard[] = [];
   let error: { message: string } | null = null;

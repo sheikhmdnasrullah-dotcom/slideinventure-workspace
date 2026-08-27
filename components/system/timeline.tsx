@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { StatusBadge, type StatusTone } from "@/components/system/status-badge";
 
 /**
- * Timeline — the vertical activity feed. Each item is a row on a rule, with a
+ * Timeline: the vertical activity feed. Each item is a row on a rule, with a
  * tone dot at the left edge (the position in the timeline), a label, an
  * optional description, a tone badge, and a right-aligned timestamp. The
  * opposite of the "stack of cards" feed: a single ruled surface holding many

@@ -8,12 +8,12 @@ import { linkDocumentToKnowledge, unlinkDocumentFromKnowledge } from "@/lib/know
 
 // AI Venture used to be a real folder on the server's local disk
 // (`process.cwd()/AI Venture`). On this app's deployment target (Vercel),
-// serverless functions have a read-only filesystem — every write there
+// serverless functions have a read-only filesystem. Every write there
 // throws in production, and even where it doesn't, nothing survives a
 // redeploy or is shared across instances. This module replaces that with
 // the same Appwrite Storage bucket + `documents` table that Documents
 // already uses (workspace="ai-venture", node_type="file"|"folder",
-// folder_path holding the virtual path) — one canonical resource, real
+// folder_path holding the virtual path): one canonical resource, real
 // persistence, and every AI-Venture file becomes a real Documents row for
 // free instead of a second, disconnected copy.
 
@@ -26,7 +26,7 @@ export const VENTURE_ROOT_FOLDERS = ["PDF", "Brainstormed Ideas", "Brainstorm Sk
 
 const TEXT_EXTENSIONS = new Set([".md", ".txt", ".tldr", ".json", ".csv"]);
 const PDF_EXTENSIONS = new Set([".pdf"]);
-// Uploaded as-is (base64), streamed back as raw bytes — same treatment as
+// Uploaded as-is (base64), streamed back as raw bytes: same treatment as
 // PDFs already got, just not limited to PDFs. Docs/slides/sheets included so
 // "upload other reasonable document types" doesn't need a case-by-case list.
 const BINARY_EXTENSIONS = new Set([
@@ -95,7 +95,7 @@ function isImageFile(name: string): boolean {
   return [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"].includes(extOf(name) || "");
 }
 
-// Validates and normalizes a virtual path — the only gate between the
+// Validates and normalizes a virtual path: the only gate between the
 // browser and the row/storage layer, so it must reject anything that could
 // smuggle a path-traversal-shaped segment through, even though there is no
 // real filesystem behind it anymore.
@@ -311,7 +311,7 @@ async function reindexIfLinkable(row: DocumentRow, name: string, buffer: Buffer)
   try {
     const ext = extOf(name);
     // Images/zip/pptx/xlsx have no real text-extraction path (extractFileText
-    // would just produce a placeholder string) — skip rather than mirror
+    // would just produce a placeholder string). Skip rather than mirror
     // junk into Knowledge. .docx does have real extraction (mammoth), so it
     // proceeds despite being in BINARY_EXTENSIONS (streamed raw, but also
     // worth indexing).

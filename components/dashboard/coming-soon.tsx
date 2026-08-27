@@ -2,7 +2,7 @@ import { SiteHeader } from "@/components/dashboard/site-header";
 import { PageHeader, Surface, EmptyState } from "@/components/system";
 
 /**
- * ComingSoon — the "not built yet" surface. Rendered by stub routes the new
+ * ComingSoon: the "not built yet" surface. Rendered by stub routes the new
  * sidebar IA exposes so navigation never 404s. Upgraded from a Card to the new
  * primitives: a Surface (flat, not boxed) carrying an EmptyState. The
  * structure is right even before the data is.

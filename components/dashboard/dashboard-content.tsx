@@ -14,18 +14,18 @@ import type { DashboardResponse, KpiCard, ActivityRow, ActivityStatus } from "@/
 import { cn } from "@/lib/utils";
 
 /**
- * Command Center — the home page. Not a KPI wall. Reframes the four existing
+ * Command Center: the home page. Not a KPI wall. Reframes the four existing
  * metrics into the six questions the brief demanded the console answer:
  * what happened / what do we know / what changed / what did AI discover /
  * what needs attention / what next.
  *
  * Layout (top to bottom):
  *   1. PageHeader + sync button
- *   2. "What changed" rail — chronological evidence from activity
- *   3. "Needs attention" strip — proposed items, failed runs, conflicts
- *   5. "Live agents" micro-panel — running task_runs with progress
+ *   2. "What changed" rail: chronological evidence from activity
+ *   3. "Needs attention" strip: proposed items, failed runs, conflicts
+ *   5. "Live agents" micro-panel: running task_runs with progress
  *   6. Outreach velocity sparkline (the only graph)
- *   7. ActivityTable — the dense tail (existing component, reused)
+ *   7. ActivityTable: the dense tail (existing component, reused)
  */
 export function DashboardContent() {
   const [data, setData] = useState<DashboardResponse | null>(null);
@@ -59,7 +59,7 @@ export function DashboardContent() {
           <DashboardSkeleton />
         ) : (
           <>
-            {/* 1. What changed — chronological evidence from the unified activity feed */}
+            {/* 1. What changed: chronological evidence from the unified activity feed */}
             <Section tone="base">
               <PageHeader
                 eyebrow="What changed"
@@ -71,7 +71,7 @@ export function DashboardContent() {
               </Surface>
             </Section>
 
-            {/* 2. Needs attention — proposed items, failed runs, conflicts */}
+            {/* 2. Needs attention: proposed items, failed runs, conflicts */}
             <Section tone="inset">
               <PageHeader
                 eyebrow="Needs attention"
@@ -103,7 +103,7 @@ export function DashboardContent() {
               </Surface>
             </Section>
 
-            {/* 3. Live agents — running task_runs with progress */}
+            {/* 3. Live agents: running task_runs with progress */}
             <Section tone="base">
               <PageHeader
                 eyebrow="Live agents"
@@ -121,7 +121,7 @@ export function DashboardContent() {
               </Surface>
             </Section>
 
-            {/* 4. Outreach velocity — the only graph */}
+            {/* 4. Outreach velocity: the only graph */}
             <Section tone="anchor" seam bleed>
               <PageHeader
                 eyebrow="Outreach"
@@ -132,7 +132,7 @@ export function DashboardContent() {
               </Surface>
             </Section>
 
-            {/* 5. Activity table — the dense tail */}
+            {/* 5. Activity table: the dense tail */}
             <Section tone="base">
               <PageHeader
                 eyebrow="Full log"
@@ -195,7 +195,7 @@ function buildNeedsAttention(data: DashboardResponse) {
       icon: null,
     });
   }
-  // Conflicts would be detected by the knowledge system — not present yet
+  // Conflicts would be detected by the knowledge system: not present yet
   if (items.length === 0) {
     items.push({
       label: "Nothing pending",

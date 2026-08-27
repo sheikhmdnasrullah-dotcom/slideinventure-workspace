@@ -3,7 +3,7 @@ import { chatCompletion } from "@/lib/llm/gateway";
 
 // Stagehand's `model` option only accepts one of its own supported
 // provider/model-name strings (openai/anthropic/google/groq/cerebras) plus
-// that provider's own API key — it has no support for an arbitrary custom
+// that provider's own API key. It has no support for an arbitrary custom
 // model client, so our NVIDIA/OpenRouter gateway can't be plugged in here.
 // Browserbase credentials alone (hosted browser) aren't enough either:
 // Stagehand's AI reasoning still needs one of the model keys below.

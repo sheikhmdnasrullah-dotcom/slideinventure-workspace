@@ -25,7 +25,7 @@ export type EmailCrawlerResult = {
 
 /**
  * Email Crawler: given a prospect link + free-form details, the agent surfs the
- * web (no prerequisites — it starts immediately), searches any site it needs,
+ * web (no prerequisites: it starts immediately), searches any site it needs,
  * solves CAPTCHAs via 2captcha wherever they appear, and returns the prospect's
  * email(s). Each find is verified with TrueMail and imported as a lead.
  */
@@ -51,13 +51,13 @@ export async function crawlEmails(opts: {
     details || "(none provided)",
     "",
     instructions ? `EXTRA INSTRUCTIONS:\n${instructions}\n` : "",
-    "PROCEDURE (start immediately — do not ask for anything, there are no prerequisites):",
+    "PROCEDURE (start immediately: do not ask for anything, there are no prerequisites):",
     "1. If a starting link is given, OPEN IT FIRST. If it is a YouTube channel, click the \"About\" tab (or goto the link with \"/about\" appended) and read every detail for a contact/business/mailto email.",
     "2. Run a web search: goto https://www.google.com/search?q=<prospect name and company>+\"email\" and open several result links (prefer the official site, press, podcast, or contact pages).",
     "3. On each visited page, look for mailto: links, \"For business inquiries\", \"Contact\", and visible email text. Also inspect the footer, About, Team, and Press pages.",
-    "4. If you hit a CAPTCHA, solve it using the available solver and continue — never stop because of a CAPTCHA.",
+    "4. If you hit a CAPTCHA, solve it using the available solver and continue. Never stop because of a CAPTCHA.",
     "5. Keep exploring until you have checked the YouTube About page AND at least 3 other sources, or you are confident no public email exists.",
-    "6. Return a concise bulleted list, one item per line, formatted exactly as: email — source/context. If you found none, return \"No email found\".",
+    "6. Return a concise bulleted list, one item per line, formatted exactly as: email: source/context. If you found none, return \"No email found\".",
     "Only include email addresses that literally appear on a page you visited. Do not invent emails.",
     preEmails.length
       ? `\nPRE-DISCOVERED CANDIDATE EMAILS (verify they belong to the prospect):\n${preEmails.join(", ")}`
@@ -76,7 +76,7 @@ export async function crawlEmails(opts: {
     return { ok: false, emails: [], imported: 0, raw: "", error: res.error };
   }
 
-  // Browse backends may return an object in edge cases — coerce to a string so
+  // Browse backends may return an object in edge cases. Coerce to a string so
   // extraction never throws and the raw payload stays inspectable.
   const rawResult = typeof res.result === "string" ? res.result : JSON.stringify(res.result ?? "");
   // CRITICAL: only trust emails that literally appeared on a page the agent

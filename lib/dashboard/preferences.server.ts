@@ -80,7 +80,7 @@ async function waitForCollectionShape() {
   }
 
   // Best-effort only: if a required attribute can't be provisioned (e.g. the
-  // collection is at Appwrite's attribute limit), don't block saves — the
+  // collection is at Appwrite's attribute limit), don't block saves: the
   // document still reads/writes the attributes that do exist.
   console.warn("Preferences collection shape not fully ready; proceeding with available attributes")
 }

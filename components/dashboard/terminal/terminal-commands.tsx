@@ -287,7 +287,7 @@ function CommandCard({
   const router = useRouter()
 
   // One click: create a Research workspace from this command (title +
-  // description/notes) and jump to the Research lab. No picker, no form —
+  // description/notes) and jump to the Research lab. No picker, no form:
   // matches the "one click should be enough" rule.
   const handleSaveToResearch = async () => {
     setSavingToResearch(true)

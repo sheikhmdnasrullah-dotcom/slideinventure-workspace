@@ -100,7 +100,7 @@ const SECTION_ICONS: Record<string, React.ComponentType<{ className?: string }>>
 };
 
 // Same categories the Activity page (components/dashboard/activity-feed.tsx)
-// filters on — kept in sync manually since they're two small, independent
+// filters on, kept in sync manually since they're two small, independent
 // lookup tables rather than a shared import worth the coupling.
 const RECENT_CATEGORY_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
   knowledge: BookOpen,
@@ -188,7 +188,7 @@ function CommandMenuInner() {
     inputRef.current?.focus();
   }, []);
 
-  // "Open recent items" — pulled once per open from the same activities
+  // "Open recent items": pulled once per open from the same activities
   // feed the Activity page reads, so this needs no extra API surface.
   useEffect(() => {
     fetch("/api/activities?limit=6")
