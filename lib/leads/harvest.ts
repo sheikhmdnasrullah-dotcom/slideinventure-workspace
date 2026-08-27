@@ -63,7 +63,7 @@ export async function harvestLeads(opts: {
 
   await logActivity({
     category: "leads",
-    action: "harvest",
+    action: "imported",
     title: "Lead harvest",
     description: `Harvested ${created.length} leads for "${opts.topic}" (${found.length} candidate emails)`,
     entityType: "leads",

@@ -136,7 +136,7 @@ export async function crawlEmails(opts: {
 
   await logActivity({
     category: "leads",
-    action: "email-crawler",
+    action: "imported",
     title: "Email Crawler run",
     description: `Crawled ${found.length} candidate emails (${imported} imported) for: ${details.slice(0, 60) || link}`,
     entityType: "leads",

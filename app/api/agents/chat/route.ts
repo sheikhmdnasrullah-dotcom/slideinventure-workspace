@@ -3,24 +3,26 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { getAgentPrompt } from "@/lib/agents/roster";
 import { runMastraAgent } from "@/lib/agents/mastra";
-import { logActivity } from "@/lib/activities/client";
-import { createOpenAI } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateText, type ModelMessage } from "ai";
 import { NextRequest } from "next/server";
-
-// Agents are powered by DeepSeek (OpenAI-compatible) to match the rest of the
-// dashboard's agent fleet. NVIDIA remains available via runMastraAgent's own
-// fallback and the gateway.
-const deepseek = createOpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY ?? process.env.OPENROUTER_API_KEY ?? "",
-  baseURL: "https://api.deepseek.com/v1",
-});
+import { NoLlmProviderError, resolveChatModel } from "@/lib/llm/models";
+import {
+  agentRunCompleted,
+  agentRunFailed,
+  agentRunStarted,
+  agentThinking,
+  agentToolStarted,
+  type AgentRunContext,
+} from "@/lib/agui/server";
 
 /**
  * Stateless chat with one installed agent persona (`.claude/agents/<slug>.md`
- * as system prompt). No session/message persistence. The client holds the
- * conversation and resends it each turn. Separate from `/api/chat`, which is
- * the knowledge-base RAG assistant.
+ * as system prompt). No session/message persistence: the client holds the
+ * conversation and resends it each turn. Separate from `/api/chat`, which is the
+ * knowledge-base RAG assistant.
+ *
+ * Every run emits AG-UI lifecycle events through lib/agui/server, so the
+ * dashboard and activity feed show the run live rather than only after it ends.
  */
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
@@ -47,71 +49,64 @@ export async function POST(request: NextRequest) {
   const agent = getAgentPrompt(slug);
   if (!agent) return ApiError.notFound("AGENT_NOT_FOUND", "Unknown agent").toResponse();
 
+  const ctx: AgentRunContext = {
+    runId: crypto.randomUUID(),
+    agent: agent.name,
+    userEmail: user.email,
+  };
+
+  await agentRunStarted(ctx, message.slice(0, 200));
+
   // Opt-in Mastra mode: persona + tools (retrieve/browse/remember/recall).
   if (tools) {
+    agentToolStarted(ctx, "tools");
     const res = await runMastraAgent({ slug, message, history, userEmail: user.email });
     if (!res.ok) {
-      await logActivity({
-        category: "agents",
-        action: "failed",
-        title: `${agent.name} run failed`,
-        description: res.error ?? "Agent run failed",
-        entityId: slug,
-        entityType: "agent",
-        metadata: { agent: slug, tools: true },
-      }).catch(() => {});
+      await agentRunFailed(ctx, res.error ?? "Agent run failed");
       return ApiError.internal("MASTRA_AGENT_FAILED", res.error ?? "agent failed").toResponse();
     }
-    await logActivity({
-      category: "agents",
-      action: "completed",
-      title: `${agent.name} run completed`,
-      description: res.answer.slice(0, 280),
-      entityId: slug,
-      entityType: "agent",
-      metadata: { agent: slug, tools: res.toolCalls },
-    }).catch(() => {});
-    return Response.json({ answer: res.answer, agent: res.agentName, tools: res.toolCalls });
+    await agentRunCompleted(ctx, res.answer.slice(0, 280));
+    return Response.json({
+      answer: res.answer,
+      agent: res.agentName,
+      tools: res.toolCalls,
+      runId: ctx.runId,
+    });
   }
 
-  const priorTurns = Array.isArray(history)
+  const priorTurns: ModelMessage[] = Array.isArray(history)
     ? history
-        .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+        .filter(
+          (m) =>
+            (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
+        )
         .slice(-20)
+        .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
     : [];
 
-  const messages = [
+  const messages: ModelMessage[] = [
     { role: "system", content: agent.prompt },
     ...priorTurns,
     { role: "user", content: message },
   ];
 
   try {
+    agentThinking(ctx);
     const { text: answer } = await generateText({
-      model: deepseek(process.env.DEEPSEEK_MODEL || "deepseek-chat"),
+      model: resolveChatModel(),
       messages,
     });
-    await logActivity({
-      category: "agents",
-      action: "completed",
-      title: `${agent.name} run completed`,
-      description: answer.slice(0, 280),
-      entityId: slug,
-      entityType: "agent",
-      metadata: { agent: slug, tools: false },
-    }).catch(() => {});
-    return Response.json({ answer, agent: agent.name });
+    await agentRunCompleted(ctx, answer.slice(0, 280));
+    return Response.json({ answer, agent: agent.name, runId: ctx.runId });
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : "Agent chat failed";
-    await logActivity({
-      category: "agents",
-      action: "failed",
-      title: `${agent.name} run failed`,
-      description: errorMessage,
-      entityId: slug,
-      entityType: "agent",
-      metadata: { agent: slug, tools: false },
-    }).catch(() => {});
-    return ApiError.internal("AGENT_CHAT_FAILED", errorMessage).toResponse();
+    const errorMessage =
+      err instanceof NoLlmProviderError
+        ? err.message
+        : err instanceof Error
+          ? err.message
+          : "Agent chat failed";
+    await agentRunFailed(ctx, errorMessage);
+    const status = err instanceof NoLlmProviderError ? 503 : 500;
+    return Response.json({ error: errorMessage }, { status });
   }
 }

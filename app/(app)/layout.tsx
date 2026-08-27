@@ -9,6 +9,7 @@ import { DashboardPreferencesProvider } from "@/components/dashboard/preferences
 import { getDashboardPreferencesForUser } from "@/lib/dashboard/preferences.server";
 import { requireUser } from "@/lib/supabase/server";
 import { SmoothScroll } from "@/components/providers/smooth-scroll";
+import { EventStreamProvider } from "@/components/providers/event-stream";
 import { AgentCopilot } from "@/components/copilot/agent-copilot";
 
 export default async function AppLayout({
@@ -24,24 +25,26 @@ export default async function AppLayout({
           userEmail={user.email ?? "unknown"}
           initialPreferences={preferences}
         >
-          <SmoothScroll>
-            <SidebarProvider
-              style={
-                {
-                  "--sidebar-width": "calc(var(--spacing) * 64)",
-                  "--header-height": "calc(var(--spacing) * 12 + 1px)",
-                } as React.CSSProperties
-              }
-            >
-              <AppSidebar userEmail={user.email ?? "unknown"} />
-              <SidebarInset>
-                <PageTransition>{children}</PageTransition>
-              </SidebarInset>
-              <Toaster />
-              <CommandMenu />
-              <AgentCopilot />
-            </SidebarProvider>
-          </SmoothScroll>
+          <EventStreamProvider>
+            <SmoothScroll>
+              <SidebarProvider
+                style={
+                  {
+                    "--sidebar-width": "calc(var(--spacing) * 64)",
+                    "--header-height": "calc(var(--spacing) * 12 + 1px)",
+                  } as React.CSSProperties
+                }
+              >
+                <AppSidebar userEmail={user.email ?? "unknown"} />
+                <SidebarInset>
+                  <PageTransition>{children}</PageTransition>
+                </SidebarInset>
+                <Toaster />
+                <CommandMenu />
+                <AgentCopilot />
+              </SidebarProvider>
+            </SmoothScroll>
+          </EventStreamProvider>
         </DashboardPreferencesProvider>
       </TooltipProvider>
     </CopilotKit>

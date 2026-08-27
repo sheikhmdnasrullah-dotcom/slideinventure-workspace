@@ -5,6 +5,13 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { ensureNotificationsCollection } from "@/lib/notifications/ensure";
 import { ensureActivitiesCollection } from "@/lib/activities/ensure";
 import { notifyViaNovu } from "@/lib/notifications/novu";
+import { publishEvent } from "@/lib/events/bus";
+import {
+  eventTypeForActivity,
+  sourceForCategory,
+  type DomainEventType,
+  type EventSource,
+} from "@/lib/events/types";
 
 export type Activity = import("./types").Activity;
 export type ActivityCategory = import("./types").ActivityCategory;
@@ -58,6 +65,11 @@ export async function logActivity(entry: {
   // When true, also surfaces an in-app notification (only for meaningful
   // events, never used for noisy internal operations).
   notify?: boolean;
+  // Optional overrides for the live domain event. Omit both and the event name
+  // and source are derived from category + action, which is right for almost
+  // every call site.
+  eventType?: DomainEventType;
+  source?: EventSource;
 }): Promise<void> {
   try {
     const user = await getSessionUser();
@@ -73,6 +85,23 @@ export async function logActivity(entry: {
       timestamp: new Date().toISOString(),
       metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
       user_email: user.email ?? null,
+    });
+
+    // Persist first, broadcast second. The durable record is the activity row;
+    // this push is what makes the dashboard and feed update live instead of
+    // polling every section. Publishing only after a successful write means the
+    // UI can never show an event for something that did not save.
+    publishEvent({
+      type:
+        entry.eventType ??
+        eventTypeForActivity(entry.category, entry.action, entry.entityType),
+      source: entry.source ?? sourceForCategory(entry.category),
+      title: entry.title,
+      description: entry.description ?? "",
+      entityId: entry.entityId,
+      entityType: entry.entityType,
+      metadata: entry.metadata,
+      userEmail: user.email ?? null,
     });
 
     if (entry.notify) {

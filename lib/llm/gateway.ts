@@ -1,15 +1,17 @@
 import "server-only";
 import { langfuseGeneration } from "@/lib/observability/langfuse";
 import { loadInfisicalSecrets } from "@/lib/vault/infisical";
+import {
+  availableProviders,
+  modelFor,
+  NVIDIA_DEFAULT_MODEL,
+  OPENROUTER_DEFAULT_MODEL,
+} from "@/lib/llm/models";
 
 // Load secrets from Infisical into process.env once, at first LLM use.
 loadInfisicalSecrets().catch(() => {});
 
-export const NVIDIA_DEFAULT_MODEL = "nvidia/nemotron-3-ultra-550b-a55b";
-// Cheap OpenRouter fallback used only when NVIDIA is unavailable. Override with
-// OPENROUTER_FALLBACK_MODEL if you prefer a different model. NVIDIA stays primary.
-export const OPENROUTER_DEFAULT_MODEL =
-  process.env.OPENROUTER_FALLBACK_MODEL || "openai/gpt-oss-120b";
+export { NVIDIA_DEFAULT_MODEL, OPENROUTER_DEFAULT_MODEL };
 
 export type ChatMessage = { role: string; content: string };
 export type ChatOptions = {
@@ -37,52 +39,19 @@ export function getTokenUsage() {
 
 type Provider = { url: string; key: string; model: string };
 
+// Provider order and credentials come from lib/llm/models so the raw-fetch
+// gateway and the AI SDK routes can never disagree about which key belongs to
+// which host.
+//
+// `opts.model` is applied per provider via modelFor(): previously a caller
+// asking for an NVIDIA model name had that name forced onto DeepSeek and
+// OpenRouter too, so every fallback in the chain was guaranteed to fail.
 function buildProviders(opts: ChatOptions): Provider[] {
-  const providers: Provider[] = [];
-  const nvidiaKey = process.env.NVIDIA_API_KEY;
-  const openrouterKey = process.env.OPENROUTER_API_KEY;
-  const deepseekKey = process.env.DEEPSEEK_API_KEY;
-  const deepseekModel = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-
-  // LiteLLM is the preferred routing/key-management layer when configured
-  // (BerriAI/litellm): all model traffic flows through it for token savings,
-  // fallbacks, and a single API key surface.
-  const litellmUrl = process.env.LITELLM_BASE_URL;
-  const litellmKey = process.env.LITELLM_API_KEY;
-  if (litellmUrl && litellmKey) {
-    providers.push({
-      url: litellmUrl.replace(/\/$/, ""),
-      key: litellmKey,
-      model: opts.model ?? process.env.LITELLM_MODEL ?? NVIDIA_DEFAULT_MODEL,
-    });
-  }
-
-  // DeepSeek (dedicated key): strong reasoning model for the multi-agent
-  // workflows. Used alongside NVIDIA: preferred here, NVIDIA/OpenRouter are the
-  // fallbacks if DeepSeek is unavailable.
-  if (deepseekKey) {
-    providers.push({
-      url: "https://api.deepseek.com/v1",
-      key: deepseekKey,
-      model: opts.model ?? deepseekModel,
-    });
-  }
-
-  if (nvidiaKey) {
-    providers.push({
-      url: "https://integrate.api.nvidia.com/v1",
-      key: nvidiaKey,
-      model: opts.model ?? NVIDIA_DEFAULT_MODEL,
-    });
-  }
-  if (openrouterKey) {
-    providers.push({
-      url: "https://openrouter.ai/api/v1",
-      key: openrouterKey,
-      model: opts.model ?? OPENROUTER_DEFAULT_MODEL,
-    });
-  }
-  return providers;
+  return availableProviders().map((p) => ({
+    url: p.baseURL,
+    key: p.apiKey,
+    model: modelFor(p, opts.model),
+  }));
 }
 
 async function completeAt(

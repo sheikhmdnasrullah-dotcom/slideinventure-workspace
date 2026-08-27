@@ -21,6 +21,7 @@ export type ActivityAction =
   | "updated"
   | "deleted"
   | "completed"
+  | "failed"
   | "imported"
   | "exported"
   | "connected"

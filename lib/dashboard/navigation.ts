@@ -97,7 +97,16 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
     ],
   },
   { id: "vault", label: "Vault", route: "/vault", icon: Vault },
-  { id: "settings", label: "Settings", route: "/settings", icon: Settings },
+  {
+    id: "settings",
+    label: "Settings",
+    route: "/settings",
+    icon: Settings,
+    children: [
+      { id: "settings-ui-kit", label: "UI Kit (shadcn/ui)", route: "/ui-kit", icon: Component },
+      { id: "settings-ai-chat", label: "AI SDK Chat", route: "/ai-chat", icon: MessageSquare },
+    ],
+  },
   {
     id: "email-crawler",
     label: "Email Crawler",
@@ -125,20 +134,6 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
     children: [
       { id: "analytics-bento", label: "Live Metrics", route: "/analytics" },
     ],
-  },
-  {
-    id: "ai-chat",
-    label: "AI SDK Chat",
-    route: "/ai-chat",
-    icon: MessageSquare,
-    children: [{ id: "ai-chat-run", label: "Chat", route: "/ai-chat" }],
-  },
-  {
-    id: "ui-kit",
-    label: "UI Kit",
-    route: "/ui-kit",
-    icon: Component,
-    children: [{ id: "ui-kit-show", label: "shadcn/ui", route: "/ui-kit" }],
   },
 ]
 

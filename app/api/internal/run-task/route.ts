@@ -24,9 +24,11 @@ export async function POST(request: NextRequest) {
   }).catch((e) => ({ ok: false, error: String(e) }));
 
   await logActivity({
-    category: "temporal",
-    action: "workflow-task",
+    category: "agents",
+    action: "executed",
+    title: res.ok ? "Browse task completed" : "Browse task failed",
     description: (body.userEmail ? `[${body.userEmail}] ` : "") + task,
+    entityType: "browse_task",
     metadata: { ok: res.ok },
   }).catch(() => {});
 

@@ -1,33 +1,61 @@
-import { createOpenAI } from "@ai-sdk/openai";
-import { streamText } from "ai";
+import { streamText, type ModelMessage } from "ai";
+import { NoLlmProviderError, providerSummary, resolveChatModel } from "@/lib/llm/models";
 
-const deepseek = createOpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY ?? process.env.OPENROUTER_API_KEY ?? "",
-  baseURL: "https://api.deepseek.com/v1",
-});
+/**
+ * Streaming chat for the AI SDK `useChat` surfaces (the /ai-chat page and the
+ * floating copilot). Provider resolution is shared with every other AI route via
+ * lib/llm/models, so there is one place that decides which key talks to which
+ * host.
+ */
 
-// useChat (Vercel AI SDK v5) sends UIMessages with `parts`. Convert the text
-// parts into ModelMessages directly (convertToModelMessages is unreliable in
-// this ai@7 build).
-function toModelMessages(messages: any[]) {
-  return messages.map((m) => ({
-    role: m.role,
-    content: Array.isArray(m.parts)
-      ? m.parts
-          .filter((p: any) => p.type === "text")
-          .map((p: any) => p.text)
+// useChat (AI SDK v5) sends UIMessages with `parts`. Convert the text parts into
+// ModelMessages directly (convertToModelMessages is unreliable in this ai@7
+// build).
+function toModelMessages(messages: unknown[]): ModelMessage[] {
+  const out: ModelMessage[] = [];
+  for (const m of messages) {
+    const msg = m as {
+      role?: string;
+      parts?: { type: string; text?: string }[];
+      content?: unknown;
+    };
+    const content = Array.isArray(msg.parts)
+      ? msg.parts
+          .filter((p) => p.type === "text")
+          .map((p) => p.text ?? "")
           .join("")
-      : typeof m.content === "string"
-        ? m.content
-        : "",
-  }));
+      : typeof msg.content === "string"
+        ? msg.content
+        : "";
+    if (!content) continue;
+    if (msg.role === "user" || msg.role === "assistant" || msg.role === "system") {
+      out.push({ role: msg.role, content } as ModelMessage);
+    }
+  }
+  return out;
 }
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
+
+  let model;
+  try {
+    model = resolveChatModel();
+  } catch (err) {
+    if (err instanceof NoLlmProviderError) {
+      return Response.json({ error: err.message }, { status: 503 });
+    }
+    throw err;
+  }
+
   const result = streamText({
-    model: deepseek("deepseek-chat"),
+    model,
     messages: toModelMessages(Array.isArray(messages) ? messages : []),
   });
   return result.toUIMessageStreamResponse();
+}
+
+/** Lets the UI show which provider is actually answering, without guessing. */
+export async function GET() {
+  return Response.json(providerSummary());
 }
