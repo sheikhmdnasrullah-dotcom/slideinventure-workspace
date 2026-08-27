@@ -65,22 +65,27 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const d = validated.data;
     const now = new Date().toISOString();
 
+    // `d` comes back from a `.partial()` schema whose fields carry `.default()`
+    // (tags, variables, favorite, metadata) — Zod fills those defaults in even
+    // for keys the request never sent, so `d.field !== undefined` is always
+    // true and silently wipes the field on every update. Check the raw body
+    // for actual presence instead.
     const payload: Record<string, unknown> = { updated_at: now };
-    if (d.title !== undefined) payload.title = d.title;
-    if (d.command !== undefined) payload.command = d.command;
-    if (d.description !== undefined) payload.description = d.description;
-    if (d.category !== undefined) payload.category = d.category;
-    if (d.tags !== undefined) payload.tags = d.tags;
-    if (d.notes !== undefined) payload.notes = d.notes;
-    if (d.variables !== undefined) payload.variables = JSON.stringify(d.variables);
-    if (d.favorite !== undefined) payload.favorite = d.favorite;
-    if (d.cwd !== undefined) payload.cwd = d.cwd;
-    if (d.stdout !== undefined) payload.stdout = d.stdout;
-    if (d.stderr !== undefined) payload.stderr = d.stderr;
+    if ("title" in body) payload.title = d.title;
+    if ("command" in body) payload.command = d.command;
+    if ("description" in body) payload.description = d.description;
+    if ("category" in body) payload.category = d.category;
+    if ("tags" in body) payload.tags = d.tags;
+    if ("notes" in body) payload.notes = d.notes;
+    if ("variables" in body) payload.variables = JSON.stringify(d.variables);
+    if ("favorite" in body) payload.favorite = d.favorite;
+    if ("cwd" in body) payload.cwd = d.cwd;
+    if ("stdout" in body) payload.stdout = d.stdout;
+    if ("stderr" in body) payload.stderr = d.stderr;
     payload.triggered_by = user.email ?? doc.triggered_by ?? null;
-    if (d.exitCode !== undefined) payload.exit_code = d.exitCode;
-    if (d.durationMs !== undefined) payload.duration_ms = d.durationMs;
-    if (d.metadata !== undefined) payload.metadata = JSON.stringify(d.metadata);
+    if ("exitCode" in body) payload.exit_code = d.exitCode;
+    if ("durationMs" in body) payload.duration_ms = d.durationMs;
+    if ("metadata" in body) payload.metadata = JSON.stringify(d.metadata);
 
     await databases.updateDocument(DB, COL, id, payload);
 

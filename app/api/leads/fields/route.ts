@@ -91,20 +91,24 @@ export async function PUT(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const validated = validate(z.object({ id: z.string(), changes: UpdateSchema }), body);
   const { id, changes } = validated.data;
+  const rawChanges = (body as { changes?: Record<string, unknown> })?.changes ?? {};
   const now = new Date().toISOString();
 
   try {
+    // required/visible/sortable/filterable/order all default in
+    // CustomLeadFieldSchema, so a partial update always sees them as
+    // "defined" even when omitted — check the raw payload for presence.
     const update: Record<string, unknown> = { updated_at: now };
     if (changes.key !== undefined) update.key = changes.key;
     if (changes.label !== undefined) update.label = changes.label;
     if (changes.type !== undefined) update.type = changes.type;
     if (changes.options !== undefined) update.options = changes.options;
-    if (changes.required !== undefined) update.required = changes.required;
-    if (changes.visible !== undefined) update.visible = changes.visible;
-    if (changes.sortable !== undefined) update.sortable = changes.sortable;
-    if (changes.filterable !== undefined) update.filterable = changes.filterable;
+    if ("required" in rawChanges) update.required = changes.required;
+    if ("visible" in rawChanges) update.visible = changes.visible;
+    if ("sortable" in rawChanges) update.sortable = changes.sortable;
+    if ("filterable" in rawChanges) update.filterable = changes.filterable;
     if (changes.width !== undefined) update.width = changes.width;
-    if (changes.order !== undefined) update.order = changes.order;
+    if ("order" in rawChanges) update.order = changes.order;
 
     await databases.updateDocument(DB, COL, id, update);
     return Response.json({ id, status: "updated" });

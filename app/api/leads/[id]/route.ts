@@ -50,8 +50,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!existing) return ApiError.notFound("LEAD_NOT_FOUND", "Lead not found").toResponse()
 
     const now = new Date().toISOString()
+    // first_name/last_name/source/status/tags/custom_fields all default in
+    // LeadSchema, so validated.data always has them "defined" even when the
+    // request omitted them — leadInputToRow's `!== undefined` checks can't
+    // tell the difference. Strip any key the raw body didn't actually send
+    // before handing off, so an omitted field is left untouched.
+    const sanitized: Record<string, unknown> = { ...validated.data }
+    for (const key of Object.keys(sanitized)) {
+      if (!(key in (body as Record<string, unknown>))) delete sanitized[key]
+    }
     await databases.updateDocument(DB, COL, id, {
-      ...leadInputToRow(validated.data),
+      ...leadInputToRow(sanitized as typeof validated.data),
       updated_at: now,
     })
 

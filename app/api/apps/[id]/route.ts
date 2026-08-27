@@ -59,15 +59,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const d = validated.data;
     const now = new Date().toISOString();
 
+    // name/slug/enabled/config default in AppSchema, so a partial update
+    // always sees them as "defined" even when omitted — check raw body presence.
     const payload: Record<string, unknown> = { updated_at: now };
-    if (d.name !== undefined) payload.name = d.name;
-    if (d.slug !== undefined) payload.slug = d.slug;
+    if ("name" in body) payload.name = d.name;
+    if ("slug" in body) payload.slug = d.slug;
     if (d.description !== undefined) payload.description = d.description;
     if (d.icon !== undefined) payload.icon = d.icon;
     if (d.url !== undefined) payload.url = d.url;
     if (d.category !== undefined) payload.category = d.category;
-    if (d.enabled !== undefined) payload.enabled = d.enabled;
-    if (d.config !== undefined) payload.config = JSON.stringify(d.config);
+    if ("enabled" in body) payload.enabled = d.enabled;
+    if ("config" in body) payload.config = JSON.stringify(d.config);
 
     await databases.updateDocument(DB, COL, id, payload);
     return Response.json({ id, status: "updated" });

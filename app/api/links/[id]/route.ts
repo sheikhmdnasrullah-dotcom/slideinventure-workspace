@@ -86,9 +86,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const validated = validate(UpdateSchema, body);
     const d = validated.data;
     const now = new Date().toISOString();
+    // title/tags default in UsefulLinkSchema, so a partial update always
+    // sees them as "defined" even when omitted — check raw body presence.
     const normalizedUrl = d.url !== undefined ? normalizeUrl(d.url) : undefined;
     const nextUrl = normalizedUrl ?? doc.url;
-    const nextTitle = d.title !== undefined || d.url !== undefined
+    const titleProvided = "title" in body;
+    const nextTitle = titleProvided || d.url !== undefined
       ? (d.title?.trim() || buildFallbackTitle(nextUrl ?? ""))
       : undefined;
 
@@ -96,7 +99,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (normalizedUrl !== undefined) payload.url = normalizedUrl;
     if (nextTitle !== undefined) payload.title = nextTitle;
     if (d.description !== undefined) payload.description = d.description;
-    if (d.tags !== undefined) payload.tags = d.tags;
+    if ("tags" in body) payload.tags = d.tags;
     if (d.favicon !== undefined) payload.favicon = d.favicon;
 
     await databases.updateDocument(DB, COL, id, payload);

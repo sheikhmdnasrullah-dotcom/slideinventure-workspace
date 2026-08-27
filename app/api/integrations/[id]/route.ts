@@ -74,12 +74,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const v = validated.data;
   const now = new Date().toISOString();
 
+  // status/config default in IntegrationSchema, so a partial update always
+  // sees them as "defined" even when omitted — check raw body presence.
   const update: Record<string, unknown> = { updated_at: now };
   if (v.name !== undefined) update.name = v.name;
   if (v.provider !== undefined) update.provider = v.provider;
   if (v.type !== undefined) update.type = v.type;
-  if (v.status !== undefined) update.status = v.status;
-  if (v.config !== undefined) update.config = JSON.stringify(v.config ?? {});
+  if ("status" in body) update.status = v.status;
+  if ("config" in body) update.config = JSON.stringify(v.config ?? {});
   if (v.lastSyncAt !== undefined) update.last_sync_at = v.lastSyncAt;
   if (v.lastError !== undefined) update.last_error = v.lastError;
 

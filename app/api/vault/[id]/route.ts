@@ -72,18 +72,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const validated = validate(UpdateSchema, body);
   const now = new Date().toISOString();
 
-  const updateData: Record<string, unknown> = {
-    name: validated.data.name,
-    category: validated.data.category ?? null,
-    service_name: validated.data.serviceName ?? null,
-    username: validated.data.username ?? null,
-    secret_type: validated.data.secretType,
-    url: validated.data.url ?? null,
-    notes: validated.data.notes ?? null,
-    tags: validated.data.tags ?? [],
-    expires_at: validated.data.expiresAt ?? null,
-    updated_at: now,
-  };
+  // This previously wrote every field unconditionally on every PUT — since
+  // secretType/tags default in SecretVaultEntrySchema (and the rest default
+  // to null via `?? null`), any partial update (e.g. just a rename) silently
+  // wiped category/serviceName/username/url/notes/tags/secretType back to
+  // null/defaults. Only touch a field the request actually sent.
+  const updateData: Record<string, unknown> = { updated_at: now };
+  if ("name" in body) updateData.name = validated.data.name;
+  if ("category" in body) updateData.category = validated.data.category ?? null;
+  if ("serviceName" in body) updateData.service_name = validated.data.serviceName ?? null;
+  if ("username" in body) updateData.username = validated.data.username ?? null;
+  if ("secretType" in body) updateData.secret_type = validated.data.secretType;
+  if ("url" in body) updateData.url = validated.data.url ?? null;
+  if ("notes" in body) updateData.notes = validated.data.notes ?? null;
+  if ("tags" in body) updateData.tags = validated.data.tags ?? [];
+  if ("expiresAt" in body) updateData.expires_at = validated.data.expiresAt ?? null;
 
   if (validated.data.encryptedValue) {
     const { encrypted, iv } = encryptSecret(validated.data.encryptedValue);
