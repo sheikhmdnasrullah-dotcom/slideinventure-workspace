@@ -37,6 +37,13 @@ export function AvWhiteboardEditor({
   const [ready, setReady] = useState(false)
   const [status, setStatus] = useState<"loading" | "saving" | "saved">("loading")
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // Title edits and content/snapshot edits both flow through saveContent and
+  // can land within the same 500ms debounce window (e.g. renaming right
+  // after a drawing change). A prior version reset the timer with only the
+  // latest call's payload, so the earlier field's change was silently
+  // dropped instead of saved. Accumulate into one pending object so every
+  // field that changed before the flush actually gets sent.
+  const pending = useRef<Record<string, unknown>>({})
 
   useEffect(() => {
     setReady(false)
@@ -60,20 +67,23 @@ export function AvWhiteboardEditor({
   const saveContent = useCallback(
     (payload: Record<string, unknown>) => {
       setStatus("saving")
+      pending.current = { ...pending.current, ...payload }
       clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(async () => {
+        const body = pending.current
+        pending.current = {}
         try {
           if (engine === "excalidraw") {
             await fetch(`/api/boards/${boardId}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
+              body: JSON.stringify(body),
             })
           } else {
             await fetch(`/api/affine/${boardId}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ...payload, section: AFFINE_SECTION }),
+              body: JSON.stringify({ ...body, section: AFFINE_SECTION }),
             })
           }
         } catch {
