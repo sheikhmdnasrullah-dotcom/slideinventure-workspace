@@ -33,30 +33,35 @@ export async function runBrowserUseTask(
 
     const llm = new ChatOpenRouter({ model, apiKey });
     const agent = new Agent({ task, llm });
-    const history: any = await agent.run(opts.maxSteps ?? 20);
+    const history = await agent.run(opts.maxSteps ?? 20);
 
-    // Best-effort extraction of the final answer from the history list.
-    let result = "";
-    try {
-      result = (await history.final_result?.()) || "";
-    } catch {}
-    if (!result && Array.isArray(history?.history)) {
-      const last = history.history[history.history.length - 1];
-      result = last?.result?.extracted_content || last?.result?.long_term_memory || "";
+    // AgentHistoryList's per-step `result` is an ActionResult[], not a single
+    // object — reaching in as `.result.extracted_content` (an earlier version
+    // of this code did) always misses and stringifies the whole list instead
+    // ("[object Object]"). Use the library's own public accessors, which
+    // already flatten this correctly: final_result() is sync (not a promise),
+    // extracted_content()/action_names() are parallel per-step arrays.
+    const actionNames = history.action_names();
+    const extracted = history.extracted_content();
+    actionNames.forEach((name, i) => {
+      steps.push({ step: i + 1, action: name || "step", detail: extracted[i] ?? undefined });
+    });
+
+    let result = history.final_result() || "";
+    if (!result) {
+      // Prefer a step whose extracted content actually looks like an answer
+      // (e.g. an email address, for the lead-harvest use case) over just the
+      // last non-empty one, but fall back to the latter either way.
+      result =
+        [...extracted].reverse().find((c): c is string => c != null && c.includes("@")) ??
+        [...extracted].reverse().find((c): c is string => c != null && c.length > 0) ??
+        "";
     }
-    if (!result) result = String(history ?? "");
 
-    if (Array.isArray(history?.history)) {
-      history.history.forEach((h: any, i: number) => {
-        steps.push({
-          step: i + 1,
-          action: h?.result?.action?.type ?? "step",
-          detail: h?.result?.extracted_content ?? undefined,
-        });
-      });
-    }
-
-    return { ok: true, backend: "browser-use", steps, result: result || "(no result)" };
+    // Only claim success when we have a real answer — otherwise the caller
+    // falls through to the next browse backend instead of a dead end.
+    const usable = result.trim().length > 0;
+    return { ok: usable, backend: "browser-use", steps, result: usable ? result : "" };
   } catch (err) {
     return {
       ok: false,

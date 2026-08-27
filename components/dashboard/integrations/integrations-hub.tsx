@@ -1,6 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Activity,
+  Bell,
+  Blocks,
+  Bot,
+  Brain,
+  BrainCircuit,
+  Clock,
+  FlaskConical,
+  Globe,
+  KeyRound,
+  Mail,
+  MousePointer2,
+  MousePointerClick,
+  Radio,
+  ShieldCheck,
+  UserSearch,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
 import { PageHeader, Section, Surface, StatusBadge, type StatusTone } from "@/components/system";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +31,39 @@ import { ComposioConnections } from "@/components/dashboard/integrations/composi
 import type { IntegrationStatus, IntegrationGroup } from "@/lib/integrations/status";
 
 const GROUP_ORDER: IntegrationGroup[] = ["Agent surfaces", "Connected services"];
+
+// One glanceable icon per card — status.ts stays plain data (it's imported
+// server-side), so the id -> icon mapping lives here on the client instead.
+const ICONS: Record<string, LucideIcon> = {
+  browse: Globe,
+  memory: BrainCircuit,
+  agents: Bot,
+  automations: Workflow,
+  leads: UserSearch,
+  eval: FlaskConical,
+  composio: Blocks,
+  novu: Bell,
+  mem0: Brain,
+  langfuse: Activity,
+  infisical: KeyRound,
+  steel: Globe,
+  windmill: Workflow,
+  temporal: Clock,
+  litellm: Radio,
+  gateway: Radio,
+  stagehand: MousePointer2,
+  browseruse: MousePointerClick,
+  captcha: ShieldCheck,
+};
+
+function IntegrationIcon({ id }: { id: string }) {
+  const Icon = ICONS[id] ?? Mail;
+  return (
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--surface-2)] ring-1 ring-rule">
+      <Icon className="size-4.5 text-ink-muted" />
+    </div>
+  );
+}
 
 function toneFor(enabled: boolean): StatusTone {
   return enabled ? "live" : "neutral";
@@ -147,14 +200,17 @@ export function IntegrationsHub({ statuses }: { statuses: IntegrationStatus[] })
         if (!items.length) return null;
         return (
           <Section key={group} tone="base">
-            <PageHeader eyebrow="Integrations" title={group} />
+            <PageHeader title={group} />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {items.map((item) => (
                 <Surface key={item.id} variant="inset" className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">{item.name}</span>
-                      <span className="font-mono text-[10px] text-foreground/40">{item.repo}</span>
+                    <div className="flex items-start gap-2.5">
+                      <IntegrationIcon id={item.id} />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{item.name}</span>
+                        <span className="font-mono text-[10px] text-foreground/40">{item.repo}</span>
+                      </div>
                     </div>
                     <StatusBadge tone={toneFor(item.enabled)} label={item.enabled ? "live" : "off"} />
                   </div>

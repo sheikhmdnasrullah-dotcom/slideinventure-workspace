@@ -31,12 +31,18 @@ Keep selectors simple. Prefer links/buttons by visible text via :has-text().`;
 
 async function llmAction(task: string, pageState: string): Promise<any> {
   const prompt = `TASK: ${task}\n\nCURRENT PAGE STATE:\n${pageState}\n\nChoose the next action.`;
-  const resp = await chatCompletion([
-    { role: "system", content: ACTION_SYSTEM },
-    { role: "user", content: prompt },
-  ], { temperature: 0.2, json: true });
-
-  const text = (resp.choices?.[0]?.message?.content || "{}").trim();
+  // chatCompletion returns the completion text directly (no OpenAI-style
+  // `.choices[0].message.content` wrapper, and no `json` mode option) — the
+  // ACTION_SYSTEM prompt already instructs JSON-only output.
+  const text = (
+    await chatCompletion(
+      [
+        { role: "system", content: ACTION_SYSTEM },
+        { role: "user", content: prompt },
+      ],
+      { temperature: 0.2 }
+    )
+  ).trim();
   try {
     return JSON.parse(text.replace(/^```json|^```|```$/g, "").trim());
   } catch {
@@ -143,7 +149,9 @@ export async function runBrowseTask(opts: {
 
     for (let i = 1; i <= maxSteps; i++) {
       const captchaSolved = await solveOnPage(page);
-      const content = await page.evaluate(() => document.body.innerText);
+      const content = await page.evaluate(
+        () => (document.body ? document.body.innerText : document.documentElement ? document.documentElement.innerText : "")
+      );
       const state = summarizePage(page, content);
 
       const action = await llmAction(opts.task, state + (captchaSolved ? "\n[CAPTCHA was solved; continue.]" : ""));
@@ -152,41 +160,51 @@ export async function runBrowseTask(opts: {
       if (action.action === "done") {
         finalAnswer = action.answer || "";
         break;
-      } else if (action.action === "goto") {
-        await page.goto(action.url, { timeout: 30000, waitUntil: "domcontentloaded" });
-      } else if (action.action === "click") {
-        await page.click(action.selector, { timeout: 10000 }).catch(() => {});
-      } else if (action.action === "type") {
-        await page.fill(action.selector, action.text || "", { timeout: 10000 }).catch(() => {});
-      } else if (action.action === "submit") {
-        await page.evaluate((sel: string) => {
-          const form = document.querySelector(sel) as HTMLFormElement | null;
-          form?.requestSubmit?.();
-        }, action.selector).catch(() => {});
       } else {
-        steps[steps.length - 1].observation = content.slice(0, 500);
+        try {
+          if (action.action === "goto") {
+            await page.goto(action.url, { timeout: 30000, waitUntil: "domcontentloaded" });
+          } else if (action.action === "click") {
+            await page.click(action.selector, { timeout: 10000 }).catch(() => {});
+          } else if (action.action === "type") {
+            await page.fill(action.selector, action.text || "", { timeout: 10000 }).catch(() => {});
+          } else if (action.action === "submit") {
+            await page.evaluate((sel: string) => {
+              const form = document.querySelector(sel) as HTMLFormElement | null;
+              form?.requestSubmit?.();
+            }, action.selector).catch(() => {});
+          } else {
+            steps[steps.length - 1].observation = content.slice(0, 500);
+          }
+        } catch {
+          // a single failed action shouldn't abort the whole task
+          steps[steps.length - 1].observation = "action failed";
+        }
       }
       await page.waitForTimeout(800);
     }
 
     if (!finalAnswer) {
-      const content = await page.evaluate(() => document.body.innerText);
-      const resp = await chatCompletion([
-        { role: "system", content: "Answer the task using the page content. Be concise." },
-        { role: "user", content: `TASK: ${opts.task}\n\nPAGE:\n${content.slice(0, 5000)}` },
-      ], { temperature: 0.3 });
-      finalAnswer = resp.choices?.[0]?.message?.content || "(no answer)";
+      const content = await page.evaluate(
+        () => (document.body ? document.body.innerText : document.documentElement ? document.documentElement.innerText : "")
+      );
+      finalAnswer = (
+        await chatCompletion([
+          { role: "system", content: "Answer the task using the page content. Be concise." },
+          { role: "user", content: `TASK: ${opts.task}\n\nPAGE:\n${content.slice(0, 5000)}` },
+        ], { temperature: 0.3 })
+      ) || "(no answer)";
     }
 
-    if (opts.userEmail) {
-      await logActivity({
-        userEmail: opts.userEmail,
-        category: "browse",
-        action: "task",
-        description: opts.task,
-        metadata: { steps: steps.length, startUrl: opts.startUrl },
-      }).catch(() => {});
-    }
+    // logActivity derives the user from the current request's session itself
+    // (it doesn't take a userEmail param) — safe to call unconditionally.
+    await logActivity({
+      category: "agents",
+      action: "executed",
+      title: "Browse agent task",
+      description: opts.task,
+      metadata: { steps: steps.length, startUrl: opts.startUrl },
+    }).catch(() => {});
 
     return { ok: true, steps, result: finalAnswer };
   } catch (err) {

@@ -3477,6 +3477,15 @@
           "encrypt": false
         },
         {
+          "key": "cross_section_evidence",
+          "type": "string",
+          "required": false,
+          "array": false,
+          "size": 100000,
+          "default": "[]",
+          "encrypt": false
+        },
+        {
           "key": "filters",
           "type": "string",
           "required": false,

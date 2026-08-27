@@ -176,9 +176,14 @@ export function IntegrationsClient() {
           {filtered.map((integration) => (
             <Card key={integration.id} className="group relative">
               <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-                <div className="space-y-1">
-                  <CardTitle className="text-base">{integration.name}</CardTitle>
-                  <CardDescription>{integration.provider} · {integration.type}</CardDescription>
+                <div className="flex items-start gap-2.5">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted ring-1 ring-border">
+                    <Cable className="size-4.5 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">{integration.name}</CardTitle>
+                    <CardDescription>{integration.provider} · {integration.type}</CardDescription>
+                  </div>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="flex size-8 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100">

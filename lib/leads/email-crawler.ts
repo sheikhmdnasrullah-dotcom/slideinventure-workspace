@@ -52,12 +52,12 @@ export async function crawlEmails(opts: {
     "",
     instructions ? `EXTRA INSTRUCTIONS:\n${instructions}\n` : "",
     "PROCEDURE (start immediately — do not ask for anything, there are no prerequisites):",
-    "1. If a starting link is given, open it. Otherwise run a web search for the prospect's name/company plus \"email\" or \"contact\".",
+    "1. If a starting link is given, open it. If it is a YouTube channel, click the \"About\" tab and read the channel details for a contact/business email. Otherwise run a web search for the prospect's name/company plus \"email\" or \"contact\".",
     "2. Explore the prospect's website, LinkedIn, social profiles, team/about/contact pages, press, and any other public source.",
-    "3. If you hit a CAPTCHA, solve it using the available solver and continue — never stop because of a CAPTCHA.",
+    "3. Look specifically for mailto: links, \"For business inquiries\", \"Contact us\", and visible email text. If you hit a CAPTCHA, solve it using the available solver and continue — never stop because of a CAPTCHA.",
     "4. Collect every plausible email address belonging to this prospect (prefer ones matching their name/company).",
     "5. Return a concise bulleted list, one item per line, formatted exactly as: email — source/context",
-    "Only include real-looking email addresses. Do not invent emails.",
+    "Only include real-looking email addresses that actually appear on the pages you visited. Do not invent emails.",
     preEmails.length
       ? `\nPRE-DISCOVERED CANDIDATE EMAILS (verify they belong to the prospect):\n${preEmails.join(", ")}`
       : "",
@@ -75,8 +75,11 @@ export async function crawlEmails(opts: {
     return { ok: false, emails: [], imported: 0, raw: "", error: res.error };
   }
 
-  const found = [...new Set((res.result.match(EMAIL_RE) || []).map((e) => e.toLowerCase()))];
-  const lines = res.result.split("\n");
+  // Browse backends may return an object in edge cases — coerce to a string so
+  // extraction never throws and the raw payload stays inspectable.
+  const rawResult = typeof res.result === "string" ? res.result : JSON.stringify(res.result ?? "");
+  const found = [...new Set((rawResult.match(EMAIL_RE) || []).map((e) => e.toLowerCase()))];
+  const lines = rawResult.split("\n");
 
   const parsed = found.map((email) => {
     const line = lines.find((l) => l.includes(email)) || "";
@@ -136,5 +139,5 @@ export async function crawlEmails(opts: {
     metadata: { link: link || null, imported, candidates: found.length },
   }).catch(() => {});
 
-  return { ok: true, emails: out, imported, raw: res.result };
+  return { ok: true, emails: out, imported, raw: rawResult };
 }
