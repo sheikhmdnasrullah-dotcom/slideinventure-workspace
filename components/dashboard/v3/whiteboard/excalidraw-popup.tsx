@@ -114,7 +114,7 @@ export default function ExcalidrawPopup() {
       </header>
       <main className="relative flex-1">
         {activeId ? (
-          <Whiteboard initialData={initial ?? "{}"} onChange={handleChange} />
+          <Whiteboard initialData={initial ?? "{}"} onChange={handleChange} onMount={() => {}} />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             Preparing canvas…

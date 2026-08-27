@@ -42,7 +42,48 @@ export default function BlocksuiteEditor({
     let disposed = false;
     let editorEl: any = null;
     let saveTimer: ReturnType<typeof setTimeout> | undefined;
-    let saveFn: (() => void) | undefined;
+    let activeDoc: any = null;
+    let detachListener: (() => void) | undefined;
+    let job: Job | undefined;
+
+    const flushSave = () => {
+      if (!activeDoc || !job) return;
+      try {
+        const snap = job.docToSnapshot(activeDoc) as Record<string, unknown> | undefined;
+        if (snap) onChange?.(snap);
+      } catch {
+        // ignore transient serialization errors
+      }
+    };
+
+    const scheduleSave = () => {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(flushSave, 900);
+    };
+
+    // The autosave listener must always be attached to whichever Doc object
+    // is actually being rendered/edited. Loading a snapshot produces a brand
+    // new Doc instance distinct from any placeholder created earlier — a
+    // previous version of this component attached the listener to a
+    // throwaway blank doc before the snapshot finished restoring, so edits
+    // to a *reopened* board (i.e. the restored doc) never fired it and were
+    // silently lost. Always (re)bind after the real doc is known.
+    const bindActiveDoc = (doc: any) => {
+      detachListener?.();
+      activeDoc = doc;
+      try {
+        const off = doc.slots?.blockUpdated?.on?.(scheduleSave);
+        detachListener = () => {
+          try {
+            off?.();
+          } catch {
+            // ignore
+          }
+        };
+      } catch {
+        detachListener = undefined;
+      }
+    };
 
     (async () => {
       await ensureEffectsRegistered();
@@ -51,36 +92,45 @@ export default function BlocksuiteEditor({
       schema.register(AffineSchemas);
       const collection = new DocCollection({ schema });
       collection.meta.initialize();
-      const job = new Job({ collection });
+      job = new Job({ collection });
 
-      const docId = "doc-" + Math.random().toString(36).slice(2, 10);
-      collection.createDoc({ id: docId });
-      let doc: any = collection.getDoc(docId);
+      // Restore the snapshot FIRST when one exists, rather than bootstrapping
+      // a blank doc and swapping it out afterward — that gap is exactly what
+      // let edits land on the wrong (soon-to-be-discarded) doc.
+      let doc: any = snapshot ? await job.snapshotToDoc(snapshot as any).catch(() => undefined) : undefined;
+
       if (!doc) {
-        await new Promise<void>((resolve) => {
-          const slot = (collection.slots as any)?.docAdded;
-          const dispose = slot?.on?.((id: string) => {
-            if (id === docId) {
-              dispose?.();
-              resolve();
-            }
-          });
-          setTimeout(resolve, 1000);
-        });
+        const docId = "doc-" + Math.random().toString(36).slice(2, 10);
+        collection.createDoc({ id: docId });
         doc = collection.getDoc(docId);
-      }
-      if (!doc) return;
-      doc.load();
-      try {
-        if (!doc.root) {
-          const pageId = doc.addBlock("affine:page", {} as never);
-          if (mode === "edgeless") {
-            doc.addBlock("affine:surface", {} as never, pageId as never);
-          }
-          doc.addBlock("affine:note", {} as never, pageId as never);
+        if (!doc) {
+          await new Promise<void>((resolve) => {
+            const slot = (collection.slots as any)?.docAdded;
+            const dispose = slot?.on?.((id: string) => {
+              if (id === docId) {
+                dispose?.();
+                resolve();
+              }
+            });
+            setTimeout(resolve, 1000);
+          });
+          doc = collection.getDoc(docId);
         }
-      } catch {
-        // editor can still bootstrap content on first edit
+        if (!doc) return;
+        doc.load();
+        try {
+          if (!doc.root) {
+            const pageId = doc.addBlock("affine:page", {} as never);
+            if (mode === "edgeless") {
+              doc.addBlock("affine:surface", {} as never, pageId as never);
+            }
+            doc.addBlock("affine:note", {} as never, pageId as never);
+          }
+        } catch {
+          // editor can still bootstrap content on first edit
+        }
+      } else {
+        doc.load();
       }
 
       if (disposed) return;
@@ -93,41 +143,9 @@ export default function BlocksuiteEditor({
       editor.style.width = "100%";
       container.appendChild(editor);
 
-      saveFn = () => {
-        try {
-          const snap = job.docToSnapshot(doc) as Record<string, unknown> | undefined;
-          if (snap) onChange?.(snap);
-        } catch {
-          // ignore transient serialization errors
-        }
-      };
+      bindActiveDoc(doc);
 
-      const scheduleSave = () => {
-        if (saveTimer) clearTimeout(saveTimer);
-        saveTimer = setTimeout(() => saveFn?.(), 900);
-      };
-
-      // `doc.slots.updated` and `collection.slots.docUpdated` don't exist on
-      // this version's Doc/DocCollection (see @blocksuite/store's doc.js /
-      // collection.js) — the `?.` chaining silently no-op'd instead of
-      // throwing, so autosave never fired on real edits. `blockUpdated` is
-      // the slot that actually emits on every block add/update/delete.
-      try {
-        (doc as any).slots?.blockUpdated?.on?.(scheduleSave);
-      } catch {
-        // slot api differs across versions
-      }
-
-      if (snapshot) {
-        job
-          .snapshotToDoc(snapshot as any)
-          .then((restored: any) => {
-            if (restored && !disposed) editor.doc = restored;
-          })
-          .catch(() => {});
-      }
-
-      const onUnload = () => saveFn?.();
+      const onUnload = () => flushSave();
       window.addEventListener("beforeunload", onUnload);
       editorEl.__cleanup = () => window.removeEventListener("beforeunload", onUnload);
     })();
@@ -135,11 +153,8 @@ export default function BlocksuiteEditor({
     return () => {
       disposed = true;
       if (saveTimer) clearTimeout(saveTimer);
-      try {
-        saveFn?.();
-      } catch {
-        // ignore
-      }
+      flushSave();
+      detachListener?.();
       if (editorEl) {
         try {
           editorEl.__cleanup?.();

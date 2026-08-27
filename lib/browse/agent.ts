@@ -16,6 +16,9 @@ export type BrowseResult = {
   ok: boolean;
   steps: BrowseStep[];
   result: string;
+  // Real text observed on each visited page (used for faithful extraction,
+  // so the caller never has to trust the LLM's free-form answer).
+  pagesText?: string[];
   error?: string;
 };
 
@@ -124,6 +127,7 @@ export async function runBrowseTask(opts: {
   }
 
   const steps: BrowseStep[] = [];
+  const pagesText: string[] = [];
   let browser: Browser | null = null;
   let steel: any = null;
   let page: Page;
@@ -143,7 +147,22 @@ export async function runBrowseTask(opts: {
       });
       page = await context.newPage();
     }
-    await page.goto(opts.startUrl || "https://www.google.com", { timeout: 30000, waitUntil: "domcontentloaded" });
+    // Initial navigation. Heavy sites (YouTube, etc.) can exceed 30s under
+    // headless; give it more time, and if it still fails, fall back to a web
+    // search derived from the task so the agent can still make progress.
+    const startUrl = opts.startUrl || "https://www.google.com";
+    try {
+      await page.goto(startUrl, { timeout: 60000, waitUntil: "domcontentloaded" });
+    } catch {
+      try {
+        await page.goto(
+          `https://www.google.com/search?q=${encodeURIComponent(opts.task.slice(0, 200))}`,
+          { timeout: 30000, waitUntil: "domcontentloaded" }
+        );
+      } catch {
+        // last resort: blank page; the agent loop will decide next actions
+      }
+    }
 
     let finalAnswer = "";
 
@@ -152,6 +171,7 @@ export async function runBrowseTask(opts: {
       const content = await page.evaluate(
         () => (document.body ? document.body.innerText : document.documentElement ? document.documentElement.innerText : "")
       );
+      pagesText.push(content);
       const state = summarizePage(page, content);
 
       const action = await llmAction(opts.task, state + (captchaSolved ? "\n[CAPTCHA was solved; continue.]" : ""));
@@ -188,6 +208,7 @@ export async function runBrowseTask(opts: {
       const content = await page.evaluate(
         () => (document.body ? document.body.innerText : document.documentElement ? document.documentElement.innerText : "")
       );
+      pagesText.push(content);
       finalAnswer = (
         await chatCompletion([
           { role: "system", content: "Answer the task using the page content. Be concise." },
@@ -206,7 +227,7 @@ export async function runBrowseTask(opts: {
       metadata: { steps: steps.length, startUrl: opts.startUrl },
     }).catch(() => {});
 
-    return { ok: true, steps, result: finalAnswer };
+    return { ok: true, steps, result: finalAnswer, pagesText };
   } catch (err) {
     return { ok: false, steps, result: "", error: err instanceof Error ? err.message : "browse failed" };
   } finally {

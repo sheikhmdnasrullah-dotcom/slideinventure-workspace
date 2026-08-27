@@ -52,12 +52,13 @@ export async function crawlEmails(opts: {
     "",
     instructions ? `EXTRA INSTRUCTIONS:\n${instructions}\n` : "",
     "PROCEDURE (start immediately — do not ask for anything, there are no prerequisites):",
-    "1. If a starting link is given, open it. If it is a YouTube channel, click the \"About\" tab and read the channel details for a contact/business email. Otherwise run a web search for the prospect's name/company plus \"email\" or \"contact\".",
-    "2. Explore the prospect's website, LinkedIn, social profiles, team/about/contact pages, press, and any other public source.",
-    "3. Look specifically for mailto: links, \"For business inquiries\", \"Contact us\", and visible email text. If you hit a CAPTCHA, solve it using the available solver and continue — never stop because of a CAPTCHA.",
-    "4. Collect every plausible email address belonging to this prospect (prefer ones matching their name/company).",
-    "5. Return a concise bulleted list, one item per line, formatted exactly as: email — source/context",
-    "Only include real-looking email addresses that actually appear on the pages you visited. Do not invent emails.",
+    "1. If a starting link is given, OPEN IT FIRST. If it is a YouTube channel, click the \"About\" tab (or goto the link with \"/about\" appended) and read every detail for a contact/business/mailto email.",
+    "2. Run a web search: goto https://www.google.com/search?q=<prospect name and company>+\"email\" and open several result links (prefer the official site, press, podcast, or contact pages).",
+    "3. On each visited page, look for mailto: links, \"For business inquiries\", \"Contact\", and visible email text. Also inspect the footer, About, Team, and Press pages.",
+    "4. If you hit a CAPTCHA, solve it using the available solver and continue — never stop because of a CAPTCHA.",
+    "5. Keep exploring until you have checked the YouTube About page AND at least 3 other sources, or you are confident no public email exists.",
+    "6. Return a concise bulleted list, one item per line, formatted exactly as: email — source/context. If you found none, return \"No email found\".",
+    "Only include email addresses that literally appear on a page you visited. Do not invent emails.",
     preEmails.length
       ? `\nPRE-DISCOVERED CANDIDATE EMAILS (verify they belong to the prospect):\n${preEmails.join(", ")}`
       : "",
@@ -78,8 +79,12 @@ export async function crawlEmails(opts: {
   // Browse backends may return an object in edge cases — coerce to a string so
   // extraction never throws and the raw payload stays inspectable.
   const rawResult = typeof res.result === "string" ? res.result : JSON.stringify(res.result ?? "");
-  const found = [...new Set((rawResult.match(EMAIL_RE) || []).map((e) => e.toLowerCase()))];
-  const lines = rawResult.split("\n");
+  // CRITICAL: only trust emails that literally appeared on a page the agent
+  // visited. The LLM's free-form answer can hallucinate addresses from memory,
+  // so we extract from observed page text, not from the model's summary.
+  const observed = res.pagesText && res.pagesText.length ? res.pagesText.join("\n") : rawResult;
+  const found = [...new Set((observed.match(EMAIL_RE) || []).map((e) => e.toLowerCase()))];
+  const lines = observed.split("\n");
 
   const parsed = found.map((email) => {
     const line = lines.find((l) => l.includes(email)) || "";

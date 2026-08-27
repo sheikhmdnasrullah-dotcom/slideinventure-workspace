@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Papa from "papaparse"
-import { FileSpreadsheet, FileUp, UploadCloud, X } from "lucide-react"
+import { FileSpreadsheet, FileUp, UploadCloud } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -33,44 +32,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-
-const FIELD_MAP: Record<string, string> = {
-  "First Name": "first_name",
-  "Last Name": "last_name",
-  "Full Name": "full_name",
-  "Email": "email",
-  "Email Address": "email",
-  "Company": "company",
-  "Organization": "company",
-  "Job Title": "job_title",
-  "Title": "job_title",
-  "Phone": "phone",
-  "Mobile": "phone",
-  "Source": "source",
-  "Status": "status",
-  "Notes": "notes",
-  "Description": "notes",
-  "Tags": "tags",
-}
-
-const FIELD_ALIASES: Record<string, string> = {
-  first_name: "first last given forename",
-  last_name: "last surname family",
-  email: "email e-mail mail",
-  company: "company organization org firm",
-  job_title: "job title position role",
-  phone: "phone telephone mobile cell contact",
-  source: "source origin",
-  status: "status stage",
-  notes: "notes description comments memo",
-  tags: "tags labels categories",
-}
-
-const DUPLICATE_ACTIONS = {
-  skip: "skip",
-  update: "update",
-  create: "create",
-}
+import {
+  DEDICATED_FIELD_OPTIONS,
+  CUSTOM_FIELD_OPTIONS,
+  inferFieldMapping,
+  mapRowToLead,
+  selectValueToTarget,
+  targetToSelectValue,
+  type HeaderMapping,
+} from "@/lib/leads/csv-mapping"
 
 interface CsvImportDialogProps {
   open: boolean
@@ -80,18 +50,16 @@ interface CsvImportDialogProps {
 
 export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDialogProps) {
   const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string[][]>([])
-  const [allRows, setAllRows] = useState<string[][]>([])
   const [headers, setHeaders] = useState<string[]>([])
-  const [mapping, setMapping] = useState<Record<string, string>>({})
+  const [rows, setRows] = useState<Record<string, string>[]>([])
+  const [mapping, setMapping] = useState<HeaderMapping>({})
   const [importing, setImporting] = useState(false)
-  const [totalCount, setTotalCount] = useState(0)
 
   useEffect(() => {
     if (!open) {
       setFile(null)
-      setPreview([])
       setHeaders([])
+      setRows([])
       setMapping({})
     }
   }, [open])
@@ -107,45 +75,23 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
 
     setFile(selected)
 
-    Papa.parse<string[]>(selected, {
-      header: false,
+    // header:true hands back row/column/value already correctly associated
+    // by PapaParse's own (well-tested) CSV parser — quoted commas, ragged
+    // rows, and column order are all handled by the library rather than by
+    // hand-zipping a raw header array against positional row arrays.
+    Papa.parse<Record<string, string>>(selected, {
+      header: true,
       skipEmptyLines: true,
       complete(results) {
-        const rows = results.data as string[][]
-        if (rows.length === 0) {
+        const data = results.data.filter((row) => Object.values(row).some((v) => (v ?? "").toString().trim()))
+        const fields = results.meta.fields ?? []
+        if (fields.length === 0 || data.length === 0) {
           toast.error("CSV file is empty")
           return
         }
-        const h = rows[0]
-        setHeaders(h)
-        // Store all data rows (excluding header) for import, but only preview the first few.
-        const dataRows = rows.slice(1)
-        setAllRows(dataRows)
-        setTotalCount(dataRows.length)
-        setPreview([h, ...dataRows.slice(0, 5)])
-
-        const autoMap: Record<string, string> = {}
-        h.forEach((col) => {
-          const normalized = col.trim().toLowerCase().replace(/[\s_-]+/g, " ")
-          const direct = Object.entries(FIELD_MAP).find(([label]) =>
-            normalized.includes(label.toLowerCase())
-          )
-          if (direct) {
-            autoMap[col] = direct[1]
-            return
-          }
-
-          const scored = Object.entries(FIELD_ALIASES).map(([field, aliases]) => {
-            const hits = aliases.split(" ").filter((alias) => alias && normalized.includes(alias))
-            return { field, score: hits.length, hits }
-          }).filter((x) => x.score > 0)
-            .sort((a, b) => b.score - a.score || a.hits[0].length - b.hits[0].length)
-
-          if (scored[0]) {
-            autoMap[col] = scored[0].field
-          }
-        })
-        setMapping(autoMap)
+        setHeaders(fields)
+        setRows(data)
+        setMapping(inferFieldMapping(fields))
       },
       error() {
         toast.error("Failed to parse CSV file")
@@ -153,36 +99,11 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
     })
   }, [])
 
-  
-
   const mappedLeads = useMemo(() => {
-    if (allRows.length === 0) return []
-    const result: Record<string, unknown>[] = []
-    for (let i = 0; i < allRows.length; i++) {
-      const row: Record<string, unknown> = {}
-      const customFields: Record<string, unknown> = {}
-      let hasCustom = false
-      headers.forEach((header, index) => {
-        const field = mapping[header]
-        const value = (allRows[i][index] ?? "").toString().trim()
-        if (!value) return
-        if (field && field !== "ignore" && field !== "custom") {
-          if (field === "tags") {
-            row[field] = value ? value.split(",").map((s) => s.trim()) : []
-          } else {
-            row[field] = value
-          }
-        } else {
-          // Unmapped or explicitly "custom" -> preserve every column in custom_fields
-          customFields[header] = value
-          hasCustom = true
-        }
-      })
-      if (hasCustom) row.custom_fields = customFields
-      result.push(row)
-    }
-    return result
-  }, [allRows, mapping, headers])
+    return rows.map((row) => mapRowToLead(row, mapping))
+  }, [rows, mapping])
+
+  const totalCount = rows.length
 
   const handleImport = async () => {
     if (!file || mappedLeads.length === 0) {
@@ -203,7 +124,9 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
         throw new Error(err.error || "Import failed")
       }
 
-      toast.success(`Imported ${totalCount} leads`)
+      const json = await res.json().catch(() => ({}))
+      const imported = typeof json.imported === "number" ? json.imported : totalCount
+      toast.success(`Imported ${imported} of ${totalCount} leads`)
       onImported()
       onOpenChange(false)
     } catch (err) {
@@ -219,12 +142,11 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
         <DialogHeader>
           <DialogTitle>Import Leads from CSV</DialogTitle>
           <DialogDescription>
-            Upload a CSV file, map the columns, and preview the data before importing.
+            Upload a CSV file. Columns are matched to lead fields automatically — review or correct the mapping below before importing.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          {/* Modern File Upload Section */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">CSV File</Label>
             <div className="relative">
@@ -286,71 +208,65 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
                   <div key={header} className="flex flex-col gap-1.5">
                     <Label className="text-xs text-muted-foreground">{header}</Label>
                     <Select
-                      value={mapping[header] || ""}
+                      value={targetToSelectValue(mapping[header] ?? { kind: "unmapped" })}
                       onValueChange={(value) => {
-                        if (value) {
-                          setMapping((prev) => ({ ...prev, [header]: value }))
-                        }
+                        if (!value) return
+                        setMapping((prev) => ({ ...prev, [header]: selectValueToTarget(value) }))
                       }}
                     >
                       <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Map to..." />
+                        <SelectValue placeholder="Keep as custom field" />
                       </SelectTrigger>
-                       <SelectContent>
-                          <SelectItem value="ignore">Skip</SelectItem>
-                          <SelectItem value="custom">Keep as custom field</SelectItem>
-                          <SelectItem value="first_name">Name / First Name</SelectItem>
-                          <SelectItem value="last_name">Last Name</SelectItem>
-                          <SelectItem value="email">Email</SelectItem>
-                         <SelectItem value="company">Company</SelectItem>
-                         <SelectItem value="job_title">Job Title</SelectItem>
-                         <SelectItem value="phone">Phone</SelectItem>
-                         <SelectItem value="source">Source</SelectItem>
-                         <SelectItem value="status">Status</SelectItem>
-                         <SelectItem value="notes">Notes</SelectItem>
-                         <SelectItem value="tags">Tags</SelectItem>
-                       </SelectContent>
+                      <SelectContent>
+                        <SelectItem value="ignore">Skip this column</SelectItem>
+                        {DEDICATED_FIELD_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                        {CUSTOM_FIELD_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={`custom:${opt.value}`}>
+                            {opt.label} (custom field)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
                 ))}
               </div>
 
-              {preview.length > 1 && (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">
-                      Preview
-                    </Label>
-                    <Badge variant="secondary" className="text-xs">
-                      {totalCount} {totalCount === 1 ? "lead" : "leads"} to import
-                    </Badge>
-                  </div>
-                  <div className="overflow-hidden rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Preview (first 5 rows)</Label>
+                  <Badge variant="secondary" className="text-xs">
+                    {totalCount} {totalCount === 1 ? "lead" : "leads"} to import
+                  </Badge>
+                </div>
+                <div className="overflow-hidden rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {headers.map((h) => (
+                          <TableHead key={h} className="text-xs">
+                            {h}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.slice(0, 5).map((row, idx) => (
+                        <TableRow key={idx}>
                           {headers.map((h) => (
-                            <TableHead key={h} className="text-xs">
-                              {h}
-                            </TableHead>
+                            <TableCell key={h} className="text-xs">
+                              {row[h]}
+                            </TableCell>
                           ))}
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {preview.slice(1).map((row, idx) => (
-                          <TableRow key={idx}>
-                            {row.map((cell, cellIdx) => (
-                              <TableCell key={cellIdx} className="text-xs">
-                                {cell}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              )}
+              </div>
             </>
           )}
         </div>

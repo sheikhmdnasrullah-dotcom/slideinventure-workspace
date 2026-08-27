@@ -16,6 +16,8 @@ import {
   Sparkles,
   Terminal,
   Vault,
+  Workflow,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react"
 
@@ -38,6 +40,8 @@ export type DashboardSectionId =
   | "vault"
   | "settings"
   | "email-crawler"
+  | "agent-canvas"
+  | "analytics"
 
 export type DashboardSectionChild = {
   id: string
@@ -99,6 +103,24 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
     children: [
       { id: "email-crawler-run", label: "Find emails", route: "/email-crawler" },
       { id: "email-crawler-verify", label: "Verify Leads", route: "/leads/verify", icon: ShieldCheck },
+    ],
+  },
+  {
+    id: "agent-canvas",
+    label: "Agent Canvas",
+    route: "/agent-canvas",
+    icon: Workflow,
+    children: [
+      { id: "agent-canvas-run", label: "Pipeline", route: "/agent-canvas" },
+    ],
+  },
+  {
+    id: "analytics",
+    label: "Analytics",
+    route: "/analytics",
+    icon: BarChart3,
+    children: [
+      { id: "analytics-bento", label: "Live Metrics", route: "/analytics" },
     ],
   },
 ]

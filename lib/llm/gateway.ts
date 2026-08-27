@@ -41,6 +41,8 @@ function buildProviders(opts: ChatOptions): Provider[] {
   const providers: Provider[] = [];
   const nvidiaKey = process.env.NVIDIA_API_KEY;
   const openrouterKey = process.env.OPENROUTER_API_KEY;
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
+  const deepseekModel = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
   // LiteLLM is the preferred routing/key-management layer when configured
   // (BerriAI/litellm): all model traffic flows through it for token savings,
@@ -55,6 +57,17 @@ function buildProviders(opts: ChatOptions): Provider[] {
     });
   }
 
+  // DeepSeek (dedicated key) — strong reasoning model for the multi-agent
+  // workflows. Used alongside NVIDIA: preferred here, NVIDIA/OpenRouter are the
+  // fallbacks if DeepSeek is unavailable.
+  if (deepseekKey) {
+    providers.push({
+      url: "https://api.deepseek.com/v1",
+      key: deepseekKey,
+      model: opts.model ?? deepseekModel,
+    });
+  }
+
   if (nvidiaKey) {
     providers.push({
       url: "https://integrate.api.nvidia.com/v1",
@@ -66,7 +79,7 @@ function buildProviders(opts: ChatOptions): Provider[] {
     providers.push({
       url: "https://openrouter.ai/api/v1",
       key: openrouterKey,
-      model: opts.model ?? opts.fallbackModel ?? OPENROUTER_DEFAULT_MODEL,
+      model: opts.model ?? OPENROUTER_DEFAULT_MODEL,
     });
   }
   return providers;

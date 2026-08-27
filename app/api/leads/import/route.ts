@@ -45,15 +45,41 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString()
 
-    const emails = leadsToImport
-      .map((lead) => String(lead.email ?? lead.name ?? lead.full_name ?? ""))
-      .filter((email): email is string => email !== "")
+    const emails = [
+      ...new Set(
+        leadsToImport
+          .map((lead) => String(lead.email ?? lead.name ?? lead.full_name ?? ""))
+          .filter((email): email is string => email !== "")
+      ),
+    ]
+
+    // Appwrite rejects a Query.equal array value over 100 entries AND the
+    // serialized query string over 4096 chars — a CSV with more than ~100
+    // distinct emails (exactly the "100+ leads" case this importer needs to
+    // handle) made every import fail outright, and with real-length emails
+    // even 100-per-batch can blow the 4096-char cap. Batch by both.
+    const EMAIL_QUERY_MAX_ITEMS = 100
+    const EMAIL_QUERY_MAX_CHARS = 3500 // margin under Appwrite's 4096 cap for JSON/query overhead
+    const emailBatches: string[][] = []
+    let current: string[] = []
+    let currentChars = 0
+    for (const email of emails) {
+      const cost = email.length + 3 // quotes + comma
+      if (current.length >= EMAIL_QUERY_MAX_ITEMS || (current.length > 0 && currentChars + cost > EMAIL_QUERY_MAX_CHARS)) {
+        emailBatches.push(current)
+        current = []
+        currentChars = 0
+      }
+      current.push(email)
+      currentChars += cost
+    }
+    if (current.length > 0) emailBatches.push(current)
 
     const existingLeads: Record<string, string> = {} // email -> $id mapping
-    if (emails.length > 0) {
+    for (const batch of emailBatches) {
       const res = await databases.listDocuments(DB, COL, [
-        Query.equal("email", emails),
-        Query.limit(1000),
+        Query.equal("email", batch),
+        Query.limit(EMAIL_QUERY_MAX_ITEMS),
       ])
       for (const doc of res.documents) {
         const emailKey = String(doc.email ?? "").toLowerCase()
@@ -65,6 +91,14 @@ export async function POST(request: Request) {
 
     const toCreate: Array<Record<string, unknown>> = []
     const toUpdate: Array<{ id: string; row: Record<string, unknown> }> = []
+    // Tracks emails not yet in the DB but already queued in this batch —
+    // without this, two rows sharing an email (a real "verify duplicate
+    // handling" case, not just re-imports of an existing lead) both looked
+    // up against the same pre-import snapshot and both created, producing
+    // two leads with the same email instead of the second updating the
+    // first.
+    const pendingCreateIndexByEmail: Record<string, number> = {}
+    const updateIndexByEmail: Record<string, number> = {}
 
     for (const lead of leadsToImport) {
       const email = String(lead.email ?? lead.name ?? lead.full_name ?? "").toLowerCase()
@@ -87,24 +121,44 @@ export async function POST(request: Request) {
 
       const existingId = existingLeads[email]
       if (existingId) {
-        toUpdate.push({ id: existingId, row })
+        // A later row for the same already-existing lead overwrites the
+        // earlier queued update rather than issuing two updateDocument
+        // calls (the last row in the CSV wins, matching "last value wins"
+        // for any other in-batch duplicate).
+        if (email && email in updateIndexByEmail) {
+          toUpdate[updateIndexByEmail[email]] = { id: existingId, row }
+        } else {
+          if (email) updateIndexByEmail[email] = toUpdate.length
+          toUpdate.push({ id: existingId, row })
+        }
+      } else if (email && email in pendingCreateIndexByEmail) {
+        toCreate[pendingCreateIndexByEmail[email]] = { ...row, created_at: now }
       } else {
         row.created_at = now
+        if (email) pendingCreateIndexByEmail[email] = toCreate.length
         toCreate.push(row)
       }
     }
 
-    if (toCreate.length > 0) {
-      for (const row of toCreate) {
-        await databases.createDocument(DB, COL, ID.unique(), row)
+    // A 121-row import took 114s running one createDocument/updateDocument
+    // call at a time in sequence — well past what a Vercel serverless
+    // function is given, so any realistically-sized ("100+ leads") import
+    // would time out and fail outright in production. Run a bounded number
+    // of writes in flight at once instead of fully serializing them.
+    const WRITE_CONCURRENCY = 10
+    async function runPooled<T>(items: T[], worker: (item: T) => Promise<void>) {
+      let cursor = 0
+      async function next(): Promise<void> {
+        const i = cursor++
+        if (i >= items.length) return
+        await worker(items[i])
+        return next()
       }
+      await Promise.all(Array.from({ length: Math.min(WRITE_CONCURRENCY, items.length) }, next))
     }
 
-    if (toUpdate.length > 0) {
-      for (const { id, row } of toUpdate) {
-        await databases.updateDocument(DB, COL, id, row)
-      }
-    }
+    await runPooled(toCreate, (row) => databases.createDocument(DB, COL, ID.unique(), row).then(() => {}))
+    await runPooled(toUpdate, ({ id, row }) => databases.updateDocument(DB, COL, id, row).then(() => {}))
 
     const imported = toCreate.length + toUpdate.length
     logActivity({
