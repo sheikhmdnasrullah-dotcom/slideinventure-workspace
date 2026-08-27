@@ -110,7 +110,7 @@ function TemporalControl() {
       <Button onClick={start} disabled={busy || !task.trim()} size="sm">
         {busy ? "Starting…" : "Start workflow"}
       </Button>
-      {out && <pre className="max-h-40 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs">{out}</pre>}
+      {out && <pre className="max-h-40 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs" data-lenis-prevent>{out}</pre>}
     </div>
   );
 }
@@ -135,7 +135,7 @@ function NovuControl() {
       <Button onClick={send} disabled={busy} size="sm">
         {busy ? "Sending…" : "Send test notification"}
       </Button>
-      {out && <pre className="max-h-32 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs">{out}</pre>}
+      {out && <pre className="max-h-32 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs" data-lenis-prevent>{out}</pre>}
     </div>
   );
 }
@@ -160,7 +160,7 @@ function Mem0Control() {
       <Button onClick={test} disabled={busy} size="sm">
         {busy ? "Testing…" : "Test remember / recall"}
       </Button>
-      {out && <pre className="max-h-32 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs">{out}</pre>}
+      {out && <pre className="max-h-32 overflow-auto rounded-md bg-[var(--surface-2)] p-2 text-xs" data-lenis-prevent>{out}</pre>}
     </div>
   );
 }

@@ -76,7 +76,7 @@ export function AgentRunSheet({
               <SheetDescription>{agent.description}</SheetDescription>
             </SheetHeader>
 
-            <div className="flex-1 overflow-y-auto px-4 space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 space-y-3" data-lenis-prevent>
               {messages.length === 0 && (
                 <p className="font-body text-sm text-ink-faint">
                   Send a message to work with this agent. It responds in-character using its

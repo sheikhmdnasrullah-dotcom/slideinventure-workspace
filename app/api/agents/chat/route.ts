@@ -1,10 +1,19 @@
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
-import { nvidiaComplete } from "@/lib/llm/nvidia";
 import { getAgentPrompt } from "@/lib/agents/roster";
 import { runMastraAgent } from "@/lib/agents/mastra";
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateText } from "ai";
 import { NextRequest } from "next/server";
+
+// Agents are powered by DeepSeek (OpenAI-compatible) to match the rest of the
+// dashboard's agent fleet. NVIDIA remains available via runMastraAgent's own
+// fallback and the gateway.
+const deepseek = createOpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY ?? process.env.OPENROUTER_API_KEY ?? "",
+  baseURL: "https://api.deepseek.com/v1",
+});
 
 /**
  * Stateless chat with one installed agent persona (`.claude/agents/<slug>.md`
@@ -57,7 +66,10 @@ export async function POST(request: NextRequest) {
   ];
 
   try {
-    const answer = await nvidiaComplete(messages);
+    const { text: answer } = await generateText({
+      model: deepseek(process.env.DEEPSEEK_MODEL || "deepseek-chat"),
+      messages,
+    });
     return Response.json({ answer, agent: agent.name });
   } catch (err) {
     return ApiError.internal("AGENT_CHAT_FAILED", err instanceof Error ? err.message : "Agent chat failed").toResponse();
