@@ -20,11 +20,9 @@ import {
   Mail,
   MessageSquare,
   NotebookPen,
-  Plus,
   RefreshCw,
   Rocket,
   Search,
-  Send,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -33,8 +31,18 @@ import {
   Users,
   Workflow,
 } from "lucide-react";
+import { toast } from "sonner";
 import { commandMenuStore, useCommandMenu } from "@/lib/command-menu-store";
+import { useLiveRefresh } from "@/components/providers/event-stream";
 import { cn } from "@/lib/utils";
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+} from "@/components/ui/command";
 
 type CmdEntry = {
   id: string;
@@ -52,7 +60,6 @@ type SearchResult = {
   title: string;
   subtitle: string;
   href: string;
-  updatedAt: string;
 };
 
 const NAV_ENTRIES: Omit<CmdEntry, "run">[] = [
@@ -97,11 +104,9 @@ const SECTION_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   todoist: Workflow,
   notes: NotebookPen,
   chat: MessageSquare,
+  dashboard: LayoutDashboard,
 };
 
-// Same categories the Activity page (components/dashboard/activity-feed.tsx)
-// filters on, kept in sync manually since they're two small, independent
-// lookup tables rather than a shared import worth the coupling.
 const RECENT_CATEGORY_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
   knowledge: BookOpen,
   leads: Users,
@@ -116,6 +121,7 @@ const RECENT_CATEGORY_ICON: Record<string, React.ComponentType<{ className?: str
   concepts: Rocket,
   brainstorm: Lightbulb,
   agents: Bot,
+  dashboard: LayoutDashboard,
 };
 
 const RECENT_CATEGORY_ROUTE: Record<string, string> = {
@@ -132,12 +138,14 @@ const RECENT_CATEGORY_ROUTE: Record<string, string> = {
   concepts: "/concepts",
   brainstorm: "/brainstorm-sketch",
   agents: "/agents",
+  dashboard: "/dashboard",
 };
 
 type RecentActivity = { id: string; title: string; category: string };
 
 export function CommandMenu() {
   const open = useCommandMenu((s) => s.open);
+  const pathname = usePathname();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -150,16 +158,28 @@ export function CommandMenu() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (!open) return null;
-  return <CommandMenuInner />;
+  useEffect(() => {
+    if (open) commandMenuStore.close();
+  }, [pathname, open]);
+
+  return (
+    <CommandDialog
+      open={open}
+      onOpenChange={(o) => (o ? commandMenuStore.open() : commandMenuStore.close())}
+      shouldFilter={false}
+    >
+      <CommandMenuBody />
+    </CommandDialog>
+  );
 }
 
-async function createAndGo(
+async function createAndToast(
   router: ReturnType<typeof useRouter>,
   api: string,
   body: Record<string, unknown>,
   idPath: (d: any) => string | undefined,
-  fallback: string
+  fallback: string,
+  successMsg: string
 ) {
   try {
     const res = await fetch(api, {
@@ -169,65 +189,75 @@ async function createAndGo(
     });
     const data = await res.json().catch(() => ({}));
     const id = idPath(data);
+    toast.success(successMsg);
     router.push(id ? `${fallback}?id=${encodeURIComponent(id)}` : fallback);
   } catch {
+    toast.error("Could not complete that action");
     router.push(fallback);
   }
 }
 
-function CommandMenuInner() {
+function CommandMenuBody() {
   const router = useRouter();
-  const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
   const [recent, setRecent] = useState<RecentActivity[]>([]);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    const t = setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
-  // "Open recent items": pulled once per open from the same activities
-  // feed the Activity page reads, so this needs no extra API surface.
-  useEffect(() => {
-    fetch("/api/activities?limit=6")
-      .then((res) => res.json())
-      .then((data) => setRecent(Array.isArray(data.activities) ? data.activities : []))
-      .catch(() => setRecent([]));
-  }, []);
+  const loadRecent = useMemo(
+    () => () => {
+      fetch("/api/activities?limit=6")
+        .then((res) => res.json())
+        .then((data) =>
+          setRecent(Array.isArray(data.activities) ? data.activities : [])
+        )
+        .catch(() => setRecent([]));
+    },
+    []
+  );
 
   useEffect(() => {
-    if (inputRef.current && document.activeElement !== inputRef.current) {
-      commandMenuStore.close();
-    }
-  }, [pathname]);
+    loadRecent();
+  }, [loadRecent]);
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") commandMenuStore.close();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  useLiveRefresh(loadRecent);
 
-  // Debounced global search across every section.
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
       setResults([]);
+      setSearching(false);
       return;
     }
+    setSearching(true);
+    const controller = new AbortController();
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(q)}`,
+          { signal: controller.signal }
+        );
         const json = await res.json();
         setResults(Array.isArray(json.results) ? json.results : []);
-      } catch {
-        setResults([]);
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") setResults([]);
+      } finally {
+        setSearching(false);
       }
-    }, 250);
-    return () => clearTimeout(t);
+    }, 180);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
   }, [query]);
 
   const navEntries = useMemo<CmdEntry[]>(
@@ -243,7 +273,15 @@ function CommandMenuInner() {
         hint: "blank workspace",
         group: "Create",
         icon: Beaker,
-        run: () => createAndGo(router, "/api/affine", { section: "research" }, (d) => d.workspace?.id, "/research-lab"),
+        run: () =>
+          createAndToast(
+            router,
+            "/api/affine",
+            { section: "research" },
+            (d) => d.workspace?.id,
+            "/research-lab",
+            "Research workspace created"
+          ),
       },
       {
         id: "create-board",
@@ -251,7 +289,47 @@ function CommandMenuInner() {
         hint: "brainstorm canvas",
         group: "Create",
         icon: Lightbulb,
-        run: () => createAndGo(router, "/api/boards", { title: "Untitled Board", scope: "global" }, (d) => d.board?.id, "/brainstorm-sketch"),
+        run: () =>
+          createAndToast(
+            router,
+            "/api/boards",
+            { title: "Untitled Board", scope: "global" },
+            (d) => d.board?.id,
+            "/brainstorm-sketch",
+            "Board created"
+          ),
+      },
+      {
+        id: "create-idea-map",
+        label: "New idea map",
+        hint: "mind map canvas",
+        group: "Create",
+        icon: Lightbulb,
+        run: () =>
+          createAndToast(
+            router,
+            "/api/idea-maps",
+            {},
+            (d) => d.map?.id,
+            "/brainstorm-sketch",
+            "Idea map created"
+          ),
+      },
+      {
+        id: "create-brainstorm-board",
+        label: "New brainstorm board",
+        hint: "brainstorm canvas",
+        group: "Create",
+        icon: Lightbulb,
+        run: () =>
+          createAndToast(
+            router,
+            "/api/boards",
+            { title: "Untitled Board", scope: "brainstorm" },
+            (d) => d.board?.id,
+            "/brainstorm-sketch",
+            "Brainstorm board created"
+          ),
       },
       { id: "create-note", label: "New Note", hint: "open editor", group: "Create", icon: NotebookPen, run: () => router.push("/notepad?new=1") },
       { id: "create-lead", label: "New Lead", hint: "open form", group: "Create", icon: Users, run: () => router.push("/leads?new=1") },
@@ -265,6 +343,22 @@ function CommandMenuInner() {
 
   const actionEntries = useMemo<CmdEntry[]>(
     () => [
+      {
+        id: "act-open-terminal",
+        label: "Open terminal",
+        hint: "/terminal",
+        group: "Actions",
+        icon: Terminal,
+        run: () => router.push("/terminal"),
+      },
+      {
+        id: "act-start-agent",
+        label: "Start agent",
+        hint: "/agents",
+        group: "Actions",
+        icon: Bot,
+        run: () => router.push("/agents"),
+      },
       {
         id: "act-sync",
         label: "Sync knowledge base",
@@ -282,7 +376,7 @@ function CommandMenuInner() {
       results.map((r) => ({
         id: `res-${r.type}-${r.id}`,
         label: r.title,
-        hint: r.subtitle ? `${r.label} · ${r.subtitle}` : r.label,
+        hint: r.subtitle ? `${r.label} ${r.subtitle}` : r.label,
         group: "Results" as const,
         icon: SECTION_ICONS[r.type] ?? Search,
         run: () => router.push(r.href),
@@ -303,145 +397,158 @@ function CommandMenuInner() {
     [recent, router]
   );
 
-  const filtered = useMemo<CmdEntry[]>(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [...recentEntries, ...createEntries, ...navEntries, ...actionEntries];
-    const local = [...createEntries, ...navEntries, ...actionEntries].filter(
-      (e) =>
-        e.label.toLowerCase().includes(q) ||
-        e.hint?.toLowerCase().includes(q) ||
-        e.group.toLowerCase().includes(q)
-    );
-    return [...searchEntries, ...local];
-  }, [query, searchEntries, recentEntries, createEntries, navEntries, actionEntries]);
+  const q = query.trim().toLowerCase();
+  const matches = (e: CmdEntry) =>
+    !q ||
+    e.label.toLowerCase().includes(q) ||
+    e.hint?.toLowerCase().includes(q) ||
+    e.group.toLowerCase().includes(q);
 
-  const safeActive = Math.min(active, Math.max(0, filtered.length - 1));
+  const nav = navEntries.filter(matches);
+  const create = createEntries.filter(matches);
+  const actions = actionEntries.filter(matches);
+  const recentShown = !q ? recentEntries : [];
 
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActive((i) => Math.min(i + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      filtered[safeActive]?.run();
-    }
-  }
-
-  const grouped = filtered.reduce<Record<string, CmdEntry[]>>((acc, e) => {
-    (acc[e.group] ||= []).push(e);
-    return acc;
-  }, {});
-  const groupOrder: CmdEntry["group"][] = ["Results", "Recent", "Create", "Navigate", "Actions"];
-  let flatIndex = -1;
+  const hasStatic = nav.length > 0 || create.length > 0 || actions.length > 0;
+  const showEmpty = q.length >= 2 && !searching && results.length === 0 && !hasStatic;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-[var(--scrim)] px-4 pt-[12vh] backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Command menu"
-      onClick={() => commandMenuStore.close()}
-    >
-      <div
-        className="flex w-full max-w-xl flex-col overflow-hidden rounded-md border border-rule-strong bg-popover shadow-overlay"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-2 border-b border-rule px-4">
-          <Sparkles className="size-4 shrink-0 text-flame" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Search everything · create · navigate · run…"
-            className="h-12 flex-1 bg-transparent font-body text-base text-ink-strong outline-none placeholder:text-ink-faint"
-            aria-label="Command input"
-            aria-controls="command-list"
-            aria-activedescendant={filtered[active] ? `cmd-${filtered[active].id}` : undefined}
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <kbd className="hidden h-5 items-center rounded-xs border border-rule bg-[var(--surface-2)] px-1 font-mono text-[10px] text-ink-faint sm:inline-flex">
-            ESC
-          </kbd>
-        </div>
+    <>
+      <CommandInput
+        ref={inputRef}
+        value={query}
+        onValueChange={setQuery}
+        placeholder="Search the workspace"
+      />
+      <CommandList>
+        {showEmpty && (
+          <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+            No results found.
+          </div>
+        )}
 
-        <div id="command-list" className="max-h-[60vh] overflow-y-auto p-2">
-          {filtered.length === 0 ? (
-            <p className="px-3 py-6 text-center font-body text-sm text-ink-muted">
-              No matches for &ldquo;{query}&rdquo;.
-              {query.length > 2 && (
-                <span className="mt-1 block text-xs text-ink-faint">
-                  Try a page name, a section, or a term to search across all modules.
+        {searching && q.length >= 2 && (
+          <CommandGroup heading="Results">
+            <CommandItem disabled value="__searching__">
+              <Search className="size-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Searching</span>
+            </CommandItem>
+          </CommandGroup>
+        )}
+
+        {results.length > 0 && (
+          <CommandGroup heading="Results">
+            {searchEntries.map((entry) => (
+              <CommandItem
+                key={entry.id}
+                value={entry.id}
+                onSelect={entry.run}
+              >
+                <entry.icon
+                  className={cn(
+                    "size-4 shrink-0",
+                    "text-muted-foreground"
+                  )}
+                />
+                <span className="flex-1">{entry.label}</span>
+                {entry.hint && (
+                  <span className="text-xs text-muted-foreground">
+                    {entry.hint}
+                  </span>
+                )}
+                <ArrowRight className="size-3 shrink-0 text-muted-foreground" />
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {recentShown.length > 0 && (
+          <CommandGroup heading="Recent">
+            {recentShown.map((entry) => (
+              <CommandItem
+                key={entry.id}
+                value={entry.id}
+                onSelect={entry.run}
+              >
+                <entry.icon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="flex-1">{entry.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  {entry.hint}
                 </span>
-              )}
-            </p>
-          ) : (
-            groupOrder.map((group) =>
-              grouped[group]?.length ? (
-                <div key={group} className="mb-1">
-                  <div className="flex items-center gap-2 px-2 py-1 font-label text-ink-faint">
-                    {group === "Create" && <Plus className="size-3" />}
-                    {group === "Results" && <Search className="size-3" />}
-                    {group === "Recent" && <Activity className="size-3" />}
-                    {group}
-                  </div>
-                  {grouped[group].map((entry) => {
-                    flatIndex += 1;
-                    const idx = flatIndex;
-                    const isActive = idx === safeActive;
-                    return (
-                      <button
-                        key={entry.id}
-                        id={`cmd-${entry.id}`}
-                        type="button"
-                        role="option"
-                        aria-selected={isActive}
-                        onMouseEnter={() => setActive(idx)}
-                        onClick={entry.run}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left transition-colors",
-                          isActive
-                            ? "bg-[var(--accent-wash)] text-ink-strong"
-                            : "text-ink-default hover:bg-[var(--surface-2)]"
-                        )}
-                      >
-                        <entry.icon
-                          className={cn(
-                            "size-4 shrink-0",
-                            isActive ? "text-flame" : "text-ink-faint"
-                          )}
-                        />
-                        <span className="flex-1 font-body text-sm">{entry.label}</span>
-                        {entry.hint && (
-                          <span className="font-label tabular-nums text-ink-faint">
-                            {entry.hint}
-                          </span>
-                        )}
-                        {group === "Results" && (
-                          <ArrowRight className="size-3 shrink-0 text-ink-faint" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null
-            )
-          )}
-        </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
 
-        <div className="flex items-center justify-between border-t border-rule px-3 py-2 font-label text-ink-faint">
-          <span className="normal-case">
-            <span className="text-flame">↵</span> open ·{" "}
-            <span className="text-flame">↑↓</span> move ·{" "}
-            <span className="text-flame">esc</span> close
-          </span>
-          <span className="normal-case">SlideIn Venture OS</span>
-        </div>
+        {create.length > 0 && (
+          <CommandGroup heading="Create">
+            {create.map((entry) => (
+              <CommandItem
+                key={entry.id}
+                value={entry.id}
+                onSelect={entry.run}
+              >
+                <entry.icon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="flex-1">{entry.label}</span>
+                {entry.hint && (
+                  <span className="text-xs text-muted-foreground">
+                    {entry.hint}
+                  </span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {nav.length > 0 && (
+          <CommandGroup heading="Navigate">
+            {nav.map((entry) => (
+              <CommandItem
+                key={entry.id}
+                value={entry.id}
+                onSelect={entry.run}
+              >
+                <entry.icon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="flex-1">{entry.label}</span>
+                {entry.hint && (
+                  <CommandShortcut>{entry.hint}</CommandShortcut>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {actions.length > 0 && (
+          <CommandGroup heading="Actions">
+            {actions.map((entry) => (
+              <CommandItem
+                key={entry.id}
+                value={entry.id}
+                onSelect={entry.run}
+              >
+                <entry.icon className="size-4 shrink-0 text-muted-foreground" />
+                <span className="flex-1">{entry.label}</span>
+                {entry.hint && (
+                  <span className="text-xs text-muted-foreground">
+                    {entry.hint}
+                  </span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+      </CommandList>
+
+      <div className="flex items-center justify-between border-t border-border px-3 py-2 font-label text-xs text-muted-foreground">
+        <span className="flex items-center gap-3">
+          <span>Enter to open</span>
+          <span>Esc to close</span>
+        </span>
+        <span className="flex items-center gap-2">
+          <Sparkles className="size-3 text-flame" />
+          <span>Command palette</span>
+        </span>
       </div>
-    </div>
+    </>
   );
 }

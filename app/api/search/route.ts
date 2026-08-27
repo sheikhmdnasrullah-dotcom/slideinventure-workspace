@@ -33,6 +33,9 @@ const SECTIONS: SectionDef[] = [
   { type: "terminal", collection: APPWRITE.collections.terminalCommands, titleFields: ["command", "description"], subtitleFields: ["category"], route: "/terminal", orderBy: "created_at", label: "Terminal" },
   { type: "todoist", collection: APPWRITE.collections.todoistTasks, titleFields: ["title", "content"], subtitleFields: ["project"], route: "/todoist", orderBy: "updated_at", label: "Todoist" },
   { type: "notes", collection: APPWRITE.collections.notes, titleFields: ["title"], subtitleFields: ["updated_at"], route: "/notepad", orderBy: "updated_at", label: "Note" },
+  // The Command Center (dashboard) surfaces this same activity feed, so
+  // searching it lets users jump straight to what the dashboard shows.
+  { type: "dashboard", collection: APPWRITE.collections.activities, titleFields: ["title"], subtitleFields: ["category"], route: "/dashboard", orderBy: "timestamp", label: "Dashboard" },
 ];
 
 function pick(doc: any, fields: string[]): string {

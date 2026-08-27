@@ -6,7 +6,7 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { logActivity } from "@/lib/activities/client";
-import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
+import { BOARD_SCOPE_ACTIVITY, normalizeBoardScope } from "@/lib/boards/scope";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;
@@ -47,7 +47,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   try {
     const doc = await fetchOwned(id, user.email ?? "");
     if (!doc) return ApiError.notFound().toResponse();
-    return Response.json({ board: serialize(doc) });
+    return Response.json({ map: serialize(doc) });
   } catch (error) {
     return toJson(error);
   }
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
-  const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000, identifier: `boards-update:${user.id}` });
+  const limit = checkRateLimit(request, { limit: 30, windowMs: 60_000, identifier: `idea-maps-update:${user.id}` });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const { id } = await params;
@@ -74,19 +74,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const updated = await databases.updateDocument(DB, COL, id, update);
 
-    const scope = normalizeBoardScope((doc as BoardDoc).scope);
-    const { category, label } = BOARD_SCOPE_ACTIVITY[scope];
+    const scopeKey = normalizeBoardScope((doc as BoardDoc).scope ?? "ideas");
+    const { category, label } = BOARD_SCOPE_ACTIVITY[scopeKey];
+    const changedTitle = typeof title === "string" && title !== (doc as BoardDoc).title;
     logActivity({
       category,
-      action: "updated",
-      title: label,
-      description: typeof title === "string" ? title : ((doc as BoardDoc).title ?? "Untitled"),
+      action: changedTitle ? "renamed" : "updated",
+      title: changedTitle ? `${label} renamed` : `${label} updated`,
+      description: title || (doc as BoardDoc).title || "Untitled",
       entityId: id,
-      entityType: "board",
-      metadata: { scope },
+      entityType: "idea_map",
+      metadata: { scope: (doc as BoardDoc).scope ?? "ideas" },
     }).catch(() => {});
 
-    return Response.json({ board: serialize(updated) });
+    return Response.json({ map: serialize(updated) });
   } catch (error) {
     return toJson(error);
   }
@@ -103,16 +104,17 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 
     await databases.deleteDocument(DB, COL, id);
 
-    if ((doc as BoardDoc).scope === "ai-venture") {
-      logActivity({
-        category: "ai_venture",
-        action: "deleted",
-        title: "Sketch deleted",
-        description: (doc as BoardDoc).title || "Untitled",
-        entityId: id,
-        entityType: "board",
-      }).catch(() => {});
-    }
+    const scopeKey = normalizeBoardScope((doc as BoardDoc).scope ?? "ideas");
+    const { category, label } = BOARD_SCOPE_ACTIVITY[scopeKey];
+    logActivity({
+      category,
+      action: "deleted",
+      title: `${label} deleted`,
+      description: (doc as BoardDoc).title || "Untitled",
+      entityId: id,
+      entityType: "idea_map",
+      metadata: { scope: (doc as BoardDoc).scope ?? "ideas" },
+    }).catch(() => {});
 
     return Response.json({ ok: true });
   } catch (error) {

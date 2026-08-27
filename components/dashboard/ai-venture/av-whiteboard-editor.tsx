@@ -1,107 +1,134 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import dynamic from "next/dynamic"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useCanvasAutosave } from "@/components/dashboard/v3/whiteboard/use-canvas-autosave";
+import { SaveIndicator } from "@/components/dashboard/v3/whiteboard/save-indicator";
 
 const ExcalidrawCanvas = dynamic(() => import("@/components/dashboard/v3/whiteboard/Whiteboard"), {
   ssr: false,
   loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading canvas…</div>,
-})
+});
 const BlocksuiteEditor = dynamic(() => import("@/components/dashboard/v3/blocksuite/blocksuite-editor"), {
   ssr: false,
   loading: () => <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading editor…</div>,
-})
+});
 
-export type BoardEngine = "excalidraw" | "affine"
+export type BoardEngine = "excalidraw" | "affine";
 
-export const AFFINE_SECTION = "concepts" // preserves boards created before this rewrite
+export const AFFINE_SECTION = "concepts"; // preserves boards created before this rewrite
 
-// Shared by both the Whiteboard tool and Playground: a single editor
-// implementation so opening a board from either place uses identical
-// load/save logic against the same persistent record.
+type AvPayload = {
+  content?: string;
+  title?: string;
+  snapshot?: Record<string, unknown>;
+  section?: string;
+};
+
 export function AvWhiteboardEditor({
   engine,
   boardId,
   onBack,
 }: {
-  engine: BoardEngine
-  boardId: string
-  onBack: () => void
+  engine: BoardEngine;
+  boardId: string;
+  onBack: () => void;
 }) {
-  const [title, setTitle] = useState("Untitled")
-  const [excalidrawData, setExcalidrawData] = useState<string>("{}")
-  const [affineSnapshot, setAffineSnapshot] = useState<Record<string, unknown> | null>(null)
-  const [ready, setReady] = useState(false)
-  const [status, setStatus] = useState<"loading" | "saving" | "saved">("loading")
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  // Title edits and content/snapshot edits both flow through saveContent and
-  // can land within the same 500ms debounce window (e.g. renaming right
-  // after a drawing change). A prior version reset the timer with only the
-  // latest call's payload, so the earlier field's change was silently
-  // dropped instead of saved. Accumulate into one pending object so every
-  // field that changed before the flush actually gets sent.
-  const pending = useRef<Record<string, unknown>>({})
+  const [title, setTitle] = useState("Untitled");
+  const [excalidrawData, setExcalidrawData] = useState<string>("{}");
+  const [affineSnapshot, setAffineSnapshot] = useState<Record<string, unknown> | null>(null);
+  const [ready, setReady] = useState(false);
+  const engineRef = useRef(engine);
+  const boardIdRef = useRef(boardId);
+  engineRef.current = engine;
+  boardIdRef.current = boardId;
 
   useEffect(() => {
-    setReady(false)
-    ;(async () => {
+    setReady(false);
+    (async () => {
       if (engine === "excalidraw") {
-        const res = await fetch(`/api/boards/${boardId}`)
-        const json = await res.json()
-        setExcalidrawData(json.board?.content ?? "{}")
-        setTitle(json.board?.title || "Untitled")
+        const res = await fetch(`/api/boards/${boardId}`);
+        const json = await res.json();
+        setExcalidrawData(json.board?.content ?? "{}");
+        setTitle(json.board?.title || "Untitled");
       } else {
-        const res = await fetch(`/api/affine/${boardId}`)
-        const json = await res.json()
-        setAffineSnapshot(json.workspace?.snapshot ?? null)
-        setTitle(json.workspace?.title || "Untitled")
+        const res = await fetch(`/api/affine/${boardId}`);
+        const json = await res.json();
+        setAffineSnapshot(json.workspace?.snapshot ?? null);
+        setTitle(json.workspace?.title || "Untitled");
       }
-      setStatus("saved")
-      setReady(true)
-    })()
-  }, [engine, boardId])
+      setReady(true);
+    })();
+  }, [engine, boardId]);
 
-  const saveContent = useCallback(
-    (payload: Record<string, unknown>) => {
-      setStatus("saving")
-      pending.current = { ...pending.current, ...payload }
-      clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(async () => {
-        const body = pending.current
-        pending.current = {}
-        try {
-          if (engine === "excalidraw") {
-            await fetch(`/api/boards/${boardId}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            })
-          } else {
-            await fetch(`/api/affine/${boardId}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ...body, section: AFFINE_SECTION }),
-            })
-          }
-        } catch {
-          // best-effort autosave; the next change retries
-        }
-        setStatus("saved")
-      }, 500)
+  const { state, lastSavedAt, queue, flush } = useCanvasAutosave<AvPayload>({
+    delay: 500,
+    merge: (prev, next) => ({ ...prev, ...next }),
+    save: async (payload) => {
+      const id = boardIdRef.current;
+      if (!id) return;
+      if (engineRef.current === "excalidraw") {
+        await fetch(`/api/boards/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch(`/api/affine/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, section: AFFINE_SECTION }),
+        });
+      }
     },
-    [engine, boardId]
-  )
+    beacon: (payload) => {
+      const id = boardIdRef.current;
+      if (!id) return null;
+      const url =
+        engineRef.current === "excalidraw"
+          ? `/api/boards/${id}`
+          : `/api/affine/${id}`;
+      return {
+        url,
+        method: "PUT",
+        body: JSON.stringify(
+          engineRef.current === "excalidraw"
+            ? payload
+            : { ...payload, section: AFFINE_SECTION }
+        ),
+      };
+    },
+  });
 
   const saveTitle = useCallback(
     (next: string) => {
-      setTitle(next)
-      saveContent({ title: next })
+      setTitle(next);
+      queue({ title: next });
     },
-    [saveContent]
-  )
+    [queue]
+  );
+
+  // Flush when embedded in an iframe modal and the parent requests close.
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type === "canvas:flush") {
+        flush().finally(() => {
+          try {
+            (e.source as Window | null)?.postMessage?.({ type: "canvas:flushed" }, e.origin);
+          } catch {
+            // ignore
+          }
+          window.parent.postMessage({ type: "canvas:flushed" }, window.location.origin);
+        });
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [flush]);
 
   return (
     <div className="flex h-full flex-col">
@@ -109,10 +136,15 @@ export function AvWhiteboardEditor({
         <Button size="icon-sm" variant="ghost" onClick={onBack}>
           <ArrowLeft className="size-4" />
         </Button>
-        <Input value={title} onChange={(e) => saveTitle(e.target.value)} className="h-8 w-64 text-sm" />
-        <span className="text-xs text-muted-foreground">
-          {status === "saving" ? "Saving…" : status === "loading" ? "Loading…" : "Saved"}
-        </span>
+        <Input
+          value={title}
+          onChange={(e) => saveTitle(e.target.value)}
+          onBlur={() => {
+            flush();
+          }}
+          className="h-8 w-64 text-sm"
+        />
+        <SaveIndicator state={state} lastSavedAt={lastSavedAt} onRetry={() => flush()} />
       </div>
       <div className="relative flex-1">
         {!ready ? (
@@ -121,7 +153,7 @@ export function AvWhiteboardEditor({
           <ExcalidrawCanvas
             key={boardId}
             initialData={excalidrawData}
-            onChange={(snapshot: string) => saveContent({ content: snapshot })}
+            onChange={(snapshot: string) => queue({ content: snapshot })}
             onMount={() => {}}
           />
         ) : (
@@ -129,10 +161,10 @@ export function AvWhiteboardEditor({
             key={boardId}
             snapshot={affineSnapshot}
             mode="edgeless"
-            onChange={(snapshot) => saveContent({ snapshot })}
+            onChange={(snapshot) => queue({ snapshot })}
           />
         )}
       </div>
     </div>
-  )
+  );
 }

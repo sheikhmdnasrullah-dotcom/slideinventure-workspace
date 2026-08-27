@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCanvasAutosave } from "./use-canvas-autosave";
+import { SaveIndicator } from "./save-indicator";
 
 // AFFiNE edgeless editor: loaded client-only (custom elements + WASM).
 const BlocksuiteEditor = dynamic(
@@ -18,22 +20,23 @@ const BlocksuiteEditor = dynamic(
   }
 );
 
-type Status = "loading" | "saving" | "saved";
+type WorkspacePayload = { snapshot?: Record<string, unknown>; title?: string; section: string };
 
 export default function WhiteboardPopup() {
   const [section, setSection] = useState("research");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<Record<string, unknown> | null>(null);
   const [title, setTitle] = useState("Untitled");
-  const [status, setStatus] = useState<Status>("loading");
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const idRef = useRef<string | null>(null);
+  const sectionRef = useRef(section);
+  sectionRef.current = section;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sec = params.get("section") || "research";
     const existingId = params.get("id");
     setSection(sec);
+    sectionRef.current = sec;
 
     (async () => {
       try {
@@ -60,48 +63,70 @@ export default function WhiteboardPopup() {
             setTitle(json.workspace.title || "Untitled");
           }
         }
-        setStatus("saved");
       } catch {
-        setStatus("saved");
+        // best-effort load
       }
     })();
   }, []);
 
-  const handleChange = useCallback(
-    (snap: Record<string, unknown>) => {
+  const { state, lastSavedAt, queue, flush } = useCanvasAutosave<WorkspacePayload>({
+    delay: 700,
+    merge: (prev, next) => ({ ...prev, ...next }),
+    save: async (payload) => {
       const curId = idRef.current;
       if (!curId) return;
-      setStatus("saving");
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(async () => {
-        try {
-          await fetch(`/api/affine/${curId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ snapshot: snap, section }),
-          });
-        } catch {
-          // best-effort autosave
-        }
-        setStatus("saved");
-      }, 700);
-    },
-    [section]
-  );
-
-  const saveTitle = useCallback(async () => {
-    const curId = idRef.current;
-    if (!curId) return;
-    try {
       await fetch(`/api/affine/${curId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, section }),
+        body: JSON.stringify(payload),
       });
-    } catch {
-      // ignore
-    }
-  }, [title, section]);
+    },
+    beacon: (payload) => {
+      const curId = idRef.current;
+      if (!curId) return null;
+      return {
+        url: `/api/affine/${curId}`,
+        method: "PUT",
+        body: JSON.stringify(payload),
+      };
+    },
+  });
+
+  const handleChange = useCallback(
+    (snap: Record<string, unknown>) => {
+      if (!idRef.current) return;
+      queue({ snapshot: snap, section: sectionRef.current });
+    },
+    [queue]
+  );
+
+  const onTitleChange = useCallback(
+    (value: string) => {
+      setTitle(value);
+      if (!idRef.current) return;
+      queue({ title: value, section: sectionRef.current });
+    },
+    [queue]
+  );
+
+  // Flush when embedded in an iframe modal and the parent requests close.
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type === "canvas:flush") {
+        flush().finally(() => {
+          try {
+            (e.source as Window | null)?.postMessage?.({ type: "canvas:flushed" }, e.origin);
+          } catch {
+            // ignore
+          }
+          window.parent.postMessage({ type: "canvas:flushed" }, window.location.origin);
+        });
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [flush]);
 
   return (
     <div className="flex h-screen w-screen flex-col bg-background">
@@ -109,13 +134,17 @@ export default function WhiteboardPopup() {
         <span className="text-xs uppercase tracking-wide text-muted-foreground">{section} whiteboard</span>
         <Input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={saveTitle}
+          onChange={(e) => onTitleChange(e.target.value)}
+          onBlur={() => {
+            flush();
+          }}
           className="h-7 w-64 text-sm"
         />
-        <span className="text-xs text-muted-foreground">
-          {status === "saving" ? "Saving…" : status === "loading" ? "Loading…" : "Saved"}
-        </span>
+        {activeId ? (
+          <SaveIndicator state={state} lastSavedAt={lastSavedAt} onRetry={() => flush()} />
+        ) : (
+          <span className="text-xs text-muted-foreground">Loading…</span>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <Button
             size="sm"

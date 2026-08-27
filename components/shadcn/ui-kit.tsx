@@ -27,7 +27,7 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-} from "@/components/shadcn/command";
+} from "@/components/ui/command";
 
 const COMPONENTS = [
   { name: "Button", desc: "Clickable trigger (cva variants)" },
@@ -77,9 +77,9 @@ export function UiKit() {
           </div>
 
           <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">Open Dialog</Button>
-            </DialogTrigger>
+            <DialogTrigger
+              render={<Button variant="outline">Open Dialog</Button>}
+            />
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>shadcn Dialog</DialogTitle>
@@ -122,7 +122,7 @@ export function UiKit() {
       </Tabs>
 
       <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
-        <CommandInput placeholder="Search components…" />
+        <CommandInput placeholder="Search components" />
         <CommandList>
           <CommandEmpty>No results.</CommandEmpty>
           <CommandGroup heading="shadcn/ui">

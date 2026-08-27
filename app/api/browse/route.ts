@@ -1,18 +1,40 @@
+import { NextRequest } from "next/server";
+import { ApiError } from "@/lib/api/errors";
 import { getSessionUser } from "@/lib/appwrite/auth";
-import { runBrowseTask } from "@/lib/browse/agent";
-import { NextRequest, NextResponse } from "next/server";
-
-export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!user) return ApiError.unauthorized().toResponse();
 
-  const body = await request.json().catch(() => ({}));
-  const task = (body.task as string | undefined)?.toString().slice(0, 2000);
-  const startUrl = (body.startUrl as string | undefined)?.toString().slice(0, 2000);
-  if (!task) return NextResponse.json({ error: "task required" }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  const query = (body?.query as string) || "";
+  const url = (body?.url as string) || "";
+  if (!query.trim() && !url.trim()) {
+    return ApiError.badRequest("MISSING_QUERY", "query or url is required").toResponse();
+  }
 
-  const result = await runBrowseTask({ task, startUrl, userEmail: user.email });
-  return NextResponse.json(result);
+  const gateway = process.env.TEMPORAL_GATEWAY_URL;
+  const key = process.env.TEMPORAL_GATEWAY_KEY;
+  if (!gateway || !key) {
+    return Response.json(
+      { text: "", error: "Browse gateway not configured" },
+      { status: 503 },
+    );
+  }
+
+  try {
+    const res = await fetch(`${gateway.replace(/\/$/, "")}/browse`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-temporal-gateway-key": key,
+      },
+      body: JSON.stringify({ query, url }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return Response.json({ text: data.text ?? "", error: data.error ?? null });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "browse failed";
+    return Response.json({ text: "", error: message }, { status: 502 });
+  }
 }

@@ -91,18 +91,27 @@ export async function POST(request: NextRequest) {
       updated_at: now,
     })
 
-    if (scope === "ai-venture") {
-      logActivity({
-        category: "ai_venture",
-        action: "created",
-        title: "Idea created",
-        description: title || "Untitled idea",
-        entityId: doc.$id,
-        entityType: "note",
-      }).catch(() => {})
-    } else {
-      // AI Venture-scoped notes are out of scope for this index. That
-      // territory belongs to a separate, concurrent AFFiNE-based rebuild.
+    // Every scope logs an activity. Previously only ai-venture notes did, so a
+    // note created from /notepad or Brainstorm never reached the dashboard and
+    // looked like nothing had happened.
+    const CATEGORY_BY_SCOPE = {
+      "ai-venture": "ai_venture",
+      brainstorm: "brainstorm",
+      global: "notes",
+    } as const
+
+    logActivity({
+      category: CATEGORY_BY_SCOPE[scope],
+      action: "created",
+      title: "Note created",
+      description: title || "Untitled note",
+      entityId: doc.$id,
+      entityType: "note",
+      metadata: { scope },
+    }).catch(() => {})
+
+    if (scope !== "ai-venture") {
+      // AI Venture notes are indexed by that section's own retrieval pass.
       const text = [title, blockNoteToPlainText(doc.content as string)].filter(Boolean).join("\n")
       upsertVector({ collection: "notes", docId: doc.$id, text }).catch(() => {})
     }

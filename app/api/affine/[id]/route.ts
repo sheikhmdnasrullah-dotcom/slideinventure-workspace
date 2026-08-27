@@ -3,6 +3,9 @@ import { databases, ID } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ensureAffineCollection } from "@/lib/affine/ensure";
 import { logActivity } from "@/lib/activities/client";
+import { ApiError, toJson } from "@/lib/api/errors";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.affineWorkspaces;
@@ -40,7 +43,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return ApiError.unauthorized().toResponse();
+
+  const limit = checkRateLimit(req, { limit: 30, windowMs: 60_000, identifier: `affine-update:${user.id}` });
+  if (!limit.allowed) return ApiError.rateLimited().toResponse();
+
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
   await ensureAffineCollection();
@@ -49,17 +56,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.snapshot !== undefined) update.snapshot = body.snapshot ? JSON.stringify(body.snapshot) : null;
   try {
     const doc = await databases.updateDocument(DB, COL, id, update);
+    const scope = normalizeBoardScope(body.section);
+    const { category, label } = BOARD_SCOPE_ACTIVITY[scope];
     await logActivity({
-      category: (body.section as any) ?? "brainstorm",
+      category,
       action: "updated",
-      title: doc.title ?? "Workspace",
-      description: `Updated a ${body.section ?? "brainstorm"} workspace`,
+      title: doc.title ?? label,
+      description: `Updated a ${body.section ?? scope} workspace`,
       entityId: id,
       entityType: "affine_workspace",
+      metadata: { section: body.section },
     });
     return Response.json({ workspace: serialize(doc) });
-  } catch {
-    return Response.json({ error: "Update failed" }, { status: 404 });
+  } catch (error) {
+    return toJson(error);
   }
 }
 

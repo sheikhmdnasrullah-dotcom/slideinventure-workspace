@@ -35,16 +35,16 @@ export async function GET(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
-  const limit = checkRateLimit(request, { limit: 60, windowMs: 60_000, identifier: `boards-list:${user.id}` });
+  const limit = checkRateLimit(request, { limit: 60, windowMs: 60_000, identifier: `idea-maps-list:${user.id}` });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
-  const scope = request.nextUrl.searchParams.get("scope");
+  const scope = request.nextUrl.searchParams.get("scope") || "ideas";
 
   try {
     const queries = [Query.equal("user_email", user.email ?? ""), Query.orderDesc("updated_at")];
-    if (scope) queries.push(Query.equal("scope", scope));
+    queries.push(Query.equal("scope", scope));
     const res = await databases.listDocuments(DB, COL, queries);
-    return Response.json({ boards: res.documents.map(serialize) });
+    return Response.json({ maps: res.documents.map(serialize) });
   } catch (error) {
     return toJson(error);
   }
@@ -54,13 +54,13 @@ export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
-  const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000, identifier: `boards-create:${user.id}` });
+  const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000, identifier: `idea-maps-create:${user.id}` });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   try {
     const body = await request.json().catch(() => ({}));
-    const title = (body.title as string | undefined)?.toString().slice(0, 200) || "New board";
-    const scope = normalizeBoardScope(body.scope);
+    const title = (body.title as string | undefined)?.toString().slice(0, 200) || "New idea map";
+    const scope = normalizeBoardScope("ideas");
     const now = new Date().toISOString();
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
       user_email: user.email ?? "",
@@ -78,11 +78,11 @@ export async function POST(request: NextRequest) {
       title: `${label} created`,
       description: title,
       entityId: doc.$id,
-      entityType: "board",
+      entityType: "idea_map",
       metadata: { scope },
     }).catch(() => {});
 
-    return Response.json({ board: serialize(doc) }, { status: 201 });
+    return Response.json({ map: serialize(doc) }, { status: 201 });
   } catch (error) {
     return toJson(error);
   }

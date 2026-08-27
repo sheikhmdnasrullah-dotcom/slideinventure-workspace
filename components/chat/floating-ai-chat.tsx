@@ -63,9 +63,7 @@ export function FloatingAiChat() {
             className="flex-1 space-y-3 overflow-y-auto p-3"
           >
             {messages.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Ask me anything, powered by DeepSeek. Full answers stream live.
-              </p>
+              <p className="text-sm text-muted-foreground">Ask a question.</p>
             )}
             {messages.map((m) => (
               <div

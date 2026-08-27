@@ -6,6 +6,7 @@ import {
   Cable,
   FileText,
   GripVertical,
+  Network,
   LayoutDashboard,
   Mail,
   MessageSquare,
@@ -35,6 +36,7 @@ export type DashboardSectionId =
   | "research-lab"
   | "notepad"
   | "brainstorm-sketch"
+  | "ideas"
   | "terminal"
   | "useful-links"
   | "mail-apps"
@@ -84,6 +86,7 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "research-lab", label: "Research Lab", route: "/research-lab", icon: Beaker },
   { id: "notepad", label: "Notepad", route: "/notepad", icon: BookOpen },
   { id: "brainstorm-sketch", label: "Brainstorm", route: "/brainstorm-sketch", icon: Brain },
+  { id: "ideas", label: "Ideas", route: "/ideas", icon: Network },
   { id: "terminal", label: "Terminal", route: "/terminal", icon: Terminal },
   { id: "useful-links", label: "Useful Links", route: "/useful-links", icon: Send },
   {

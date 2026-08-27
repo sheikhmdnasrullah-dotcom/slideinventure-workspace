@@ -5,7 +5,7 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { PageHeader, Section, Surface, Badge } from "@/components/system";
 import { AgentType } from "@/lib/agents/registry";
 import { getAgentRoster, getAgentDivisions } from "@/lib/agents/roster";
-import { AgentRosterTable } from "@/components/dashboard/agent-roster-table";
+import { AgentIconGrid } from "@/components/dashboard/agent-icon-grid";
 import { cn } from "@/lib/utils";
 
 const DB = APPWRITE.databaseId;
@@ -216,7 +216,7 @@ export default async function AgentsPage() {
         <PageHeader
           eyebrow="Roster"
           title="Agent roster"
-          meta={roster.length > 0 ? `${roster.length} specialist agents across ${rosterDivisions.length} divisions, click one to chat` : undefined}
+          meta={roster.length > 0 ? `${roster.length} specialist agents across ${rosterDivisions.length} divisions — click one to open its visual canvas` : undefined}
         />
         <Surface variant="raised">
           {roster.length === 0 ? (
@@ -225,14 +225,13 @@ export default async function AgentsPage() {
             </p>
           ) : (
             <>
-              <p className="font-body text-sm text-ink-muted pb-2">
-                Click any agent below to chat with it directly, each responds in-character using
-                its persona prompt. The same files are also installed in{" "}
-                <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">.claude/agents/</code>{" "}
-                for use inside Claude Code sessions. This roster is separate from the live
-                task-run executions above.
+              <p className="font-body text-sm text-ink-muted pb-4">
+                Each agent opens a visual workflow canvas. Describe a task in plain English and the
+                agent builds the node graph (research → reason → output) and runs it. The same
+                personas also live in{" "}
+                <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">.claude/agents/</code>.
               </p>
-              <AgentRosterTable agents={roster} divisions={rosterDivisions} />
+              <AgentIconGrid agents={roster} />
             </>
           )}
         </Surface>
