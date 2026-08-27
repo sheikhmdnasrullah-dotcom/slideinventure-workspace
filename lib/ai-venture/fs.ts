@@ -24,8 +24,15 @@ const WORKSPACE = "ai-venture";
 
 export const VENTURE_ROOT_FOLDERS = ["PDF", "Brainstormed Ideas", "Brainstorm Sketches"];
 
-const TEXT_EXTENSIONS = new Set([".md", ".txt", ".tldr", ".json"]);
+const TEXT_EXTENSIONS = new Set([".md", ".txt", ".tldr", ".json", ".csv"]);
 const PDF_EXTENSIONS = new Set([".pdf"]);
+// Uploaded as-is (base64), streamed back as raw bytes — same treatment as
+// PDFs already got, just not limited to PDFs. Docs/slides/sheets included so
+// "upload other reasonable document types" doesn't need a case-by-case list.
+const BINARY_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp",
+  ".docx", ".pptx", ".xlsx", ".zip",
+]);
 
 type DocumentRow = {
   $id: string;
@@ -78,6 +85,14 @@ export function isTextFile(name: string): boolean {
 
 function isPdfFile(name: string): boolean {
   return PDF_EXTENSIONS.has(extOf(name) || "");
+}
+
+export function isBinaryFile(name: string): boolean {
+  return BINARY_EXTENSIONS.has(extOf(name) || "");
+}
+
+function isImageFile(name: string): boolean {
+  return [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"].includes(extOf(name) || "");
 }
 
 // Validates and normalizes a virtual path — the only gate between the
@@ -249,10 +264,11 @@ export async function readFileContent(
   if (row.node_type === "folder") throw new VentureFsError("Not a file", 400);
 
   const name = row.filename || nameOf(p);
-  if (!isTextFile(name) && !isPdfFile(name)) throw new VentureFsError("Unsupported file type", 415);
+  if (!isTextFile(name) && !isPdfFile(name) && !isBinaryFile(name)) throw new VentureFsError("Unsupported file type", 415);
 
-  if (isPdfFile(name)) {
-    // PDFs stream their raw bytes via /api/ai-venture/file/raw instead.
+  if (isPdfFile(name) || isBinaryFile(name)) {
+    // PDFs and other binary types stream their raw bytes via
+    // /api/ai-venture/file/raw instead of being read as text.
     return { content: "", name, size: row.size_bytes || 0, modifiedAt: row.updated_at || new Date().toISOString() };
   }
 
@@ -293,8 +309,14 @@ async function replaceStorageContent(
 // Never blocks or fails the caller.
 async function reindexIfLinkable(row: DocumentRow, name: string, buffer: Buffer) {
   try {
-    if (!isTextFile(name) && !isPdfFile(name)) return;
-    if (extOf(name) === ".tldr" || extOf(name) === ".json") return; // canvas snapshots, not readable text
+    const ext = extOf(name);
+    // Images/zip/pptx/xlsx have no real text-extraction path (extractFileText
+    // would just produce a placeholder string) — skip rather than mirror
+    // junk into Knowledge. .docx does have real extraction (mammoth), so it
+    // proceeds despite being in BINARY_EXTENSIONS (streamed raw, but also
+    // worth indexing).
+    if (!isTextFile(name) && !isPdfFile(name) && ext !== ".docx") return;
+    if (ext === ".tldr" || ext === ".json") return; // canvas snapshots, not readable text
     const file = new File([new Uint8Array(buffer)], name);
     const extracted = await extractFileText(file);
     if (!extracted.text) return;
@@ -317,8 +339,8 @@ export async function writeFileContent(
 ): Promise<void> {
   const p = normalizePath(relativePath);
   const name = nameOf(p);
-  if (!isTextFile(name) && !isPdfFile(name)) {
-    throw new VentureFsError("Only .md, .txt, .pdf, .tldr and .json files can be saved", 415);
+  if (!isTextFile(name) && !isPdfFile(name) && !isBinaryFile(name)) {
+    throw new VentureFsError("Unsupported file type", 415);
   }
 
   const buffer = encoding === "base64" ? Buffer.from(content, "base64") : Buffer.from(content, "utf-8");
@@ -328,6 +350,18 @@ export async function writeFileContent(
     ".txt": "text/plain",
     ".json": "application/json",
     ".tldr": "application/json",
+    ".csv": "text/csv",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+    ".bmp": "image/bmp",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".zip": "application/zip",
   };
   const now = new Date().toISOString();
   const existing = await findRowByPath(p);

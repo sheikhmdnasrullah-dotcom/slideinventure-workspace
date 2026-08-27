@@ -10,13 +10,19 @@ import { createWorkingMemory, getWorkingMemory } from "@/lib/memory/working-memo
 import { mem0Remember, mem0Recall, mem0Enabled } from "@/lib/memory/mem0";
 import { NVIDIA_DEFAULT_MODEL } from "@/lib/llm/gateway";
 
-// NVIDIA's chat API is OpenAI-compatible, so we point the AI-SDK OpenAI
-// provider at it. This gives Mastra a working tool-calling model without a
-// separate provider plugin. The unified gateway (NVIDIA+OpenRouter) remains
-// the path for plain chat; agents use this direct NVIDIA channel.
+// DeepSeek and NVIDIA's chat APIs are both OpenAI-compatible, so we point the
+// AI-SDK OpenAI provider at whichever is configured. This gives Mastra a
+// working tool-calling model without a separate provider plugin per backend.
+// DeepSeek preferred when its key is set (matches lib/llm/gateway.ts's own
+// provider order for the multi-agent workflows), NVIDIA otherwise.
 function getModel() {
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
+  if (deepseekKey) {
+    const provider = createOpenAI({ baseURL: "https://api.deepseek.com/v1", apiKey: deepseekKey });
+    return provider(process.env.DEEPSEEK_MODEL || "deepseek-chat");
+  }
   const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) throw new Error("NVIDIA_API_KEY missing — agents cannot run");
+  if (!apiKey) throw new Error("No agent model configured — set DEEPSEEK_API_KEY or NVIDIA_API_KEY");
   const provider = createOpenAI({
     baseURL: "https://integrate.api.nvidia.com/v1",
     apiKey,

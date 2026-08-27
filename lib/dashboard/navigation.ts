@@ -18,6 +18,7 @@ import {
   Vault,
   Workflow,
   BarChart3,
+  Component,
   type LucideIcon,
 } from "lucide-react"
 
@@ -42,6 +43,8 @@ export type DashboardSectionId =
   | "email-crawler"
   | "agent-canvas"
   | "analytics"
+  | "ai-chat"
+  | "ui-kit"
 
 export type DashboardSectionChild = {
   id: string
@@ -122,6 +125,20 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
     children: [
       { id: "analytics-bento", label: "Live Metrics", route: "/analytics" },
     ],
+  },
+  {
+    id: "ai-chat",
+    label: "AI SDK Chat",
+    route: "/ai-chat",
+    icon: MessageSquare,
+    children: [{ id: "ai-chat-run", label: "Chat", route: "/ai-chat" }],
+  },
+  {
+    id: "ui-kit",
+    label: "UI Kit",
+    route: "/ui-kit",
+    icon: Component,
+    children: [{ id: "ui-kit-show", label: "shadcn/ui", route: "/ui-kit" }],
   },
 ]
 
