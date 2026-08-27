@@ -29,9 +29,42 @@ export function AgentRunSheet({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tools, setTools] = useState(false);
+  const [durable, setDurable] = useState(false);
   const [toolLog, setToolLog] = useState<string[]>([]);
 
   const messages = agent ? (messagesByAgent[agent.slug] ?? []) : [];
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  async function runViaTemporal(slug: string, message: string) {
+    const start = await fetch("/api/temporal/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, message }),
+    });
+    const startData = await start.json();
+    if (!start.ok) throw new Error(startData?.error ?? "Failed to start durable run");
+    const workflowId: string = startData.workflowId;
+    setToolLog((prev) => [...prev, `⏱ Temporal workflow started: ${workflowId}`]);
+
+    let status = "RUNNING";
+    let result: string | null = null;
+    for (let i = 0; i < 90; i++) {
+      await sleep(2000);
+      const poll = await fetch(`/api/temporal/run?workflowId=${encodeURIComponent(workflowId)}`);
+      const pollData = await poll.json();
+      status = pollData.status;
+      if (status === "COMPLETED") {
+        result = pollData.result;
+        break;
+      }
+      if (status === "FAILED" || status === "CANCELED" || status === "TERMINATED" || status === "TIMED_OUT") {
+        throw new Error(`Temporal workflow ${status}`);
+      }
+    }
+    if (result == null) throw new Error("Temporal workflow did not finish in time");
+    return result;
+  }
 
   async function send() {
     if (!agent || !input.trim() || loading) return;
@@ -42,6 +75,16 @@ export function AgentRunSheet({
     setError(null);
     setLoading(true);
     try {
+      if (durable) {
+        const answer = await runViaTemporal(agent.slug, userMsg.content);
+        setMessagesByAgent((prev) => ({
+          ...prev,
+          [agent.slug]: [...(prev[agent.slug] ?? []), { role: "assistant", content: answer }],
+        }));
+        setToolLog((prev) => [...prev, `✅ ${agent.name} finished via Temporal (durable)`]);
+        return;
+      }
+
       const res = await fetch("/api/agents/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,6 +148,15 @@ export function AgentRunSheet({
             </div>
 
             <SheetFooter>
+              <label className="flex items-center gap-2 text-xs text-ink-muted pb-2">
+                <input
+                  type="checkbox"
+                  checked={durable}
+                  onChange={(e) => setDurable(e.target.checked)}
+                  className="accent-[var(--text-accent)]"
+                />
+                Durable run via Temporal (DeepSeek‑powered, resumable)
+              </label>
               <label className="flex items-center gap-2 text-xs text-ink-muted pb-2">
                 <input
                   type="checkbox"
