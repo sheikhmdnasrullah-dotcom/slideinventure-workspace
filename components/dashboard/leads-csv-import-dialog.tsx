@@ -35,18 +35,35 @@ import {
 } from "@/components/ui/table"
 
 const FIELD_MAP: Record<string, string> = {
-  "Name": "first_name",
   "First Name": "first_name",
   "Last Name": "last_name",
   "Full Name": "full_name",
   "Email": "email",
+  "Email Address": "email",
   "Company": "company",
+  "Organization": "company",
   "Job Title": "job_title",
+  "Title": "job_title",
   "Phone": "phone",
+  "Mobile": "phone",
   "Source": "source",
   "Status": "status",
   "Notes": "notes",
+  "Description": "notes",
   "Tags": "tags",
+}
+
+const FIELD_ALIASES: Record<string, string> = {
+  first_name: "first last given forename",
+  last_name: "last surname family",
+  email: "email e-mail mail",
+  company: "company organization org firm",
+  job_title: "job title position role",
+  phone: "phone telephone mobile cell contact",
+  source: "source origin",
+  status: "status stage",
+  notes: "notes description comments memo",
+  tags: "tags labels categories",
 }
 
 const DUPLICATE_ACTIONS = {
@@ -109,14 +126,23 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
 
         const autoMap: Record<string, string> = {}
         h.forEach((col) => {
-          const normalized = col.trim().toLowerCase()
-          const matched = Object.entries(FIELD_MAP).find(([label, key]) =>
+          const normalized = col.trim().toLowerCase().replace(/[\s_-]+/g, " ")
+          const direct = Object.entries(FIELD_MAP).find(([label]) =>
             normalized.includes(label.toLowerCase())
           )
-          if (matched) {
-            autoMap[col] = matched[1]
-          } else if (normalized.includes("name") && !autoMap[col]) {
-            autoMap[col] = "first_name"
+          if (direct) {
+            autoMap[col] = direct[1]
+            return
+          }
+
+          const scored = Object.entries(FIELD_ALIASES).map(([field, aliases]) => {
+            const hits = aliases.split(" ").filter((alias) => alias && normalized.includes(alias))
+            return { field, score: hits.length, hits }
+          }).filter((x) => x.score > 0)
+            .sort((a, b) => b.score - a.score || a.hits[0].length - b.hits[0].length)
+
+          if (scored[0]) {
+            autoMap[col] = scored[0].field
           }
         })
         setMapping(autoMap)

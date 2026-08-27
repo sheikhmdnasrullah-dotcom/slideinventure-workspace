@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { AvFiles } from "./av-files";
 import { AvPdfAsk } from "./av-pdf-ask";
 import { AvSearch } from "./av-search";
+import { FolderOpen, Plus } from "lucide-react";
 
 type Tool = "files" | "pdf" | "search" | "whiteboard";
 
@@ -18,14 +21,10 @@ const TOOLS: { id: Tool; label: string }[] = [
 
 type Board = { id: string; title: string };
 
-function openWhiteboard(id?: string) {
-  const url = `/whiteboard?section=concepts${id ? `&id=${encodeURIComponent(id)}` : ""}`;
-  window.open(url, "_blank", "width=1440,height=900");
-}
-
 export function AiVentureWorkspace() {
   const [tool, setTool] = useState<Tool>("files");
   const [boards, setBoards] = useState<Board[]>([]);
+  const [whiteboardUrl, setWhiteboardUrl] = useState<string | null>(null);
 
   const loadBoards = useCallback(async () => {
     const res = await fetch(`/api/affine?section=concepts`);
@@ -36,6 +35,24 @@ export function AiVentureWorkspace() {
   useEffect(() => {
     if (tool === "whiteboard") loadBoards();
   }, [tool, loadBoards]);
+
+  const openWhiteboard = (id?: string) => {
+    const url = `/whiteboard?section=concepts${id ? `&id=${encodeURIComponent(id)}` : ""}`;
+    setWhiteboardUrl(url);
+  };
+
+  const createBoard = async () => {
+    const res = await fetch("/api/affine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ section: "concepts", title: "Untitled" }),
+    });
+    const json = await res.json();
+    if (json.workspace) {
+      setBoards((prev) => [...prev, json.workspace]);
+      openWhiteboard(json.workspace.id);
+    }
+  };
 
   return (
     <div className="flex h-[calc(100vh-4rem)] w-full">
@@ -62,32 +79,41 @@ export function AiVentureWorkspace() {
           <div className="flex h-full flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium">AFFiNE Whiteboard</h2>
-              <Button size="sm" onClick={() => openWhiteboard()}>
-                New whiteboard
+              <Button size="sm" onClick={createBoard}>
+                <Plus className="size-3" /> New board
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Opens in a dedicated window. Your boards are saved automatically per session.
+              Boards open inside the dashboard. Your work is saved automatically.
             </p>
             <ScrollArea className="flex-1">
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {boards.map((b) => (
                   <button
                     key={b.id}
                     onClick={() => openWhiteboard(b.id)}
-                    className="rounded-lg border border-border px-3 py-2 text-left text-sm hover:bg-accent"
+                    className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border p-4 text-sm hover:bg-accent"
                   >
-                    {b.title}
+                    <FolderOpen className="size-8 text-muted-foreground" />
+                    <span className="line-clamp-1 text-center">{b.title}</span>
                   </button>
                 ))}
                 {boards.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No whiteboards yet — create one.</p>
+                  <p className="col-span-full text-xs text-muted-foreground">No whiteboards yet — create one.</p>
                 )}
               </div>
             </ScrollArea>
           </div>
         )}
       </main>
+
+      <Dialog open={!!whiteboardUrl} onOpenChange={(open) => { if (!open) setWhiteboardUrl(null); }}>
+        <DialogContent className="sm:max-w-[95vw] h-[90vh] p-0">
+          {whiteboardUrl && (
+            <iframe src={whiteboardUrl} className="h-full w-full rounded-lg border-0" />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

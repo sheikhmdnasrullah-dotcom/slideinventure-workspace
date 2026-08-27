@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/supabase/server";
 import { VerificationPanel } from "@/components/dashboard/lead-verification/verification-panel";
+import { TruemailPanel } from "@/components/dashboard/lead-verification/truemail-panel";
 
 export const metadata = {
   title: "Lead Verification — SlideIn Venture",
@@ -20,6 +21,7 @@ export default async function LeadVerificationPage() {
         </p>
       </div>
       <VerificationPanel />
+      <TruemailPanel />
     </div>
   );
 }

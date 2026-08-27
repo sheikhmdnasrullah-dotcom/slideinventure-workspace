@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Folder, FileText, File, ChevronRight, Home } from "lucide-react";
 
 type VentureNode = {
   id: string;
@@ -13,20 +14,37 @@ type VentureNode = {
   children?: VentureNode[];
 };
 
-function flatten(nodes: VentureNode[], depth = 0): { node: VentureNode; depth: number }[] {
-  const out: { node: VentureNode; depth: number }[] = [];
-  for (const n of nodes) {
-    out.push({ node: n, depth });
-    if (n.children) out.push(...flatten(n.children, depth + 1));
+function findNode(tree: VentureNode | null, path: string): VentureNode | null {
+  if (!tree) return null;
+  if (tree.path === path) return tree;
+  if (tree.children) {
+    for (const child of tree.children) {
+      const found = findNode(child, path);
+      if (found) return found;
+    }
   }
-  return out;
+  return null;
+}
+
+function getChildren(tree: VentureNode | null, path: string): VentureNode[] {
+  if (!tree) return [];
+  if (!path) return tree.children ?? [];
+  const node = findNode(tree, path);
+  return node?.children ?? [];
+}
+
+function fileIcon(name: string) {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (["md", "txt", "json", "csv", "yaml", "yml", "toml"].includes(ext)) return FileText;
+  if (["pdf", "doc", "docx", "ppt", "xls"].includes(ext)) return FileText;
+  return File;
 }
 
 export function AvFiles() {
   const [tree, setTree] = useState<VentureNode | null>(null);
+  const [currentPath, setCurrentPath] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [content, setContent] = useState("");
-  const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -45,7 +63,6 @@ export function AvFiles() {
       const res = await fetch(`/api/ai-venture/file?path=${encodeURIComponent(path)}`);
       const json = await res.json();
       setContent(json.content ?? "");
-      setName(json.name ?? path.split("/").pop() ?? "");
     } catch {
       // ignore
     } finally {
@@ -83,17 +100,42 @@ export function AvFiles() {
   const del = async (path: string) => {
     if (!window.confirm(`Delete ${path}?`)) return;
     await fetch(`/api/ai-venture/file?path=${encodeURIComponent(path)}`, { method: "DELETE" }).catch(() => {});
-    setSelected(null);
+    if (selected === path) {
+      setSelected(null);
+      setContent("");
+    }
     load();
   };
 
-  const items = tree ? flatten(tree.children && tree.children.length ? tree.children : [tree]) : [];
+  const items = getChildren(tree, currentPath);
+  const segments = currentPath ? currentPath.split("/") : [];
 
   return (
-    <div className="grid h-full grid-cols-[260px_1fr] gap-3">
+    <div className="grid h-full grid-cols-1 gap-3 lg:grid-cols-[1fr_400px]">
       <div className="flex flex-col rounded-lg border border-border">
-        <div className="flex items-center gap-2 border-b border-border px-2 py-1.5">
-          <span className="text-xs font-medium">Files</span>
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={() => setCurrentPath("")}
+            disabled={!currentPath}
+          >
+            <Home className="size-3.5" />
+          </Button>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            {segments.length === 0 && <span className="text-foreground">Root</span>}
+            {segments.map((seg, idx) => (
+              <span key={idx} className="flex items-center gap-1">
+                {idx > 0 && <ChevronRight className="size-3" />}
+                <button
+                  onClick={() => setCurrentPath(segments.slice(0, idx + 1).join("/"))}
+                  className={`hover:text-foreground ${idx === segments.length - 1 ? "text-foreground" : ""}`}
+                >
+                  {seg}
+                </button>
+              </span>
+            ))}
+          </div>
           <div className="ml-auto flex gap-1">
             <Button size="xs" variant="outline" onClick={() => create("file")}>
               New file
@@ -103,22 +145,36 @@ export function AvFiles() {
             </Button>
           </div>
         </div>
-        <ScrollArea className="flex-1 p-1">
-          {items.map(({ node, depth }) => (
-            <button
-              key={node.id || node.path}
-              onClick={() => node.type === "file" && openFile(node.path)}
-              disabled={node.type === "folder"}
-              style={{ paddingLeft: 8 + depth * 12 }}
-              className="flex w-full items-center gap-1 rounded px-1 py-1 text-left text-xs hover:bg-accent disabled:opacity-70"
-            >
-              <span className="truncate">{node.name}</span>
-            </button>
-          ))}
+        <ScrollArea className="flex-1 p-3">
+          {items.length === 0 ? (
+            <p className="text-xs text-muted-foreground">This folder is empty.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              {items.map((item) => {
+                const Icon = item.type === "folder" ? Folder : fileIcon(item.name);
+                return (
+                  <button
+                    key={item.id || item.path}
+                    onClick={() => {
+                      if (item.type === "folder") {
+                        setCurrentPath(item.path);
+                      } else {
+                        openFile(item.path);
+                      }
+                    }}
+                    className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border p-3 text-center text-xs hover:bg-accent"
+                  >
+                    <Icon className="size-8 text-muted-foreground" />
+                    <span className="line-clamp-2">{item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </ScrollArea>
       </div>
       <div className="flex flex-col rounded-lg border border-border">
-        <div className="flex items-center gap-2 border-b border-border px-2 py-1.5">
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
           <span className="truncate text-xs">{selected ?? "No file selected"}</span>
           <div className="ml-auto flex gap-1">
             <Button size="xs" onClick={save} disabled={!selected || busy}>

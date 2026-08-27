@@ -37,6 +37,7 @@ export type DashboardSectionId =
   | "mail-apps"
   | "vault"
   | "settings"
+  | "email-crawler"
 
 export type DashboardSectionChild = {
   id: string
@@ -90,6 +91,16 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   },
   { id: "vault", label: "Vault", route: "/vault", icon: Vault },
   { id: "settings", label: "Settings", route: "/settings", icon: Settings },
+  {
+    id: "email-crawler",
+    label: "Email Crawler",
+    route: "/email-crawler",
+    icon: Mail,
+    children: [
+      { id: "email-crawler-run", label: "Find emails", route: "/email-crawler" },
+      { id: "email-crawler-verify", label: "Verify Leads", route: "/leads/verify", icon: ShieldCheck },
+    ],
+  },
 ]
 
 export const DEFAULT_NAVIGATION_ORDER = DASHBOARD_SECTIONS.map((section) => section.id)
