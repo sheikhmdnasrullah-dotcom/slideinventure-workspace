@@ -14,7 +14,7 @@ const COL = APPWRITE.collections.integrations;
 
 const ListSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().min(1).max(50).default(20),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
   provider: z.string().optional(),
   status: z.string().optional(),
 });
@@ -53,16 +53,16 @@ export async function GET(request: NextRequest) {
   const limit = checkRateLimit(request, { limit: 100, windowMs: 60_000 });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
-  const query = validateQuery(ListSchema, request.nextUrl.searchParams);
-  const email = user.email ?? "";
-
-  const queries = [Query.equal("created_by", email)];
-  if (query.data.provider) queries.push(Query.equal("provider", query.data.provider));
-  if (query.data.status) queries.push(Query.equal("status", query.data.status));
-  queries.push(Query.orderDesc("created_at"));
-  queries.push(Query.limit(query.data.pageSize), Query.offset((query.data.page - 1) * query.data.pageSize));
-
   try {
+    const query = validateQuery(ListSchema, request.nextUrl.searchParams);
+    const email = user.email ?? "";
+
+    const queries = [Query.equal("created_by", email)];
+    if (query.data.provider) queries.push(Query.equal("provider", query.data.provider));
+    if (query.data.status) queries.push(Query.equal("status", query.data.status));
+    queries.push(Query.orderDesc("created_at"));
+    queries.push(Query.limit(query.data.pageSize), Query.offset((query.data.page - 1) * query.data.pageSize));
+
     const res = await databases.listDocuments(DB, COL, queries);
     return Response.json({
       data: res.documents.map(serialize),

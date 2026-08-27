@@ -1,5 +1,7 @@
-import WhiteboardLauncher from "@/components/dashboard/v3/whiteboard/whiteboard-launcher";
+import { requireUser } from "@/lib/supabase/server";
+import { ResearchLabWorkspace } from "@/components/dashboard/research/research-lab-workspace";
 
-export default function ResearchLabPage() {
-  return <WhiteboardLauncher section="research" title="Research Lab" />;
+export default async function ResearchLabPage() {
+  await requireUser();
+  return <ResearchLabWorkspace />;
 }

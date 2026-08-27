@@ -3,6 +3,7 @@ import { runBrowseTask } from "@/lib/browse/agent";
 import { databases, ID, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { verifyEmail } from "@/lib/verify/truemail";
+import { enrichWithPythonService } from "@/lib/email-crawler/service";
 import { logActivity } from "@/lib/activities/client";
 
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
@@ -38,6 +39,11 @@ export async function crawlEmails(opts: {
   const details = (opts.details || "").trim();
   const instructions = (opts.instructions || "").trim();
 
+  // Optional Python microservice (crawl4ai) pre-discovery to strengthen the agent.
+  const pre = await enrichWithPythonService(link, details).catch(() => null);
+  const preEmails = pre?.emails?.length ? pre.emails : [];
+  const preLinks = pre?.links?.slice(0, 12) ?? [];
+
   const task = [
     "You are an email-finding agent. Find the email address(es) for the prospect described below.",
     "",
@@ -52,6 +58,10 @@ export async function crawlEmails(opts: {
     "4. Collect every plausible email address belonging to this prospect (prefer ones matching their name/company).",
     "5. Return a concise bulleted list, one item per line, formatted exactly as: email — source/context",
     "Only include real-looking email addresses. Do not invent emails.",
+    preEmails.length
+      ? `\nPRE-DISCOVERED CANDIDATE EMAILS (verify they belong to the prospect):\n${preEmails.join(", ")}`
+      : "",
+    preLinks.length ? `\nSUGGESTED PAGES TO INSPECT:\n${preLinks.join("\n")}` : "",
   ].join("\n");
 
   const startUrl = link

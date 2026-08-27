@@ -1,5 +1,7 @@
-import WhiteboardLauncher from "@/components/dashboard/v3/whiteboard/whiteboard-launcher";
+import { requireUser } from "@/lib/supabase/server";
+import { BrainstormWorkspace } from "@/components/dashboard/brainstorm/brainstorm-workspace";
 
-export default function BrainstormSketchPage() {
-  return <WhiteboardLauncher section="brainstorm" title="Brainstorm" />;
+export default async function BrainstormPage() {
+  await requireUser();
+  return <BrainstormWorkspace />;
 }

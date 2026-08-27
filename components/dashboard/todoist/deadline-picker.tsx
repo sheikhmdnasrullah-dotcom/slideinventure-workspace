@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -18,6 +18,149 @@ interface DeadlinePickerProps {
   onChange: (value: string) => void
   id?: string
   className?: string
+}
+
+const DIAL_SIZE = 176
+const DIAL_CENTER = DIAL_SIZE / 2
+const DIAL_RADIUS = 80
+
+// Angle convention: 0 rad points at 12 o'clock, increasing clockwise —
+// matches how a clock face reads, so hour/minute math below stays intuitive.
+function pointToAngle(x: number, y: number, cx: number, cy: number): number {
+  const angle = Math.atan2(x - cx, -(y - cy))
+  return angle < 0 ? angle + Math.PI * 2 : angle
+}
+
+function angleToHour12(angle: number): number {
+  const hour = Math.round(angle / (Math.PI / 6)) % 12
+  return hour === 0 ? 12 : hour
+}
+
+function angleToMinute(angle: number): number {
+  return Math.round(angle / (Math.PI / 30)) % 60
+}
+
+function AnalogDial({
+  draft,
+  mode,
+  onSetHour,
+  onSetMinute,
+}: {
+  draft: Date
+  mode: "hour" | "minute"
+  onSetHour: (hour12: number) => void
+  onSetMinute: (minute: number) => void
+}) {
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const draggingRef = useRef(false)
+
+  const minutes = draft.getMinutes()
+  const hour12 = draft.getHours() % 12 === 0 ? 12 : draft.getHours() % 12
+  const minuteAngle = (minutes * 6 * Math.PI) / 180
+  const hourAngle = ((hour12 % 12) * 30 + minutes * 0.5) * (Math.PI / 180)
+
+  const applyAtPoint = useCallback(
+    (clientX: number, clientY: number) => {
+      const svg = svgRef.current
+      if (!svg) return
+      const rect = svg.getBoundingClientRect()
+      const scale = DIAL_SIZE / rect.width
+      const x = (clientX - rect.left) * scale
+      const y = (clientY - rect.top) * scale
+      const angle = pointToAngle(x, y, DIAL_CENTER, DIAL_CENTER)
+      if (mode === "hour") onSetHour(angleToHour12(angle))
+      else onSetMinute(angleToMinute(angle))
+    },
+    [mode, onSetHour, onSetMinute]
+  )
+
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    draggingRef.current = true
+    e.currentTarget.setPointerCapture(e.pointerId)
+    applyAtPoint(e.clientX, e.clientY)
+  }
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!draggingRef.current) return
+    applyAtPoint(e.clientX, e.clientY)
+  }
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    draggingRef.current = false
+    e.currentTarget.releasePointerCapture(e.pointerId)
+  }
+
+  const activeAngle = mode === "hour" ? hourAngle : minuteAngle
+  const handLength = mode === "hour" ? DIAL_RADIUS * 0.52 : DIAL_RADIUS * 0.8
+  const handX = DIAL_CENTER + Math.sin(activeAngle) * handLength
+  const handY = DIAL_CENTER - Math.cos(activeAngle) * handLength
+
+  const ticks = Array.from({ length: 12 }, (_, i) => i)
+
+  return (
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${DIAL_SIZE} ${DIAL_SIZE}`}
+      width={DIAL_SIZE}
+      height={DIAL_SIZE}
+      className="touch-none select-none rounded-full"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      role="slider"
+      aria-label={mode === "hour" ? "Hour" : "Minute"}
+      aria-valuenow={mode === "hour" ? hour12 : minutes}
+      aria-valuemin={mode === "hour" ? 1 : 0}
+      aria-valuemax={mode === "hour" ? 12 : 59}
+    >
+      <circle
+        cx={DIAL_CENTER}
+        cy={DIAL_CENTER}
+        r={DIAL_RADIUS}
+        className="fill-muted/40 stroke-border"
+        strokeWidth={1}
+      />
+      {ticks.map((i) => {
+        const tickAngle = (i * 30 * Math.PI) / 180
+        const isMajor = i % 3 === 0
+        const outer = DIAL_RADIUS - 4
+        const inner = outer - (isMajor ? 8 : 4)
+        const labelR = outer - 18
+        const x1 = DIAL_CENTER + Math.sin(tickAngle) * outer
+        const y1 = DIAL_CENTER - Math.cos(tickAngle) * outer
+        const x2 = DIAL_CENTER + Math.sin(tickAngle) * inner
+        const y2 = DIAL_CENTER - Math.cos(tickAngle) * inner
+        const label = mode === "hour" ? (i === 0 ? 12 : i) : i * 5
+        const lx = DIAL_CENTER + Math.sin(tickAngle) * labelR
+        const ly = DIAL_CENTER - Math.cos(tickAngle) * labelR
+        return (
+          <g key={i}>
+            <line x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-foreground/30" strokeWidth={isMajor ? 2 : 1} />
+            {isMajor && (
+              <text
+                x={lx}
+                y={ly}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-muted-foreground text-[10px] font-medium tabular-nums"
+              >
+                {label}
+              </text>
+            )}
+          </g>
+        )
+      })}
+      <line
+        x1={DIAL_CENTER}
+        y1={DIAL_CENTER}
+        x2={handX}
+        y2={handY}
+        className="stroke-primary"
+        strokeWidth={3}
+        strokeLinecap="round"
+      />
+      <circle cx={DIAL_CENTER} cy={DIAL_CENTER} r={4} className="fill-primary" />
+      <circle cx={handX} cy={handY} r={6} className="fill-primary" />
+    </svg>
+  )
 }
 
 export function DeadlinePicker({ value, onChange, id, className }: DeadlinePickerProps) {
@@ -47,10 +190,26 @@ export function DeadlinePicker({ value, onChange, id, className }: DeadlinePicke
     setOpen(false)
   }
 
+  // Up increases, down decreases — matches every other stepper in the app.
   function bump(field: "hour" | "minute", delta: number) {
     const next = new Date(draft)
     if (field === "hour") next.setHours(next.getHours() + delta)
     else next.setMinutes(next.getMinutes() + delta)
+    setDraft(next)
+  }
+
+  function setHour12(hour12: number) {
+    const next = new Date(draft)
+    const isPm = next.getHours() >= 12
+    const hour24 = (hour12 % 12) + (isPm ? 12 : 0)
+    next.setHours(hour24)
+    setDraft(next)
+    setMode("minute")
+  }
+
+  function setMinute(minute: number) {
+    const next = new Date(draft)
+    next.setMinutes(minute)
     setDraft(next)
   }
 
@@ -112,23 +271,12 @@ export function DeadlinePicker({ value, onChange, id, className }: DeadlinePicke
             }}
           />
 
-          <div className="flex items-center justify-center gap-4">
-            <div className="flex h-[156px] w-[156px] flex-col items-center justify-center rounded-full border border-foreground/10 bg-muted/40 text-center">
-              <span className="text-4xl font-semibold tabular-nums leading-none text-foreground">
-                {String(hour12).padStart(2, "0")}:{String(draft.getMinutes()).padStart(2, "0")}
-              </span>
-              <span className="mt-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                {isPm ? "PM" : "AM"}
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2 rounded-md bg-muted/50 p-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => bump(mode, -1)}
-                >
+          <div className="flex flex-col items-center gap-3 border-t border-border pt-3">
+            <AnalogDial draft={draft} mode={mode} onSetHour={setHour12} onSetMinute={setMinute} />
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 rounded-md bg-muted/50 p-1">
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => bump(mode, 1)}>
                   <ChevronUp className="size-4" />
                 </Button>
                 <div className="flex items-center gap-1 text-2xl font-semibold tabular-nums">
@@ -154,16 +302,12 @@ export function DeadlinePicker({ value, onChange, id, className }: DeadlinePicke
                     {String(draft.getMinutes()).padStart(2, "0")}
                   </button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => bump(mode, 1)}
-                >
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => bump(mode, -1)}>
                   <ChevronDown className="size-4" />
                 </Button>
               </div>
-              <div className="flex items-center gap-1">
+
+              <div className="flex flex-col items-center gap-1">
                 <Button
                   type="button"
                   variant={!isPm ? "secondary" : "outline"}

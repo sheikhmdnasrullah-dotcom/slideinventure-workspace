@@ -76,7 +76,7 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "ai-venture", label: "AI Venture", route: "/concepts", icon: Rocket },
   { id: "research-lab", label: "Research Lab", route: "/research-lab", icon: Beaker },
   { id: "notepad", label: "Notepad", route: "/notepad", icon: BookOpen },
-  { id: "brainstorm-sketch", label: "Brainstorm Sketch", route: "/brainstorm-sketch", icon: Brain },
+  { id: "brainstorm-sketch", label: "Brainstorm", route: "/brainstorm-sketch", icon: Brain },
   { id: "terminal", label: "Terminal", route: "/terminal", icon: Terminal },
   { id: "useful-links", label: "Useful Links", route: "/useful-links", icon: Send },
   {
