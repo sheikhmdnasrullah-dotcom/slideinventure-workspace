@@ -58,10 +58,10 @@ export function AiChat() {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Message the agent…"
+          placeholder="Message the agent"
         />
         <Button type="submit" disabled={streaming}>
-          {streaming ? "…" : "Send"}
+          {streaming ? "Sending" : "Send"}
         </Button>
       </form>
     </div>

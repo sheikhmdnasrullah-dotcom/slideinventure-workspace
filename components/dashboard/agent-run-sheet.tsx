@@ -12,10 +12,20 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, CircleCheck, CircleX } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { RosterAgent } from "@/lib/agents/roster";
+import { AgentIcon } from "@/components/dashboard/agent-icon";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+
+type LogEntry = { level: "info" | "success" | "error"; text: string };
+
+const LOG_ICON: Record<LogEntry["level"], LucideIcon | null> = {
+  info: null,
+  success: CircleCheck,
+  error: CircleX,
+};
 
 export function AgentRunSheet({
   agent,
@@ -30,7 +40,7 @@ export function AgentRunSheet({
   const [error, setError] = useState<string | null>(null);
   const [tools, setTools] = useState(false);
   const [durable, setDurable] = useState(false);
-  const [toolLog, setToolLog] = useState<string[]>([]);
+  const [toolLog, setToolLog] = useState<LogEntry[]>([]);
 
   const messages = agent ? (messagesByAgent[agent.slug] ?? []) : [];
 
@@ -45,7 +55,7 @@ export function AgentRunSheet({
     const startData = await start.json();
     if (!start.ok) throw new Error(startData?.error ?? "Failed to start durable run");
     const workflowId: string = startData.workflowId;
-    setToolLog((prev) => [...prev, `⏱ Temporal workflow started: ${workflowId}`]);
+    setToolLog((prev) => [...prev, { level: "info", text: `Temporal workflow started: ${workflowId}` }]);
 
     let status = "RUNNING";
     let result: string | null = null;
@@ -81,7 +91,7 @@ export function AgentRunSheet({
           ...prev,
           [agent.slug]: [...(prev[agent.slug] ?? []), { role: "assistant", content: answer }],
         }));
-        setToolLog((prev) => [...prev, `✅ ${agent.name} finished via Temporal (durable)`]);
+        setToolLog((prev) => [...prev, { level: "success", text: `${agent.name} finished via Temporal (durable)` }]);
         return;
       }
 
@@ -93,7 +103,7 @@ export function AgentRunSheet({
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Agent chat failed");
       if (Array.isArray(data.tools) && data.tools.length) {
-        setToolLog((prev) => [...prev, `🔧 ${agent.name} used: ${data.tools.join(", ")}`]);
+        setToolLog((prev) => [...prev, { level: "info", text: `${agent.name} used: ${data.tools.join(", ")}` }]);
       }
       setMessagesByAgent((prev) => ({
         ...prev,
@@ -113,7 +123,7 @@ export function AgentRunSheet({
           <>
             <SheetHeader>
               <SheetTitle>
-                <span className="mr-2">{agent.emoji ?? "🤖"}</span>
+                <AgentIcon slug={agent.slug} className="mr-2 size-4 text-ink-strong" />
                 {agent.name}
               </SheetTitle>
               <SheetDescription>{agent.description}</SheetDescription>
@@ -168,9 +178,21 @@ export function AgentRunSheet({
               </label>
               {toolLog.length > 0 && (
                 <div className="flex flex-col gap-1 pb-2">
-                  {toolLog.map((t, i) => (
-                    <p key={i} className="font-label text-[10px] text-ink-faint">{t}</p>
-                  ))}
+                  {toolLog.map((e, i) => {
+                    const Icon = LOG_ICON[e.level];
+                    return (
+                      <p
+                        key={i}
+                        className={cn(
+                          "flex items-center gap-1.5 font-label text-[10px]",
+                          e.level === "error" ? "text-destructive" : "text-ink-faint",
+                        )}
+                      >
+                        {Icon && <Icon className="size-3 shrink-0" />}
+                        <span>{e.text}</span>
+                      </p>
+                    );
+                  })}
                 </div>
               )}
               <div className="flex items-end gap-2">

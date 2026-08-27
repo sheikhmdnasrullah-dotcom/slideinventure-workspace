@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import { ArrowLeft, PenTool, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { AvWhiteboardEditor, AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
+import { AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
+import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog"
 
 type BoardSummary = { id: string; title: string; updated_at: string }
 
@@ -113,7 +114,17 @@ export function AvWhiteboard() {
   const [activeId, setActiveId] = useState<string | null>(null)
 
   if (activeId && engine) {
-    return <AvWhiteboardEditor engine={engine} boardId={activeId} onBack={() => setActiveId(null)} />
+    const frameUrl =
+      engine === "excalidraw"
+        ? `/excalidraw?scope=ai-venture&id=${encodeURIComponent(activeId)}`
+        : `/whiteboard?section=${AFFINE_SECTION}&id=${encodeURIComponent(activeId)}`
+    return (
+      <AppFrameDialog
+        url={frameUrl}
+        title={`${engine} board`}
+        onClose={() => setActiveId(null)}
+      />
+    )
   }
 
   if (engine) {

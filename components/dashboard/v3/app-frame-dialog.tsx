@@ -66,13 +66,13 @@ export function AppFrameDialog({
 
   return (
     <Dialog open={!!url} onOpenChange={(open) => { if (!open) requestClose(); }}>
-      <DialogContent className="sm:max-w-[95vw] h-[90vh] p-0">
+      <DialogContent className="w-[100vw] h-[100vh] max-w-[100vw] max-h-[100vh] p-0 gap-0 border-0 rounded-none bg-background">
         {url && (
           <iframe
             ref={iframeRef}
             src={url}
             title={title ?? "App"}
-            className="h-full w-full rounded-lg border-0"
+            className="h-full w-full border-0"
           />
         )}
       </DialogContent>

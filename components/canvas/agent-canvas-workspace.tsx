@@ -80,8 +80,8 @@ export function AgentCanvasWorkspace() {
       <div className="rounded-xl border bg-card/60 p-4">
         <h3 className="text-sm font-semibold">Launch Pipeline</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Feed a prospect link or details. The canvas walks every agent stage
-          (browser → CAPTCHA → crawl4ai → TrueMail) and emits AG-UI events.
+          Feed a prospect link or details. The canvas runs each pipeline stage and emits
+          AG-UI events as it goes.
         </p>
         <label className="mt-4 block text-xs font-medium">Prospect link</label>
         <input

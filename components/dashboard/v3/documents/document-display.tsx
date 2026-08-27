@@ -2,6 +2,7 @@
 
 import { format } from "date-fns"
 import { Download, ExternalLink, MoreVertical, Pencil, Trash2 } from "lucide-react"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,9 +14,11 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { STIRLING_PDF_URL } from "@/lib/pdf-editor"
 import { useDocuments } from "./use-documents"
+import { PdfEditorDialog } from "./pdf-editor-dialog"
 
 export function DocumentDisplay() {
   const { selectedDocument, deleteDocument } = useDocuments()
+  const [pdfOpen, setPdfOpen] = React.useState(false)
 
   if (!selectedDocument) {
     return (
@@ -46,9 +49,21 @@ export function DocumentDisplay() {
           <a  href={selectedDocument.url} target="_blank" rel="noopener noreferrer" title="Open in new tab" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><ExternalLink className="h-4 w-4" /></a>
           <a  href={selectedDocument.url} download={selectedDocument.filename} title="Download" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><Download className="h-4 w-4" /></a>
           {selectedDocument.mime_type === "application/pdf" && (
-            <a href={STIRLING_PDF_URL} target="_blank" rel="noopener noreferrer" title="Edit PDF" className="inline-flex items-center gap-1.5 rounded-md border px-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9">
-              <Pencil className="h-4 w-4" /> Edit PDF
-            </a>
+            <>
+              <button
+                onClick={() => setPdfOpen(true)}
+                title="Edit PDF"
+                className="inline-flex items-center gap-1.5 rounded-md border px-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9"
+              >
+                <Pencil className="h-4 w-4" /> Edit PDF
+              </button>
+              <PdfEditorDialog
+                open={pdfOpen}
+                onClose={() => setPdfOpen(false)}
+                fileUrl={selectedDocument.url}
+                title={selectedDocument.title}
+              />
+            </>
           )}
         </div>
         <div className="ml-auto flex items-center gap-2">

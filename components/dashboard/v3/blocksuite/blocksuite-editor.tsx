@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DocCollection, Job, Schema } from "@blocksuite/store";
 import { AffineSchemas } from "@blocksuite/blocks";
 
@@ -34,10 +34,12 @@ export default function BlocksuiteEditor({
   mode?: "page" | "edgeless";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    setError(null);
 
     let disposed = false;
     let editorEl: any = null;
@@ -86,12 +88,18 @@ export default function BlocksuiteEditor({
     };
 
     (async () => {
-      await ensureEffectsRegistered();
+      try {
+        await ensureEffectsRegistered();
+      } catch (e: any) {
+        setError("Failed to initialize AFFiNE editor: " + (e?.message || e));
+        return;
+      }
 
       const schema = new Schema();
       schema.register(AffineSchemas);
       const collection = new DocCollection({ schema });
       collection.meta.initialize();
+      collection.start();
       job = new Job({ collection });
 
       // Restore the snapshot FIRST when one exists, rather than bootstrapping
@@ -148,7 +156,9 @@ export default function BlocksuiteEditor({
       const onUnload = () => flushSave();
       window.addEventListener("beforeunload", onUnload);
       editorEl.__cleanup = () => window.removeEventListener("beforeunload", onUnload);
-    })();
+    })().catch((e: any) => {
+      setError("AFFiNE failed to render: " + (e?.message || e));
+    });
 
     return () => {
       disposed = true;
@@ -166,5 +176,12 @@ export default function BlocksuiteEditor({
     };
   }, [snapshot, mode, onChange]);
 
+  if (error) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-destructive">
+        {error}
+      </div>
+    );
+  }
   return <div ref={containerRef} style={{ height: "100%", width: "100%" }} />;
 }

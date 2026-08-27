@@ -32,8 +32,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { commandMenuStore } from "@/lib/command-menu-store"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/system"
 import { Button } from "@/components/ui/button"
 
 type LiveRow = {
@@ -190,94 +189,84 @@ export function LiveActivity() {
   const groups = React.useMemo(() => groupByDay(rows), [rows])
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <CardTitle className="text-base">Live Activity</CardTitle>
-            <CardDescription>What happened while you were away</CardDescription>
-          </div>
-          <ConnectionDot status={status} />
+    <div className="flex flex-1 flex-col">
+      <div className="flex items-center justify-between gap-2 pb-3">
+        <div>
+          <p className="font-label text-ink-faint">Recent activity</p>
+          <p className="font-body-tight text-sm text-ink-muted">What happened while you were away</p>
         </div>
-      </CardHeader>
-      <CardContent className="flex-1">
-        {!loaded ? (
-          <div className="flex h-[360px] items-center justify-center text-sm text-muted-foreground">
-            Loading activity
-          </div>
-        ) : rows.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted-foreground">
-            No activity yet. Work done in any section shows up here.
-          </p>
-        ) : (
-          <div data-lenis-prevent className="h-[360px] overflow-y-auto pr-2">
-            <AnimatePresence initial={false}>
-              {groups.map((group) => (
-                <div key={group.header} className="mb-3">
-                  <div className="sticky top-0 z-10 bg-background/90 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground backdrop-blur">
-                    {group.header}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {group.items.map((row) => {
-                      const Icon = iconForSource(row.source)
-                      const href = hrefForRow(row)
-                      const body = (
-                        <MotionDiv
-                          layout
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: Duration.fast, ease: Ease.expo }}
-                          className="flex items-start gap-3 rounded-lg border p-3"
-                        >
-                          <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium leading-tight">{row.title}</p>
-                            {row.description ? (
-                              <p className="truncate text-xs text-muted-foreground">{row.description}</p>
-                            ) : null}
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">
-                              {labelForEventType(row.type)} •{" "}
-                              {formatDistanceToNow(new Date(row.timestamp), { addSuffix: true })}
-                            </p>
-                          </div>
-                        </MotionDiv>
-                      )
-                      return href !== "/activity" ? (
-                        <Link key={row.id} href={href} className="block">
-                          {body}
-                        </Link>
-                      ) : (
-                        <div key={row.id}>{body}</div>
-                      )
-                    })}
-                  </div>
+        <ConnectionDot status={status} />
+      </div>
+      {!loaded ? (
+        <div className="flex h-[360px] items-center justify-center font-body text-sm text-ink-muted">
+          Loading activity
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="py-12 text-center font-body text-sm text-ink-muted">
+          No activity yet. Work done in any section shows up here.
+        </p>
+      ) : (
+        <div data-lenis-prevent className="h-[360px] overflow-y-auto pr-2">
+          <AnimatePresence initial={false}>
+            {groups.map((group) => (
+              <div key={group.header} className="mb-1">
+                <div className="sticky top-0 z-10 bg-[var(--page-fill)]/90 py-1 font-label text-ink-faint backdrop-blur-sm">
+                  {group.header}
                 </div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                <div className="flex flex-col">
+                  {group.items.map((row) => {
+                    const Icon = iconForSource(row.source)
+                    const href = hrefForRow(row)
+                    const body = (
+                      <MotionDiv
+                        layout
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: Duration.fast, ease: Ease.expo }}
+                        className="flex items-start gap-3 border-l border-rule py-2 pl-3 transition-colors hover:bg-[var(--surface-2)]/50"
+                      >
+                        <Icon className="mt-0.5 size-3.5 shrink-0 text-ink-faint" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-body-tight text-sm text-ink-strong">{row.title}</p>
+                          {row.description ? (
+                            <p className="truncate font-body text-xs text-ink-muted">{row.description}</p>
+                          ) : null}
+                          <p className="mt-0.5 font-label text-ink-faint">
+                            {labelForEventType(row.type)} ·{" "}
+                            {formatDistanceToNow(new Date(row.timestamp), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </MotionDiv>
+                    )
+                    return href !== "/activity" ? (
+                      <Link key={row.id} href={href} className="block">
+                        {body}
+                      </Link>
+                    ) : (
+                      <div key={row.id}>{body}</div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
   )
 }
 
 function ConnectionDot({ status }: { status: "connecting" | "live" | "offline" }) {
   const live = status === "live"
   return (
-    <Badge variant="outline" className="gap-1.5">
-      <span
-        className={cn(
-          "size-2 rounded-full",
-          live ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500 animate-pulse" : "bg-rose-500"
-        )}
-      />
-      {live ? "Live" : "Reconnecting"}
-    </Badge>
+    <StatusBadge
+      tone={live ? "live" : status === "connecting" ? "warn" : "danger"}
+      dot
+      label={live ? "Live" : "Reconnecting"}
+    />
   )
 }
-
-const cn = (...classes: (string | false | null | undefined)[]) => classes.filter(Boolean).join(" ")
 
 export function QuickActions() {
   const router = useRouter()
@@ -299,7 +288,7 @@ export function QuickActions() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quick actions</span>
+      <span className="font-label text-ink-faint">Quick actions</span>
       <Button
         size="sm"
         variant="outline"

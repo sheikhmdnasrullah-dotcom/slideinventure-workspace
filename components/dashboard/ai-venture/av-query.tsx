@@ -70,7 +70,7 @@ export function AvQuery() {
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">
             <Sparkles className="size-8" />
-            <p className="text-sm">Ask anything. This searches your Knowledge, Documents, Notes, Terminal, and Links.</p>
+            <p className="text-sm">Searches your Knowledge, Documents, Notes, Terminal, and Links.</p>
           </div>
         ) : (
           <div className="mx-auto flex max-w-2xl flex-col gap-4">

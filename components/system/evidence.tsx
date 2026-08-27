@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  *
  *   SourceCitation  the small reference strip below an answer/result: a type
  *                  badge, a source slug, an optional position coordinate, and
- *                  an "Open source →" deep link. Used under chat answers and
+ *                  an "Open source" deep link. Used under chat answers and
  *                  inline in the search result list.
  *
  *   EvidenceBlock   the larger unit: the highlighted passage text (with the
@@ -60,7 +60,7 @@ export function SourceCitation({
           href={href}
           className="normal-case text-ink-muted transition-colors hover:text-[var(--text-accent)]"
         >
-          Open source →
+          Open source
         </Link>
       )}
     </div>

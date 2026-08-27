@@ -79,7 +79,7 @@ export async function PATCH(request: NextRequest) {
       category: "ai_venture",
       action: "moved",
       title: path === newPath ? "AI Venture file renamed" : "AI Venture file moved",
-      description: `${path} → ${newPath}`,
+      description: `${path} to ${newPath}`,
       entityId: newPath,
       entityType: "file",
       metadata: { from: path, to: newPath },

@@ -13,20 +13,21 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { motion } from "framer-motion";
+import { ArrowRight, Globe, ShieldCheck, Network, MailCheck, UserPlus, type LucideIcon } from "lucide-react";
 import { AGENT_STAGES, type AgentStage } from "@/lib/agui/bus";
 
 export type StageStatus = "idle" | "running" | "done" | "error";
 
 const NODE_META: Record<
   AgentStage,
-  { label: string; sub: string; icon: string }
+  { label: string; sub: string; icon: LucideIcon }
 > = {
-  input: { label: "Input Ingestion", sub: "Prospect link + details", icon: "⌨" },
-  browser: { label: "Browser Navigation", sub: "Headless surf", icon: "🌐" },
-  captcha: { label: "CAPTCHA Solver", sub: "2Captcha bridge", icon: "🤖" },
-  crawl: { label: "Deep Crawler", sub: "crawl4ai / browser-use", icon: "🕸" },
-  truemail: { label: "TrueMail Validation", sub: "SMTP verify", icon: "✉" },
-  lead: { label: "Lead Emitted", sub: "Imported to CRM", icon: "★" },
+  input: { label: "Input Ingestion", sub: "Prospect link + details", icon: ArrowRight },
+  browser: { label: "Browser Navigation", sub: "Headless surf", icon: Globe },
+  captcha: { label: "CAPTCHA Solver", sub: "2Captcha bridge", icon: ShieldCheck },
+  crawl: { label: "Deep Crawler", sub: "crawl4ai / browser-use", icon: Network },
+  truemail: { label: "TrueMail Validation", sub: "SMTP verify", icon: MailCheck },
+  lead: { label: "Lead Emitted", sub: "Imported to CRM", icon: UserPlus },
 };
 
 const STATUS_RING: Record<StageStatus, string> = {
@@ -51,7 +52,7 @@ function StageNode({ data }: NodeProps) {
     >
       <Handle type="target" position={Position.Left} className="!bg-primary" />
       <div className="flex items-center gap-2">
-        <span className="text-lg">{meta.icon}</span>
+        <meta.icon className="size-4 text-ink-strong" />
         <span className="text-xs font-semibold">{meta.label}</span>
       </div>
       <p className="mt-1 text-[10px] text-muted-foreground">{meta.sub}</p>

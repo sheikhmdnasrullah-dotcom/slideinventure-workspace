@@ -2,42 +2,39 @@
 
 # PROJECT RULES
 
-This dashboard is based on the downloaded ShadcnStore dashboard template.
-
-SOURCE OF TRUTH:
+This dashboard started from the downloaded ShadcnStore dashboard template:
 https://github.com/shadcnstore/shadcn-dashboard-landing-template
 
-Do NOT redesign the UI.
+That template is our ORIGIN POINT, not a permanent constraint. As of 2026-08-27 we are
+executing a deliberate first-party visual redesign (see "SlideIn Venture Design System"
+below) — a proprietary "business operating system" identity, built on top of the existing
+component logic and architecture. This supersedes the older "do not redesign / preserve
+ShadcnStore layout exactly" rule that used to live in this file.
 
-Do NOT invent alternative layouts.
+## SlideIn Venture Design System — active direction
 
-Do NOT "improve" the visual design.
-
-Reuse/adapt the existing ShadcnStore components whenever possible.
-
-Preserve its:
-- layout
-- sidebar
-- header
-- spacing
-- typography
-- tables
-- cards
-- Mail UI
-- responsive behavior
-- component style
-
-This application uses LIGHT MODE ONLY.
-
-Do NOT implement dark mode.
-Do NOT add dark-mode logic.
-Do NOT add dark-mode CSS/classes.
-Do NOT create theme toggles for dark mode.
-
-Our application adds functionality; it does not replace the design.
-
-If a requested feature does not exist in the template:
-use the closest existing ShadcnStore component pattern.
+- We ARE redesigning the visual language: sidebar, top bar, dashboard, modals, and
+  per-section layouts (Leads, Research Lab, AI Venture, Agents, Knowledge, Documents,
+  Terminal, Notepad, Brainstorm, Settings, Chat, command palette).
+- Preserve existing business logic, data flow, auth, persistence, and routing. Redesign is
+  presentation-layer + layout-structure, not a rewrite of functionality.
+- Establish a real design token system (colors, type scale, spacing, radius, shadows,
+  motion, z-index) instead of scattering magic numbers/classes.
+- Keep the SlideIn Venture brand recognizable: warm neutral foundation, orange as a
+  restrained accent for active/important/status states — not an all-orange UI.
+- LIGHT MODE is the default and must always look correct. Dark mode / system mode are
+  allowed as user-selectable options in Settings going forward (this reverses the old
+  "light mode only" rule) — but do not make dark mode the default, and do not ship a
+  section that only works in one theme.
+- Vary visual structure by section intent (open workspace vs. data grid vs. execution
+  console vs. library) instead of repeating the same card-grid pattern everywhere.
+- No fake data, fake metrics, or fake activity to make screens look alive — use real
+  application data and elegant empty states.
+- Don't install a UI/animation library just because it exists — prefer the app's current
+  infrastructure (Tailwind, shadcn/ui, existing primitives) unless something is clearly
+  missing and free/open-source.
+- After each meaningful redesign pass: run typecheck/build, then actually exercise the UI
+  (browser tooling) before calling a section done.
 
 Do not create unnecessary abstractions.
 

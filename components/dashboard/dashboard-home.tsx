@@ -1,7 +1,7 @@
 import { SiteHeader } from "@/components/dashboard/site-header"
 import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics"
 import { LiveActivity, QuickActions } from "@/components/dashboard/live-activity"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Section, SectionRule, Surface } from "@/components/system"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DataTable, type ActivityItem } from "@/components/dashboard/v3/data-table"

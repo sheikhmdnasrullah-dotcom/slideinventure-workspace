@@ -226,9 +226,7 @@ export default async function AgentsPage() {
           ) : (
             <>
               <p className="font-body text-sm text-ink-muted pb-4">
-                Each agent opens a visual workflow canvas. Describe a task in plain English and the
-                agent builds the node graph (research → reason → output) and runs it. The same
-                personas also live in{" "}
+                Each persona is defined as a file in{" "}
                 <code className="font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">.claude/agents/</code>.
               </p>
               <AgentIconGrid agents={roster} />

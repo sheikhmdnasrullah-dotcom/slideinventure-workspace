@@ -1,9 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { ArrowLeft, PenTool, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { AvWhiteboardEditor, AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
+import { PenTool, Trash2 } from "lucide-react"
+import { AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
+import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog"
 
 type Engine = BoardEngine
 type PlaygroundItem = { id: string; engine: Engine; title: string; updated_at: string }
@@ -48,18 +48,19 @@ export function AvPlayground() {
   }, [load])
 
   if (open) {
+    const frameUrl =
+      open.engine === "excalidraw"
+        ? `/excalidraw?scope=ai-venture&id=${encodeURIComponent(open.id)}`
+        : `/whiteboard?section=${AFFINE_SECTION}&id=${encodeURIComponent(open.id)}`
     return (
-      <div className="flex h-full flex-col">
-        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-          <Button size="icon-sm" variant="ghost" onClick={() => { setOpen(null); load(); }}>
-            <ArrowLeft className="size-4" />
-          </Button>
-          <span className="text-xs text-muted-foreground">Playground · {open.engine}</span>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <AvWhiteboardEditor engine={open.engine} boardId={open.id} onBack={() => { setOpen(null); load(); }} />
-        </div>
-      </div>
+      <AppFrameDialog
+        url={frameUrl}
+        title={`Playground · ${open.engine}`}
+        onClose={() => {
+          setOpen(null)
+          load()
+        }}
+      />
     )
   }
 
@@ -122,7 +123,7 @@ export function AvPlayground() {
                   }}
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  <span className="text-xs">✎</span>
+                  <PenTool className="size-3.5" />
                 </button>
                 <Trash2
                   className="size-3.5 text-muted-foreground hover:text-destructive"

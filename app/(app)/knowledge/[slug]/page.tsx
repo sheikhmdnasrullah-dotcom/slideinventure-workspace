@@ -45,7 +45,7 @@ export default async function KnowledgeItemPage(
             href="/chat"
             className="text-sm text-primary hover:underline"
           >
-            Return to your search results →
+            Back to search results
           </Link>
         </div>
       </div>

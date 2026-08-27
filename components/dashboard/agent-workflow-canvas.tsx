@@ -10,12 +10,15 @@ import {
   Position,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { ShimmerButton } from "@/components/ui/magicui/shimmer-button";
+import { cn } from "@/lib/utils";
+import { Search, Brain, Wrench, Video, Send, Zap, CircleCheck, CircleX, Trash2, type LucideIcon } from "lucide-react";
 
 type NodeKind = "trigger" | "research" | "reason" | "output" | "tool" | "youtube";
 type Status = "idle" | "running" | "done" | "error";
@@ -26,16 +29,23 @@ type AgentNodeData = {
   status: Status;
   instruction: string;
   result: string;
-  icon: string;
 };
 
-const KIND_META: Record<NodeKind, { icon: string; color: string }> = {
-  trigger: { icon: "⚡", color: "#a855f7" },
-  research: { icon: "🌐", color: "#3b82f6" },
-  reason: { icon: "🧠", color: "#6366f1" },
-  tool: { icon: "🛠", color: "#f59e0b" },
-  youtube: { icon: "📺", color: "#ef4444" },
-  output: { icon: "📤", color: "#10b981" },
+type LogEntry = { level: "info" | "success" | "error"; text: string };
+
+const LOG_ICON: Record<LogEntry["level"], LucideIcon | null> = {
+  info: null,
+  success: CircleCheck,
+  error: CircleX,
+};
+
+const KIND_META: Record<NodeKind, { icon: LucideIcon }> = {
+  trigger: { icon: Zap },
+  research: { icon: Search },
+  reason: { icon: Brain },
+  tool: { icon: Wrench },
+  youtube: { icon: Video },
+  output: { icon: Send },
 };
 
 const STATUS_RING: Record<Status, string> = {
@@ -45,16 +55,31 @@ const STATUS_RING: Record<Status, string> = {
   error: "border-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.45)]",
 };
 
-function AgentNode({ data }: NodeProps) {
+function AgentNode({ id, data }: NodeProps) {
   const d = data as AgentNodeData;
   const meta = KIND_META[d.kind];
+  const { deleteElements, getEdges } = useReactFlow();
+  const onDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const connected = getEdges()
+      .filter((edge) => edge.source === id || edge.target === id)
+      .map((edge) => ({ id: edge.id }));
+    deleteElements({ nodes: [{ id }], edges: connected });
+  };
   return (
     <div
-      className={`w-52 rounded-xl border bg-card/80 p-3 backdrop-blur ${STATUS_RING[d.status]}`}
+      className={`group relative w-52 rounded-xl border bg-card/80 p-3 backdrop-blur ${STATUS_RING[d.status]}`}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary" />
+      <button
+        onClick={onDelete}
+        title="Delete node"
+        className="absolute right-1.5 top-1.5 z-10 hidden rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive group-hover:block"
+      >
+        <Trash2 className="size-3.5" />
+      </button>
       <div className="flex items-center gap-2">
-        <span className="text-lg">{meta.icon}</span>
+        <meta.icon className="size-4 text-ink-strong" />
         <span className="text-xs font-semibold">{d.label}</span>
       </div>
       {d.instruction && (
@@ -76,7 +101,6 @@ function AgentNode({ data }: NodeProps) {
 const nodeTypes = { agent: AgentNode };
 
 function mkNode(id: string, kind: NodeKind, label: string, instruction: string, x: number): Node {
-  const meta = KIND_META[kind];
   return {
     id,
     type: "agent",
@@ -87,7 +111,6 @@ function mkNode(id: string, kind: NodeKind, label: string, instruction: string, 
       status: "idle",
       instruction,
       result: "",
-      icon: meta.icon,
     } as AgentNodeData,
   };
 }
@@ -95,21 +118,17 @@ function mkNode(id: string, kind: NodeKind, label: string, instruction: string, 
 export function AgentWorkflowCanvas({
   slug,
   name,
-  emoji,
-  color,
   persona,
 }: {
   slug: string;
   name: string;
-  emoji: string;
-  color: string;
   persona: string;
 }) {
   const [input, setInput] = React.useState("");
   const [planning, setPlanning] = React.useState(false);
   const [running, setRunning] = React.useState(false);
   const [output, setOutput] = React.useState("");
-  const [log, setLog] = React.useState<string[]>([]);
+  const [log, setLog] = React.useState<LogEntry[]>([]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -155,7 +174,7 @@ export function AgentWorkflowCanvas({
   async function buildGraph() {
     if (!input.trim() || planning) return;
     setPlanning(true);
-    setLog([`Planning "${name}" workflow…`]);
+    setLog([{ level: "info", text: `Planning "${name}" workflow...` }]);
     try {
       const res = await fetch(`/api/agents/${slug}/plan`, {
         method: "POST",
@@ -184,9 +203,9 @@ export function AgentWorkflowCanvas({
       }
       setNodes(built);
       setEdges(builtEdges);
-      setLog((l) => [...l, `Built ${built.length - 1} step(s).`]);
+      setLog((l) => [...l, { level: "info", text: `Built ${built.length - 1} step(s).` }]);
     } catch (e: any) {
-      setLog((l) => [...l, `Plan failed: ${e?.message ?? e}`]);
+      setLog((l) => [...l, { level: "error", text: `Plan failed: ${e?.message ?? e}` }]);
     } finally {
       setPlanning(false);
     }
@@ -207,7 +226,7 @@ export function AgentWorkflowCanvas({
         const text = (data.text as string) || "(no results)";
         researchRef.current += `\n[${d.label}]\n${text}\n`;
         setResult(n.id, text.slice(0, 400));
-        setLog((l) => [...l, `🔎 ${d.label}: ${text.length} chars retrieved`]);
+        setLog((l) => [...l, { level: "info", text: `${d.label}: ${text.length} chars retrieved` }]);
       } else if (d.kind === "output") {
         const finalOut = researchRef.current
           ? `Based on research:\n${researchRef.current}\n\n${name} output: (see reasoning above)`
@@ -225,7 +244,7 @@ export function AgentWorkflowCanvas({
         const r0 = data.results?.[0];
         const found = r0?.emails?.length ? r0.emails.join(", ") : r0?.email;
         setResult(n.id, found || "(no email found)");
-        setLog((l) => [...l, `📺 ${d.label}: ${found || "no email"}`]);
+        setLog((l) => [...l, { level: "info", text: `${d.label}: ${found || "no email"}` }]);
         researchRef.current += `\n[${d.label}] ${found || "no email"}\n`;
       } else {
         const ctx = researchRef.current ? `\n\nWeb research:\n${researchRef.current}` : "";
@@ -241,12 +260,12 @@ export function AgentWorkflowCanvas({
         const data = await res.json();
         const text = data.response || data.message || "(no response)";
         setResult(n.id, text.slice(0, 400));
-        setLog((l) => [...l, `🧠 ${d.label}: ${text.slice(0, 80)}…`]);
+        setLog((l) => [...l, { level: "info", text: `${d.label}: ${text.slice(0, 80)}...` }]);
       }
       setStatus(n.id, "done");
     } catch (e: any) {
       setStatus(n.id, "error");
-      setLog((l) => [...l, `❌ ${d.label}: ${e?.message ?? e}`]);
+      setLog((l) => [...l, { level: "error", text: `${d.label}: ${e?.message ?? e}` }]);
     }
   }
 
@@ -255,13 +274,13 @@ export function AgentWorkflowCanvas({
     setRunning(true);
     setOutput("");
     researchRef.current = "";
-    setLog((l) => [...l, "Running workflow…"]);
+    setLog((l) => [...l, { level: "info", text: "Running workflow" }]);
     const order = [...nodes];
     for (const n of order) {
       await runNode(n);
     }
     setRunning(false);
-    setLog((l) => [...l, "✅ Workflow finished."]);
+    setLog((l) => [...l, { level: "success", text: "Workflow finished." }]);
   }
 
   return (
@@ -271,18 +290,18 @@ export function AgentWorkflowCanvas({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && buildGraph()}
-          placeholder={`Describe what you want ${name} to do…`}
+          placeholder={`Describe what you want ${name} to do...`}
           className="min-w-[260px] flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
         />
         <ShimmerButton onClick={buildGraph} disabled={planning || !input.trim()}>
-          {planning ? "Building…" : "Build graph"}
+          {planning ? "Building" : "Build graph"}
         </ShimmerButton>
         <button
           onClick={run}
           disabled={running}
           className="rounded-md border border-rule px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
         >
-          {running ? "Running…" : "▶ Run"}
+          {running ? "Running" : "Run"}
         </button>
         <button
           onClick={defaultGraph}
@@ -312,16 +331,26 @@ export function AgentWorkflowCanvas({
           <p className="mb-2 font-semibold text-ink-strong">Execution log</p>
           {log.length === 0 ? (
             <p className="text-ink-muted">
-              Type a task, hit <b>Build graph</b>, then <b>Run</b>. {emoji} {name} will research
+              Type a task, hit <b>Build graph</b>, then <b>Run</b>. {name} will research
               the web (headless) and reason with DeepSeek.
             </p>
           ) : (
             <div className="space-y-1">
-              {log.map((l, i) => (
-                <p key={i} className="text-ink-muted">
-                  {l}
-                </p>
-              ))}
+              {log.map((e, i) => {
+                const Icon = LOG_ICON[e.level];
+                return (
+                  <p
+                    key={i}
+                    className={cn(
+                      "flex items-center gap-1.5",
+                      e.level === "error" ? "text-destructive" : "text-ink-muted",
+                    )}
+                  >
+                    {Icon && <Icon className="size-3 shrink-0" />}
+                    <span>{e.text}</span>
+                  </p>
+                );
+              })}
             </div>
           )}
           {output && (

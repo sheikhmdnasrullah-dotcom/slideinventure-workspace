@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Highlight } from "@/components/knowledge/highlight";
 import { Stagger, StaggerItem } from "@/components/system/motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ChevronRight } from "lucide-react";
 
 export type ChunkHit = {
   id: string;
@@ -83,7 +83,7 @@ export function ExactSearchResults({
                         href={`/knowledge/${item.slug}?q=${encodeURIComponent(query)}&chunk=${hit.chunk_index}`}
                         className="text-xs text-signal hover:underline"
                       >
-                        Open source →
+                        Open source
                       </Link>
                     )}
                     {onAskAI && (
@@ -122,8 +122,9 @@ export function ExactSearchResults({
             disabled={!hasNext}
             className="text-foreground/60 hover:underline disabled:opacity-30"
           >
-            Next →
-          </button>
+             Next
+             <ChevronRight className="size-3" />
+           </button>
         </div>
       )}
     </div>

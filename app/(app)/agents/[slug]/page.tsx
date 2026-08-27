@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getAgentPrompt, getAgentRoster } from "@/lib/agents/roster";
 import { AgentWorkflowCanvas } from "@/components/dashboard/agent-workflow-canvas";
+import { AgentIcon } from "@/components/dashboard/agent-icon";
 import Link from "next/link";
 
 export function generateStaticParams() {
@@ -27,12 +28,12 @@ export default async function AgentCanvasPage({
           ← Agents
         </Link>
         <span
-          className="flex size-9 items-center justify-center rounded-lg text-lg"
+          className="flex size-9 items-center justify-center rounded-lg text-ink-strong"
           style={{
             background: `color-mix(in oklch, ${meta.color || "#6366f1"} 16%, transparent)`,
           }}
         >
-          {meta.emoji ?? "🤖"}
+          <AgentIcon slug={meta.slug} className="size-5" />
         </span>
         <div>
           <h1 className="font-label text-sm font-semibold text-ink-strong">{meta.name}</h1>
@@ -42,8 +43,6 @@ export default async function AgentCanvasPage({
       <AgentWorkflowCanvas
         slug={meta.slug}
         name={meta.name}
-        emoji={meta.emoji ?? "🤖"}
-        color={meta.color ?? "#6366f1"}
         persona={agent.prompt}
       />
     </div>

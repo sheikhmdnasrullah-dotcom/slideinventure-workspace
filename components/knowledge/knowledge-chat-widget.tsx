@@ -95,7 +95,7 @@ export function KnowledgeChatWidget() {
               autoFocus
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
-              placeholder="Ask about a prospect, SOP, decision…"
+              placeholder="Ask about a prospect, SOP, or decision"
               className="h-8 text-xs"
             />
           </div>

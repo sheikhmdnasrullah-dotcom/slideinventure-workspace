@@ -69,7 +69,7 @@ export function KnowledgeSearchPanel() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask anything... e.g. &quot;mail server setup&quot;, &quot;cold email benchmarks&quot;, &quot;Supabase auth flow&quot;"
+            placeholder="Search the knowledge base, e.g. &quot;mail server setup&quot;, &quot;cold email benchmarks&quot;, &quot;Supabase auth flow&quot;"
             className="text-sm"
             onKeyDown={(e) => e.key === "Enter" && search()}
           />

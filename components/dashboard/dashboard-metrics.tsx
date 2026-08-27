@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Card, Metric, Text, BarChart, Grid, Flex } from "@tremor/react"
 import Link from "next/link"
 import { useLiveRefresh } from "@/components/providers/event-stream"
+import { Metric, MetricRow, MetricCell, SectionRule } from "@/components/system"
 import type { DashboardResponse, DashboardCounts } from "@/lib/dashboard/types"
 
 type Tile = {
@@ -23,6 +23,24 @@ function tilesFromCounts(counts: DashboardCounts | undefined): Tile[] {
     { label: "Agent runs", value: counts.agentRuns, href: "/agents" },
     { label: "Activities (7d)", value: counts.activities7d, href: "/activity" },
   ]
+}
+
+/** Tiny inline 14-day trend, not a chart card. Omitted entirely when there is
+ * no volume to show, per house rule: no empty chart boxes, no invented data. */
+function Sparkline({ points }: { points: number[] }) {
+  if (points.length < 2) return null
+  const max = Math.max(...points, 1)
+  const w = 72
+  const h = 22
+  const step = w / (points.length - 1)
+  const d = points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(h - (p / max) * h).toFixed(1)}`)
+    .join(" ")
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0 overflow-visible text-[var(--text-accent)]" aria-hidden>
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
 }
 
 export function DashboardMetrics({ initial }: { initial: DashboardResponse | null }) {
@@ -53,49 +71,24 @@ export function DashboardMetrics({ initial }: { initial: DashboardResponse | nul
   const totalVolume = volume.reduce((s, p) => s + p.count, 0)
 
   return (
-    <div className="flex flex-col gap-4">
-      <Grid numItemsSm={2} numItemsLg={4} className="gap-3">
-        {tiles.map((tile) => (
-          <Link key={tile.label} href={tile.href} className="block">
-            <Card className="transition-colors hover:bg-muted/50">
-              <Text>{tile.label}</Text>
-              <Metric className="tabular-nums">{tile.value ?? ""}</Metric>
-            </Card>
-          </Link>
-        ))}
-        {tiles.length === 0 ? (
-          <Card>
-            <Text>No metrics yet</Text>
-            <Metric></Metric>
-          </Card>
-        ) : null}
-      </Grid>
-
-      <Card>
-        <Flex alignItems="start">
-          <div>
-            <Text>Activity volume</Text>
-            <div className="text-xs text-muted-foreground">Per day, last 14 days</div>
-          </div>
-        </Flex>
-        {totalVolume === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No activity recorded in the last 14 days.
-          </p>
-        ) : (
-          <BarChart
-            className="mt-4 h-44"
-            data={volume}
-            index="date"
-            categories={["count"]}
-            colors={["blue"]}
-            showLegend={false}
-            showGridLines={false}
-            yAxisWidth={28}
-            valueFormatter={(n) => String(n)}
-          />
-        )}
-      </Card>
+    <div className="flex flex-col">
+      <SectionRule
+        label="Workspace pulse"
+        coordinate={totalVolume > 0 ? <Sparkline points={volume.map((p) => p.count)} /> : undefined}
+      />
+      {tiles.length === 0 ? (
+        <p className="font-body text-sm text-ink-muted">
+          No workspace activity yet. Numbers appear here as you create notes, documents and boards.
+        </p>
+      ) : (
+        <MetricRow>
+          {tiles.map((tile) => (
+            <MetricCell key={tile.label}>
+              <Metric label={tile.label} value={tile.value ?? "—"} href={tile.href} />
+            </MetricCell>
+          ))}
+        </MetricRow>
+      )}
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { DataTable, FilterBar, Badge, type Column } from "@/components/system";
 import { AgentRunSheet } from "@/components/dashboard/agent-run-sheet";
+import { AgentIcon } from "@/components/dashboard/agent-icon";
 import type { RosterAgent } from "@/lib/agents/roster";
 
 const DIVISION_LABELS: Record<string, string> = {
@@ -57,7 +58,7 @@ export function AgentRosterTable({
       sortable: true,
       render: (a) => (
         <div className="flex items-center gap-2">
-          <span className="text-base leading-none">{a.emoji ?? "🤖"}</span>
+          <AgentIcon slug={a.slug} className="size-4 text-ink-strong" />
           <span className="font-body text-sm font-medium text-ink-strong">{a.name}</span>
         </div>
       ),
@@ -88,7 +89,7 @@ export function AgentRosterTable({
         <FilterBar.Search
           value={query}
           onChange={setQuery}
-          placeholder="Search agents…"
+          placeholder="Search agents"
         />
         <FilterBar.Select
           value={division}

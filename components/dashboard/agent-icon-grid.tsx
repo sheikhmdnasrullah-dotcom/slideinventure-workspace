@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { RosterAgent } from "@/lib/agents/roster";
+import { AgentIcon } from "@/components/dashboard/agent-icon";
 import { cn } from "@/lib/utils";
 
 function tint(hex: string | null): { bg: string; ring: string } {
@@ -26,10 +27,10 @@ export function AgentIconGrid({ agents }: { agents: RosterAgent[] }) {
             className="group flex flex-col items-center gap-2 rounded-xl border border-rule bg-[var(--surface)] p-4 text-center transition-all hover:-translate-y-0.5 hover:border-[var(--text-accent)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
           >
             <span
-              className="flex size-14 items-center justify-center rounded-xl text-2xl"
+              className="flex size-14 items-center justify-center rounded-xl text-ink-strong"
               style={{ background: t.bg, boxShadow: `inset 0 0 0 1px ${t.ring}` }}
             >
-              {a.emoji ?? "🤖"}
+              <AgentIcon slug={a.slug} className="size-7" />
             </span>
             <span className="font-label text-sm font-medium text-ink-strong leading-tight">
               {a.name}
