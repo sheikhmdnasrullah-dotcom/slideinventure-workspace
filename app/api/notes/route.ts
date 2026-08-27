@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
       typeof rawTitle === "string" && rawTitle.trim().length > 0
         ? rawTitle.trim().slice(0, 200)
         : null
-    const scope = body.scope === "ai-venture" ? "ai-venture" : "global"
+    const scope =
+      body.scope === "ai-venture" ? "ai-venture" : body.scope === "brainstorm" ? "brainstorm" : "global"
     const now = new Date().toISOString()
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
       user_email: user.email ?? "",

@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LayoutGrid, PenTool, Plus } from "lucide-react";
+import { LayoutGrid, NotebookPen, PenTool, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog";
+import { NotepadView } from "@/components/dashboard/notepad-view";
 
 type Doc = { id: string; title: string };
 
@@ -16,6 +18,7 @@ export function BrainstormWorkspace() {
   const [excel, setExcel] = useState<Doc[]>([]);
   const [affine, setAffine] = useState<Doc[]>([]);
   const [frame, setFrame] = useState<string | null>(null);
+  const [notepadOpen, setNotepadOpen] = useState(false);
 
   const load = useCallback(async () => {
     const [b, a] = await Promise.all([
@@ -64,11 +67,29 @@ export function BrainstormWorkspace() {
       <div className="flex flex-col gap-1">
         <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">Brainstorm</h1>
         <p className="text-xs text-foreground/40">
-          Two apps, side by side. Pick either and start working — everything autosaves.
+          Notepad, sketches, boards. Pick one and start working. Everything autosaves.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <NotebookPen className="size-4" /> Notepad
+            </CardTitle>
+            <Button size="sm" onClick={() => setNotepadOpen(true)} data-testid="brainstorm-notepad-open">
+              <Plus className="size-3" /> Open
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-72">
+              <p className="px-3 py-2 text-xs text-muted-foreground">
+                Quick notes, autosaved. Same note system as the main dashboard, scoped to brainstorm.
+              </p>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -129,6 +150,13 @@ export function BrainstormWorkspace() {
       </div>
 
       <AppFrameDialog url={frame} onClose={() => setFrame(null)} title="Brainstorm app" />
+
+      <Dialog open={notepadOpen} onOpenChange={setNotepadOpen}>
+        <DialogContent className="sm:max-w-[95vw] h-[90vh] p-0" showCloseButton>
+          <DialogTitle className="sr-only">Brainstorm notepad</DialogTitle>
+          <NotepadView scope="brainstorm" />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

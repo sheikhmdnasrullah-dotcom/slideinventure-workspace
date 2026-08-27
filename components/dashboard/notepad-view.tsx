@@ -22,10 +22,10 @@ const Notepad = dynamic(() => import("@/components/dashboard/v3/note/dynamic"), 
 type Note = { id: string; title: string | null; content: string; updated_at: string }
 
 // Same note engine the main dashboard Notepad uses (/api/notes, which already
-// supports scope=global|ai-venture) — parameterized by scope instead of
+// supports scope=global|ai-venture), parameterized by scope instead of
 // duplicated, so AI Venture notes are real notes in the same system, not a
 // second disconnected note store.
-export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-venture" }) {
+export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-venture" | "brainstorm" }) {
   const [notes, setNotes] = React.useState<Note[]>([])
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [content, setContent] = React.useState<string>("[]")
@@ -34,7 +34,7 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  // Always pass scope explicitly (never omit it) — /api/notes returns every
+  // Always pass scope explicitly (never omit it): /api/notes returns every
   // scope mixed together when the param is absent, which would leak AI
   // Venture notes into the main dashboard Notepad and vice versa.
   const scopeQuery = `?scope=${scope}`
