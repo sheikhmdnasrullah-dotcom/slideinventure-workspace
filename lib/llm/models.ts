@@ -20,8 +20,6 @@ loadInfisicalSecrets().catch(() => {});
 
 export type LlmProviderId =
   | "seekai"
-  | "gorouter"
-  | "tabiai"
   | "litellm"
   | "deepseek"
   | "nvidia"
@@ -64,12 +62,13 @@ export const OPENROUTER_DEFAULT_MODEL =
 
 /**
  * Ordered by preference (user-specified):
- *   1. SeekAI   2. GoRouter   3. TabiAi   (user-supplied gateways)
- *   4. DeepSeek   5. NVIDIA    (direct keys)
- *   6. LiteLLM    7. OpenRouter (routers / extra fallbacks)
+ *   1. SeekAI      (user-supplied gateway, verified working)
+ *   2. DeepSeek    3. NVIDIA    (direct keys)
+ *   4. LiteLLM     5. OpenRouter (routers / extra fallbacks)
  *
- * The three gateways only appear when their base URL env var is set; until
- * then the chain falls through to DeepSeek/NVIDIA so nothing breaks.
+ * GoRouter and TabiAi were removed from the chain: both are behind a Cloudflare
+ * managed-challenge (HTTP 403) that blocks server-to-server API calls, so they
+ * cannot be reached. Re-add here (plus their env vars) once that is resolved.
  */
 export function availableProviders(): LlmProvider[] {
   const out: LlmProvider[] = [];
@@ -81,22 +80,6 @@ export function availableProviders(): LlmProvider[] {
     modelEnv: "SEEKAI_MODEL",
   });
   if (seekai) out.push(seekai);
-
-  const gorouter = gatewayProvider({
-    id: "gorouter",
-    keyEnv: "GOROUTER_API_KEY",
-    urlEnv: "GOROUTER_BASE_URL",
-    modelEnv: "GOROUTER_MODEL",
-  });
-  if (gorouter) out.push(gorouter);
-
-  const tabiai = gatewayProvider({
-    id: "tabiai",
-    keyEnv: "TABIAI_API_KEY",
-    urlEnv: "TABIAI_BASE_URL",
-    modelEnv: "TABIAI_MODEL",
-  });
-  if (tabiai) out.push(tabiai);
 
   if (process.env.DEEPSEEK_API_KEY) {
     out.push({
@@ -160,7 +143,7 @@ export function providerClient(provider: LlmProvider): OpenAIProvider {
 export class NoLlmProviderError extends Error {
   constructor() {
     super(
-      "No AI provider configured. Set one of SEEKAI_BASE_URL + SEEKAI_API_KEY, GOROUTER_BASE_URL + GOROUTER_API_KEY, TABIAI_BASE_URL + TABIAI_API_KEY, DEEPSEEK_API_KEY, NVIDIA_API_KEY, LITELLM_BASE_URL + LITELLM_API_KEY, or OPENROUTER_API_KEY."
+      "No AI provider configured. Set one of SEEKAI_BASE_URL + SEEKAI_API_KEY, DEEPSEEK_API_KEY, NVIDIA_API_KEY, LITELLM_BASE_URL + LITELLM_API_KEY, or OPENROUTER_API_KEY."
     );
     this.name = "NoLlmProviderError";
   }
@@ -189,9 +172,7 @@ export function modelFor(provider: LlmProvider, requested?: string): string {
   if (
     provider.id === "litellm" ||
     provider.id === "openrouter" ||
-    provider.id === "seekai" ||
-    provider.id === "gorouter" ||
-    provider.id === "tabiai"
+    provider.id === "seekai"
   ) {
     return requested;
   }
