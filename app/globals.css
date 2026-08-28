@@ -135,27 +135,21 @@
   }
 
   /* Sidebar nav items: the active background already toggles via data-active,
-     but it snapped in. Smooth the colour change and add a quiet left rail that
-     eases in so the current location reads as continuous, not abrupt. */
+     but it snapped in. Smooth the colour change and add a soft raised "glow"
+     on hover so the row reads as alive, not flat. The active-page rail itself
+     is now a real Framer Motion element (layoutId="sidebarActiveRail" in
+     app-sidebar.tsx) that slides between rows on navigation, so it is NOT
+     drawn here as a static ::before anymore — only the base transitions live
+     in CSS. */
   [data-slot="sidebar-menu-button"] {
+    position: relative;
     transition:
       background-color var(--dur-fast) var(--ease-std),
-      color var(--dur-fast) var(--ease-std);
+      color var(--dur-fast) var(--ease-std),
+      box-shadow var(--dur-fast) var(--ease-std);
   }
-  [data-slot="sidebar-menu-button"][data-active] {
-    position: relative;
-  }
-  [data-slot="sidebar-menu-button"][data-active]::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    height: 18px;
-    width: 3px;
-    transform: translateY(-50%);
-    border-radius: 9999px;
-    background: var(--sidebar-primary, var(--primary));
-    animation: sidebar-active-in var(--dur-fast) var(--ease-std);
+  [data-slot="sidebar-menu-button"]:hover {
+    box-shadow: var(--shadow-contact);
   }
   [data-slot="sidebar-menu-sub-button"][data-active] {
     position: relative;
@@ -170,6 +164,7 @@
     transform: translateY(-50%);
     border-radius: 9999px;
     background: var(--sidebar-primary, var(--primary));
+    animation: sidebar-active-in var(--dur-fast) var(--ease-std);
   }
 
   @keyframes sidebar-active-in {

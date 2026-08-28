@@ -174,8 +174,8 @@ export function AvWhiteboard() {
           className="flex w-48 flex-col items-center gap-3 rounded-xl border border-border p-6 hover:bg-accent hover:shadow-sm transition-all"
         >
           <PenTool className="size-10 text-muted-foreground" />
-          <span className="text-sm font-medium">Lucidchart</span>
-          <span className="text-xs text-muted-foreground">Your university account (new tab)</span>
+            <span className="text-sm font-medium">Lucidchart</span>
+            <span className="text-xs text-muted-foreground">Diagrams &amp; flowcharts</span>
         </a>
       </div>
     </div>

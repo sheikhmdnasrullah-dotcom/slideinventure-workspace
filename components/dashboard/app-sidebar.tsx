@@ -19,6 +19,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { ChevronRight } from "lucide-react"
+import { motion } from "framer-motion"
 import { usePathname, useRouter } from "next/navigation"
 
 import { NavUser } from "@/components/dashboard/v3/nav-user"
@@ -183,6 +184,7 @@ function SortableSidebarItem({
               <Collapsible open={open || isActive} onOpenChange={setOpen} className="group/collapsible">
                 <div className="flex items-center gap-1">
                   <SidebarMenuButton tooltip={section.label} isActive={isActive} onClick={() => router.push(section.route)} className="flex-1">
+                    <ActiveRail active={isActive} />
                     <section.icon />
                     <span>{section.label}</span>
                   </SidebarMenuButton>
@@ -222,6 +224,7 @@ function SortableSidebarItem({
               </Collapsible>
             ) : (
               <SidebarMenuButton tooltip={section.label} isActive={isActive} onClick={() => router.push(section.route)}>
+                <ActiveRail active={isActive} />
                 <section.icon />
                 <span>{section.label}</span>
               </SidebarMenuButton>
@@ -230,6 +233,23 @@ function SortableSidebarItem({
         </div>
       </div>
     </SidebarMenuItem>
+  )
+}
+
+/**
+ * The active-page indicator: one shared element (layoutId) that slides
+ * between rows on navigation instead of fading in fresh at each new spot.
+ * Renders only inside the currently-active row; Framer Motion animates the
+ * position delta whenever it remounts at a different row.
+ */
+function ActiveRail({ active }: { active: boolean }) {
+  if (!active) return null
+  return (
+    <motion.span
+      layoutId="sidebarActiveRail"
+      className="pointer-events-none absolute left-0 top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-full bg-[var(--sidebar-primary,var(--primary))]"
+      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.6 }}
+    />
   )
 }
 

@@ -75,7 +75,7 @@ import {
 } from "@/components/ui/table"
 import { ColumnConfigDialog, type LeadColumnConfig } from "./leads-column-config-dialog"
 import { CsvImportDialog } from "./leads-csv-import-dialog"
-import { FilterBar } from "@/components/system"
+import { FilterBar, StatusBadge, Surface, type StatusTone } from "@/components/system"
 
 export type Lead = {
   id: string
@@ -123,19 +123,19 @@ const emptyForm: LeadFormValues = {
   custom_fields: {},
 }
 
-const statusColor = (status: string) => {
+const statusTone = (status: string): StatusTone => {
   switch (status.toLowerCase()) {
     case "new":
-      return "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+      return "info"
     case "contacted":
-      return "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+      return "warn"
     case "qualified":
     case "won":
-      return "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
+      return "live"
     case "lost":
-      return "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+      return "danger"
     default:
-      return "border-border text-foreground"
+      return "neutral"
   }
 }
 
@@ -553,11 +553,7 @@ export function LeadsTable() {
           header: config.label,
           cell: ({ row }: { row: Row<Lead> }) => {
             const value = row.getValue(config.key) as string
-            return (
-              <Badge variant="outline" className={statusColor(value)}>
-                {value}
-              </Badge>
-            )
+            return <StatusBadge tone={statusTone(value)} label={value} />
           },
           size: config.width ?? 120,
         }
@@ -673,8 +669,8 @@ export function LeadsTable() {
       </div>
 
       {selectedCount > 0 && (
-        <div className="flex items-center justify-between rounded-md border bg-muted/50 p-3">
-          <span className="text-sm text-muted-foreground">
+        <Surface variant="inset" className="flex items-center justify-between">
+          <span className="font-body text-sm text-ink-muted">
             {selectedCount} lead{selectedCount > 1 ? "s" : ""} selected
           </span>
           <div className="flex items-center gap-2">
@@ -686,7 +682,7 @@ export function LeadsTable() {
               <X className="size-4" />
             </Button>
           </div>
-        </div>
+        </Surface>
       )}
 
       <FilterBar className="py-0">
@@ -731,7 +727,7 @@ export function LeadsTable() {
         </FilterBar.Button>
       </FilterBar>
 
-      <div className="rounded-md border">
+      <Surface variant="raised" className="px-0 py-0">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -781,7 +777,7 @@ export function LeadsTable() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Surface>
 
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex items-center space-x-2">

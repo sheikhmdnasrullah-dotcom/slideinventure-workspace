@@ -34,10 +34,16 @@ export function PageTransition({ children }: { children: ReactNode }) {
         <motion.div
           key={pathname}
           className="flex min-h-0 min-w-0 flex-1 flex-col"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4, transition: { duration: Duration.fast, ease: Ease.expo } }}
-          transition={{ duration: Duration.base, ease: Ease.expo }}
+          initial={{ opacity: 0, y: 10, scale: 0.99, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+          exit={{
+            opacity: 0,
+            y: -6,
+            scale: 0.995,
+            filter: "blur(4px)",
+            transition: { duration: Duration.fast, ease: Ease.expo },
+          }}
+          transition={{ duration: 0.25, ease: Ease.expo }}
         >
           {children}
         </motion.div>

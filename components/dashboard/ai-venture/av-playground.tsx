@@ -144,7 +144,7 @@ export function AvPlayground() {
           >
             <PenTool className="size-8 text-muted-foreground" />
             <span className="line-clamp-1 text-center">Lucidchart</span>
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">university</span>
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">charts</span>
           </a>
         </div>
       )}
