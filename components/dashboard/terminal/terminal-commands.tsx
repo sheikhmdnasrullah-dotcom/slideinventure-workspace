@@ -277,22 +277,32 @@ function CommandRow({
 
   const hasOutput = Boolean(command.stdout || command.stderr || command.exitCode != null)
 
-  // One click: create a Research workspace from this command (title +
+  // One click: create a Research board from this command (title +
   // description/notes) and jump to the Research lab. No picker, no form:
   // matches the "one click should be enough" rule.
   const handleSaveToResearch = async () => {
     setSavingToResearch(true)
     try {
       const title = (command.title || command.command || "Research").toString().slice(0, 80)
-      const res = await fetch("/api/affine", {
+      const res = await fetch("/api/boards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section: "research", title }),
+        body: JSON.stringify({ 
+          title,
+          scope: "research",
+          content: JSON.stringify({ 
+            description: command.description || "", 
+            sources: "",
+            notes: command.notes || ""
+          }),
+        }),
       })
-      if (!res.ok) throw new Error("Could not create Research workspace")
+      if (!res.ok) throw new Error("Could not create Research project")
+      toast.success("Research project created")
       router.push("/research-lab")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't save to Research Lab")
+    } finally {
       setSavingToResearch(false)
     }
   }

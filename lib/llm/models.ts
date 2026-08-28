@@ -38,6 +38,18 @@ export const OPENROUTER_DEFAULT_MODEL =
 export function availableProviders(): LlmProvider[] {
   const out: LlmProvider[] = [];
 
+  // DeepSeek is the user's primary key and is preferred above all routers, so
+  // the chat/assistant use it directly instead of a possibly-misconfigured
+  // LiteLLM proxy. LiteLLM (and the other direct keys) remain as fallbacks.
+  if (process.env.DEEPSEEK_API_KEY) {
+    out.push({
+      id: "deepseek",
+      baseURL: "https://api.deepseek.com/v1",
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      defaultModel: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+    });
+  }
+
   const litellmUrl = process.env.LITELLM_BASE_URL;
   const litellmKey = process.env.LITELLM_API_KEY;
   if (litellmUrl && litellmKey) {
@@ -46,15 +58,6 @@ export function availableProviders(): LlmProvider[] {
       baseURL: litellmUrl.replace(/\/$/, ""),
       apiKey: litellmKey,
       defaultModel: process.env.LITELLM_MODEL ?? "deepseek-chat",
-    });
-  }
-
-  if (process.env.DEEPSEEK_API_KEY) {
-    out.push({
-      id: "deepseek",
-      baseURL: "https://api.deepseek.com/v1",
-      apiKey: process.env.DEEPSEEK_API_KEY,
-      defaultModel: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
     });
   }
 

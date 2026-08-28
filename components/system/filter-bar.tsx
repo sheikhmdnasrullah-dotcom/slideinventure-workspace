@@ -170,7 +170,10 @@ FilterBar.Button = function FilterBarButton({
 }: {
   active?: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  // Optional so it can also be used as a `render` target (e.g. inside
+  // `<DropdownMenuTrigger render={<FilterBar.Button .../>}>`), where the
+  // trigger's own children are merged onto this element instead of passed here.
+  children?: React.ReactNode;
   className?: string;
 }) {
   return (

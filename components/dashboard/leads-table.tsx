@@ -491,11 +491,11 @@ export function LeadsTable() {
                 <span className="sr-only">Edit lead</span>
               </Button>
               <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
-                    <EllipsisVertical className="size-3.5" />
-                    <span className="sr-only">More actions</span>
-                  </Button>
+                <DropdownMenuTrigger
+                  render={<Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer" />}
+                >
+                  <EllipsisVertical className="size-3.5" />
+                  <span className="sr-only">More actions</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem className="cursor-pointer" onClick={() => handleEdit(row.original)}>
@@ -665,12 +665,10 @@ export function LeadsTable() {
         </div>
         <div className="flex items-center space-x-2">
           <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="outline" size="sm">
-                <Download className="mr-2 size-4" />
-                Export
-                <ChevronDown className="ml-2 size-4" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+              <Download className="mr-2 size-4" />
+              Export
+              <ChevronDown className="ml-2 size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem className="cursor-pointer" onClick={handleExportCsv}>
@@ -725,10 +723,8 @@ export function LeadsTable() {
           options={[{ value: "all", label: "All sources" }, ...sources.map((s) => ({ value: s, label: s }))]}
         />
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <FilterBar.Button onClick={() => {}}>
-              Columns <ChevronDown className="ml-1 inline size-3.5" />
-            </FilterBar.Button>
+          <DropdownMenuTrigger render={<FilterBar.Button onClick={() => {}} />}>
+            Columns <ChevronDown className="ml-1 inline size-3.5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {columns
