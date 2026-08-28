@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useQueryState, parseAsStringLiteral } from "nuqs"
 import dynamic from "next/dynamic"
 import {
   FolderOpen,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/dashboard/site-header"
+import { ActiveTabIndicator, TabTransition } from "@/components/system/motion"
 
 const AvFiles = dynamic(() => import("./av-files").then((m) => m.AvFiles), {
   ssr: false,
@@ -80,7 +80,7 @@ const SECTIONS: { id: SectionId; label: string; icon: LucideIcon; description: s
   { id: "activity", label: "Activity", icon: Activity, description: "Recent activity in this venture" },
 ]
 
-const VALID = new Set<SectionId>(["home", ...SECTIONS.map((s) => s.id)])
+const SECTION_IDS = ["home", ...SECTIONS.map((s) => s.id)] as SectionId[]
 
 function Loading({ label }: { label: string }) {
   return (
@@ -128,23 +128,17 @@ function Launcher({ onSelect }: { onSelect: (id: SectionId) => void }) {
 // reflected in the URL (?tab=) so a refresh or a shared link restores it.
 // The rail's own "Home" entry lands on a launcher grid of the same tools.
 export function AiVentureWorkspace() {
-  const router = useRouter()
-  const params = useSearchParams()
-  const tabParam = params.get("tab")
-
-  const [active, setActive] = useState<SectionId>("home")
-
-  useEffect(() => {
-    if (tabParam && VALID.has(tabParam as SectionId)) {
-      setActive(tabParam as SectionId)
-    }
-  }, [tabParam])
+  // Shallow URL state: switching section no longer asks the server for a new RSC
+  // payload, it just swaps which component is mounted. The previous
+  // `router.replace` + `useEffect` sync also meant the URL was the source of
+  // truth one render late; `useQueryState` removes that round-trip entirely.
+  const [active, setActive] = useQueryState(
+    "tab",
+    parseAsStringLiteral(SECTION_IDS).withDefault("home")
+  )
 
   const select = (id: SectionId) => {
-    setActive(id)
-    const q = new URLSearchParams(Array.from(params.entries()))
-    q.set("tab", id)
-    router.replace(`/concepts?${q.toString()}`, { scroll: false })
+    void setActive(id)
   }
 
   return (
@@ -156,12 +150,13 @@ export function AiVentureWorkspace() {
             onClick={() => select("home")}
             aria-current={active === "home" ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-left transition-colors",
+              "relative flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-left transition-colors",
               active === "home"
-                ? "bg-[var(--surface-2)] text-ink-strong"
+                ? "text-ink-strong"
                 : "text-ink-muted hover:bg-[var(--surface-2)]/60 hover:text-ink-strong"
             )}
           >
+            {active === "home" && <ActiveTabIndicator />}
             <LayoutDashboard className="size-4 shrink-0" strokeWidth={1.5} />
             <span className="font-body-tight text-sm">Home</span>
           </button>
@@ -176,12 +171,13 @@ export function AiVentureWorkspace() {
                   onClick={() => select(s.id)}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-left transition-colors",
+                    "relative flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-left transition-colors",
                     isActive
-                      ? "bg-[var(--surface-2)] text-ink-strong"
+                      ? "text-ink-strong"
                       : "text-ink-muted hover:bg-[var(--surface-2)]/60 hover:text-ink-strong"
                   )}
                 >
+                  {isActive && <ActiveTabIndicator />}
                   <Icon className="size-4 shrink-0" strokeWidth={1.5} />
                   <span className="font-body-tight truncate text-sm">{s.label}</span>
                 </button>
@@ -191,16 +187,18 @@ export function AiVentureWorkspace() {
         </nav>
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {active === "home" && <Launcher onSelect={select} />}
-          {active === "files" && <AvFiles />}
-          {active === "query" && <AvQuery />}
-          {active === "research" && <AvResearch />}
-          {active === "playground" && <AvPlayground />}
-          {active === "brainstorm" && <AvWhiteboard />}
-          {active === "notepad" && <NotepadView scope="ai-venture" />}
-          {active === "connected" && <IdeaMapsPanel scope="ideas" title="Connected ideas" />}
-          {active === "agents" && <AvAgents />}
-          {active === "activity" && <AvActivity />}
+          <TabTransition tabKey={active} className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            {active === "home" && <Launcher onSelect={select} />}
+            {active === "files" && <AvFiles />}
+            {active === "query" && <AvQuery />}
+            {active === "research" && <AvResearch />}
+            {active === "playground" && <AvPlayground />}
+            {active === "brainstorm" && <AvWhiteboard />}
+            {active === "notepad" && <NotepadView scope="ai-venture" />}
+            {active === "connected" && <IdeaMapsPanel scope="ideas" title="Connected ideas" />}
+            {active === "agents" && <AvAgents />}
+            {active === "activity" && <AvActivity />}
+          </TabTransition>
         </main>
       </div>
     </>

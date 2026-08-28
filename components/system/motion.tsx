@@ -6,6 +6,9 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Duration, Ease, MotionDiv } from "@/lib/motion";
 
+/** Shared layoutId for the sliding active-tab indicator. */
+export const ACTIVE_TAB_LAYOUT_ID = "activeTab";
+
 /**
  * One cohesive motion system for the dashboard. Built on the existing
  * `lib/motion.tsx` tokens (expo easing, 80/140/220/420/620ms scale) and the
@@ -16,9 +19,14 @@ import { Duration, Ease, MotionDiv } from "@/lib/motion";
 
 /**
  * Page/section transition. Mounted once in the (app) layout, keyed by pathname.
- * The sidebar/header shell stays mounted, so only the content swaps. Navigation
- * reads as movement inside one app rather than a full reload. Respecting
- * `prefers-reduced-motion` by rendering a static wrapper.
+ * The sidebar/header shell stays mounted, so only the content swaps.
+ *
+ * Deliberately NOT wrapped in `AnimatePresence mode="wait"`: that serialises an
+ * exit animation before the next page is allowed to mount, which put a hard
+ * ~390ms floor (140ms exit + 250ms enter) on every section switch no matter how
+ * well the route was prefetched. The new page now mounts on the same frame as
+ * the click and only fades/rises in, so switching reads as instant while still
+ * being movement inside one app. Respects `prefers-reduced-motion`.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -30,25 +38,72 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={pathname}
-          className="flex min-h-0 min-w-0 flex-1 flex-col"
-          initial={{ opacity: 0, y: 10, scale: 0.99, filter: "blur(8px)" }}
-          animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-          exit={{
-            opacity: 0,
-            y: -6,
-            scale: 0.995,
-            filter: "blur(4px)",
-            transition: { duration: Duration.fast, ease: Ease.expo },
-          }}
-          transition={{ duration: 0.25, ease: Ease.expo }}
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
+      <motion.div
+        key={pathname}
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: Duration.base, ease: Ease.expo }}
+      >
+        {children}
+      </motion.div>
     </MotionConfig>
+  );
+}
+
+/**
+ * Content swap for in-page tabs. Unlike PageTransition this keeps
+ * `mode="wait"` so panels crossfade cleanly instead of overlapping two
+ * absolutely-different layouts, but the exit is kept very short. The active-tab
+ * indicator moves independently via `layoutId`, so the click still registers
+ * instantly even while the panel underneath is crossfading.
+ */
+export function TabTransition({
+  tabKey,
+  children,
+  className,
+}: {
+  tabKey: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const reduce = useReducedMotion();
+
+  if (reduce) {
+    return <div className={className}>{children}</div>;
+  }
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={tabKey}
+        className={className}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, transition: { duration: Duration.instant, ease: Ease.std } }}
+        transition={{ duration: Duration.base, ease: Ease.expo }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/**
+ * The sliding pill behind the active tab. Render only inside the active
+ * trigger; Framer Motion animates the position delta between triggers because
+ * every instance shares one `layoutId`.
+ */
+export function ActiveTabIndicator({ className }: { className?: string }) {
+  return (
+    <motion.span
+      layoutId={ACTIVE_TAB_LAYOUT_ID}
+      className={cn(
+        "pointer-events-none absolute inset-0 -z-10 rounded-sm bg-[var(--surface-2)]",
+        className
+      )}
+      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.6 }}
+    />
   );
 }
 

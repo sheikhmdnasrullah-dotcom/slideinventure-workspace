@@ -28,6 +28,28 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import dynamic from "next/dynamic"
 import { headers } from "next/headers"
+import { Suspense, cache } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
+
+/**
+ * Deduplicated per-request loader.
+ *
+ * Several independently-suspending sections need this payload. `cache()` keeps
+ * them to a single upstream request while still letting each one stream into its
+ * own skeleton, so one slow section never gates the others.
+ *
+ * The incoming session cookie is forwarded because a raw server fetch would 401
+ * and silently render an empty dashboard.
+ */
+const getDashboardData = cache(async (): Promise<DashboardResponse | null> => {
+  const cookie = (await headers()).get("cookie") ?? ""
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/dashboard`,
+    { cache: "no-store", headers: cookie ? { cookie } : undefined }
+  ).catch(() => null)
+
+  return res?.ok ? ((await res.json()) as DashboardResponse) : null
+})
 
 const DataTableLazy = dynamic(
   () => import("@/components/dashboard/v3/data-table").then((m) => m.DataTable),
@@ -177,27 +199,19 @@ function greetingFor(hour: number): string {
   return "Good evening."
 }
 
-export async function DashboardHome() {
-  // Forward the incoming session cookie so the internal API call authenticates
-  // (a raw server fetch would 401 and render an empty dashboard).
-  const cookie = (await headers()).get("cookie") ?? ""
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/dashboard`,
-    { cache: "no-store", headers: cookie ? { cookie } : undefined }
-  ).catch(() => null)
-
-  const data: DashboardResponse | null = res?.ok
-    ? ((await res.json()) as DashboardResponse)
-    : null
-
-  const activity = data?.activity ?? []
-  const tableItems: ActivityItem[] = activity.map(toDataTableItem)
+export function DashboardHome() {
   const now = new Date()
 
   return (
     <>
       <SiteHeader crumbs={[{ label: "Dashboard" }]} />
       <div className="flex flex-1 flex-col gap-6 p-6">
+        {/*
+          The shell below renders on the first frame. Every piece that needs
+          /api/dashboard sits behind its own Suspense boundary, so a slow
+          upstream (that route currently makes ~17 sequential Appwrite calls)
+          streams into a skeleton instead of holding back the whole page.
+        */}
         <div className="flex flex-col gap-1">
           <span className="font-label text-ink-faint">
             {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
@@ -206,32 +220,113 @@ export async function DashboardHome() {
             {greetingFor(now.getHours())}
           </h1>
           <p className="font-body text-sm text-ink-muted">
-            Here&apos;s what happened while you were away.
-            {data?.syncedAt
-              ? ` Synced ${new Date(data.syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`
-              : ""}
+            Here&apos;s what happened while you were away.{" "}
+            <Suspense fallback={null}>
+              <SyncedAt />
+            </Suspense>
           </p>
         </div>
 
         <Section tone="base" className="py-0">
-          <DashboardMetrics initial={data} />
+          <Suspense fallback={<MetricsSkeleton />}>
+            <MetricsSection />
+          </Suspense>
         </Section>
 
         <QuickActions />
 
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2">
           <LiveActivity />
-          <RecentWork activity={activity} />
+          <Suspense fallback={<RecentWorkSkeleton />}>
+            <RecentWorkSection />
+          </Suspense>
         </div>
 
-        <div>
-          <SectionRule label="All activity" coordinate={`${tableItems.length} item${tableItems.length === 1 ? "" : "s"}`} />
-          <Surface variant="raised" className="px-0 py-0">
-            <DataTableLazy data={tableItems} />
-          </Surface>
-        </div>
+        <Suspense fallback={<ActivityTableSkeleton />}>
+          <ActivityTableSection />
+        </Suspense>
       </div>
     </>
+  )
+}
+
+async function SyncedAt() {
+  const data = await getDashboardData()
+  if (!data?.syncedAt) return null
+  return (
+    <>
+      {`Synced ${new Date(data.syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`}
+    </>
+  )
+}
+
+async function MetricsSection() {
+  const data = await getDashboardData()
+  return <DashboardMetrics initial={data} />
+}
+
+async function RecentWorkSection() {
+  const data = await getDashboardData()
+  return <RecentWork activity={data?.activity ?? []} />
+}
+
+async function ActivityTableSection() {
+  const data = await getDashboardData()
+  const tableItems: ActivityItem[] = (data?.activity ?? []).map(toDataTableItem)
+  return (
+    <div>
+      <SectionRule
+        label="All activity"
+        coordinate={`${tableItems.length} item${tableItems.length === 1 ? "" : "s"}`}
+      />
+      <Surface variant="raised" className="px-0 py-0">
+        <DataTableLazy data={tableItems} />
+      </Surface>
+    </div>
+  )
+}
+
+function MetricsSkeleton() {
+  return (
+    <div className="flex flex-col">
+      <SectionRule label="Workspace pulse" />
+      <div className="grid grid-cols-2 gap-px sm:grid-cols-4 lg:grid-cols-7">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-2 p-3">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-6 w-10" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RecentWorkSkeleton() {
+  return (
+    <div className="flex flex-1 flex-col">
+      <p className="font-label pb-3 text-ink-faint">Work in progress</p>
+      <div className="flex flex-col gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ActivityTableSkeleton() {
+  return (
+    <div>
+      <SectionRule label="All activity" />
+      <Surface variant="raised" className="px-0 py-0">
+        <Skeleton className="h-64 w-full rounded-lg" />
+      </Surface>
+    </div>
   )
 }
 

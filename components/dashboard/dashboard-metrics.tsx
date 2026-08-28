@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLiveRefresh } from "@/components/providers/event-stream"
 import { Metric, MetricRow, MetricCell, SectionRule } from "@/components/system"
+import { dashboardSummaryQuery } from "@/lib/dashboard/queries"
 import type { DashboardResponse, DashboardCounts } from "@/lib/dashboard/types"
 
 type Tile = {
@@ -44,27 +46,26 @@ function Sparkline({ points }: { points: number[] }) {
 }
 
 export function DashboardMetrics({ initial }: { initial: DashboardResponse | null }) {
-  const [data, setData] = React.useState<DashboardResponse | null>(initial)
+  const queryClient = useQueryClient()
 
-  const refetch = React.useCallback(async () => {
-    try {
-      const res = await fetch("/api/dashboard", { cache: "no-store" })
-      if (res.ok) setData((await res.json()) as DashboardResponse)
-    } catch {
-      /* keep last good data */
-    }
-  }, [])
-
-  // Stay live: any write in a tracked section refreshes the counts and chart.
-  useLiveRefresh(refetch, {
-    types: ["note.", "file.", "board.", "knowledge.", "lead.", "agent.", "idea.", "chat.", "terminal."],
+  // The server render already paid for this request, so seed the cache with it
+  // instead of re-fetching on mount. `initialData` is skipped when the server
+  // could not prefill (e.g. no session yet), in which case this fetches normally.
+  const { data } = useQuery({
+    ...dashboardSummaryQuery,
+    initialData: initial ?? undefined,
   })
 
-  // Fallback for when the server could not prefill data (e.g. no session in the
-  // initial render): pull real numbers on mount so the tiles are never blank.
-  React.useEffect(() => {
-    if (!data) refetch()
-  }, [data, refetch])
+  // Stay live: any write in a tracked section invalidates the cached summary, so
+  // the push layer keeps driving freshness rather than polling.
+  useLiveRefresh(
+    React.useCallback(() => {
+      void queryClient.invalidateQueries({ queryKey: dashboardSummaryQuery.queryKey })
+    }, [queryClient]),
+    {
+      types: ["note.", "file.", "board.", "knowledge.", "lead.", "agent.", "idea.", "chat.", "terminal."],
+    }
+  )
 
   const tiles = tilesFromCounts(data?.counts)
   const volume = data?.activityVolume ?? []

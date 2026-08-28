@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   closestCenter,
   DndContext,
@@ -20,7 +20,9 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
-import { usePathname, useRouter } from "next/navigation"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 
 import { NavUser } from "@/components/dashboard/v3/nav-user"
 import { useDashboardPreferences } from "@/components/dashboard/preferences/preferences-provider"
@@ -47,16 +49,39 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getOrderedSections, NAVIGATION_HANDLE_ICON } from "@/lib/dashboard/navigation"
+import { NAV_PREFETCH } from "@/lib/dashboard/queries"
 
 const GripIcon = NAVIGATION_HANDLE_ICON
+
+/**
+ * Warm a section's data before the click lands.
+ *
+ * `<Link prefetch>` only fetches the route payload; the section's own API data
+ * would still be fetched on mount. Pairing the two means that by the time the
+ * user actually clicks, both halves are usually already in memory.
+ * `prefetchQuery` is a no-op when the entry is still fresh, so repeat hovers are
+ * free and this never fires a duplicate request.
+ */
+function useNavPrefetch() {
+  const queryClient = useQueryClient()
+
+  return useCallback(
+    (route: string) => {
+      const query = NAV_PREFETCH[route]
+      if (!query) return
+      void queryClient.prefetchQuery(query())
+    },
+    [queryClient]
+  )
+}
 
 export function AppSidebar({
   userEmail,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { userEmail: string }) {
-  const router = useRouter()
   const pathname = usePathname()
   const { preferences, saveState, setNavigationOrder, retrySave } = useDashboardPreferences()
+  const prefetch = useNavPrefetch()
 
   const orderedSections = useMemo(
     () => getOrderedSections(preferences.navigationOrder, preferences.labels),
@@ -86,7 +111,12 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" onClick={() => router.push(homeRoute)}>
+            <SidebarMenuButton
+              size="lg"
+              render={<Link href={homeRoute} prefetch />}
+              onMouseEnter={() => prefetch(homeRoute)}
+              onFocus={() => prefetch(homeRoute)}
+            >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-foreground font-mono text-xs font-semibold text-background">
                 SV
               </div>
@@ -107,7 +137,12 @@ export function AppSidebar({
               <SortableContext items={orderedSections.map((section) => section.id)} strategy={verticalListSortingStrategy}>
                 <SidebarMenu>
                   {orderedSections.map((section) => (
-                    <SortableSidebarItem key={section.id} section={section} pathname={pathname} />
+                    <SortableSidebarItem
+                      key={section.id}
+                      section={section}
+                      pathname={pathname}
+                      onPrefetch={prefetch}
+                    />
                   ))}
                 </SidebarMenu>
               </SortableContext>
@@ -139,11 +174,12 @@ export function AppSidebar({
 function SortableSidebarItem({
   section,
   pathname,
+  onPrefetch,
 }: {
   section: ReturnType<typeof getOrderedSections>[number]
   pathname: string
+  onPrefetch: (route: string) => void
 }) {
-  const router = useRouter()
   const [open, setOpen] = useState(() => isSectionActive(section.route, pathname, section.children?.map((child) => child.route)))
   const {
     attributes,
@@ -183,7 +219,14 @@ function SortableSidebarItem({
             {section.children?.length ? (
               <Collapsible open={open || isActive} onOpenChange={setOpen} className="group/collapsible">
                 <div className="flex items-center gap-1">
-                  <SidebarMenuButton tooltip={section.label} isActive={isActive} onClick={() => router.push(section.route)} className="flex-1">
+                  <SidebarMenuButton
+                    tooltip={section.label}
+                    isActive={isActive}
+                    render={<Link href={section.route} prefetch />}
+                    onMouseEnter={() => onPrefetch(section.route)}
+                    onFocus={() => onPrefetch(section.route)}
+                    className="flex-1"
+                  >
                     <ActiveRail active={isActive} />
                     <section.icon />
                     <span>{section.label}</span>
@@ -207,12 +250,13 @@ function SortableSidebarItem({
                               child.external ? (
                                 <a href={child.route} target="_blank" rel="noreferrer noopener" />
                               ) : (
-                                <button type="button" />
+                                <Link href={child.route} prefetch />
                               )
                             }
-                            onClick={() => {
-                              if (!child.external) router.push(child.route)
-                            }}
+                            onMouseEnter={
+                              child.external ? undefined : () => onPrefetch(child.route)
+                            }
+                            onFocus={child.external ? undefined : () => onPrefetch(child.route)}
                           >
                             <span>{child.label}</span>
                           </SidebarMenuSubButton>
@@ -223,7 +267,13 @@ function SortableSidebarItem({
                 </CollapsibleContent>
               </Collapsible>
             ) : (
-              <SidebarMenuButton tooltip={section.label} isActive={isActive} onClick={() => router.push(section.route)}>
+              <SidebarMenuButton
+                tooltip={section.label}
+                isActive={isActive}
+                render={<Link href={section.route} prefetch />}
+                onMouseEnter={() => onPrefetch(section.route)}
+                onFocus={() => onPrefetch(section.route)}
+              >
                 <ActiveRail active={isActive} />
                 <section.icon />
                 <span>{section.label}</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useQueryState, parseAsStringLiteral } from "nuqs";
 import dynamic from "next/dynamic";
 import {
   NotebookPen,
@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TabTransition } from "@/components/system/motion";
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog";
 import { LUCIDCHART_URL } from "@/lib/lucidchart";
 import { IdeaMapsPanel } from "@/components/dashboard/ideas/idea-maps-panel";
@@ -47,20 +48,17 @@ type Tab = (typeof TABS)[number];
 type Doc = { id: string; title: string };
 
 export function BrainstormWorkspace() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const initial = params.get("tab");
-  const [tab, setTab] = useState<Tab>(
-    initial && (TABS as readonly string[]).includes(initial) ? (initial as Tab) : "notepad"
+  // `useQueryState` is shallow by default: the tab lands in the URL (so refresh
+  // and shared links still restore it) without asking the App Router for a new
+  // RSC payload. The old `router.replace` did a server round-trip for what is
+  // purely local UI state.
+  const [tab, setTab] = useQueryState(
+    "tab",
+    parseAsStringLiteral(TABS).withDefault("notepad")
   );
 
   const onTabChange = (value: string | number) => {
-    const next = String(value) as Tab;
-    setTab(next);
-    const qs = new URLSearchParams(Array.from(params.entries()));
-    qs.set("tab", next);
-    router.replace(`${pathname}?${qs.toString()}`, { scroll: false });
+    void setTab(String(value) as Tab);
   };
 
   return (
@@ -87,29 +85,31 @@ export function BrainstormWorkspace() {
           </TabsTrigger>
         </TabsList>
 
-        {tab === "notepad" && (
-          <TabsContent value="notepad" className="flex-1 min-h-0">
-            <NotepadView scope="brainstorm" />
-          </TabsContent>
-        )}
+        <TabTransition tabKey={tab} className="flex flex-1 flex-col min-h-0">
+          {tab === "notepad" && (
+            <TabsContent value="notepad" className="flex-1 min-h-0">
+              <NotepadView scope="brainstorm" />
+            </TabsContent>
+          )}
 
-        {tab === "draw" && (
-          <TabsContent value="draw" className="flex-1 min-h-0">
-            <BoardList />
-          </TabsContent>
-        )}
+          {tab === "draw" && (
+            <TabsContent value="draw" className="flex-1 min-h-0">
+              <BoardList />
+            </TabsContent>
+          )}
 
-        {tab === "whiteboard" && (
-          <TabsContent value="whiteboard" className="flex-1 min-h-0">
-            <WorkspaceList />
-          </TabsContent>
-        )}
+          {tab === "whiteboard" && (
+            <TabsContent value="whiteboard" className="flex-1 min-h-0">
+              <WorkspaceList />
+            </TabsContent>
+          )}
 
-        {tab === "ideas" && (
-          <TabsContent value="ideas" className="flex-1 min-h-0">
-            <IdeaMapsPanel scope="ideas" />
-          </TabsContent>
-        )}
+          {tab === "ideas" && (
+            <TabsContent value="ideas" className="flex-1 min-h-0">
+              <IdeaMapsPanel scope="ideas" />
+            </TabsContent>
+          )}
+        </TabTransition>
       </Tabs>
       </div>
     </>

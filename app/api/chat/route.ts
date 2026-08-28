@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { nvidiaComplete } from "@/lib/llm/nvidia";
 import { searchVector, type VectorCollection } from "@/lib/retrieval/vector-index";
+import { tavilySearch } from "@/lib/search/tavily";
 import { logActivity } from "@/lib/activities/client";
 import { NextRequest } from "next/server";
 
@@ -192,9 +193,10 @@ export async function POST(request: NextRequest) {
   // (Documents, Notes, Terminal, Links) via the shared semantic index, so the
   // assistant can actually answer from what's stored across the workspace,
   // not just Knowledge.
-  const [evidence, crossSection] = await Promise.all([
+  const [evidence, crossSection, webHits] = await Promise.all([
     retrieveEvidence(message, filters),
     retrieveCrossSection(message).catch(() => [] as CrossSectionHit[]),
+    tavilySearch(message, { maxResults: 5 }).catch(() => []),
   ]);
 
   // Build context for LLM
@@ -205,11 +207,17 @@ export async function POST(request: NextRequest) {
   crossSection.forEach((hit, i) => {
     contextParts.push(`[${evidence.length + i + 1}] (from ${hit.collection}) ${hit.text}`);
   });
+  webHits.forEach((h, i) => {
+    contextParts.push(
+      `[${evidence.length + crossSection.length + i + 1}] (from web, ${h.url}) ${h.title}\n${h.content}`
+    );
+  });
   const context = contextParts.join("\n\n---\n\n");
 
-  const systemPrompt = `You are the SlideIn Venture OS assistant. Answer using ONLY the provided evidence, which may
-be drawn from Knowledge, Documents, Notes, Terminal, or Links. Each item not from Knowledge is labeled with its source.
-If the evidence is insufficient, say "I couldn't find enough evidence in the knowledge base."
+  const systemPrompt = `You are the SlideIn Venture OS assistant. Answer using the provided evidence, which may be drawn from the user's internal workspace (Knowledge, Documents, Notes, Terminal, Links) and/or live web search results (labeled "from web").
+- Prefer internal evidence when it is relevant.
+- You MAY use web results to answer when internal evidence is insufficient or the question is about current or realtime information.
+- If no evidence at all is available, say you couldn't find anything in the workspace or the web.
 Cite evidence by number [1], [2], etc. Do not hallucinate.`;
 
   const messages = [

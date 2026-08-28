@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { format, isToday, isYesterday } from "date-fns";
-import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink, Trash2, BookOpen, User, Terminal, Puzzle, Link as LinkIcon, FileText } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink, Trash2, BookOpen, User, Terminal, Puzzle, Link as LinkIcon, FileText, Globe } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,6 +100,7 @@ const SOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   terminal: Terminal,
   apps: Puzzle,
   links: LinkIcon,
+  web: Globe,
 };
 
 async function loadSessions(
@@ -230,37 +231,40 @@ export function ChatInterface() {
       });
 
       let retrievalSources: SourceGroup[] | undefined;
+      let retrievalElapsedMs: number | undefined;
 
       if (retrieveRes.ok) {
         const retrieveData = await retrieveRes.json();
         if (retrieveData.type === "retrieval") {
           retrievalSources = retrieveData.sources;
+          retrievalElapsedMs = retrieveData.elapsedMs;
         }
       }
 
       // Remove temp user message
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("temp-")));
 
-      if (retrievalSources && retrievalSources.some((s) => s.matchCount > 0)) {
+      // Show a retrieval card when the search found anything (now incl. web),
+      // then always stream an LLM answer that synthesizes from internal +
+      // web context.
+      const matched = retrievalSources?.filter((s) => s.matchCount > 0).length ?? 0;
+      if (matched > 0 && retrievalSources) {
         setMessages((prev) => [
           ...prev,
           {
             id: `retrieval-${Date.now()}`,
             role: "assistant",
-            content: `Found matches across ${retrievalSources.filter((s) => s.matchCount > 0).length} source${retrievalSources.filter((s) => s.matchCount > 0).length !== 1 ? "s" : ""} for "${text}"`,
+            content: `Found matches across ${matched} source${matched !== 1 ? "s" : ""} for "${text}"`,
             retrievalSources,
             retrievalQuery: text,
+            retrievalElapsedMs,
             createdAt: new Date().toISOString(),
           },
         ]);
-        setStreaming(false);
-        textareaRef.current?.focus();
-        return;
       }
 
-      // No retrieval matches: ask the LLM directly. The backend creates a
-      // session automatically when none exists yet, so this works for a
-      // brand new conversation too.
+      // Ask the LLM. The backend creates a session automatically when none
+      // exists yet, so this works for a brand new conversation too.
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -5,6 +5,7 @@ import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { searchVector } from "@/lib/retrieval/vector-index";
+import { tavilySearch } from "@/lib/search/tavily";
 import { NextRequest } from "next/server";
 
 const DB = APPWRITE.databaseId;
@@ -223,6 +224,26 @@ async function searchExternal(source: string, query: string): Promise<RetrievalR
   return [];
 }
 
+// Web search (Tavily). Best-effort: degrades to [] so the chat never hard-fails
+// when the key is missing or the network is down. Surfaced as its own source
+// group so users can see and open real web results.
+async function searchWeb(query: string): Promise<RetrievalResult[]> {
+  if (!query.trim()) return [];
+  try {
+    const hits = await tavilySearch(query, { maxResults: 5 });
+    return hits.map((h) => ({
+      source: "web",
+      title: h.title || h.url,
+      snippet: buildExcerpt(h.content, query),
+      url: h.url,
+      score: h.score,
+    }));
+  } catch (err) {
+    console.warn("searchWeb failed (non-fatal):", err);
+    return [];
+  }
+}
+
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
@@ -238,12 +259,13 @@ export async function POST(request: NextRequest) {
 
   const start = Date.now();
 
-  const [knowledge, leads, terminal, apps, links] = await Promise.all([
+  const [knowledge, leads, terminal, apps, links, web] = await Promise.all([
     searchKnowledgeChunks(message),
     searchExternal("leads", message),
     searchExternal("terminal", message),
     searchExternal("apps", message),
     searchExternal("useful_links", message),
+    searchWeb(message),
   ]);
 
   const sources: SourceGroup[] = [
@@ -252,6 +274,7 @@ export async function POST(request: NextRequest) {
     { source: "terminal", label: "Terminal history", results: terminal, matchCount: terminal.length },
     { source: "apps", label: "Apps", results: apps, matchCount: apps.length },
     { source: "links", label: "Useful links", results: links, matchCount: links.length },
+    { source: "web", label: "Web search", results: web, matchCount: web.length },
   ];
 
   const elapsed = Date.now() - start;

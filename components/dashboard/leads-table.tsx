@@ -35,6 +35,8 @@ import { toast } from "sonner"
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import Papa from "papaparse"
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
+import { leadsListQuery, leadsKeys, type LeadsListResponse } from "@/lib/leads/queries"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -150,8 +152,7 @@ const DEFAULT_COLUMNS: LeadColumnConfig[] = [
 ]
 
 export function LeadsTable() {
-  const [leads, setLeads] = useState<Lead[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
@@ -162,45 +163,43 @@ export function LeadsTable() {
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({})
   const [rowSelection, setRowSelection] = useState({})
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 50 })
-  const [total, setTotal] = useState(0)
   const [columns, setColumns] = useState<LeadColumnConfig[]>(DEFAULT_COLUMNS)
   const [showColumnConfig, setShowColumnConfig] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [customFieldKeys, setCustomFieldKeys] = useState<string[]>([])
 
-  const loadLeads = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      params.set("page", String(pagination.pageIndex + 1))
-      params.set("pageSize", String(pagination.pageSize))
-      sorting.forEach((s) => {
-        params.set("sortBy", s.id)
-        params.set("sortOrder", s.desc ? "desc" : "asc")
-      })
-      if (globalFilter) params.set("search", globalFilter)
+  // Server state lives in the query cache, keyed by the exact params that
+  // produced it. Revisiting a page/sort/search combo already in cache renders
+  // instantly (via `placeholderData: keepPreviousData` it even holds the
+  // previous page's rows on screen while the next page loads, instead of
+  // flashing empty) and only revalidates in the background.
+  const sortParam = sorting[0]
+  const listParams = useMemo(
+    () => ({
+      page: pagination.pageIndex + 1,
+      pageSize: pagination.pageSize,
+      sortBy: sortParam?.id,
+      sortOrder: sortParam ? (sortParam.desc ? ("desc" as const) : ("asc" as const)) : undefined,
+      search: globalFilter || undefined,
+    }),
+    [pagination.pageIndex, pagination.pageSize, sortParam, globalFilter]
+  )
 
-      const res = await fetch(`/api/leads?${params.toString()}`, { cache: "no-store" })
-      if (res.ok) {
-        const json = await res.json()
-        setLeads(json.data ?? [])
-        setTotal(json.total ?? 0)
-        setPagination((prev) => ({
-          ...prev,
-          pageIndex: Math.max(0, (json.page ?? prev.pageIndex + 1) - 1),
-          pageSize: json.pageSize ?? prev.pageSize,
-        }))
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false)
-    }
-  }, [pagination.pageIndex, pagination.pageSize, sorting, globalFilter])
+  const { data: leadsPage, isPending } = useQuery({
+    ...leadsListQuery(listParams),
+    placeholderData: keepPreviousData,
+  })
+  const leads = leadsPage?.data ?? []
+  const total = leadsPage?.total ?? 0
+  const loading = isPending
 
-  useEffect(() => {
-    loadLeads()
-  }, [loadLeads])
+  // Kept as a stable name so existing call sites (form submit, CSV import)
+  // don't need to change: invalidates every cached leads-list variant so
+  // counts and rows stay correct regardless of which page/filter is active.
+  const loadLeads = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ["leads", "list"] }),
+    [queryClient]
+  )
 
   useEffect(() => {
     fetch("/api/leads/column-config")
@@ -277,48 +276,75 @@ export function LeadsTable() {
     setShowForm(true)
   }
 
-  const handleDelete = async (id: string) => {
-    try {
+  // Optimistic delete: the row disappears the instant you click, before the
+  // server confirms. `onMutate` snapshots the current cache entry so `onError`
+  // can restore it exactly if the request fails; `onSettled` invalidates every
+  // cached leads-list variant so counts stay correct even if another page was
+  // showing a stale total.
+  const deleteLeadMutation = useMutation({
+    mutationFn: async (id: string) => {
       const res = await fetch(`/api/leads/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       })
-
-      if (!res.ok) {
-        toast.error("Delete failed")
-        return
-      }
-
-      toast.success("Lead deleted")
-      await loadLeads()
-    } catch {
+      if (!res.ok) throw new Error("Delete failed")
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: leadsKeys.list(listParams) })
+      const previous = queryClient.getQueryData<LeadsListResponse>(leadsKeys.list(listParams))
+      queryClient.setQueryData<LeadsListResponse>(leadsKeys.list(listParams), (prev) =>
+        prev
+          ? { ...prev, data: prev.data.filter((l) => l.id !== id), total: Math.max(0, prev.total - 1) }
+          : prev
+      )
+      return { previous }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) queryClient.setQueryData(leadsKeys.list(listParams), context.previous)
       toast.error("Delete failed")
-    }
-  }
+    },
+    onSuccess: () => toast.success("Lead deleted"),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["leads", "list"] })
+    },
+  })
+  const handleDelete = (id: string) => deleteLeadMutation.mutate(id)
 
-  const handleBulkDelete = async () => {
-    const selectedIds = table.getFilteredSelectedRowModel().rows.map((r) => r.original.id)
-    if (selectedIds.length === 0) return
-
-    try {
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
       const res = await fetch("/api/leads/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", ids: selectedIds }),
+        body: JSON.stringify({ action: "delete", ids }),
       })
-
-      if (!res.ok) {
-        toast.error("Bulk delete failed")
-        return
-      }
-
-      toast.success(`Deleted ${selectedIds.length} leads`)
+      if (!res.ok) throw new Error("Bulk delete failed")
+    },
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: leadsKeys.list(listParams) })
+      const previous = queryClient.getQueryData<LeadsListResponse>(leadsKeys.list(listParams))
+      const idSet = new Set(ids)
+      queryClient.setQueryData<LeadsListResponse>(leadsKeys.list(listParams), (prev) =>
+        prev
+          ? { ...prev, data: prev.data.filter((l) => !idSet.has(l.id)), total: Math.max(0, prev.total - ids.length) }
+          : prev
+      )
       setRowSelection({})
-      await loadLeads()
-    } catch {
+      return { previous }
+    },
+    onError: (_err, _ids, context) => {
+      if (context?.previous) queryClient.setQueryData(leadsKeys.list(listParams), context.previous)
       toast.error("Bulk delete failed")
-    }
+    },
+    onSuccess: (_data, ids) => toast.success(`Deleted ${ids.length} leads`),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["leads", "list"] })
+    },
+  })
+  const handleBulkDelete = () => {
+    const selectedIds = table.getFilteredSelectedRowModel().rows.map((r) => r.original.id)
+    if (selectedIds.length === 0) return
+    bulkDeleteMutation.mutate(selectedIds)
   }
 
   const handleExportCsv = useCallback(() => {

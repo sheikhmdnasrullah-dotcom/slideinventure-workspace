@@ -1,21 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-export type Document = {
-  id: string
-  title: string
-  filename: string
-  mime_type: string
-  size_bytes: number
-  storage_path: string
-  url: string
-  tags: string[]
-  status: string
-  author: string
-  created_at: string
-}
+import { dashboardKeys, documentsQuery, type DocumentRecord } from "@/lib/dashboard/queries"
+
+export type Document = DocumentRecord
 
 type DocumentsContextValue = {
   selected: string | null
@@ -48,69 +39,59 @@ export function useDocuments() {
 }
 
 export function DocumentsProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient()
   const [selected, setSelected] = React.useState<string | null>(null)
-  const [selectedDocument, setSelectedDocument] = React.useState<Document | null>(null)
   const [folder, setFolder] = React.useState("All")
-  const [documents, setDocuments] = React.useState<Document[]>([])
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
   const [search, setSearch] = React.useState("")
   const [uploadOpen, setUploadOpen] = React.useState(false)
 
-  const fetchDocuments = React.useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`/api/documents`)
-      if (!res.ok) throw new Error("Failed to fetch documents")
-      const json = await res.json()
-      // API returns paginated response: { data: [...], total, page, pageSize }
-      setDocuments(json.data ?? [])
-    } catch (e) {
-      setError(String(e))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const { data, isPending, error, refetch } = useQuery(documentsQuery)
+  const documents = data ?? []
 
-  React.useEffect(() => {
-    fetchDocuments()
-  }, [fetchDocuments])
+  // `isPending` rather than `isFetching`: it is only true while there is nothing
+  // to show. A revisit renders the cached list immediately and revalidates
+  // silently in the background instead of flashing a skeleton.
+  const loading = isPending
 
-  // Update selectedDocument when selected ID changes or documents list updates
-  React.useEffect(() => {
-    if (!selected) {
-      setSelectedDocument(null)
-      return
-    }
-    const doc = documents.find((d) => d.id === selected)
-    setSelectedDocument(doc || null)
-  }, [selected, documents])
+  // Derived, not mirrored into state. The old version kept `selectedDocument` in
+  // its own state synced by an effect, which cost an extra render on every
+  // selection and could briefly disagree with the list.
+  const selectedDocument = React.useMemo(
+    () => (selected ? documents.find((d) => d.id === selected) ?? null : null),
+    [selected, documents]
+  )
 
-  const deleteDocument = React.useCallback(async (id: string) => {
-    const res = await fetch(`/api/documents/${id}`, {
-      method: "DELETE",
-    })
-    if (!res.ok) {
-      toast.error("Failed to delete document")
-      return
-    }
-    setDocuments((prev) => prev.filter((d) => d.id !== id))
-    if (selected === id) {
-      setSelected(null)
-    }
-    toast.success("Document deleted")
-  }, [selected])
+  const deleteDocument = React.useCallback(
+    async (id: string) => {
+      const res = await fetch(`/api/documents/${id}`, { method: "DELETE" })
+      if (!res.ok) {
+        toast.error("Failed to delete document")
+        return
+      }
+      queryClient.setQueryData<Document[]>(dashboardKeys.documents, (prev) =>
+        (prev ?? []).filter((d) => d.id !== id)
+      )
+      setSelected((prev) => (prev === id ? null : prev))
+      toast.success("Document deleted")
+    },
+    [queryClient]
+  )
+
+  const refresh = React.useCallback(() => {
+    void refetch()
+  }, [refetch])
 
   return (
     <DocumentsContext.Provider value={{
       selected, setSelected,
       selectedDocument,
       folder, setFolder,
-      documents, loading, error,
+      documents,
+      loading,
+      error: error ? String(error) : null,
       search, setSearch,
       uploadOpen, setUploadOpen,
-      refresh: fetchDocuments,
+      refresh,
       deleteDocument,
     }}>
       {children}
