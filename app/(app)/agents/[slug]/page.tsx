@@ -5,7 +5,7 @@ import { AgentIcon } from "@/components/dashboard/agent-icon";
 import Link from "next/link";
 
 export function generateStaticParams() {
-  return getAgentRoster().map((a) => ({ slug: a.slug }));
+  return getAgentRoster().filter((a) => a.slug !== "youtube-email").map((a) => ({ slug: a.slug }));
 }
 
 export default async function AgentCanvasPage({

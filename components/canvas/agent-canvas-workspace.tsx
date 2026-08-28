@@ -1,9 +1,18 @@
 "use client";
 
 import * as React from "react";
+import { Mail, Search } from "lucide-react";
 import { AgentFlowCanvas, type StageStatus } from "@/components/canvas/agent-flow-canvas";
 import { AGENT_STAGES, type AgentStage, emitRunStarted, emitRunFinished, emitRunError } from "@/lib/agui/bus";
 import { ShimmerButton } from "@/components/ui/magicui/shimmer-button";
+import { LeadResearchAssistantPanel } from "@/components/dashboard/leads/lead-research-assistant";
+import { cn } from "@/lib/utils";
+
+const CANVAS_AGENTS = [
+  { id: "email-crawler", label: "Email Crawler Pipeline", icon: Mail },
+  { id: "lead-research-assistant", label: "Lead Research Assistant", icon: Search },
+] as const;
+type CanvasAgentId = (typeof CANVAS_AGENTS)[number]["id"];
 
 function idleStatuses(): Record<AgentStage, StageStatus> {
   return AGENT_STAGES.reduce(
@@ -15,6 +24,7 @@ function idleStatuses(): Record<AgentStage, StageStatus> {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function AgentCanvasWorkspace() {
+  const [selected, setSelected] = React.useState<CanvasAgentId>("email-crawler");
   const [link, setLink] = React.useState("");
   const [details, setDetails] = React.useState("");
   const [statuses, setStatuses] = React.useState<Record<AgentStage, StageStatus>>(idleStatuses);
@@ -76,7 +86,46 @@ export function AgentCanvasWorkspace() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap gap-3">
+        {CANVAS_AGENTS.map((agent) => {
+          const Icon = agent.icon;
+          const isSelected = selected === agent.id;
+          return (
+            <button
+              key={agent.id}
+              onClick={() => setSelected(agent.id)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-md border px-3 py-2.5 text-left transition-colors",
+                isSelected
+                  ? "border-[var(--text-accent)] bg-[var(--accent-wash)]"
+                  : "border-rule bg-[var(--surface)] hover:bg-[var(--surface-2)]/60"
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-8 items-center justify-center rounded-sm",
+                  isSelected ? "bg-[var(--surface)] text-[var(--text-accent)]" : "bg-[var(--surface-2)] text-ink-strong"
+                )}
+              >
+                <Icon className="size-4" strokeWidth={1.5} />
+              </span>
+              <span className="font-body-tight text-sm text-ink-strong">{agent.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {selected === "lead-research-assistant" ? (
+        <div className="max-w-lg rounded-xl border bg-card/60 p-4">
+          <h3 className="text-sm font-semibold">Lead Research Assistant</h3>
+          <p className="mt-1 mb-4 text-xs text-muted-foreground">
+            No required fields. Describe who to find, add one lead you have partial info on, or upload a CSV.
+          </p>
+          <LeadResearchAssistantPanel />
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
       <div className="rounded-xl border bg-card/60 p-4">
         <h3 className="text-sm font-semibold">Launch Pipeline</h3>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -123,7 +172,11 @@ export function AgentCanvasWorkspace() {
         )}
       </div>
 
-      <AgentFlowCanvas statuses={statuses} />
+      <div>
+        <AgentFlowCanvas statuses={statuses} />
+      </div>
+      </div>
+      )}
     </div>
   );
 }

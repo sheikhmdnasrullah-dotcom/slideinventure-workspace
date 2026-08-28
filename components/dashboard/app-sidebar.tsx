@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Bot } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -50,6 +50,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getOrderedSections, NAVIGATION_HANDLE_ICON } from "@/lib/dashboard/navigation"
 import { NAV_PREFETCH } from "@/lib/dashboard/queries"
+import { useDock, undockAssistant } from "@/lib/ui/assistant-dock"
 
 const GripIcon = NAVIGATION_HANDLE_ICON
 
@@ -81,6 +82,7 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & { userEmail: string }) {
   const pathname = usePathname()
   const { preferences, saveState, setNavigationOrder, retrySave } = useDashboardPreferences()
+  const { docked } = useDock()
   const prefetch = useNavPrefetch()
 
   const orderedSections = useMemo(
@@ -148,7 +150,21 @@ export function AppSidebar({
               </SortableContext>
             </DndContext>
           </SidebarGroupContent>
-        </SidebarGroup>
+          </SidebarGroup>
+          {docked && (
+            <div className="px-2 pb-2 pt-1">
+              <button
+                type="button"
+                onClick={() => undockAssistant()}
+                title="Bring the assistant back to the screen"
+                className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70"
+              >
+                <Bot className="size-4 text-primary" />
+                <span>Assistant</span>
+                <span className="ml-auto text-[10px] text-sidebar-foreground/50">tap to open</span>
+              </button>
+            </div>
+          )}
       </SidebarContent>
 
       <SidebarFooter>

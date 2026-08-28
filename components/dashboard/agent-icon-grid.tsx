@@ -20,10 +20,15 @@ export function AgentIconGrid({ agents }: { agents: RosterAgent[] }) {
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
       {agents.map((a) => {
         const t = tint(a.color);
+        // The lead research assistant is a real dashboard tool (CSV upload,
+        // free-text research, writes into the Leads table), not a generic
+        // persona chat canvas, so it opens the Leads page's assistant panel
+        // instead of the standard /agents/[slug] workflow canvas.
+        const href = a.slug === "lead-research-assistant" ? "/leads?assistant=1" : `/agents/${a.slug}`
         return (
           <button
             key={a.slug}
-            onClick={() => router.push(`/agents/${a.slug}`)}
+            onClick={() => router.push(href)}
             className="group flex flex-col items-center gap-2 rounded-md border border-rule bg-[var(--surface)] p-4 text-center transition-all duration-base ease-std hover:-translate-y-0.5 hover:border-[var(--text-accent)] hover:shadow-[var(--shadow-float)]"
           >
             <span

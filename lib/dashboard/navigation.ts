@@ -80,8 +80,17 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
       { id: "leads-verify", label: "Verify Leads", route: "/leads/verify", icon: ShieldCheck },
     ],
   },
-  { id: "chat", label: "Chat", route: "/chat", icon: MessageSquare },
-  { id: "agents", label: "Agents", route: "/agents", icon: Bot },
+  { id: "chat", label: "Look Up", route: "/chat", icon: MessageSquare },
+  {
+    id: "agents",
+    label: "Agents",
+    route: "/agents",
+    icon: Bot,
+    children: [
+      { id: "agents-roster", label: "Agent Roster", route: "/agents" },
+      { id: "agents-youtube-email", label: "YouTube Email Agent", route: "/agents/youtube-email", icon: Video },
+    ],
+  },
   { id: "todoist", label: "Todoist", route: "/todoist", icon: Sparkles },
   { id: "knowledge", label: "Knowledge", route: "/knowledge", icon: BookOpen },
   { id: "documents", label: "Documents", route: "/documents", icon: FileText },
@@ -122,12 +131,6 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
       { id: "email-crawler-run", label: "Find emails", route: "/email-crawler" },
       { id: "email-crawler-verify", label: "Verify Leads", route: "/leads/verify", icon: ShieldCheck },
     ],
-  },
-  {
-    id: "youtube-email",
-    label: "YouTube Email",
-    route: "/youtube-email",
-    icon: Video,
   },
   {
     id: "csv-discovery",

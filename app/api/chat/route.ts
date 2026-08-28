@@ -6,7 +6,6 @@ import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { nvidiaComplete } from "@/lib/llm/nvidia";
 import { searchVector, type VectorCollection } from "@/lib/retrieval/vector-index";
-import { tavilySearch } from "@/lib/search/tavily";
 import { logActivity } from "@/lib/activities/client";
 import {
   getConsolidatedMemoryContext,
@@ -200,12 +199,12 @@ export async function POST(request: NextRequest) {
   }));
 
   // Retrieve evidence: Persistent memory (SecondBrain/Dashboard), Knowledge (fulltext chunks),
-  // plus cross-section (Documents, Notes, Terminal, Links) and live web search.
-  const [persistentMemoryContext, evidence, crossSection, webHits] = await Promise.all([
+  // plus cross-section (Documents, Notes, Terminal, Links). Look Up is the
+  // internal search engine — it searches the workspace and knowledge base only.
+  const [persistentMemoryContext, evidence, crossSection] = await Promise.all([
     getConsolidatedMemoryContext({ userEmail: user.email, query: message }).catch(() => ""),
     retrieveEvidence(message, filters),
     retrieveCrossSection(message).catch(() => [] as CrossSectionHit[]),
-    tavilySearch(message, { maxResults: 5 }).catch(() => []),
   ]);
 
   // Build context for LLM
@@ -213,17 +212,12 @@ export async function POST(request: NextRequest) {
   if (persistentMemoryContext) {
     contextParts.push(`[Persistent Memory (Obsidian / Dashboard)]\n${persistentMemoryContext}`);
   }
-  evidence.forEach((e, i) => {
+  evidence.forEach((e) => {
     const header = e.heading ? `${e.heading}\n` : "";
     contextParts.push(`[${contextParts.length + 1}] ${header}${e.text}`);
   });
   crossSection.forEach((hit) => {
     contextParts.push(`[${contextParts.length + 1}] (from ${hit.collection}) ${hit.text}`);
-  });
-  webHits.forEach((h) => {
-    contextParts.push(
-      `[${contextParts.length + 1}] (from web, ${h.url}) ${h.title}\n${h.content}`
-    );
   });
   const context = contextParts.join("\n\n---\n\n");
 
@@ -237,8 +231,8 @@ You have persistent memory across conversations stored in the workspace's Obsidi
 - For workspace, knowledge, or memory questions: answer accurately using the provided evidence and your persistent memory.
 - For greetings or conversational inquiries: answer warmly and helpfully.
 - Prefer internal evidence and persistent memory when relevant.
-- You MAY use web results to answer when internal evidence is insufficient or the question is about current/realtime information.
-Cite evidence sources when referring to specific documents or web links. Follow user formatting constraints strictly.${memoryNotice}`;
+- This is the internal "Look Up" search: only use the provided workspace evidence. If the evidence is insufficient, say you couldn't find it in the workspace.
+Cite evidence sources when referring to specific documents. Follow user formatting constraints strictly.${memoryNotice}`;
 
   const messages = [
     { role: "system", content: systemPrompt },

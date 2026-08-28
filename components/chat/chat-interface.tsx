@@ -368,7 +368,7 @@ export function ChatInterface() {
 
   return (
     <>
-      <SiteHeader crumbs={[{ label: "Chat" }]} subtitle="Intelligent assistant" />
+      <SiteHeader crumbs={[{ label: "Look Up" }]} subtitle="Search your workspace & knowledge base" />
       <div className="flex h-[calc(100vh-var(--header-height))]">
       {/* Sidebar - Session list */}
       <aside className="flex w-72 shrink-0 flex-col border-r border-rule bg-[var(--surface-2)]/40">
@@ -433,13 +433,13 @@ export function ChatInterface() {
         </div>
 
         {/* Messages */}
-        <ScrollArea className="min-w-0 flex-1 px-4">
+        <div className="min-w-0 flex-1 overflow-y-auto px-4">
           <div className="min-w-0 space-y-4 py-4">
             {messages.length === 0 ? (
               <div className="flex h-full min-h-[50vh] flex-col items-center justify-center text-center text-muted-foreground">
                 <Sparkles className="mb-4 size-10 text-muted-foreground/60" />
-                <p className="text-base">Start a conversation</p>
-                 <p className="mt-1 text-sm">Ask about knowledge, research, SOPs, or decisions</p>
+                <p className="text-base">Start a search</p>
+                 <p className="mt-1 text-sm">Look up anything across your workspace & knowledge base</p>
               </div>
             ) : (
               messageGroups.map((group) => (
@@ -513,11 +513,9 @@ export function ChatInterface() {
                                               {result.path ? (
                                                 <Link
                                                   href={result.path}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
                                                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                                 >
-                                                  Open source <ExternalLink className="size-3" />
+                                                  Open in dashboard <ExternalLink className="size-3" />
                                                 </Link>
                                               ) : (
                                                 result.url && (
@@ -566,7 +564,7 @@ export function ChatInterface() {
 
             <div ref={bottomRef} />
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Composer */}
         <div className="shrink-0 border-t border-rule p-4">

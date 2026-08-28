@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { ApiError } from "@/lib/api/errors";
 import { getSessionUser } from "@/lib/appwrite/auth";
+import { saveProspects } from "@/lib/youtube-email/storage";
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
@@ -45,6 +46,13 @@ export async function POST(request: NextRequest) {
         };
       }),
     );
+
+    // Instantly save extracted prospects to persistent storage and knowledge base
+    const validToSave = results.filter((r) => !r.error && ((r.emails && r.emails.length > 0) || r.email || (r.websites && r.websites.length > 0)));
+    if (validToSave.length > 0) {
+      await saveProspects(validToSave).catch((e) => console.warn("Failed to auto-save prospects:", e));
+    }
+
     return Response.json({ results });
   } catch (err) {
     const message = err instanceof Error ? err.message : "youtube-email failed";

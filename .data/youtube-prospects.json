@@ -1,0 +1,31 @@
+[
+  {
+    "id": "yt-1787938962607-qor83",
+    "channel": "https://www.youtube.com/@MrBeast/about",
+    "channelName": "@MrBeast",
+    "emails": [
+      "contact@mrbeastbusiness.com"
+    ],
+    "websites": [
+      "https://mrbeast.com",
+      "https://twitter.com/MrBeast"
+    ],
+    "method": "headless-browser-captcha",
+    "researchedAt": "2026-08-28T17:42:42.606Z"
+  },
+  {
+    "id": "yt-1787938962607-zuj30",
+    "channel": "https://www.youtube.com/@Vercel/about",
+    "channelName": "@Vercel",
+    "emails": [
+      "support@vercel.com",
+      "press@vercel.com"
+    ],
+    "websites": [
+      "https://vercel.com",
+      "https://github.com/vercel"
+    ],
+    "method": "headless-browser",
+    "researchedAt": "2026-08-28T17:42:42.606Z"
+  }
+]

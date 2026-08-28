@@ -21,6 +21,7 @@ export function KnowledgeDisplay() {
   const [title, setTitle] = React.useState("")
   const [body, setBody] = React.useState("")
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
+  const [viewMode, setViewMode] = React.useState<"sheet" | "raw">("sheet")
   const [deleting, setDeleting] = React.useState(false)
   const [sourceUrl, setSourceUrl] = React.useState<string | null>(null)
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -136,6 +137,24 @@ export function KnowledgeDisplay() {
               </Button>
             </a>
           )}
+          {body.includes("|---|") && (
+            <div className="ml-2 inline-flex items-center rounded-md border border-rule bg-[var(--surface-2)] p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("sheet")}
+                className={`rounded px-2 py-0.5 font-medium transition-colors ${viewMode === "sheet" ? "bg-background text-ink-strong shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Sheet View
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("raw")}
+                className={`rounded px-2 py-0.5 font-medium transition-colors ${viewMode === "raw" ? "bg-background text-ink-strong shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Markdown Editor
+              </button>
+            </div>
+          )}
           <span className="ml-auto text-xs text-muted-foreground">
             {status === "saving" ? "Saving" : status === "saved" ? "Saved" : ""}
           </span>
@@ -153,13 +172,95 @@ export function KnowledgeDisplay() {
       </div>
       <Separator />
       <div className="flex-1 p-6">
-        <Textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="Start writing..."
-          className="min-h-[300px] w-full resize-none border-none p-0 font-mono text-sm leading-relaxed shadow-none focus-visible:ring-0"
-        />
+        {viewMode === "sheet" && body.includes("|---|") ? (
+          <MarkdownTableView content={body} />
+        ) : (
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Start writing..."
+            className="min-h-[300px] w-full resize-none border-none p-0 font-mono text-sm leading-relaxed shadow-none focus-visible:ring-0"
+          />
+        )}
       </div>
     </div>
   )
+}
+
+function MarkdownTableView({ content }: { content: string }) {
+  const lines = content.split("\n");
+  const tableStartIndex = lines.findIndex((l) => l.trim().startsWith("|") && l.includes("|---|"));
+  
+  if (tableStartIndex <= 0) {
+    return <div className="whitespace-pre-wrap font-mono text-xs">{content}</div>;
+  }
+
+  const headerLine = lines[tableStartIndex - 1];
+  const headers = headerLine
+    .split("|")
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  const rowLines = lines.slice(tableStartIndex + 1).filter((l) => l.trim().startsWith("|"));
+  const rows = rowLines.map((line) =>
+    line
+      .split("|")
+      .map((c) => c.trim())
+      .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
+  );
+
+  const preamble = lines.slice(0, tableStartIndex - 1).join("\n").trim();
+
+  return (
+    <div className="space-y-4">
+      {preamble && (
+        <div className="rounded-lg border border-rule bg-muted/20 p-4 text-xs text-ink-muted leading-relaxed whitespace-pre-wrap">
+          {preamble}
+        </div>
+      )}
+      <div className="overflow-hidden rounded-xl border border-rule bg-card/40 shadow-sm">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-rule bg-muted/50 font-label">
+              {headers.map((h, i) => (
+                <th key={i} className="px-3.5 py-2.5 text-left font-medium text-ink-muted">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-rule font-body-tight">
+            {rows.map((row, rIdx) => (
+              <tr key={rIdx} className="hover:bg-muted/30 transition-colors">
+                {row.map((cell, cIdx) => {
+                  const isLink = cell.startsWith("[") && cell.includes("](") && cell.endsWith(")");
+                  const linkMatch = cell.match(/\[(.*?)\]\((.*?)\)/);
+
+                  return (
+                    <td key={cIdx} className="px-3.5 py-2.5 text-ink-strong break-words">
+                      {isLink && linkMatch ? (
+                        <a
+                          href={linkMatch[2]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          {linkMatch[1]}
+                          <ExternalLink className="size-2.5 opacity-60" />
+                        </a>
+                      ) : cell.includes("@") && cell.includes(".") ? (
+                        <span className="font-mono font-medium text-emerald-500">{cell}</span>
+                      ) : (
+                        cell.replace(/\*\*/g, "")
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

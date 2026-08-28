@@ -1,6 +1,7 @@
 [
   { "slug": "mastra-researcher", "division": "Research", "team": "Intelligence" },
   { "slug": "email-crawler", "division": "Lead Generation", "team": "Growth" },
+  { "slug": "lead-research-assistant", "division": "Lead Generation", "team": "Growth" },
   { "slug": "deep-crawler", "division": "Research", "team": "Intelligence" },
   { "slug": "captcha-solver", "division": "Infrastructure", "team": "Platform" },
   { "slug": "truemail-validator", "division": "Lead Generation", "team": "Growth" },
@@ -18,5 +19,6 @@
   { "slug": "eval-agent", "division": "Research", "team": "Intelligence" },
   { "slug": "litellm-router", "division": "Infrastructure", "team": "Platform" },
   { "slug": "agui-agent", "division": "Infrastructure", "team": "Platform" },
-  { "slug": "copilot-agent", "division": "Product", "team": "Studio" }
+  { "slug": "copilot-agent", "division": "Product", "team": "Studio" },
+  { "slug": "youtube-email", "division": "Lead Generation", "team": "Growth" }
 ]

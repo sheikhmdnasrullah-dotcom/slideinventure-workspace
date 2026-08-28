@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BookOpen, FileText, NotebookPen, Plus, RefreshCw, FileCode2, LibraryBig, PanelRightClose, PanelRightOpen } from "lucide-react"
+import { BookOpen, FileText, NotebookPen, Plus, RefreshCw, FileCode2, LibraryBig, PanelRightClose, PanelRightOpen, Users } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ const CATEGORIES = [
   { title: "Notes", icon: BookOpen, cat: "note" },
   { title: "SOPs", icon: FileText, cat: "sop" },
   { title: "System Docs", icon: FileCode2, cat: "system" },
+  { title: "Prospects & Leads", icon: Users, cat: "research" },
 ]
 
 function KnowledgeAppInner() {
