@@ -2,10 +2,12 @@ import { requireUser } from "@/lib/supabase/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
-import { PageHeader, Section, Surface, StatusBadge, DataTable, type Column } from "@/components/system";
+import { PageHeader, Section, Surface, StatusBadge } from "@/components/system";
 import { AgentType } from "@/lib/agents/registry";
 import { getAgentRoster, getAgentDivisions } from "@/lib/agents/roster";
 import { AgentIconGrid } from "@/components/dashboard/agent-icon-grid";
+import { AgentHistoryTable, type AgentHistoryRow } from "@/components/dashboard/agents/agent-history-table";
+import { SiteHeader } from "@/components/dashboard/site-header";
 
 const DB = APPWRITE.databaseId;
 const RUNS = APPWRITE.collections.taskRuns;
@@ -40,103 +42,59 @@ type ProgressEvent = {
   created_at: string;
 };
 
-type HistoryRow = TaskRun & { startedMs: number; duration: number | null };
-
-function runStatusTone(status: string): "live" | "danger" | "warn" | "neutral" {
-  if (status === "completed") return "live";
-  if (status === "failed") return "danger";
-  if (status === "running") return "warn";
-  return "neutral";
-}
-
-const historyColumns: Column<HistoryRow>[] = [
-  {
-    key: "task_type",
-    header: "Type",
-    sortable: true,
-    render: (row) => <span className="font-label text-ink-strong">{row.task_type}</span>,
-  },
-  {
-    key: "command",
-    header: "Command",
-    render: (row) => (
-      <span className="block max-w-xs truncate font-mono text-xs text-ink-muted">{row.command ?? ""}</span>
-    ),
-  },
-  {
-    key: "status",
-    header: "Status",
-    sortable: true,
-    render: (row) => (
-      <StatusBadge tone={runStatusTone(row.status)} dot={row.status === "running"} label={row.status} />
-    ),
-  },
-  {
-    key: "startedMs",
-    header: "Started",
-    sortable: true,
-    align: "right",
-    render: (row) => (
-      <span className="font-label tabular-nums text-ink-muted">
-        {new Date(row.started_at).toLocaleTimeString()}
-      </span>
-    ),
-  },
-  {
-    key: "duration",
-    header: "Duration",
-    sortable: true,
-    align: "right",
-    render: (row) => (
-      <span className="font-label tabular-nums text-ink-muted">
-        {row.duration !== null ? `${row.duration}s` : ""}
-      </span>
-    ),
-  },
-];
-
 export default async function AgentsPage() {
   await requireUser();
 
-  const runsRes = await databases.listDocuments(DB, RUNS, [
-    Query.orderDesc("started_at"),
-    Query.limit(50),
-  ]);
-
-  const runs = runsRes.documents.map((d: any) => ({
-    id: d.$id,
-    task_type: d.task_type,
-    status: d.status,
-    command: d.command,
-    output: d.output,
-    exit_code: d.exit_code,
-    started_at: d.started_at,
-    completed_at: d.completed_at,
-    triggered_by: d.triggered_by,
-    metadata: parseJson(d.metadata),
-  })) as TaskRun[];
+  // These read the task-run collections, which may not exist in every
+  // deployment. Never let a failure here take down the whole Agents section —
+  // the roster is file-based and must always render.
+  let runs: TaskRun[] = [];
+  try {
+    const runsRes = await databases.listDocuments(DB, RUNS, [
+      Query.orderDesc("started_at"),
+      Query.limit(50),
+    ]);
+    runs = runsRes.documents.map((d: any) => ({
+      id: d.$id,
+      task_type: d.task_type,
+      status: d.status,
+      command: d.command,
+      output: d.output,
+      exit_code: d.exit_code,
+      started_at: d.started_at,
+      completed_at: d.completed_at,
+      triggered_by: d.triggered_by,
+      metadata: parseJson(d.metadata),
+    })) as TaskRun[];
+  } catch {
+    runs = [];
+  }
 
   // Replicate the `task_run_latest_progress` view: latest event (max sequence) per task_run_id.
   const progressMap = new Map<string, ProgressEvent>();
   if (runs.length) {
-    const evRes = await databases.listDocuments(DB, EVENTS, [
-      Query.equal("task_run_id", runs.map((r) => r.id)),
-      Query.limit(5000),
-    ]);
-    const best = new Map<string, any>();
-    for (const e of evRes.documents) {
-      const cur = best.get(e.task_run_id);
-      if (!cur || e.sequence > cur.sequence) best.set(e.task_run_id, e);
-    }
-    for (const [k, v] of best) {
-      progressMap.set(k, {
-        task_run_id: v.task_run_id,
-        current: v.current,
-        total: v.total,
-        current_item: v.current_item ?? null,
-        status: v.status,
-        created_at: v.created_at,
-      });
+    try {
+      const evRes = await databases.listDocuments(DB, EVENTS, [
+        Query.equal("task_run_id", runs.map((r) => r.id)),
+        Query.limit(5000),
+      ]);
+      const best = new Map<string, any>();
+      for (const e of evRes.documents) {
+        const cur = best.get(e.task_run_id);
+        if (!cur || e.sequence > cur.sequence) best.set(e.task_run_id, e);
+      }
+      for (const [k, v] of best) {
+        progressMap.set(k, {
+          task_run_id: v.task_run_id,
+          current: v.current,
+          total: v.total,
+          current_item: v.current_item ?? null,
+          status: v.status,
+          created_at: v.created_at,
+        });
+      }
+    } catch {
+      // progress stays empty
     }
   }
 
@@ -148,7 +106,9 @@ export default async function AgentsPage() {
   const rosterDivisions = getAgentDivisions(roster);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <>
+      <SiteHeader crumbs={[{ label: "Agents" }]} subtitle="Execution workspace" />
+      <div className="flex flex-1 flex-col gap-6 p-6">
       <PageHeader
         eyebrow="Intelligence"
         title="Agents"
@@ -209,15 +169,20 @@ export default async function AgentsPage() {
       <Section tone="base">
         <PageHeader eyebrow="History" title="Recent agent runs" />
         <Surface variant="raised" className="px-0 py-0">
-          <DataTable<HistoryRow>
-            data={completed.map((run) => {
+          <AgentHistoryTable
+            data={completed.map((run): AgentHistoryRow => {
               const started = new Date(run.started_at);
               const ended = run.completed_at ? new Date(run.completed_at) : null;
               const duration = ended ? Math.round((ended.getTime() - started.getTime()) / 1000) : null;
-              return { ...run, startedMs: started.getTime(), duration };
+              return {
+                id: run.id,
+                task_type: run.task_type,
+                command: run.command,
+                status: run.status,
+                started_at: run.started_at,
+                duration,
+              };
             })}
-            columns={historyColumns}
-            empty={{ title: "No runs yet", description: "Completed and failed agent runs will appear here." }}
           />
         </Surface>
       </Section>
@@ -245,6 +210,7 @@ export default async function AgentsPage() {
           )}
         </Surface>
       </Section>
-    </div>
+      </div>
+    </>
   );
 }
