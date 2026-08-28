@@ -215,8 +215,8 @@ export function AiVentureWorkspace() {
           </div>
         </nav>
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <TabTransition tabKey={active} className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <TabTransition tabKey={active} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden h-full">
             {active === "home" && <Launcher onSelect={select} />}
             {active === "files" && <AvFiles />}
             {active === "useful-links" && <AvUsefulLinks />}

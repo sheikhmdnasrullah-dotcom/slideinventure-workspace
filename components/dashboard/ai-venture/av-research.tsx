@@ -16,7 +16,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useLiveRefresh } from "@/components/providers/event-stream";
 import { formatDistanceToNow } from "date-fns";
@@ -134,8 +133,8 @@ export function AvResearch() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/20 px-6 py-3.5">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/20 px-6 py-3.5">
         <div>
           <div className="flex items-center gap-2">
             <FlaskConical className="size-5 text-primary" />
@@ -197,8 +196,8 @@ export function AvResearch() {
           </Button>
         </div>
       ) : (
-        <ScrollArea className="flex-1" data-lenis-prevent>
-          <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
+        <div className="flex-1 min-h-0 overflow-y-auto" data-lenis-prevent>
+          <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6 pb-24">
             {grouped.map(({ source, items: sourceItems }) => {
               const meta = SOURCE_META[source];
               const Icon = meta.icon;
@@ -274,7 +273,7 @@ export function AvResearch() {
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
       )}
     </div>
   );
