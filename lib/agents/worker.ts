@@ -5,10 +5,12 @@ import { getAgentPrompt } from "@/lib/agents/roster";
 import { agentRunStarted, agentRunCompleted, agentRunFailed } from "@/lib/agui/server";
 import { captureResearchInsight } from "@/lib/research-lab/capture";
 
-// Executes a queued agent job on the server, independent of any browser session.
-// Triggered via waitUntil on enqueue, or lazily by the poll endpoint / cron. The
-// job row in Appwrite is the source of truth, so a run can survive a function
-// recycle or the user closing their laptop. `mastra` is imported lazily so a
+// Dispatches a queued agent job to the self-hosted Mastra server (VPS) and
+// records the result, independent of any browser session. Triggered via
+// waitUntil on enqueue, or lazily by the poll endpoint / cron. The job row in
+// Appwrite is the source of truth, so a run can survive a function recycle or
+// the user closing their laptop — the actual LLM/tool work happens on the
+// Mastra box, not in this function. `mastra-client` is imported lazily so a
 // failure there surfaces as a job error rather than taking down the route.
 export async function processAgentJob(jobId: string): Promise<void> {
   const job = await getAgentJobById(jobId);
@@ -23,7 +25,7 @@ export async function processAgentJob(jobId: string): Promise<void> {
   await agentRunStarted(ctx, job.message.slice(0, 200));
 
   try {
-    const { runMastraAgent } = await import("@/lib/agents/mastra");
+    const { runMastraAgent } = await import("@/lib/agents/mastra-client");
     const res = await runMastraAgent({
       slug: job.slug,
       message: job.message,

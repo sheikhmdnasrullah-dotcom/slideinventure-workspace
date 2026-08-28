@@ -72,6 +72,7 @@ async function completeAt(
       max_tokens: opts.maxTokens ?? 2048,
       stream: false,
     }),
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) {
     const err = await res.text();

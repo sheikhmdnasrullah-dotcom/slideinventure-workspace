@@ -188,8 +188,24 @@ export function DraggableDeployedAgent() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Agent did not respond");
+      let data: any = null;
+      const rawText = await res.text();
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok || !data) {
+        const errorMsg =
+          data?.error ||
+          (res.status === 504
+            ? "Agent response timed out. Please try asking a more focused question."
+            : res.status === 401
+              ? "Please sign in to chat with the agent."
+              : `Agent service error (${res.status})`);
+        throw new Error(errorMsg);
+      }
 
       const cleanAnswer = (data.answer || "Task completed.").replace(/[—–]/g, "-");
       addAgentMessage({ role: "assistant", content: cleanAnswer });

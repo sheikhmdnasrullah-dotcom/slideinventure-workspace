@@ -2,11 +2,11 @@ import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { getAgentPrompt } from "@/lib/agents/roster";
-import { runMastraAgent } from "@/lib/agents/mastra";
+import { runMastraAgent } from "@/lib/agents/mastra-client";
 import { generateText, type ModelMessage } from "ai";
 import { NextRequest } from "next/server";
-import { waitUntil } from "@vercel/functions";
 import { NoLlmProviderError, resolveChatModel } from "@/lib/llm/models";
+import { chatCompletion } from "@/lib/llm/gateway";
 import { captureResearchInsight } from "@/lib/research-lab/capture";
 import {
   agentRunCompleted,
@@ -16,6 +16,9 @@ import {
   agentToolStarted,
   type AgentRunContext,
 } from "@/lib/agui/server";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
  * Stateless chat with one installed agent persona (`.claude/agents/<slug>.md`
@@ -104,22 +107,37 @@ export async function POST(request: NextRequest) {
 
   try {
     agentThinking(ctx);
-    const { text: answer } = await generateText({
-      model: resolveChatModel(),
-      messages,
-    });
-    await agentRunCompleted(ctx, answer.slice(0, 280));
+    let answer = "";
+    try {
+      answer = await chatCompletion(
+        messages.map((m) => ({
+          role: m.role as string,
+          content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+        })),
+        { maxTokens: 2048, temperature: 0.3 }
+      );
+    } catch (llmErr) {
+      console.warn("chatCompletion failed, trying generateText:", llmErr);
+      const { text } = await generateText({
+        model: resolveChatModel(),
+        messages,
+      });
+      answer = text;
+    }
+
+    const cleanAnswer = (answer || "").replace(/[—–]/g, "-");
+    await agentRunCompleted(ctx, cleanAnswer.slice(0, 280));
     if (user.email) {
       void captureResearchInsight({
         userEmail: user.email,
         source: "agent",
         sourceRef: ctx.runId,
         title: `${agent.name}: ${message.slice(0, 80)}`,
-        rawText: `Task: ${message}\n\nResult: ${answer}`,
+        rawText: `Task: ${message}\n\nResult: ${cleanAnswer}`,
         reference: { tab: "agents" },
       }).catch((err) => console.error("CAPTURE_AGENT_ERROR:", err));
     }
-    return Response.json({ answer, agent: agent.name, runId: ctx.runId });
+    return Response.json({ answer: cleanAnswer, agent: agent.name, runId: ctx.runId });
   } catch (err) {
     const errorMessage =
       err instanceof NoLlmProviderError
@@ -129,6 +147,9 @@ export async function POST(request: NextRequest) {
           : "Agent chat failed";
     await agentRunFailed(ctx, errorMessage);
     const status = err instanceof NoLlmProviderError ? 503 : 500;
-    return Response.json({ error: errorMessage }, { status });
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
