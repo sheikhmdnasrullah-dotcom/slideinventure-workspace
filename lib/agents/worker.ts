@@ -1,12 +1,12 @@
 import "server-only";
 import { enqueueAgentJob, getAgentJobById, updateAgentJob } from "@/lib/agents/jobs-store";
-import { runMastraAgent } from "@/lib/agents/mastra";
 import type { AgentJobInput } from "@/lib/agents/jobs-store";
 
 // Executes a queued agent job on the server, independent of any browser session.
 // Triggered via waitUntil on enqueue, or lazily by the poll endpoint / cron. The
 // job row in Appwrite is the source of truth, so a run can survive a function
-// recycle or the user closing their laptop.
+// recycle or the user closing their laptop. `mastra` is imported lazily so a
+// failure there surfaces as a job error rather than taking down the route.
 export async function processAgentJob(jobId: string): Promise<void> {
   const job = await getAgentJobById(jobId);
   if (!job) return;
@@ -15,6 +15,7 @@ export async function processAgentJob(jobId: string): Promise<void> {
 
   await updateAgentJob(jobId, { status: "running" });
   try {
+    const { runMastraAgent } = await import("@/lib/agents/mastra");
     const res = await runMastraAgent({
       slug: job.slug,
       message: job.message,
