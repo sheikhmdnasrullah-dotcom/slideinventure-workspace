@@ -26,7 +26,6 @@
     "@blocksuite/store": "^0.0.0-canary-20250316001624",
     "@browserbasehq/stagehand": "^4.0.2",
     "@composio/core": "^0.17.0",
-    "@composio/mastra": "^0.10.4",
     "@copilotkit/react-core": "^1.69.2",
     "@copilotkit/react-ui": "^1.69.2",
     "@copilotkit/runtime": "^1.69.2",
