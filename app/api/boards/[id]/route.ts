@@ -104,7 +104,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             sourceRef: id,
             title: (typeof title === "string" ? title : (doc as BoardDoc).title) || "Untitled sketch",
             rawText,
-            reference: { tab: "brainstorm", board: id },
+            reference: { tab: "brainstorm", board: id, engine: "excalidraw" },
           }).catch(() => {})
         );
       }

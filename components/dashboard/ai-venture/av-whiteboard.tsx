@@ -113,16 +113,19 @@ function BoardList({ engine, onOpen }: { engine: BoardEngine; onOpen: (id: strin
 
 export function AvWhiteboard() {
   const [deepLinkBoard, setDeepLinkBoard] = useQueryState("board")
+  const [deepLinkEngine, setDeepLinkEngine] = useQueryState("boardEngine")
   const [engine, setEngine] = useState<BoardEngine | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   // Deep link from Research Lab ("Open source"): jump straight to the
-  // referenced excalidraw board, then drop the query param.
+  // referenced board with whichever engine it was drawn in, then drop the
+  // query params.
   useEffect(() => {
     if (!deepLinkBoard) return
-    setEngine("excalidraw")
+    setEngine(deepLinkEngine === "affine" ? "affine" : "excalidraw")
     setActiveId(deepLinkBoard)
     void setDeepLinkBoard(null)
+    void setDeepLinkEngine(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkBoard])
 

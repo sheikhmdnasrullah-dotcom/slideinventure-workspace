@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases, ID } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
@@ -6,6 +7,8 @@ import { logActivity } from "@/lib/activities/client";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
+import { captureResearchInsight } from "@/lib/research-lab/capture";
+import { summarizeAffineSnapshot } from "@/lib/research-lab/affine-summary";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.affineWorkspaces;
@@ -67,6 +70,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       entityType: "affine_workspace",
       metadata: { section: body.section },
     });
+
+    // AI Venture's block-canvas brainstorm ("concepts" section) feeds the
+    // Research Lab too, same as the Excalidraw sketch board: a summary of
+    // whatever is written on it, refreshed on every autosave past the
+    // cooldown in captureResearchInsight.
+    if (body.section === "concepts" && body.snapshot !== undefined && user.email) {
+      const rawText = summarizeAffineSnapshot(body.snapshot ?? null);
+      if (rawText) {
+        waitUntil(
+          captureResearchInsight({
+            userEmail: user.email,
+            source: "brainstorm",
+            sourceRef: id,
+            title: doc.title || "Untitled board",
+            rawText,
+            reference: { tab: "brainstorm", board: id, engine: "affine" },
+          }).catch(() => {})
+        );
+      }
+    }
+
     return Response.json({ workspace: serialize(doc) });
   } catch (error) {
     return toJson(error);

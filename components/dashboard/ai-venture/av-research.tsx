@@ -5,7 +5,6 @@ import { useQueryState } from "nuqs"
 import { FlaskConical, NotebookPen, PenTool, FolderOpen, Bot, Trash2, ExternalLink, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useLiveRefresh } from "@/components/providers/event-stream"
 import { formatDistanceToNow } from "date-fns"
@@ -41,6 +40,7 @@ export function AvResearch() {
   const [, setTab] = useQueryState("tab")
   const [, setNotePath] = useQueryState("note")
   const [, setBoardPath] = useQueryState("board")
+  const [, setBoardEngine] = useQueryState("boardEngine")
   const [, setFilePath] = useQueryState("path")
 
   const [items, setItems] = useState<ResearchLabItem[]>([])
@@ -73,7 +73,10 @@ export function AvResearch() {
     if (!ref?.tab) return
     void setTab(ref.tab)
     if (ref.tab === "notepad" && ref.note) void setNotePath(ref.note)
-    if (ref.tab === "brainstorm" && ref.board) void setBoardPath(ref.board)
+    if (ref.tab === "brainstorm" && ref.board) {
+      void setBoardPath(ref.board)
+      void setBoardEngine(ref.engine || "excalidraw")
+    }
     if (ref.tab === "files" && ref.path) void setFilePath(ref.path)
   }
 
