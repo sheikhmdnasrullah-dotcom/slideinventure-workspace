@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Bot } from "lucide-react"
+import { Bot, Rocket } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils"
 import { getOrderedSections, NAVIGATION_HANDLE_ICON } from "@/lib/dashboard/navigation"
 import { NAV_PREFETCH } from "@/lib/dashboard/queries"
 import { useDock, undockAssistant } from "@/lib/ui/assistant-dock"
+import { DeployAgentModal } from "@/components/dashboard/research/deploy-agent-modal"
 
 const GripIcon = NAVIGATION_HANDLE_ICON
 
@@ -76,6 +77,7 @@ export function AppSidebar({
   const { preferences, saveState, setNavigationOrder, retrySave } = useDashboardPreferences()
   const { docked } = useDock()
   const prefetch = useNavPrefetch()
+  const [deployOpen, setDeployOpen] = useState(false)
 
   const orderedSections = useMemo(
     () => getOrderedSections(preferences.navigationOrder, preferences.labels),
@@ -157,6 +159,18 @@ export function AppSidebar({
               </button>
             </div>
           )}
+          <div className="px-2 pb-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setDeployOpen(true)}
+              title="Deploy a research agent"
+              className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70"
+            >
+              <Rocket className="size-4 text-primary" />
+              <span>Deploy Agent</span>
+              <span className="ml-auto text-[10px] text-sidebar-foreground/50">research</span>
+            </button>
+          </div>
       </SidebarContent>
 
       <SidebarFooter>
@@ -175,6 +189,7 @@ export function AppSidebar({
           }}
         />
       </SidebarFooter>
+      <DeployAgentModal open={deployOpen} onOpenChange={setDeployOpen} />
     </Sidebar>
   )
 }

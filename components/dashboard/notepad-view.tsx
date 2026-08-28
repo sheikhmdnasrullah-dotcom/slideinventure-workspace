@@ -23,6 +23,9 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useLiveRefresh } from "@/components/providers/event-stream"
+import { DeployAgentModal } from "@/components/dashboard/research/deploy-agent-modal"
+import { ResearchPanel } from "@/components/dashboard/research/research-panel"
+import { Sparkles } from "lucide-react"
 
 const Notepad = dynamic(() => import("@/components/dashboard/v3/note/dynamic"), {
   ssr: false,
@@ -46,6 +49,8 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
   const [renamingId, setRenamingId] = React.useState<string | null>(null)
   const [draftTitle, setDraftTitle] = React.useState("")
   const [deleteId, setDeleteId] = React.useState<string | null>(null)
+  const [researchOpen, setResearchOpen] = React.useState(false)
+  const [deployOpen, setDeployOpen] = React.useState(false)
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Always pass scope explicitly (never omit it): /api/notes returns every
@@ -281,6 +286,15 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                   {status === "saving" && <Loader2 className="size-3 animate-spin" />}
                   {status === "saving" ? "Saving" : status === "saved" ? "Saved" : ""}
                 </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-2 gap-1.5"
+                  onClick={() => setDeployOpen(true)}
+                  disabled={!selectedId}
+                >
+                  <Sparkles className="size-4 text-primary" /> Research Agents
+                </Button>
               </div>
               <div className="px-6 pb-10">
                 <Notepad key={selectedId} initialContent={content} onChange={handleChange} />
@@ -292,6 +306,9 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
             </div>
           )}
         </section>
+        {researchOpen && selectedId && (
+          <ResearchPanel noteId={selectedId} onClose={() => setResearchOpen(false)} />
+        )}
       </div>
 
       <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
@@ -312,6 +329,14 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DeployAgentModal
+        open={deployOpen}
+        onOpenChange={setDeployOpen}
+        noteId={selectedId}
+        defaultTask={title}
+        onDeployed={() => setResearchOpen(true)}
+      />
     </div>
   )
 }

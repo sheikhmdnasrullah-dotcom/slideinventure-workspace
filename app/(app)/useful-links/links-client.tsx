@@ -235,15 +235,6 @@ export function LinksClient({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <button
-                    type="button"
-                    aria-label="Delete link"
-                    title="Delete link"
-                    onClick={() => handleDeleteClick(link.id)}
-                    className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                  >
-                    <Trash className="h-4 w-4" />
-                  </button>
                 </div>
               </CardHeader>
               <CardContent className="pb-4">

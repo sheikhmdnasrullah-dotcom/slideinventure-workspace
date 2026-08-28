@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
-import { Bot, Send, Loader2, X, FileCode2, Globe, Wrench, Layers } from "lucide-react";
+import { Bot, Send, Loader2, X, FileCode2, Globe, Wrench, Layers, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,6 +42,9 @@ export function AvAgents() {
   const [input, setInput] = useState("");
   const [tools, setTools] = useState(true);
   const [background, setBackground] = useState(true);
+  const [research, setResearch] = useState<
+    { id: string; task: string; status: string; agents: { slug: string; label: string }[]; conclusion: string | null }[]
+  >([]);
 
   const [, force] = useReducer((x) => x + 1, 0);
   useEffect(() => subscribe(force), []);
@@ -60,6 +63,26 @@ export function AvAgents() {
         if (active) setLoadError(e instanceof Error ? e.message : "Could not load agents");
       } finally {
         if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Standalone research super-agents (deployed without a note) show up here so
+  // they're reachable from the Agents section like any other agent.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/agents/research/sessions");
+        const json = await res.json();
+        if (!active) return;
+        const all = json.sessions ?? [];
+        setResearch(all.filter((s: any) => !s.noteId));
+      } catch {
+        /* non-fatal */
       }
     })();
     return () => {
@@ -219,141 +242,147 @@ export function AvAgents() {
   };
 
   return (
-    <div className="flex h-full">
-      <aside className="flex w-56 shrink-0 flex-col gap-1 border-r border-border bg-card/40 p-2">
-        <div className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Agents
-        </div>
-        <ScrollArea className="flex-1" data-lenis-prevent>
+    <div className="flex h-full flex-col">
+      {!selected ? (
+        <div className="h-full overflow-y-auto p-6" data-lenis-prevent>
+          <div className="mb-1 flex items-center gap-2">
+            <Layers className="size-5 text-primary" />
+            <h2 className="text-lg font-semibold">Agents</h2>
+          </div>
+          <p className="mb-5 max-w-2xl text-sm text-muted-foreground">
+            Select an agent to delegate work. Agents run with tools enabled by default (web search, knowledge base, browsing, integrations, and memory) and can continue working in the background.
+          </p>
           {loading ? (
-            <p className="px-2 py-3 text-xs text-muted-foreground">Loading</p>
+            <p className="text-sm text-muted-foreground">Loading…</p>
           ) : loadError ? (
-            <div className="flex flex-col gap-2 px-2 py-3">
-              <p className="text-xs text-destructive">{loadError}</p>
-            </div>
+            <p className="text-sm text-destructive">{loadError}</p>
           ) : agents.length === 0 ? (
-            <div className="flex flex-col gap-2 px-2 py-3">
-              <p className="text-xs text-muted-foreground">
-                No agents installed. Personas come from agent files in{" "}
-                <code className="rounded bg-muted px-1">.claude/agents/*.md</code>. Add one and it
-                shows up here.
-              </p>
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-10 text-muted-foreground">
+              <FileCode2 className="size-8" />
+              <p className="text-sm">No agents installed yet.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-1.5 p-1">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {agents.map((a) => {
                 const st = getAgentState(a.slug);
                 return (
                   <button
                     key={a.slug}
-                    title={a.name}
                     onClick={() => selectAgent(a)}
-                    className={cn(
-                      "relative flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border p-1 text-center transition-colors hover:bg-accent",
-                      selected?.slug === a.slug
-                        ? "border-primary bg-primary/10"
-                        : "border-border"
-                    )}
+                    className="group relative flex flex-col items-center gap-2.5 rounded-xl border border-border bg-card p-5 text-center transition-all duration-150 hover:-translate-y-0.5 hover:border-primary hover:shadow-sm"
                   >
-                    <span className="text-xl leading-none">{a.emoji || <Bot className="size-5" />}</span>
-                    <span className="line-clamp-1 w-full px-0.5 text-[10px] font-medium">
-                      {a.name}
+                    <span
+                      className="flex size-14 items-center justify-center rounded-2xl text-2xl shadow-xs"
+                      style={{
+                        backgroundColor: a.color ? `${a.color}22` : "hsl(var(--muted))",
+                      }}
+                    >
+                      {a.emoji || <Bot className="size-7" />}
+                    </span>
+                    <span className="font-semibold text-sm text-ink-strong">{a.name}</span>
+                    <span className="line-clamp-2 text-xs text-muted-foreground">
+                      {a.description || a.division}
                     </span>
                     {st.busy && (
-                      <span className="absolute right-1 top-1">
-                        <Loader2 className="size-3 animate-spin text-primary" />
+                      <span className="absolute right-2 top-2 flex items-center gap-1 text-[10px] text-primary">
+                        <Loader2 className="size-3 animate-spin" /> running
                       </span>
                     )}
                   </button>
                 );
-              })}
+              }              )}
             </div>
           )}
-        </ScrollArea>
-      </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col">
-        {!selected ? (
-          <div className="h-full overflow-y-auto p-6" data-lenis-prevent>
-            <div className="mb-1 flex items-center gap-2">
-              <Layers className="size-5 text-primary" />
-              <h2 className="text-lg font-semibold">Agents</h2>
-            </div>
-            <p className="mb-5 max-w-2xl text-sm text-muted-foreground">
-              Pick an agent to delegate work. They run with tools on by default — web search, your
-              knowledge base, browsing, connected integrations and memory — and can keep working in the
-              background while you do other things.
-            </p>
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : loadError ? (
-              <p className="text-sm text-destructive">{loadError}</p>
-            ) : agents.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-10 text-muted-foreground">
-                <FileCode2 className="size-8" />
-                <p className="text-sm">No agents installed yet.</p>
+          {research.length > 0 && (
+            <div className="mt-8">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles className="size-4 text-primary" />
+                <h3 className="text-sm font-semibold text-ink-strong">Research super-agents</h3>
+                <span className="text-xs text-muted-foreground">multi-agent deep research</span>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {agents.map((a) => {
-                  const st = getAgentState(a.slug);
-                  return (
-                    <button
-                      key={a.slug}
-                      onClick={() => selectAgent(a)}
-                      className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition-colors hover:border-primary"
-                    >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {research.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-ink-strong line-clamp-1">{r.task}</span>
                       <span
-                        className="flex size-12 items-center justify-center rounded-full text-2xl"
-                        style={{
-                          backgroundColor: a.color ? `${a.color}22` : "hsl(var(--muted))",
-                        }}
+                        className={cn(
+                          "shrink-0 rounded-md px-2 py-0.5 text-[10px]",
+                          r.status === "done"
+                            ? "bg-emerald-500/15 text-emerald-600"
+                            : r.status === "error"
+                              ? "bg-destructive/15 text-destructive"
+                              : "bg-primary/15 text-primary"
+                        )}
                       >
-                        {a.emoji || <Bot className="size-6" />}
+                        {r.status}
                       </span>
-                      <span className="font-medium">{a.name}</span>
-                      <span className="line-clamp-2 text-xs text-muted-foreground">
-                        {a.description || a.division}
-                      </span>
-                      {st.busy && (
-                        <span className="absolute right-2 top-2 flex items-center gap-1 text-[10px] text-primary">
-                          <Loader2 className="size-3 animate-spin" /> running
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {r.agents.map((a) => (
+                        <span key={a.slug} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                          {a.label}
                         </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
-              <span className="text-sm font-medium">{selected.name}</span>
-              <span className="text-xs text-muted-foreground">{selected.division}</span>
-              <div className="ml-auto flex items-center gap-4">
-                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Globe className="size-3.5" />
-                  <input
-                    type="checkbox"
-                    checked={tools}
-                    onChange={(e) => setTools(e.target.checked)}
-                    className="size-3.5"
-                  />
-                  Tools
-                </label>
-                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Wrench className="size-3.5" />
-                  <input
-                    type="checkbox"
-                    checked={background}
-                    onChange={(e) => setBackground(e.target.checked)}
-                    className="size-3.5"
-                  />
-                  Background
-                </label>
+                      ))}
+                    </div>
+                    {r.conclusion && (
+                      <p className="line-clamp-3 text-xs text-muted-foreground">{r.conclusion}</p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/20 px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelected(null)}
+                className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                ← All Agents
+              </Button>
+              <div className="h-4 w-px bg-border" />
+              <div className="flex items-center gap-2">
+                <span className="text-lg leading-none">{selected.emoji || <Bot className="size-4" />}</span>
+                <span className="text-sm font-semibold text-foreground">{selected.name}</span>
+                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {selected.division}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                <Globe className="size-3.5" />
+                <input
+                  type="checkbox"
+                  checked={tools}
+                  onChange={(e) => setTools(e.target.checked)}
+                  className="size-3.5 rounded"
+                />
+                Tools
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                <Wrench className="size-3.5" />
+                <input
+                  type="checkbox"
+                  checked={background}
+                  onChange={(e) => setBackground(e.target.checked)}
+                  className="size-3.5 rounded"
+                />
+                Background
+              </label>
+            </div>
+          </div>
 
             <div className="flex-1 overflow-y-auto p-4" data-lenis-prevent>
               {selectedState && selectedState.messages.length === 0 ? (
@@ -416,7 +445,6 @@ export function AvAgents() {
             </div>
           </>
         )}
-      </main>
     </div>
   );
 }
