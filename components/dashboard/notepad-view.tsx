@@ -168,8 +168,8 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-6 py-4">
         <div>
-          <h1 className="text-2xl font-bold">Notepad</h1>
-          <p className="text-sm text-muted-foreground">Rich-text notes, autosaved to your workspace.</p>
+          <h1 className="font-display text-2xl text-ink-strong">Notepad</h1>
+          <p className="font-body text-sm text-ink-muted">Rich-text notes, autosaved to your workspace.</p>
         </div>
         <Button onClick={handleWrite} className="gap-2">
           <Plus className="size-4" /> New note
@@ -189,11 +189,11 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                   <div
                     key={n.id}
                     className={cn(
-                      "group flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent/20",
-                      selectedId === n.id && "bg-muted"
+                      "group flex items-center gap-2 border-l border-rule py-2 pl-3 text-left text-sm transition-colors hover:bg-[var(--surface-2)]/50",
+                      selectedId === n.id && "bg-[var(--surface-2)]"
                     )}
                   >
-                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                    <FileText className="size-4 shrink-0 text-ink-faint" />
                     {renamingId === n.id ? (
                       <input
                         autoFocus

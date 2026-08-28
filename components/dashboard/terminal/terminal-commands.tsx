@@ -8,11 +8,9 @@ import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
+import { FilterBar, LoadingState, ErrorState, EmptyState } from "@/components/system"
 import { AddCommandDialog } from "./add-command-dialog"
 
 export type TerminalCommand = {
@@ -185,56 +183,25 @@ export function TerminalCommands() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Category</Label>
-          <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value ?? "all")}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Filter</Label>
-          <div className="flex items-center gap-2 rounded-lg border p-2">
-            <Star className={cn("size-4", favoriteFilter ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground")} />
-            <Switch checked={favoriteFilter} onCheckedChange={setFavoriteFilter} />
-            <span className="text-xs text-muted-foreground">Favorites only</span>
-          </div>
-        </div>
-      </div>
+      <FilterBar className="py-0">
+        <FilterBar.Select
+          ariaLabel="Filter by category"
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+          options={[{ value: "all", label: "All categories" }, ...categories.map((cat) => ({ value: cat, label: cat }))]}
+        />
+        <FilterBar.Button active={favoriteFilter} onClick={() => setFavoriteFilter((v) => !v)}>
+          <Star className={cn("mr-1 inline size-3.5", favoriteFilter && "fill-current")} />
+          Favorites only
+        </FilterBar.Button>
+      </FilterBar>
 
       {loading && commands.length === 0 ? (
-        <Card>
-          <CardContent className="flex h-32 items-center justify-center text-muted-foreground">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="ml-2 text-sm">Loading commands...</span>
-          </CardContent>
-        </Card>
+        <LoadingState rows={4} />
       ) : error ? (
-        <Card>
-          <CardContent className="flex h-32 items-center justify-center gap-3 text-muted-foreground">
-            <span className="text-sm">{error}</span>
-            <Button size="sm" variant="outline" onClick={() => void loadCommands()}>Retry</Button>
-          </CardContent>
-        </Card>
+        <ErrorState description={error} onRetry={() => void loadCommands()} />
       ) : filteredCommands.total === 0 ? (
-        <Card>
-          <CardContent className="flex h-32 items-center justify-center text-muted-foreground">
-            <div className="flex flex-col items-center gap-2">
-              <Search className="size-6" />
-              <span className="text-sm">No commands found.</span>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState eyebrow="Terminal" title="No commands found" description="Save reusable bash and terminal commands to build your library." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredCommands.favorites.map((cmd) => (

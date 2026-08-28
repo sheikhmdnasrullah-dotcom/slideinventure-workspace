@@ -31,6 +31,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog";
 import { IdeaMapsPanel } from "@/components/dashboard/ideas/idea-maps-panel";
 import { useLiveRefresh } from "@/components/providers/event-stream";
+import { SiteHeader } from "@/components/dashboard/site-header";
 
 const NotepadView = dynamic(
   () => import("@/components/dashboard/notepad-view").then((m) => m.NotepadView),
@@ -62,11 +63,9 @@ export function BrainstormWorkspace() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Brainstorm</h1>
-      </div>
-
+    <>
+      <SiteHeader crumbs={[{ label: "Brainstorm" }]} subtitle="Creative workspace" />
+      <div className="flex flex-1 flex-col gap-6 p-6">
       <Tabs
         value={tab}
         onValueChange={onTabChange}
@@ -111,7 +110,8 @@ export function BrainstormWorkspace() {
           </TabsContent>
         )}
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 }
 

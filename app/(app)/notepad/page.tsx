@@ -1,7 +1,13 @@
 "use client"
 
 import { NotepadView } from "@/components/dashboard/notepad-view"
+import { SiteHeader } from "@/components/dashboard/site-header"
 
 export default function NotepadPage() {
-  return <NotepadView scope="global" />
+  return (
+    <>
+      <SiteHeader crumbs={[{ label: "Notepad" }]} subtitle="Frictionless notes" />
+      <NotepadView scope="global" />
+    </>
+  )
 }

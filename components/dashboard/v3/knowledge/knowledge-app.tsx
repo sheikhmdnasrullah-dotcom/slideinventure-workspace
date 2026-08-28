@@ -55,7 +55,7 @@ function KnowledgeAppInner() {
             {!collapsed && (
               <div className="flex items-center gap-2">
                 <LibraryBig className="h-4 w-4 text-[var(--text-accent)]" />
-                <span className="text-sm font-semibold">Knowledge</span>
+                <span className="font-body-tight text-sm font-semibold text-ink-strong">Knowledge</span>
               </div>
             )}
             <Button
@@ -107,7 +107,7 @@ function KnowledgeAppInner() {
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3">
-            <h1 className="text-lg font-semibold capitalize">{category}</h1>
+            <h1 className="font-display-soft text-lg capitalize text-ink-strong">{category}</h1>
             <Button
               variant="ghost"
               size="icon"

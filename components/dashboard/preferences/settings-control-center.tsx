@@ -6,11 +6,12 @@ import { ArrowDown, ArrowUp, ChevronDown, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DASHBOARD_SECTIONS, getOrderedSections } from "@/lib/dashboard/navigation"
 import { useDashboardPreferences } from "@/components/dashboard/preferences/preferences-provider"
+import { SiteHeader } from "@/components/dashboard/site-header"
+import { PageHeader } from "@/components/system"
 
 const themeOptions = [
   { value: "system", label: "System" },
@@ -31,23 +32,23 @@ function SettingsSection({
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <Card>
+    <div className="rounded-md border border-rule bg-[var(--surface)]">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/30"
+        className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-2)]/50"
       >
         <div>
-          <p className="text-sm font-medium">{title}</p>
-          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+          <p className="font-body-tight text-sm font-medium text-ink-strong">{title}</p>
+          {description ? <p className="font-body text-xs text-ink-muted">{description}</p> : null}
         </div>
-        <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("size-4 shrink-0 text-ink-faint transition-transform", open && "rotate-180")} />
       </button>
       {open ? (
-        <CardContent className="grid gap-4 border-t border-border/50 px-4 py-4">{children}</CardContent>
+        <div className="grid gap-4 border-t border-rule px-4 py-4">{children}</div>
       ) : null}
-    </Card>
+    </div>
   )
 }
 
@@ -79,11 +80,10 @@ export function SettingsControlCenter() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">Settings</h1>
-        <p className="text-xs text-foreground/40">Control your workspace, theme, and navigation from one place.</p>
-      </div>
+    <>
+      <SiteHeader crumbs={[{ label: "Settings" }]} subtitle="Control center" />
+      <div className="flex flex-1 flex-col gap-4 p-6">
+      <PageHeader eyebrow="Workspace" title="Settings" meta="Control your workspace, theme, and navigation from one place" />
 
       <SettingsSection title="Appearance" description="Theme is applied immediately and remembered across refreshes.">
         <Label htmlFor="theme">Theme</Label>
@@ -114,7 +114,7 @@ export function SettingsControlCenter() {
       </SettingsSection>
 
       <SettingsSection title="Section names" description="Rename any section to match how you think. Names are saved and stay after refresh or logout.">
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+        <div className="flex items-center justify-between rounded-md border border-rule bg-[var(--surface-2)] px-3 py-2 font-body text-sm text-ink-muted">
           <span>
             {saveState === "saving" ? "Saving names" : saveState === "saved" ? "Names saved" : saveState === "error" ? "Couldn’t save yet" : "Names save automatically"}
           </span>
@@ -125,11 +125,11 @@ export function SettingsControlCenter() {
         </div>
         <div className="grid gap-2">
           {orderedSections.map((section) => (
-            <div key={section.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+            <div key={section.id} className="flex items-center justify-between gap-3 rounded-md border border-rule px-3 py-2">
               <div className="flex items-center gap-3">
-                <section.icon className="size-4 text-muted-foreground" />
+                <section.icon className="size-4 text-ink-faint" />
                 <div>
-                  <p className="text-xs text-muted-foreground">{section.route}</p>
+                  <p className="font-label text-ink-faint">{section.route}</p>
                 </div>
               </div>
               <Input
@@ -146,7 +146,7 @@ export function SettingsControlCenter() {
       </SettingsSection>
 
       <SettingsSection title="Navigation" description="Drag in the sidebar for the fastest path, or reorder here with buttons.">
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+        <div className="flex items-center justify-between rounded-md border border-rule bg-[var(--surface-2)] px-3 py-2 font-body text-sm text-ink-muted">
           <span>
             {saveState === "saving" ? "Saving navigation" : saveState === "saved" ? "Navigation saved" : saveState === "error" ? "Couldn’t save navigation yet" : "Navigation saves automatically"}
           </span>
@@ -161,12 +161,12 @@ export function SettingsControlCenter() {
         </div>
         <div className="grid gap-2">
           {orderedSections.map((section, index) => (
-            <div key={section.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+            <div key={section.id} className="flex items-center justify-between rounded-md border border-rule px-3 py-2">
               <div className="flex items-center gap-3">
-                <section.icon className="size-4 text-muted-foreground" />
+                <section.icon className="size-4 text-ink-faint" />
                 <div>
                   <p className="text-sm font-medium">{section.label}</p>
-                  <p className="text-xs text-muted-foreground">{section.route}</p>
+                  <p className="font-label text-ink-faint">{section.route}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -183,10 +183,11 @@ export function SettingsControlCenter() {
       </SettingsSection>
 
       <SettingsSection title="Integrations" description="Integrations now live as a first-class section in the main workspace navigation.">
-        <p className="text-sm text-muted-foreground">
-          Open <span className="font-medium text-foreground">Integrations</span> from the sidebar to manage connection records and statuses.
+        <p className="font-body text-sm text-ink-muted">
+          Open <span className="font-medium text-ink-strong">Integrations</span> from the sidebar to manage connection records and statuses.
         </p>
       </SettingsSection>
-    </div>
+      </div>
+    </>
   )
 }
