@@ -13,6 +13,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import divisionMap from "./agent-divisions.json";
+import { getResearchPersona } from "@/lib/agents/research/personas";
 
 const AGENTS_DIR = path.join(process.cwd(), ".claude", "agents");
 
@@ -106,6 +107,13 @@ export function getAgentPrompt(slug: string): { name: string; prompt: string } |
   try {
     raw = fs.readFileSync(file, "utf8");
   } catch {
+    const research = getResearchPersona(slug);
+    if (research) {
+      return {
+        name: research.name,
+        prompt: research.systemPrompt,
+      };
+    }
     return null;
   }
   const data = parseFrontmatter(raw);

@@ -23,7 +23,12 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useLiveRefresh } from "@/components/providers/event-stream"
-import { DeployAgentModal } from "@/components/dashboard/research/deploy-agent-modal"
+import { DeployAgentPalette } from "@/components/dashboard/agents/deploy-agent-palette"
+import {
+  useDeployedAgent,
+  updateNoteContext,
+  toggleDeployViewMode,
+} from "@/lib/agents/deployed-agent-store"
 import { ResearchPanel } from "@/components/dashboard/research/research-panel"
 import { Sparkles } from "lucide-react"
 
@@ -51,7 +56,17 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
   const [deleteId, setDeleteId] = React.useState<string | null>(null)
   const [researchOpen, setResearchOpen] = React.useState(false)
   const [deployOpen, setDeployOpen] = React.useState(false)
+  const deployed = useDeployedAgent()
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Sync active note context with deployed agent store
+  React.useEffect(() => {
+    if (selectedId) {
+      updateNoteContext({ id: selectedId, title: title || "Untitled", content })
+    } else {
+      updateNoteContext(null)
+    }
+  }, [selectedId, title, content])
 
   // Always pass scope explicitly (never omit it): /api/notes returns every
   // scope mixed together when the param is absent, which would leak AI
@@ -139,6 +154,44 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
     },
     []
   )
+
+  // Listen for agent inserting text into note
+  React.useEffect(() => {
+    const handleInsert = (e: Event) => {
+      const custom = e as CustomEvent<{ text: string }>
+      const textToInsert = custom.detail?.text
+      if (!textToInsert || !selectedId) return
+
+      try {
+        let existingBlocks: any[] = []
+        try {
+          const parsed = JSON.parse(content || "[]")
+          if (Array.isArray(parsed)) existingBlocks = parsed
+        } catch {
+          existingBlocks = []
+        }
+
+        const lines = textToInsert.split("\n").filter(Boolean)
+        const newBlocks = lines.map((line) => ({
+          id: crypto.randomUUID(),
+          type: "paragraph",
+          props: { textColor: "default", backgroundColor: "default", textAlignment: "left" },
+          content: [{ type: "text", text: line, styles: {} }],
+          children: [],
+        }))
+
+        const nextBlocks = [...existingBlocks, ...newBlocks]
+        const nextContent = JSON.stringify(nextBlocks)
+        setContent(nextContent)
+        persist(selectedId, nextContent, title)
+      } catch (err) {
+        console.error("Failed to insert text to note:", err)
+      }
+    }
+
+    window.addEventListener("notepad:insert-text", handleInsert)
+    return () => window.removeEventListener("notepad:insert-text", handleInsert)
+  }, [content, selectedId, title, persist])
 
   const handleChange = (next: string) => {
     setContent(next)
@@ -271,7 +324,13 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
 
         <section className="flex flex-1 flex-col">
           {selectedId ? (
-              <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-auto" data-lenis-prevent>
+            <div
+              className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-auto transition-colors"
+              data-lenis-prevent
+              data-droppable="notepad"
+              data-note-id={selectedId}
+              data-note-title={title || "Untitled"}
+            >
               <div className="flex items-center gap-2 px-6 pt-8 pb-2">
                 <input
                   value={title}
@@ -289,11 +348,31 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                 <Button
                   variant="outline"
                   size="sm"
-                  className="ml-2 gap-1.5"
-                  onClick={() => setDeployOpen(true)}
+                  className={`ml-2 gap-1.5 cursor-pointer ${
+                    deployed.target === "notepad" && deployed.noteContext?.id === selectedId
+                      ? "border-primary/60 bg-primary/10 text-primary shadow-xs"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    if (deployed.agent && deployed.target === "notepad" && deployed.noteContext?.id === selectedId) {
+                      toggleDeployViewMode()
+                    } else {
+                      setDeployOpen(true)
+                    }
+                  }}
                   disabled={!selectedId}
                 >
-                  <Sparkles className="size-4 text-primary" /> Research Agents
+                  {deployed.target === "notepad" && deployed.noteContext?.id === selectedId ? (
+                    <>
+                      <span className="text-xs">{deployed.agent?.emoji || "🤖"}</span>
+                      <span>{deployed.agent?.name} Active</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="size-4 text-primary" />
+                      <span>Deploy Agent</span>
+                    </>
+                  )}
                 </Button>
               </div>
               <div className="px-6 pb-10">
@@ -330,12 +409,10 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
         </DialogContent>
       </Dialog>
 
-      <DeployAgentModal
+      <DeployAgentPalette
         open={deployOpen}
         onOpenChange={setDeployOpen}
-        noteId={selectedId}
-        defaultTask={title}
-        onDeployed={() => setResearchOpen(true)}
+        noteContext={selectedId ? { id: selectedId, title: title || "Untitled", content } : null}
       />
     </div>
   )

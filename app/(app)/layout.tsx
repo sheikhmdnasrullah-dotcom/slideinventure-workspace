@@ -13,6 +13,7 @@ import { SmoothScroll } from "@/components/providers/smooth-scroll";
 import { EventStreamProvider } from "@/components/providers/event-stream";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AgentCopilot } from "@/components/copilot/agent-copilot";
+import { DraggableDeployedAgent } from "@/components/dashboard/agents/draggable-deployed-agent";
 
 export default async function AppLayout({
   children,
@@ -51,6 +52,7 @@ export default async function AppLayout({
                     <Toaster />
                     <CommandMenu />
                     <AgentCopilot />
+                    <DraggableDeployedAgent />
                   </SidebarProvider>
                 </SmoothScroll>
               </EventStreamProvider>

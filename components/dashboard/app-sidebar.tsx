@@ -43,7 +43,8 @@ import { cn } from "@/lib/utils"
 import { getOrderedSections, NAVIGATION_HANDLE_ICON } from "@/lib/dashboard/navigation"
 import { NAV_PREFETCH } from "@/lib/dashboard/queries"
 import { useDock, undockAssistant } from "@/lib/ui/assistant-dock"
-import { DeployAgentModal } from "@/components/dashboard/research/deploy-agent-modal"
+import { DeployAgentPalette } from "@/components/dashboard/agents/deploy-agent-palette"
+import { useDeployedAgent, deployAgent } from "@/lib/agents/deployed-agent-store"
 
 const GripIcon = NAVIGATION_HANDLE_ICON
 
@@ -77,6 +78,7 @@ export function AppSidebar({
   const { preferences, saveState, setNavigationOrder, retrySave } = useDashboardPreferences()
   const { docked } = useDock()
   const prefetch = useNavPrefetch()
+  const deployed = useDeployedAgent()
   const [deployOpen, setDeployOpen] = useState(false)
 
   const orderedSections = useMemo(
@@ -162,13 +164,30 @@ export function AppSidebar({
           <div className="px-2 pb-2 pt-1">
             <button
               type="button"
-              onClick={() => setDeployOpen(true)}
-              title="Deploy a research agent"
-              className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70"
+              onClick={() => {
+                if (deployed.agent && !deployed.isOpen) {
+                  deployAgent(deployed.agent)
+                } else {
+                  setDeployOpen(true)
+                }
+              }}
+              title="Deploy an agent as a draggable circle icon"
+              className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 cursor-pointer"
             >
-              <Rocket className="size-4 text-primary" />
-              <span>Deploy Agent</span>
-              <span className="ml-auto text-[10px] text-sidebar-foreground/50">research</span>
+              {deployed.agent ? (
+                <span
+                  className="flex size-5 items-center justify-center rounded-full text-xs shadow-xs"
+                  style={{ backgroundColor: `${deployed.agent.color || "#6366f1"}25` }}
+                >
+                  {deployed.agent.emoji || "🤖"}
+                </span>
+              ) : (
+                <Rocket className="size-4 text-primary" />
+              )}
+              <span>{deployed.agent && !deployed.isOpen ? `Summon ${deployed.agent.name}` : "Deploy Agent"}</span>
+              <span className="ml-auto text-[10px] text-sidebar-foreground/50">
+                {deployed.agent && !deployed.isOpen ? "docked" : "circle"}
+              </span>
             </button>
           </div>
       </SidebarContent>
@@ -189,7 +208,7 @@ export function AppSidebar({
           }}
         />
       </SidebarFooter>
-      <DeployAgentModal open={deployOpen} onOpenChange={setDeployOpen} />
+      <DeployAgentPalette open={deployOpen} onOpenChange={setDeployOpen} />
     </Sidebar>
   )
 }

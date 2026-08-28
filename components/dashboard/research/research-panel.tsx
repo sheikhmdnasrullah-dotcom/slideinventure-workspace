@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { DeployAgentModal } from "./deploy-agent-modal";
+import { DeployAgentPalette } from "@/components/dashboard/agents/deploy-agent-palette";
 
 type Turn = { agentSlug: string; agentLabel: string; text: string; tick: number };
 type Session = {
@@ -187,11 +187,10 @@ export function ResearchPanel({ noteId, onClose }: { noteId: string; onClose: ()
         </ScrollArea>
       )}
 
-      <DeployAgentModal
+      <DeployAgentPalette
         open={deployOpen}
         onOpenChange={setDeployOpen}
-        noteId={noteId}
-        onDeployed={onDeployed}
+        noteContext={noteId ? { id: noteId, title: "Note Research" } : null}
       />
     </div>
   );
