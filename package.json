@@ -50,6 +50,7 @@
     "@temporalio/workflow": "^1.23.0",
     "@tremor/react": "^3.18.7",
     "@types/nodemailer": "^8.0.1",
+    "@vercel/functions": "^3.9.5",
     "@xyflow/react": "^12.11.5",
     "ai": "^7.0.83",
     "appwrite": "^26.2.0",

@@ -14,6 +14,7 @@ export type AgentRunState = {
   error: string | null;
   busy: boolean;
   runId: string | null;
+  jobId: string | null;
 };
 
 const KEY = "av-agent-conversations-v1";
@@ -21,7 +22,7 @@ const store = new Map<string, AgentRunState>();
 const listeners = new Set<() => void>();
 
 function emptyState(): AgentRunState {
-  return { messages: [], status: "", answer: null, error: null, busy: false, runId: null };
+  return { messages: [], status: "", answer: null, error: null, busy: false, runId: null, jobId: null };
 }
 
 function load() {

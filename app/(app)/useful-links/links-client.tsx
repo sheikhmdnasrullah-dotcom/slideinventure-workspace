@@ -196,19 +196,30 @@ export function LinksClient() {
                   </div>
                 </div>
                 
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground z-10 relative">
-                    <MoreVertical className="h-4 w-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleOpenDialog(link)} className="gap-2">
-                      <Edit className="h-4 w-4" /> Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDeleteClick(link.id)} className="text-destructive gap-2">
-                      <Trash className="h-4 w-4" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-1 z-10 relative">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground">
+                      <MoreVertical className="h-4 w-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleOpenDialog(link)} className="gap-2">
+                        <Edit className="h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDeleteClick(link.id)} className="text-destructive gap-2">
+                        <Trash className="h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <button
+                    type="button"
+                    aria-label="Delete link"
+                    title="Delete link"
+                    onClick={() => handleDeleteClick(link.id)}
+                    className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="pb-4">
                 <CardDescription className="line-clamp-2 text-sm text-foreground/70 min-h-[40px]">

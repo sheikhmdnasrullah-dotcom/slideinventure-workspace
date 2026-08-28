@@ -42,5 +42,6 @@ export const APPWRITE = {
     affineWorkspaces: "affine_workspaces",
     notifications: "notifications",
     searchVectors: "search_vectors",
+    agentJobs: "agent_jobs",
   },
 } as const

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { Bot, Send, Loader2, X, FileCode2, Globe, Wrench, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -93,8 +93,61 @@ export function AvAgents() {
     setInput("");
   };
 
+  // Resume tracking a background job when the agent is (re)selected, e.g. after
+  // navigating away and coming back, or reopening the dashboard.
+  useEffect(() => {
+    const slug = selected?.slug;
+    if (!slug) return;
+    const st = getAgentState(slug);
+    if (st.busy && st.jobId) startPoll(slug, st.jobId);
+    return () => stopPoll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.slug]);
+
   const selectedState = selected ? getAgentState(selected.slug) : null;
   const busy = selectedState?.busy ?? false;
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopPoll = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  const pollJob = async (slug: string, jobId: string) => {
+    try {
+      const res = await fetch(`/api/agents/jobs/${jobId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === "done") {
+        const ans = data.answer ?? "";
+        const st = getAgentState(slug);
+        updateAgentState(slug, {
+          messages: [...st.messages, { role: "assistant", content: ans }],
+          answer: ans,
+          status: "Done",
+          busy: false,
+          jobId: null,
+        });
+        stopPoll();
+      } else if (data.status === "error") {
+        updateAgentState(slug, { error: data.error || "Agent run failed", busy: false, jobId: null });
+        stopPoll();
+      } else {
+        updateAgentState(slug, { status: data.status === "running" ? "Running" : "Queued" });
+      }
+    } catch {
+      /* keep polling */
+    }
+  };
+
+  const startPoll = (slug: string, jobId: string) => {
+    stopPoll();
+    pollRef.current = setInterval(() => {
+      void pollJob(slug, jobId);
+    }, 2000);
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -106,10 +159,34 @@ export function AvAgents() {
     updateAgentState(slug, {
       messages: [...prior, userMsg],
       busy: true,
-      status: "Working",
+      status: background ? "Queued" : "Working",
       answer: null,
       error: null,
     });
+
+    // Background mode: hand the run to the server-side queue. It runs on Vercel
+    // independent of this tab and keeps going even if the browser/machine closes.
+    if (background) {
+      try {
+        const res = await fetch("/api/agents/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug, message: text, history: prior, tools }),
+        });
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}));
+          throw new Error(json.error || "Could not start the background agent.");
+        }
+        const json = await res.json();
+        updateAgentState(slug, { jobId: json.id, status: "Queued" });
+        startPoll(slug, json.id);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "The agent request failed.";
+        updateAgentState(slug, { error: msg, busy: false, jobId: null });
+        toast.error(msg);
+      }
+      return;
+    }
 
     try {
       const res = await fetch("/api/agents/chat", {
@@ -310,7 +387,7 @@ export function AvAgents() {
                 <div className="mx-auto mt-3 flex max-w-2xl items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className={cn("size-3", busy && "animate-spin")} />
                   {selectedState.status}
-                  {background && busy && <span>· running in background</span>}
+                  {selectedState?.jobId && busy && <span>· running in background</span>}
                 </div>
               )}
               {selectedState?.error && (
