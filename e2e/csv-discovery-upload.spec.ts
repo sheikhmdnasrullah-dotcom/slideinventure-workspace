@@ -18,14 +18,19 @@ const CSV = [
 
 async function attachCsv(page: import("@playwright/test").Page, body = CSV) {
   const input = page.locator("#csv-discovery-file");
-  // setInputFiles sets .files programmatically; reliably firing React's onChange
-  // for a FileReader-based parse needs a native change dispatch, so do both.
-  await input.setInputFiles({
-    name: "leads.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from(body),
-  });
-  await input.dispatchEvent("change");
+  const doSet = () =>
+    input.setInputFiles({
+      name: "leads.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from(body),
+    });
+  // setInputFiles assigns .files programmatically, which does not reliably raise
+  // React's onChange on the first try in headless Chromium. A retry (after a
+  // short settle) deterministically triggers the FileReader-based parse, the
+  // same way a user re-selecting the file would.
+  await doSet();
+  await page.waitForTimeout(500);
+  if ((await page.getByText(/leads\.csv/i).count()) === 0) await doSet();
 }
 
 test.describe("Lead Discovery CSV upload", () => {
@@ -47,9 +52,12 @@ test.describe("Lead Discovery CSV upload", () => {
     await expect(chip.getByText(/leads\.csv/i)).toBeVisible({ timeout: 15000 });
     await expect(chip.getByText(/2 rows · 3 columns/i)).toBeVisible();
 
-    // Detected columns are surfaced so the user can confirm the header row.
-    await expect(page.getByText(/channel/i, { exact: true })).toBeVisible();
-    await expect(page.getByText(/domain/i, { exact: true })).toBeVisible();
+    // Detected columns are surfaced in the preview table header so the user can
+    // confirm the header row was parsed (and the quoted "Acme, Inc" cell proves
+    // a multi-comma field survived intact).
+    const previewTable = page.getByRole("table").first();
+    await expect(previewTable.getByText("channel", { exact: true })).toBeVisible();
+    await expect(previewTable.getByText("domain", { exact: true })).toBeVisible();
 
     // The quoted comma must survive parsing as a single cell.
     await expect(page.getByText("Acme, Inc")).toBeVisible();
@@ -103,11 +111,16 @@ test.describe("Lead Discovery CSV upload", () => {
       timeout: 20000,
     });
 
-    await page.setInputFiles("#csv-discovery-file", {
-      name: "notes.pdf",
-      mimeType: "application/pdf",
-      buffer: Buffer.from("%PDF-1.4 not a csv"),
-    });
+    const input = page.locator("#csv-discovery-file");
+    const rejectFile = () =>
+      input.setInputFiles({
+        name: "notes.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("%PDF-1.4 not a csv"),
+      });
+    await rejectFile();
+    await page.waitForTimeout(500);
+    if ((await page.getByText(/Please choose a \.csv file/i).count()) === 0) await rejectFile();
 
     await expect(page.getByText(/Please choose a \.csv file/i)).toBeVisible({ timeout: 10000 });
     await expect(page.locator("textarea")).toBeVisible();

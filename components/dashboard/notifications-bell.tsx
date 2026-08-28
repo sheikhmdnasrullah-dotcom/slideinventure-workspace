@@ -15,11 +15,38 @@ type Notification = {
   createdAt?: string;
 };
 
+const SEEN_NOTIFS_KEY = "workspace_seen_notification_ids";
+
+function getSeenIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(SEEN_NOTIFS_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeenIds(ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    const arr = Array.from(ids).slice(-200);
+    localStorage.setItem(SEEN_NOTIFS_KEY, JSON.stringify(arr));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function NotificationsBell() {
   const [unread, setUnread] = React.useState(0);
   const [items, setItems] = React.useState<Notification[]>([]);
   const [open, setOpen] = React.useState(false);
-  const [lastSeen, setLastSeen] = React.useState(0);
+  const isInitialMount = React.useRef(true);
+  const seenIdsRef = React.useRef<Set<string>>(new Set());
+
+  React.useEffect(() => {
+    seenIdsRef.current = getSeenIds();
+  }, []);
 
   const load = React.useCallback(async () => {
     try {
@@ -29,16 +56,27 @@ export function NotificationsBell() {
       const list: Notification[] = data.notifications ?? [];
       setItems(list);
       const u = data.unread ?? 0;
-      if (u > lastSeen) {
-        const fresh = list.find((n) => !n.read);
-        if (fresh) toast(fresh.title, { description: fresh.description });
-      }
       setUnread(u);
-      setLastSeen(u);
+
+      if (isInitialMount.current) {
+        // On initial page load/reload, mark all existing notifications as seen so they never toast
+        isInitialMount.current = false;
+        list.forEach((n) => seenIdsRef.current.add(n.id));
+        saveSeenIds(seenIdsRef.current);
+        return;
+      }
+
+      // Only toast truly new notifications that arrive while the user is actively on the page
+      const freshUnseen = list.find((n) => !n.read && !seenIdsRef.current.has(n.id));
+      if (freshUnseen) {
+        seenIdsRef.current.add(freshUnseen.id);
+        saveSeenIds(seenIdsRef.current);
+        toast(freshUnseen.title, { description: freshUnseen.description });
+      }
     } catch {
       /* ignore */
     }
-  }, [lastSeen]);
+  }, []);
 
   React.useEffect(() => {
     load();
