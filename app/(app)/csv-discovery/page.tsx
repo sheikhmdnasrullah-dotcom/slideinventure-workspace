@@ -300,7 +300,7 @@ export default function CsvDiscoveryPage() {
                     <tr key={i}>
                       {parsed.headers.map((header) => (
                         <td key={header} className="px-2.5 py-1.5 text-ink-muted">
-                          {row[header] || "—"}
+                          {row[header] || "-"}
                         </td>
                       ))}
                     </tr>
@@ -410,11 +410,11 @@ export default function CsvDiscoveryPage() {
                         ))}
                       </div>
                     ) : (
-                      <span className="text-ink-faint">—</span>
+                      <span className="text-ink-faint">-</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-xs text-ink-muted">{r.method ?? "—"}</td>
-                  <td className="px-3 py-2 max-w-md text-xs text-ink-muted">{r.brief ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-ink-muted">{r.method ?? "-"}</td>
+                  <td className="px-3 py-2 max-w-md text-xs text-ink-muted">{r.brief ?? "-"}</td>
                 </tr>
               ))}
             </tbody>

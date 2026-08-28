@@ -193,8 +193,8 @@ export function ResearchLabWorkspace() {
           {!active ? (
             <EmptyState
               eyebrow="Research Lab"
-              title="Open desk, no fixed order"
-              description="Create a project to start writing, gathering sources and sketching. Nothing here is required before another."
+              title="Research Workspace"
+              description="Create or select a project to organize notes, collect sources, and track research."
               action={{
                 label: (
                   <>

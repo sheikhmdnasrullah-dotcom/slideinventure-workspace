@@ -34,7 +34,7 @@ function ResultSummary({ outcome }: { outcome: ResearchOutcome }) {
     <p className="font-body text-sm text-ink-muted">
       {outcome.created} lead{outcome.created === 1 ? "" : "s"} created
       {outcome.updated > 0 ? `, ${outcome.updated} enriched` : ""}
-      {outcome.skipped > 0 ? ` — ${outcome.skipped} skipped (no real email found)` : ""}.
+      {outcome.skipped > 0 ? `, ${outcome.skipped} skipped (no email found)` : ""}.
     </p>
   );
 }
@@ -97,7 +97,7 @@ export function LeadResearchAssistantPanel() {
           <Textarea
             value={describeText}
             onChange={(e) => setDescribeText(e.target.value)}
-            placeholder={'Anything at all: "SaaS founders in fintech, Bangladesh" or a single lead you have partial info on — a name, a company, a LinkedIn URL, a half-remembered email.'}
+            placeholder={'Enter search criteria such as "SaaS founders in fintech" or a specific prospect name, company, LinkedIn URL, or email.'}
             rows={5}
             disabled={describeMutation.isPending}
           />
@@ -129,7 +129,7 @@ export function LeadResearchAssistantPanel() {
               {csvFileName ?? "Click to choose a CSV file"}
             </span>
             <span className="font-body text-xs text-ink-muted">
-              {csvRows ? `${csvRows.length} row${csvRows.length === 1 ? "" : "s"} loaded — any columns work` : "Any columns work. Partial rows are fine."}
+              {csvRows ? `${csvRows.length} row${csvRows.length === 1 ? "" : "s"} loaded (all standard column formats accepted)` : "Supports standard CSV columns. Partial rows are accepted."}
             </span>
           </button>
           <Button
@@ -158,7 +158,7 @@ export function LeadResearchAssistant({ open, onOpenChange }: { open: boolean; o
             Lead Research Assistant
           </DialogTitle>
           <DialogDescription>
-            Give it whatever you already know. No required fields — it researches the rest.
+            Enter available lead details to research and verify contact information.
           </DialogDescription>
         </DialogHeader>
         <LeadResearchAssistantPanel />

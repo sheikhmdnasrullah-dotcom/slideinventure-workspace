@@ -19,7 +19,7 @@ function runStatusTone(status: string): "live" | "danger" | "warn" | "neutral" {
 }
 
 // react-table column defs carry render closures, which cannot cross the
-// server-to-client prop boundary (only the `data` array — plain values — can).
+// server-to-client prop boundary (only the `data` array with plain values can).
 // This whole table lives on the client so the column defs are constructed here,
 // never passed in from the server page.
 const columns: Column<AgentHistoryRow>[] = [

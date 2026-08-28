@@ -108,9 +108,7 @@ export function AvResearch() {
           <h2 className="text-lg font-semibold">Research Lab</h2>
         </div>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          The core idea of everything you write, sketch, upload, or run gets organized here
-          automatically — nothing to type. Write in Notepad, sketch in Brainstorm, add a file, or run
-          an agent, and it shows up below.
+          Centralized research repository for notes, brainstorm sketches, files, and agent findings.
         </p>
       </div>
 
@@ -128,10 +126,9 @@ export function AvResearch() {
       ) : grouped.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground">
           <FlaskConical className="size-10 opacity-30" />
-          <p className="text-sm font-medium text-ink-strong">Nothing here yet</p>
+          <p className="text-sm font-medium text-ink-strong">No research items yet</p>
           <p className="max-w-sm text-xs">
-            This canvas fills itself in: write in Notepad, sketch in Brainstorm, add a file, or run an
-            agent — the core idea shows up here automatically, organized by where it came from.
+            Artifacts from Notepad, Brainstorm, Files, and Agents will appear here organized by source.
           </p>
         </div>
       ) : (

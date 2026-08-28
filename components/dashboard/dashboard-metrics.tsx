@@ -85,7 +85,7 @@ export function DashboardMetrics({ initial }: { initial: DashboardResponse | nul
         <MetricRow>
           {tiles.map((tile) => (
             <MetricCell key={tile.label}>
-              <Metric label={tile.label} value={tile.value ?? "—"} href={tile.href} />
+              <Metric label={tile.label} value={tile.value ?? "0"} href={tile.href} />
             </MetricCell>
           ))}
         </MetricRow>
