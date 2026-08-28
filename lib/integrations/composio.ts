@@ -1,4 +1,5 @@
 import "server-only";
+import { CONNECTABLE_TOOLKITS, type ConnectableToolkitSlug } from "@/lib/integrations/composio-toolkits";
 
 // Composio: tool/action marketplace for agents (Tools & Connections section).
 // Optional: only active when COMPOSIO_API_KEY is set. Degrades to no-op.
@@ -67,6 +68,51 @@ export async function findComposioTools(query: string, limit = 10): Promise<Comp
     }));
   } catch {
     return [];
+  }
+}
+
+/**
+ * Starts a Composio-managed OAuth connection for one of the curated
+ * connectable toolkits: reuses an existing auth config for that toolkit if
+ * one exists, otherwise creates a Composio-managed one (no OAuth app
+ * credentials of our own required), then returns the redirect URL the
+ * browser opens to complete the provider's consent screen. Composio handles
+ * the callback itself; connectedAccounts then shows up via
+ * listComposioConnections() once the user finishes.
+ */
+export async function initiateComposioConnection(
+  toolkit: ConnectableToolkitSlug,
+  callbackUrl?: string
+): Promise<{ redirectUrl: string } | { error: string }> {
+  if (!CONNECTABLE_TOOLKITS.some((t) => t.slug === toolkit)) {
+    return { error: "Unknown app." };
+  }
+  const client = await getComposioClient();
+  if (!client) return { error: "Composio is not configured." };
+  try {
+    const existing = await client.authConfigs.list({ toolkit });
+    const existingItems = existing?.items ?? existing ?? [];
+    let authConfigId: string | undefined = existingItems[0]?.id ?? existingItems[0]?.nanoid;
+
+    if (!authConfigId) {
+      const created = await client.authConfigs.create(toolkit, {
+        type: "use_composio_managed_auth",
+        name: `${toolkit} (workspace-app)`,
+      });
+      authConfigId = created?.id ?? created?.authConfigId ?? created?.nanoid;
+    }
+    if (!authConfigId) return { error: "Could not set up this integration." };
+
+    const connectionRequest = await client.connectedAccounts.link(
+      COMPOSIO_USER_ID,
+      authConfigId,
+      callbackUrl ? { callbackUrl } : undefined
+    );
+    const redirectUrl = connectionRequest?.redirectUrl ?? connectionRequest?.redirect_url;
+    if (!redirectUrl) return { error: "Could not start the connection." };
+    return { redirectUrl };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not connect this app." };
   }
 }
 
