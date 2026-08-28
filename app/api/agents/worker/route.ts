@@ -14,6 +14,14 @@ function authorized(request: NextRequest): boolean {
 export const maxDuration = 300;
 
 export async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.get("diag")) {
+    try {
+      const m = await import("@/lib/agents/mastra");
+      return Response.json({ ok: true, exported: Object.keys(m) });
+    } catch (e: any) {
+      return Response.json({ ok: false, error: e?.stack || String(e) }, { status: 200 });
+    }
+  }
   if (!authorized(request)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
