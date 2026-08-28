@@ -18,7 +18,38 @@ loadInfisicalSecrets().catch(() => {});
  * its own baseURL, so a key is never pointed at the wrong host.
  */
 
-export type LlmProviderId = "litellm" | "deepseek" | "nvidia" | "openrouter";
+export type LlmProviderId =
+  | "seekai"
+  | "gorouter"
+  | "tabiai"
+  | "litellm"
+  | "deepseek"
+  | "nvidia"
+  | "openrouter";
+
+/**
+ * Build a provider only when BOTH its key and its OpenAI-compatible base URL
+ * are present. The three user-supplied gateways (SeekAI/GoRouter/TabiAi) have
+ * no hard-coded host — their base URL is provided at deploy time via env, so a
+ * missing base URL simply skips that provider instead of pointing the key at a
+ * wrong host.
+ */
+function gatewayProvider(opts: {
+  id: "seekai" | "gorouter" | "tabiai";
+  keyEnv: string;
+  urlEnv: string;
+  modelEnv: string;
+}): LlmProvider | null {
+  const apiKey = process.env[opts.keyEnv];
+  const baseURL = process.env[opts.urlEnv];
+  if (!apiKey || !baseURL) return null;
+  return {
+    id: opts.id,
+    baseURL: baseURL.replace(/\/$/, ""),
+    apiKey,
+    defaultModel: process.env[opts.modelEnv] ?? "gpt-4o",
+  };
+}
 
 export type LlmProvider = {
   id: LlmProviderId;
@@ -32,21 +63,56 @@ export const OPENROUTER_DEFAULT_MODEL =
   process.env.OPENROUTER_FALLBACK_MODEL || "openai/gpt-oss-120b";
 
 /**
- * Ordered by preference. LiteLLM first when present (it is the routing/key
- * layer and gives fallbacks + spend tracking for free), then the direct keys.
+ * Ordered by preference (user-specified):
+ *   1. SeekAI   2. GoRouter   3. TabiAi   (user-supplied gateways)
+ *   4. DeepSeek   5. NVIDIA    (direct keys)
+ *   6. LiteLLM    7. OpenRouter (routers / extra fallbacks)
+ *
+ * The three gateways only appear when their base URL env var is set; until
+ * then the chain falls through to DeepSeek/NVIDIA so nothing breaks.
  */
 export function availableProviders(): LlmProvider[] {
   const out: LlmProvider[] = [];
 
-  // DeepSeek is the user's primary key and is preferred above all routers, so
-  // the chat/assistant use it directly instead of a possibly-misconfigured
-  // LiteLLM proxy. LiteLLM (and the other direct keys) remain as fallbacks.
+  const seekai = gatewayProvider({
+    id: "seekai",
+    keyEnv: "SEEKAI_API_KEY",
+    urlEnv: "SEEKAI_BASE_URL",
+    modelEnv: "SEEKAI_MODEL",
+  });
+  if (seekai) out.push(seekai);
+
+  const gorouter = gatewayProvider({
+    id: "gorouter",
+    keyEnv: "GOROUTER_API_KEY",
+    urlEnv: "GOROUTER_BASE_URL",
+    modelEnv: "GOROUTER_MODEL",
+  });
+  if (gorouter) out.push(gorouter);
+
+  const tabiai = gatewayProvider({
+    id: "tabiai",
+    keyEnv: "TABIAI_API_KEY",
+    urlEnv: "TABIAI_BASE_URL",
+    modelEnv: "TABIAI_MODEL",
+  });
+  if (tabiai) out.push(tabiai);
+
   if (process.env.DEEPSEEK_API_KEY) {
     out.push({
       id: "deepseek",
       baseURL: "https://api.deepseek.com/v1",
       apiKey: process.env.DEEPSEEK_API_KEY,
       defaultModel: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+    });
+  }
+
+  if (process.env.NVIDIA_API_KEY) {
+    out.push({
+      id: "nvidia",
+      baseURL: "https://integrate.api.nvidia.com/v1",
+      apiKey: process.env.NVIDIA_API_KEY,
+      defaultModel: NVIDIA_DEFAULT_MODEL,
     });
   }
 
@@ -58,15 +124,6 @@ export function availableProviders(): LlmProvider[] {
       baseURL: litellmUrl.replace(/\/$/, ""),
       apiKey: litellmKey,
       defaultModel: process.env.LITELLM_MODEL ?? "deepseek-chat",
-    });
-  }
-
-  if (process.env.NVIDIA_API_KEY) {
-    out.push({
-      id: "nvidia",
-      baseURL: "https://integrate.api.nvidia.com/v1",
-      apiKey: process.env.NVIDIA_API_KEY,
-      defaultModel: NVIDIA_DEFAULT_MODEL,
     });
   }
 
@@ -103,7 +160,7 @@ export function providerClient(provider: LlmProvider): OpenAIProvider {
 export class NoLlmProviderError extends Error {
   constructor() {
     super(
-      "No AI provider configured. Set one of LITELLM_BASE_URL + LITELLM_API_KEY, DEEPSEEK_API_KEY, NVIDIA_API_KEY, or OPENROUTER_API_KEY."
+      "No AI provider configured. Set one of SEEKAI_BASE_URL + SEEKAI_API_KEY, GOROUTER_BASE_URL + GOROUTER_API_KEY, TABIAI_BASE_URL + TABIAI_API_KEY, DEEPSEEK_API_KEY, NVIDIA_API_KEY, LITELLM_BASE_URL + LITELLM_API_KEY, or OPENROUTER_API_KEY."
     );
     this.name = "NoLlmProviderError";
   }
@@ -128,8 +185,16 @@ export function resolveChatModel(opts: { model?: string } = {}): LanguageModel {
  */
 export function modelFor(provider: LlmProvider, requested?: string): string {
   if (!requested) return provider.defaultModel;
-  // LiteLLM and OpenRouter are routers: they accept namespaced upstream names.
-  if (provider.id === "litellm" || provider.id === "openrouter") return requested;
+  // Routers accept arbitrary upstream model names as-is.
+  if (
+    provider.id === "litellm" ||
+    provider.id === "openrouter" ||
+    provider.id === "seekai" ||
+    provider.id === "gorouter" ||
+    provider.id === "tabiai"
+  ) {
+    return requested;
+  }
   if (provider.id === "nvidia" && requested.includes("/")) return requested;
   if (provider.id === "deepseek" && requested.startsWith("deepseek")) return requested;
   return provider.defaultModel;
