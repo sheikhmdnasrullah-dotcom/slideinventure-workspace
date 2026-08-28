@@ -69,16 +69,14 @@ export async function POST(request: NextRequest) {
     }
     await agentRunCompleted(ctx, res.answer.slice(0, 280));
     if (user.email) {
-      waitUntil(
-        captureResearchInsight({
-          userEmail: user.email,
-          source: "agent",
-          sourceRef: ctx.runId,
-          title: `${agent.name}: ${message.slice(0, 80)}`,
-          rawText: `Task: ${message}\n\nResult: ${res.answer}`,
-          reference: { tab: "agents" },
-        }).catch(() => {})
-      );
+      void captureResearchInsight({
+        userEmail: user.email,
+        source: "agent",
+        sourceRef: ctx.runId,
+        title: `${agent.name}: ${message.slice(0, 80)}`,
+        rawText: `Task: ${message}\n\nResult: ${res.answer}`,
+        reference: { tab: "agents" },
+      }).catch((err) => console.error("CAPTURE_AGENT_ERROR:", err));
     }
     return Response.json({
       answer: res.answer,
@@ -111,6 +109,16 @@ export async function POST(request: NextRequest) {
       messages,
     });
     await agentRunCompleted(ctx, answer.slice(0, 280));
+    if (user.email) {
+      void captureResearchInsight({
+        userEmail: user.email,
+        source: "agent",
+        sourceRef: ctx.runId,
+        title: `${agent.name}: ${message.slice(0, 80)}`,
+        rawText: `Task: ${message}\n\nResult: ${answer}`,
+        reference: { tab: "agents" },
+      }).catch((err) => console.error("CAPTURE_AGENT_ERROR:", err));
+    }
     return Response.json({ answer, agent: agent.name, runId: ctx.runId });
   } catch (err) {
     const errorMessage =

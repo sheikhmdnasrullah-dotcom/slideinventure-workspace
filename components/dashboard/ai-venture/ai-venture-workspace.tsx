@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useQueryState, parseAsStringLiteral } from "nuqs"
 import dynamic from "next/dynamic"
 import {
@@ -144,8 +145,29 @@ export function AiVentureWorkspace() {
     parseAsStringLiteral(SECTION_IDS).withDefault("home")
   )
 
+  // Active 10-second background watcher: automatically summarizes and pushes
+  // any updates in Notepad, Brainstorm, Files, or chat into the Research Lab.
+  useEffect(() => {
+    const triggerSync = () => {
+      fetch("/api/research-lab/sync", { method: "POST" }).catch(() => {})
+    }
+
+    // Initial sync
+    const initial = setTimeout(triggerSync, 1500)
+    // Continuous 10-second interval push
+    const interval = setInterval(triggerSync, 10_000)
+
+    return () => {
+      clearTimeout(initial)
+      clearInterval(interval)
+    }
+  }, [])
+
   const select = (id: SectionId) => {
     void setActive(id)
+    if (id === "research") {
+      fetch("/api/research-lab/sync", { method: "POST" }).catch(() => {})
+    }
   }
 
   return (

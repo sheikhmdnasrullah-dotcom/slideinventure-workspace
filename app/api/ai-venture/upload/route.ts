@@ -51,21 +51,19 @@ export async function POST(request: NextRequest) {
     // captured to the Research Lab, with a reference back to this file.
     if (user.email) {
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-      if (["txt", "text", "md", "markdown", "csv", "tsv", "pdf"].includes(ext)) {
-        waitUntil(
-          extractFileText(new File([buffer], file.name, { type: file.type }))
-            .then((extracted) =>
-              captureResearchInsight({
-                userEmail: user.email!,
-                source: "files",
-                sourceRef: path,
-                title: file.name,
-                rawText: extracted.text,
-                reference: { tab: "files", path },
-              })
-            )
-            .catch(() => {})
-        );
+      if (["txt", "text", "md", "markdown", "csv", "tsv", "pdf", "json"].includes(ext)) {
+        void extractFileText(new File([buffer], file.name, { type: file.type }))
+          .then((extracted) =>
+            captureResearchInsight({
+              userEmail: user.email!,
+              source: "files",
+              sourceRef: path,
+              title: file.name,
+              rawText: extracted.text,
+              reference: { tab: "files", path },
+            })
+          )
+          .catch((err) => console.error("CAPTURE_UPLOAD_ERROR:", err));
       }
     }
 

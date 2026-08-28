@@ -3,12 +3,12 @@ import { databases, ID, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ensureResearchLabCollection } from "@/lib/research-lab/ensure";
 import { logActivity } from "@/lib/activities/client";
-import { nvidiaComplete } from "@/lib/llm/nvidia";
+import { chatCompletion } from "@/lib/llm/gateway";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.researchLabItems;
 
-export type ResearchLabSource = "notepad" | "brainstorm" | "files" | "agent";
+export type ResearchLabSource = "notepad" | "brainstorm" | "files" | "agent" | "chat";
 
 export type ResearchLabItem = {
   id: string;
@@ -33,7 +33,7 @@ function serialize(doc: Record<string, unknown>): ResearchLabItem {
     source: doc.source as ResearchLabSource,
     sourceRef: doc.source_ref as string,
     title: (doc.title as string) || "Untitled",
-    summary: (doc.summary as string) || "",
+    summary: ((doc.summary as string) || "").replace(/[—–]/g, "-"),
     reference,
     createdAt: doc.created_at as string,
     updatedAt: doc.updated_at as string,
@@ -66,8 +66,9 @@ export async function deleteResearchLabItem(userEmail: string, id: string): Prom
   }
 }
 
-const MIN_LENGTH = 40;
-const COOLDOWN_MS = 45_000;
+// 10-second push cooldown as requested by user
+const MIN_LENGTH = 10;
+const COOLDOWN_MS = 10_000;
 
 export type CaptureInput = {
   userEmail: string;
@@ -76,19 +77,61 @@ export type CaptureInput = {
   title: string;
   rawText: string;
   reference?: Record<string, string>;
+  force?: boolean;
 };
 
+function fallbackBulletSummary(title: string, text: string): string {
+  const lines = text
+    .split(/\n+/)
+    .map((l) => l.trim().replace(/^[-*•#\d.]+\s*/, "").replace(/[—–]/g, "-"))
+    .filter((l) => l.length > 5 && !l.startsWith("{") && !l.startsWith("<"));
+
+  if (lines.length === 0) {
+    const clean = text.replace(/[—–]/g, "-").slice(0, 180).trim();
+    return `- ${clean || title}`;
+  }
+
+  return lines
+    .slice(0, 3)
+    .map((l) => `- ${l.slice(0, 200)}`)
+    .join("\n");
+}
+
+async function summarizeContent(title: string, text: string): Promise<string> {
+  try {
+    const messages = [
+      {
+        role: "system",
+        content:
+          "You are an expert research analyst. Extract the core ideas, hypotheses, key findings, or concepts from the content into 2 to 4 structured, concise bullet points (each starting with '- '). No fluff, no preamble. Strict rule: NEVER use em-dashes (—) or en-dashes (–); use standard hyphens (-) or colons (:) only.",
+      },
+      {
+        role: "user",
+        content: `Title: ${title}\n\nContent:\n${text.slice(0, 8000)}`,
+      },
+    ];
+
+    const result = await chatCompletion(messages, { maxTokens: 280, temperature: 0.2 });
+    const cleaned = result.replace(/[—–]/g, "-").trim();
+    if (cleaned && cleaned !== "(no core idea yet)") {
+      return cleaned;
+    }
+  } catch (err) {
+    console.warn("LLM summarization failed in captureResearchInsight, using structured fallback:", err);
+  }
+
+  return fallbackBulletSummary(title, text);
+}
+
 /**
- * Turns raw content from Notepad, Brainstorm, Files, or an agent run into one
+ * Turns raw content from Notepad, Brainstorm, Files, Chat, or an agent run into one
  * organized Research Lab item: a short "core idea" summary plus a pointer back
  * to where it came from. Keyed by (source, sourceRef) so repeated edits update
- * the same item in place instead of scattering duplicates across the canvas.
- * Fire-and-forget from every call site: never throws, never blocks the
- * primary save/run it was triggered by.
+ * the same item in place.
  */
-export async function captureResearchInsight(input: CaptureInput): Promise<void> {
+export async function captureResearchInsight(input: CaptureInput): Promise<ResearchLabItem | null> {
   const text = input.rawText.trim();
-  if (text.length < MIN_LENGTH) return;
+  if (text.length < MIN_LENGTH && !input.title.trim()) return null;
 
   await ensureResearchLabCollection();
 
@@ -105,69 +148,55 @@ export async function captureResearchInsight(input: CaptureInput): Promise<void>
     existing = null;
   }
 
-  // A brand-new item always captures immediately; a re-edit of something
-  // already captured waits out a cooldown so autosave-on-every-keystroke
-  // doesn't fire an LLM call per keystroke.
-  if (existing) {
+  // 10-second cooldown check unless forced
+  if (existing && !input.force) {
     const last = new Date((existing.updated_at as string) ?? 0).getTime();
-    if (Date.now() - last < COOLDOWN_MS) return;
+    if (Date.now() - last < COOLDOWN_MS) {
+      return serialize(existing);
+    }
   }
 
-  let summary: string;
-  try {
-    summary = await nvidiaComplete(
-      [
-        {
-          role: "system",
-          content:
-            'Extract only the core idea from the given content as 2-4 short bullet points (each starting with "- "). No preamble, no restating the source, no fluff. If the content has no substantive idea yet, respond with exactly: (no core idea yet)',
-        },
-        { role: "user", content: text.slice(0, 6000) },
-      ],
-      { maxTokens: 220 }
-    );
-  } catch {
-    return; // no LLM available; skip rather than store raw, unsummarized text
-  }
-
-  const trimmedSummary = summary.trim();
-  if (!trimmedSummary || trimmedSummary === "(no core idea yet)") return;
-
+  const structuredSummary = await summarizeContent(input.title, text || input.title);
   const now = new Date().toISOString();
   const referenceJson = input.reference ? JSON.stringify(input.reference) : null;
+  const cleanTitle = input.title.replace(/[—–]/g, "-").slice(0, 200) || "Untitled Research Item";
 
   try {
+    let savedDoc: Record<string, unknown>;
     if (existing) {
-      await databases.updateDocument(DB, COL, existing.$id as string, {
-        title: input.title.slice(0, 200),
-        summary: trimmedSummary.slice(0, 4000),
+      savedDoc = (await databases.updateDocument(DB, COL, existing.$id as string, {
+        title: cleanTitle,
+        summary: structuredSummary.slice(0, 4000),
         reference: referenceJson,
         updated_at: now,
-      });
+      } as any)) as unknown as Record<string, unknown>;
     } else {
-      await databases.createDocument(DB, COL, ID.unique(), {
+      savedDoc = (await databases.createDocument(DB, COL, ID.unique(), {
         user_email: input.userEmail,
         source: input.source,
         source_ref: input.sourceRef,
-        title: input.title.slice(0, 200),
-        summary: trimmedSummary.slice(0, 4000),
+        title: cleanTitle,
+        summary: structuredSummary.slice(0, 4000),
         reference: referenceJson,
         created_at: now,
         updated_at: now,
-      });
+      } as any)) as unknown as Record<string, unknown>;
     }
-  } catch {
-    return;
-  }
 
-  logActivity({
-    category: "knowledge",
-    action: existing ? "updated" : "created",
-    title: `Research Lab: ${input.title}`,
-    description: trimmedSummary.split("\n")[0]?.replace(/^- /, "") ?? "",
-    entityId: input.sourceRef,
-    entityType: "research_item",
-    source: "research-lab",
-    userEmail: input.userEmail,
-  }).catch(() => {});
+    logActivity({
+      category: "knowledge",
+      action: existing ? "updated" : "created",
+      title: `Research Lab: ${cleanTitle}`,
+      description: structuredSummary.split("\n")[0]?.replace(/^- /, "") ?? "",
+      entityId: input.sourceRef,
+      entityType: "research_item",
+      source: "research-lab",
+      userEmail: input.userEmail,
+    }).catch(() => {});
+
+    return serialize(savedDoc);
+  } catch (err) {
+    console.error("Failed to persist research lab document:", err);
+    return null;
+  }
 }

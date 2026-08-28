@@ -97,16 +97,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (scope === "ai-venture" && typeof content === "string" && user.email) {
       const rawText = summarizeExcalidrawScene(content);
       if (rawText) {
-        waitUntil(
-          captureResearchInsight({
-            userEmail: user.email,
-            source: "brainstorm",
-            sourceRef: id,
-            title: (typeof title === "string" ? title : (doc as BoardDoc).title) || "Untitled sketch",
-            rawText,
-            reference: { tab: "brainstorm", board: id, engine: "excalidraw" },
-          }).catch(() => {})
-        );
+        void captureResearchInsight({
+          userEmail: user.email,
+          source: "brainstorm",
+          sourceRef: id,
+          title: (typeof title === "string" ? title : (doc as BoardDoc).title) || "Untitled sketch",
+          rawText,
+          reference: { tab: "brainstorm", board: id, engine: "excalidraw" },
+        }).catch((err) => console.error("CAPTURE_BOARD_ERROR:", err));
       }
     }
 

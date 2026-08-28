@@ -57,6 +57,20 @@ export function AvQuery() {
           }
         }
       }
+
+      if (answer.trim()) {
+        fetch("/api/research-lab/capture", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "chat",
+            sourceRef: `query-${sessionIdRef.current || Date.now()}`,
+            title: question.slice(0, 80),
+            rawText: `Discussion: ${question}\n\nFindings: ${answer}`,
+            reference: { tab: "query" },
+          }),
+        }).catch(() => {});
+      }
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong. Try again." }])
     } finally {

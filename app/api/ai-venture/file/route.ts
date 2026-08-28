@@ -59,17 +59,15 @@ export async function PUT(request: NextRequest) {
     }).catch(() => {});
 
     const ext = path.split(".").pop()?.toLowerCase() ?? "";
-    if (encoding !== "base64" && user.email && ["txt", "text", "md", "markdown", "csv", "tsv"].includes(ext)) {
-      waitUntil(
-        captureResearchInsight({
-          userEmail: user.email,
-          source: "files",
-          sourceRef: path,
-          title: path.split("/").pop() || path,
-          rawText: content,
-          reference: { tab: "files", path },
-        }).catch(() => {})
-      );
+    if (encoding !== "base64" && user.email && ["txt", "text", "md", "markdown", "csv", "tsv", "json"].includes(ext)) {
+      void captureResearchInsight({
+        userEmail: user.email,
+        source: "files",
+        sourceRef: path,
+        title: path.split("/").pop() || path,
+        rawText: content,
+        reference: { tab: "files", path },
+      }).catch((err) => console.error("CAPTURE_FILE_ERROR:", err));
     }
 
     return Response.json({ ok: true });

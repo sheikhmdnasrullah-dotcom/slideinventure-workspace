@@ -94,23 +94,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       entityType: "note",
     }).catch(() => {})
 
-    if ((doc.scope ?? "global") !== "ai-venture") {
+    const noteScope = existing.scope || (doc as any).scope || "global"
+
+    if (noteScope === "ai-venture" && user.email) {
+      const rawText = blockNoteToPlainText((update.content as string) || (existing.content as string) || "")
+      const noteTitle = (update.title as string) || (doc.title as string) || (existing.title as string) || "Untitled note"
+      void captureResearchInsight({
+        userEmail: user.email,
+        source: "notepad",
+        sourceRef: id,
+        title: noteTitle,
+        rawText,
+        reference: { tab: "notepad", note: id },
+      }).catch((err) => console.error("CAPTURE_NOTE_ERROR:", err))
+    } else {
       const text = [doc.title, blockNoteToPlainText(doc.content as string)].filter(Boolean).join("\n")
       upsertVector({ collection: "notes", docId: id, text }).catch(() => {})
-    } else if (user.email) {
-      // AI Venture notes constantly feed the Research Lab: the core idea of
-      // whatever is written here shows up there automatically, organized
-      // instead of scattered.
-      waitUntil(
-        captureResearchInsight({
-          userEmail: user.email,
-          source: "notepad",
-          sourceRef: id,
-          title: (doc.title as string) || "Untitled note",
-          rawText: blockNoteToPlainText(doc.content as string),
-          reference: { tab: "notepad", note: id },
-        }).catch(() => {})
-      )
     }
 
     return Response.json({ note: serialize(doc) })
