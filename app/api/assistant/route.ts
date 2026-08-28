@@ -57,17 +57,14 @@ export async function POST(req: Request) {
 
   const systemPrompt = `You are the SlideIn Venture OS assistant, available from a floating chat widget on every page. You can answer questions about the workspace and about general or realtime topics using web search results provided below. Be concise and helpful. Cite sources by URL when you use web results.${webContext}`;
 
-  const llmMessages = [
-    { role: "system" as const, content: systemPrompt },
-    ...messages
-      .filter((m) => m.content)
-      .map((m) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content as string,
-      })),
-  ];
+  const llmMessages = messages
+    .filter((m) => m.content)
+    .map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content as string,
+    }));
 
-  const result = streamText({ model, messages: llmMessages, temperature: 0.3 });
+  const result = streamText({ model, system: systemPrompt, messages: llmMessages, temperature: 0.3 });
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -79,9 +76,10 @@ export async function POST(req: Request) {
         }
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ type: "delta", content: "\n\n[assistant error]" })}\n\n`
+            `data: ${JSON.stringify({ type: "delta", content: `\n\n[assistant error: ${msg}]` })}\n\n`
           )
         );
       } finally {

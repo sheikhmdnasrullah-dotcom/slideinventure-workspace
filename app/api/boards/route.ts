@@ -7,6 +7,7 @@ import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { logActivity } from "@/lib/activities/client";
 import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
+import { ensureBoardsCollection } from "@/lib/boards/ensure";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
   const scope = request.nextUrl.searchParams.get("scope");
 
   try {
+    await ensureBoardsCollection();
     const queries = [Query.equal("user_email", user.email ?? ""), Query.orderDesc("updated_at")];
     if (scope) queries.push(Query.equal("scope", scope));
     const res = await databases.listDocuments(DB, COL, queries);
@@ -62,6 +64,7 @@ export async function POST(request: NextRequest) {
     const title = (body.title as string | undefined)?.toString().slice(0, 200) || "New board";
     const scope = normalizeBoardScope(body.scope);
     const now = new Date().toISOString();
+    await ensureBoardsCollection();
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
       user_email: user.email ?? "",
       title,

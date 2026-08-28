@@ -7,6 +7,7 @@ import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { logActivity } from "@/lib/activities/client";
 import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
+import { ensureBoardsCollection } from "@/lib/boards/ensure";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;
@@ -32,6 +33,7 @@ function serialize(doc: BoardDoc) {
 }
 
 async function fetchOwned(id: string, email: string) {
+  await ensureBoardsCollection();
   const res = await databases.listDocuments(DB, COL, [
     Query.equal("$id", id),
     Query.equal("user_email", email),
