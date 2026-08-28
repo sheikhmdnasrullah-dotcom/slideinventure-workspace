@@ -33,7 +33,7 @@ export type LlmProviderId =
  * wrong host.
  */
 function gatewayProvider(opts: {
-  id: "seekai" | "gorouter" | "tabiai";
+  id: "seekai";
   keyEnv: string;
   urlEnv: string;
   modelEnv: string;

@@ -8,6 +8,8 @@ import { searchVector } from "@/lib/retrieval/vector-index";
 import { runBrowseTask } from "@/lib/browse/agent";
 import { createWorkingMemory, getWorkingMemory } from "@/lib/memory/working-memory";
 import { mem0Remember, mem0Recall, mem0Enabled } from "@/lib/memory/mem0";
+import { tavilySearch } from "@/lib/search/tavily";
+import { listComposioConnections } from "@/lib/integrations/composio";
 import { NVIDIA_DEFAULT_MODEL } from "@/lib/llm/gateway";
 
 // DeepSeek and NVIDIA's chat APIs are both OpenAI-compatible, so we point the
@@ -116,11 +118,48 @@ export async function runMastraAgent(opts: {
     },
   });
 
+  const webSearchTool = createTool({
+    id: "web_search",
+    description:
+      "Search the live web with Tavily for current facts, news, prices, or anything not in the knowledge base. Use this whenever fresh information is needed.",
+    inputSchema: z.object({ query: z.string().describe("the search query") }),
+    execute: async ({ query }) => {
+      const results = await tavilySearch(query, { maxResults: 5 }).catch(() => []);
+      if (!results.length) return "No web results found.";
+      return results
+        .map((r) => `[${r.title}] ${r.url}\n${r.content}`)
+        .join("\n---\n");
+    },
+  });
+
+  // Connected external tools (Composio / integration section). Read-only list so
+  // the agent knows what actions it can pull from the connected integrations.
+  const connections = await listComposioConnections().catch(() => []);
+  const integrationsTool = createTool({
+    id: "integrations",
+    description:
+      "List the external tools and integrations connected to this workspace (e.g. Composio apps). Use to discover what external actions are available before reasoning about a task.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      if (!connections.length) return "No external integrations are connected.";
+      return connections
+        .map((c: { app: string; status: string }) => `- ${c.app} (${c.status})`)
+        .join("\n");
+    },
+  });
+
   const agent = new Agent({
     name: persona.name,
     instructions: persona.prompt,
     model: getModel(),
-    tools: { retrieve: retrieveTool, browse: browseTool, remember: rememberTool, recall: recallTool },
+    tools: {
+      web_search: webSearchTool,
+      retrieve: retrieveTool,
+      browse: browseTool,
+      integrations: integrationsTool,
+      remember: rememberTool,
+      recall: recallTool,
+    },
   });
 
   const messages = [
