@@ -1,65 +1,62 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { FlaskConical, Plus, Trash2, PenTool, Network, Loader2, X } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { useQueryState } from "nuqs"
+import { FlaskConical, NotebookPen, PenTool, FolderOpen, Bot, Trash2, ExternalLink, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useLiveRefresh } from "@/components/providers/event-stream"
-import { AppWindow } from "./app-window"
-import { AvWhiteboardEditor, type BoardEngine } from "./av-whiteboard-editor"
-import { IdeaMapCanvas } from "@/components/dashboard/ideas/idea-map-canvas"
+import { formatDistanceToNow } from "date-fns"
 
-const SCOPE = "research"
+type ResearchLabSource = "notepad" | "brainstorm" | "files" | "agent"
 
-type Thread = {
+type ResearchLabItem = {
   id: string
+  source: ResearchLabSource
+  sourceRef: string
   title: string
-  description: string
-  sources: string
-  excelBoardId?: string
-  affineWorkspaceId?: string
+  summary: string
+  reference: Record<string, string> | null
+  createdAt: string
+  updatedAt: string
 }
 
-type ThreadSummary = { id: string; title: string }
+const SOURCE_META: Record<ResearchLabSource, { label: string; icon: typeof NotebookPen }> = {
+  notepad: { label: "From Notepad", icon: NotebookPen },
+  brainstorm: { label: "From Brainstorm", icon: PenTool },
+  files: { label: "From Files", icon: FolderOpen },
+  agent: { label: "From Agents", icon: Bot },
+}
 
-// Capture-first research threads. The data model and endpoints are exactly the
-// ones research-lab-workspace uses (boards with scope "research"): no new
-// collection, no scoring, no rankings, no validators. A thread is just a title,
-// a free notes area, and a free sources area you can dump and revisit.
+const SOURCE_ORDER: ResearchLabSource[] = ["notepad", "brainstorm", "files", "agent"]
+
+// Research Lab is a read-only, auto-organized canvas: it never takes typed
+// input directly. Notepad, Brainstorm, Files, and Agents each write their
+// core idea here as it happens (see lib/research-lab/capture.ts), grouped by
+// source instead of scattered in one flat list. "Open source" jumps back to
+// wherever the idea came from via the shared ?tab= URL state.
 export function AvResearch() {
-  const [threads, setThreads] = useState<ThreadSummary[]>([])
-  const [active, setActive] = useState<Thread | null>(null)
+  const [, setTab] = useQueryState("tab")
+  const [, setNotePath] = useQueryState("note")
+  const [, setBoardPath] = useQueryState("board")
+  const [, setFilePath] = useQueryState("path")
+
+  const [items, setItems] = useState<ResearchLabItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle")
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [boardPopup, setBoardPopup] = useState<{ engine: BoardEngine; id: string } | null>(null)
-  const [mapPopup, setMapPopup] = useState<string | null>(null)
-
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingRef = useRef<Thread | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
     try {
-      const res = await fetch(`/api/boards?scope=${SCOPE}`)
-      if (!res.ok) throw new Error("Could not load research threads")
+      const res = await fetch("/api/research-lab/items")
+      if (!res.ok) throw new Error("Could not load the Research Lab")
       const json = await res.json()
-      setThreads((json.boards ?? []).map((b: any) => ({ id: b.id, title: b.title || "Untitled" })))
+      setItems(json.items ?? [])
+      setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load research threads")
+      setError(e instanceof Error ? e.message : "Could not load the Research Lab")
     } finally {
       setLoading(false)
     }
@@ -69,347 +66,126 @@ export function AvResearch() {
     load()
   }, [load])
 
-  // Threads are boards (scope "research"); their writes land in the activity
-  // feed under the "knowledge" source, so refresh when those events arrive.
-  useLiveRefresh(load, { sources: ["knowledge"] })
+  useLiveRefresh(load, { sources: ["research-lab"] })
 
-  const flushSave = useCallback(async () => {
-    const t = pendingRef.current
-    if (!t || !t.id) return
-    pendingRef.current = null
+  const openSource = (item: ResearchLabItem) => {
+    const ref = item.reference
+    if (!ref?.tab) return
+    void setTab(ref.tab)
+    if (ref.tab === "notepad" && ref.note) void setNotePath(ref.note)
+    if (ref.tab === "brainstorm" && ref.board) void setBoardPath(ref.board)
+    if (ref.tab === "files" && ref.path) void setFilePath(ref.path)
+  }
+
+  const remove = async (id: string) => {
+    setDeletingId(id)
+    const prev = items
+    setItems((cur) => cur.filter((i) => i.id !== id))
     try {
-      const res = await fetch(`/api/boards/${t.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: t.title,
-          content: JSON.stringify({
-            description: t.description,
-            sources: t.sources,
-            excelBoardId: t.excelBoardId,
-            affineWorkspaceId: t.affineWorkspaceId,
-          }),
-          scope: SCOPE,
-        }),
-      })
+      const res = await fetch(`/api/research-lab/items/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error()
-      setSaveState("saved")
     } catch {
-      setSaveState("error")
-      toast.error("Could not save thread")
-    }
-  }, [])
-
-  const scheduleSave = (t: Thread) => {
-    pendingRef.current = t
-    setSaveState("saving")
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => void flushSave(), 600)
-  }
-
-  // Flush any pending edit when leaving the section so switching tabs never
-  // loses text. Fire-and-forget: we cannot await in cleanup.
-  useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      const t = pendingRef.current
-      if (t && t.id) {
-        const body = JSON.stringify({
-          title: t.title,
-          content: JSON.stringify({
-            description: t.description,
-            sources: t.sources,
-            excelBoardId: t.excelBoardId,
-            affineWorkspaceId: t.affineWorkspaceId,
-          }),
-          scope: SCOPE,
-        })
-        fetch(`/api/boards/${t.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body,
-        }).catch(() => {})
-      }
-    }
-  }, [])
-
-  const selectThread = async (id: string) => {
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current)
-      await flushSave()
-    }
-    try {
-      const res = await fetch(`/api/boards/${id}`)
-      const json = await res.json()
-      const content = json.board?.content ? JSON.parse(json.board.content || "{}") : {}
-      setActive({
-        id,
-        title: json.board?.title || "Untitled",
-        description: content.description || "",
-        sources: content.sources || "",
-        excelBoardId: content.excelBoardId,
-        affineWorkspaceId: content.affineWorkspaceId,
-      })
-      setSaveState("idle")
-    } catch {
-      toast.error("Could not open thread")
+      setItems(prev)
+      toast.error("Could not remove this item")
+    } finally {
+      setDeletingId(null)
     }
   }
 
-  const createThread = async () => {
-    try {
-      const res = await fetch("/api/boards", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "New research thread",
-          scope: SCOPE,
-          content: JSON.stringify({ description: "", sources: "" }),
-        }),
-      })
-      const json = await res.json()
-      if (json.board) {
-        setThreads((prev) => [{ id: json.board.id, title: json.board.title || "Untitled" }, ...prev])
-        await selectThread(json.board.id)
-      }
-    } catch {
-      toast.error("Could not create thread")
-    }
-  }
-
-  const renameThread = async (id: string, value: string) => {
-    const next = value.trim() || "Untitled"
-    setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, title: next } : t)))
-    if (active?.id === id) setActive({ ...active, title: next })
-    try {
-      await fetch(`/api/boards/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: next }),
-      })
-    } catch {
-      toast.error("Could not rename thread")
-      load()
-    }
-  }
-
-  const confirmDelete = async () => {
-    if (!deleteId) return
-    const id = deleteId
-    setDeleteId(null)
-    setThreads((prev) => prev.filter((t) => t.id !== id))
-    if (active?.id === id) setActive(null)
-    try {
-      const res = await fetch(`/api/boards/${id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error()
-      toast.success("Thread deleted")
-    } catch {
-      toast.error("Could not delete thread")
-      load()
-    }
-  }
-
-  const update = (patch: Partial<Thread>) => {
-    if (!active) return
-    const next = { ...active, ...patch }
-    setActive(next)
-    if (patch.title !== undefined) {
-      setThreads((prev) => prev.map((t) => (t.id === next.id ? { ...t, title: next.title } : t)))
-    }
-    scheduleSave(next)
-  }
-
-  const openBoard = async () => {
-    if (!active) return
-    let id = active.excelBoardId
-    if (!id) {
-      try {
-        const res = await fetch("/api/boards", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: `${active.title}: Sketch`, scope: "ai-venture" }),
-        })
-        const json = await res.json()
-        id = json.board?.id
-        if (id) {
-          const next = { ...active, excelBoardId: id }
-          setActive(next)
-          pendingRef.current = next
-          await flushSave()
-        }
-      } catch {
-        toast.error("Could not create a board")
-        return
-      }
-    }
-    if (id) setBoardPopup({ engine: "excalidraw", id })
-  }
-
-  const openIdeaMap = async () => {
-    if (!active) return
-    try {
-      const res = await fetch("/api/idea-maps", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: `${active.title}: Idea map` }),
-      })
-      const json = await res.json()
-      if (json.map?.id) setMapPopup(json.map.id)
-    } catch {
-      toast.error("Could not create an idea map")
-    }
-  }
+  const grouped = SOURCE_ORDER.map((source) => ({
+    source,
+    items: items.filter((i) => i.source === source),
+  })).filter((g) => g.items.length > 0)
 
   return (
-    <div className="flex h-full">
-      <aside className="flex w-60 shrink-0 flex-col gap-1 border-r border-border bg-card/40 p-2">
-        <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Threads
-          </span>
-          <Button size="xs" variant="outline" onClick={createThread}>
-            <Plus className="size-3" /> New
+    <div className="flex h-full flex-col">
+      <div className="border-b border-border px-6 py-4">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="size-5 text-primary" />
+          <h2 className="text-lg font-semibold">Research Lab</h2>
+        </div>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          The core idea of everything you write, sketch, upload, or run gets organized here
+          automatically — nothing to type. Write in Notepad, sketch in Brainstorm, add a file, or run
+          an agent, and it shows up below.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          <Loader2 className="mr-2 size-4 animate-spin" /> Loading
+        </div>
+      ) : error ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button size="sm" variant="outline" onClick={load}>
+            Retry
           </Button>
         </div>
-        <ScrollArea className="flex-1" data-lenis-prevent>
-          {loading ? (
-            <p className="px-2 py-3 text-xs text-muted-foreground">Loading</p>
-          ) : error ? (
-            <div className="flex flex-col gap-2 px-2 py-3">
-              <p className="text-xs text-destructive">{error}</p>
-              <Button size="xs" variant="outline" onClick={load}>
-                Retry
-              </Button>
-            </div>
-          ) : threads.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-muted-foreground">No threads yet. Capture one.</p>
-          ) : (
-            threads.map((t) => (
-              <div
-                key={t.id}
-                className={cn(
-                  "group flex items-center gap-1 rounded-md px-2 py-2 text-left text-sm hover:bg-accent",
-                  active?.id === t.id && "bg-accent"
-                )}
-              >
-                <button
-                  onClick={() => selectThread(t.id)}
-                  className="flex-1 truncate text-left"
-                >
-                  {t.title}
-                </button>
-                <button
-                  aria-label="Rename"
-                  onClick={() => {
-                    const v = window.prompt("Rename thread", t.title)
-                    if (v !== null) renameThread(t.id, v)
-                  }}
-                  className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-                >
-                  <FlaskConical className="size-3.5" />
-                </button>
-                <button
-                  aria-label="Delete"
-                  onClick={() => setDeleteId(t.id)}
-                  className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            ))
-          )}
-        </ScrollArea>
-      </aside>
-
-      <main className="flex-1 overflow-y-auto p-6" data-lenis-prevent>
-        {!active ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
-            <p className="text-sm">Create or open a research thread to capture notes and sources.</p>
-            <Button onClick={createThread}>
-              <Plus className="size-4" /> New research thread
-            </Button>
-          </div>
-        ) : (
-          <div className="mx-auto flex max-w-3xl flex-col gap-5">
-            <div className="flex items-center gap-2">
-              <Input
-                value={active.title}
-                onChange={(e) => update({ title: e.target.value })}
-                onBlur={() => renameThread(active.id, active.title)}
-                className="h-9 text-base font-medium"
-              />
-              <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                {saveState === "saving" && <Loader2 className="size-3 animate-spin" />}
-                {saveState === "saving" ? "Saving" : saveState === "saved" ? "Saved" : ""}
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">Notes</label>
-              <Textarea
-                value={active.description}
-                onChange={(e) => update({ description: e.target.value })}
-                placeholder="What are you researching? Hypotheses, key questions, working thoughts"
-                rows={8}
-                className="resize-y"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">Sources</label>
-              <Textarea
-                value={active.sources}
-                onChange={(e) => update({ sources: e.target.value })}
-                placeholder="Links, references, raw material for this thread"
-                rows={5}
-                className="resize-y"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={openBoard}>
-                <PenTool className="size-3.5" /> Open sketch board
-              </Button>
-              <Button variant="outline" onClick={openIdeaMap}>
-                <Network className="size-3.5" /> Open idea map
-              </Button>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <Dialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete thread</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This removes the thread and its saved notes. This cannot be undone.
+      ) : grouped.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground">
+          <FlaskConical className="size-10 opacity-30" />
+          <p className="text-sm font-medium text-ink-strong">Nothing here yet</p>
+          <p className="max-w-sm text-xs">
+            This canvas fills itself in: write in Notepad, sketch in Brainstorm, add a file, or run an
+            agent — the core idea shows up here automatically, organized by where it came from.
           </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
-              <X className="size-3" /> Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              <Trash2 className="size-3" /> Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AppWindow open={!!boardPopup} onClose={() => setBoardPopup(null)} title="Sketch board">
-        {boardPopup && (
-          <AvWhiteboardEditor
-            engine={boardPopup.engine}
-            boardId={boardPopup.id}
-            onBack={() => setBoardPopup(null)}
-          />
-        )}
-      </AppWindow>
-
-      <AppWindow open={!!mapPopup} onClose={() => setMapPopup(null)} title="Idea map">
-        {mapPopup && <IdeaMapCanvas mapId={mapPopup} className="h-full w-full" />}
-      </AppWindow>
+        </div>
+      ) : (
+        <ScrollArea className="flex-1" data-lenis-prevent>
+          <div className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
+            {grouped.map(({ source, items: sourceItems }) => {
+              const meta = SOURCE_META[source]
+              const Icon = meta.icon
+              return (
+                <section key={source} className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <Icon className="size-3.5" />
+                    {meta.label}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {sourceItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="group flex flex-col gap-2 rounded-lg border border-border bg-card p-4"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium leading-tight">{item.title}</p>
+                          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            {item.reference?.tab && (
+                              <button
+                                onClick={() => openSource(item)}
+                                title="Open source"
+                                className="rounded p-1 text-muted-foreground hover:text-foreground"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => remove(item.id)}
+                              disabled={deletingId === item.id}
+                              title="Remove"
+                              className="rounded p-1 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="whitespace-pre-line text-sm text-muted-foreground">
+                          {item.summary}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground/70">
+                          {formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+        </ScrollArea>
+      )}
     </div>
   )
 }

@@ -5,7 +5,9 @@ import { getAgentPrompt } from "@/lib/agents/roster";
 import { runMastraAgent } from "@/lib/agents/mastra";
 import { generateText, type ModelMessage } from "ai";
 import { NextRequest } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { NoLlmProviderError, resolveChatModel } from "@/lib/llm/models";
+import { captureResearchInsight } from "@/lib/research-lab/capture";
 import {
   agentRunCompleted,
   agentRunFailed,
@@ -66,6 +68,18 @@ export async function POST(request: NextRequest) {
       return ApiError.internal("MASTRA_AGENT_FAILED", res.error ?? "agent failed").toResponse();
     }
     await agentRunCompleted(ctx, res.answer.slice(0, 280));
+    if (user.email) {
+      waitUntil(
+        captureResearchInsight({
+          userEmail: user.email,
+          source: "agent",
+          sourceRef: ctx.runId,
+          title: `${agent.name}: ${message.slice(0, 80)}`,
+          rawText: `Task: ${message}\n\nResult: ${res.answer}`,
+          reference: { tab: "agents" },
+        }).catch(() => {})
+      );
+    }
     return Response.json({
       answer: res.answer,
       agent: res.agentName,

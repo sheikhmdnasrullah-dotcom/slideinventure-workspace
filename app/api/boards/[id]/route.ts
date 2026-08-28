@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
@@ -8,6 +9,8 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { logActivity } from "@/lib/activities/client";
 import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
 import { ensureBoardsCollection } from "@/lib/boards/ensure";
+import { captureResearchInsight } from "@/lib/research-lab/capture";
+import { summarizeExcalidrawScene } from "@/lib/research-lab/excalidraw-summary";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;
@@ -87,6 +90,25 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       entityType: "board",
       metadata: { scope },
     }).catch(() => {});
+
+    // Brainstorm sketches constantly feed the Research Lab too: a summary of
+    // the drawing (its labels/text plus a shape sketch) lands there next to
+    // whatever came from Notepad, Files, and Agents.
+    if (scope === "ai-venture" && typeof content === "string" && user.email) {
+      const rawText = summarizeExcalidrawScene(content);
+      if (rawText) {
+        waitUntil(
+          captureResearchInsight({
+            userEmail: user.email,
+            source: "brainstorm",
+            sourceRef: id,
+            title: (typeof title === "string" ? title : (doc as BoardDoc).title) || "Untitled sketch",
+            rawText,
+            reference: { tab: "brainstorm", board: id },
+          }).catch(() => {})
+        );
+      }
+    }
 
     return Response.json({ board: serialize(updated) });
   } catch (error) {

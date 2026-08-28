@@ -70,10 +70,15 @@ export async function logActivity(entry: {
   // every call site.
   eventType?: DomainEventType;
   source?: EventSource;
+  // Explicit identity for callers that run outside request scope (e.g. a
+  // background job resumed via waitUntil after the response already sent),
+  // where getSessionUser()'s cookie lookup has nothing to read. Request-scoped
+  // callers can omit this and keep relying on the session.
+  userEmail?: string | null;
 }): Promise<void> {
   try {
-    const user = await getSessionUser();
-    if (!user) return;
+    const email = entry.userEmail ?? (await getSessionUser())?.email ?? null;
+    if (!email) return;
     await ensureActivitiesCollection();
     await databases.createDocument(APPWRITE.databaseId, APPWRITE.collections.activities, ID.unique(), {
       category: entry.category,
@@ -84,7 +89,7 @@ export async function logActivity(entry: {
       entity_type: entry.entityType ?? null,
       timestamp: new Date().toISOString(),
       metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
-      user_email: user.email ?? null,
+      user_email: email,
     });
 
     // Persist first, broadcast second. The durable record is the activity row;
@@ -101,14 +106,14 @@ export async function logActivity(entry: {
       entityId: entry.entityId,
       entityType: entry.entityType,
       metadata: entry.metadata,
-      userEmail: user.email ?? null,
+      userEmail: email,
     });
 
     if (entry.notify) {
       try {
         await ensureNotificationsCollection();
         await databases.createDocument(APPWRITE.databaseId, APPWRITE.collections.notifications, ID.unique(), {
-          user_email: user.email ?? null,
+          user_email: email,
           category: entry.category,
           title: entry.title,
           description: entry.description ?? "",
@@ -123,8 +128,8 @@ export async function logActivity(entry: {
       }
       // Mirror to Novu when configured (optional delivery channel).
       notifyViaNovu({
-        subscriberId: user.email ?? "system",
-        email: user.email ?? undefined,
+        subscriberId: email,
+        email,
         title: entry.title,
         body: entry.description ?? "",
       }).catch(() => {});

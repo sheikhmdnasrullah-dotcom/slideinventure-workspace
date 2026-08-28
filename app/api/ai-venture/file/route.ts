@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { deleteEntry, moveEntry, readFileContent, VentureFsError, writeFileContent } from "@/lib/ai-venture/fs";
 import { logActivity } from "@/lib/activities/client";
+import { captureResearchInsight } from "@/lib/research-lab/capture";
 
 function fsErrorToResponse(error: unknown) {
   if (error instanceof VentureFsError) return new ApiError(error.status, "VENTURE_FS_ERROR", error.message).toResponse();
@@ -55,6 +57,21 @@ export async function PUT(request: NextRequest) {
       entityType: "file",
       metadata: { encoding },
     }).catch(() => {});
+
+    const ext = path.split(".").pop()?.toLowerCase() ?? "";
+    if (encoding !== "base64" && user.email && ["txt", "text", "md", "markdown", "csv", "tsv"].includes(ext)) {
+      waitUntil(
+        captureResearchInsight({
+          userEmail: user.email,
+          source: "files",
+          sourceRef: path,
+          title: path.split("/").pop() || path,
+          rawText: content,
+          reference: { tab: "files", path },
+        }).catch(() => {})
+      );
+    }
+
     return Response.json({ ok: true });
   } catch (error) {
     return fsErrorToResponse(error);

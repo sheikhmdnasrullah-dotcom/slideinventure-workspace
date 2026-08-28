@@ -1,6 +1,9 @@
 import "server-only";
 import { enqueueAgentJob, getAgentJobById, updateAgentJob } from "@/lib/agents/jobs-store";
 import type { AgentJobInput } from "@/lib/agents/jobs-store";
+import { getAgentPrompt } from "@/lib/agents/roster";
+import { agentRunStarted, agentRunCompleted, agentRunFailed } from "@/lib/agui/server";
+import { captureResearchInsight } from "@/lib/research-lab/capture";
 
 // Executes a queued agent job on the server, independent of any browser session.
 // Triggered via waitUntil on enqueue, or lazily by the poll endpoint / cron. The
@@ -14,6 +17,11 @@ export async function processAgentJob(jobId: string): Promise<void> {
   if (job.status === "running") return; // already in flight elsewhere
 
   await updateAgentJob(jobId, { status: "running" });
+
+  const persona = getAgentPrompt(job.slug);
+  const ctx = { runId: jobId, agent: persona?.name ?? job.slug, userEmail: job.owner };
+  await agentRunStarted(ctx, job.message.slice(0, 200));
+
   try {
     const { runMastraAgent } = await import("@/lib/agents/mastra");
     const res = await runMastraAgent({
@@ -24,14 +32,25 @@ export async function processAgentJob(jobId: string): Promise<void> {
     });
     if (!res.ok) {
       await updateAgentJob(jobId, { status: "error", error: res.error || "Agent run failed" });
+      await agentRunFailed(ctx, res.error || "Agent run failed");
     } else {
       await updateAgentJob(jobId, { status: "done", answer: res.answer });
+      await agentRunCompleted(ctx, res.answer.slice(0, 280));
+      // The background run's result gets its core idea captured to the
+      // Research Lab, same as a chat-run agent answer.
+      captureResearchInsight({
+        userEmail: job.owner,
+        source: "agent",
+        sourceRef: jobId,
+        title: `${ctx.agent}: ${job.message.slice(0, 80)}`,
+        rawText: `Task: ${job.message}\n\nResult: ${res.answer}`,
+        reference: { tab: "agents", slug: job.slug },
+      }).catch(() => {});
     }
   } catch (e) {
-    await updateAgentJob(jobId, {
-      status: "error",
-      error: e instanceof Error ? e.message : "Agent run failed",
-    });
+    const message = e instanceof Error ? e.message : "Agent run failed";
+    await updateAgentJob(jobId, { status: "error", error: message });
+    await agentRunFailed(ctx, message);
   }
 }
 

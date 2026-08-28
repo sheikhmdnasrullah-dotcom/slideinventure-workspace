@@ -14,7 +14,11 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { Reveal, Stagger, StaggerItem } from "@/components/system/motion";
 
-export function LinksClient() {
+export function LinksClient({
+  scope = "global",
+}: {
+  scope?: "global" | "ai-venture";
+}) {
   const [links, setLinks] = useState<UsefulLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +36,11 @@ export function LinksClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/links?pageSize=100");
+      const endpoint =
+        scope === "ai-venture"
+          ? "/api/links?tag=ai-venture&pageSize=100"
+          : "/api/links?pageSize=100";
+      const res = await fetch(endpoint);
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error?.message || "Failed to fetch links");
@@ -52,7 +60,7 @@ export function LinksClient() {
     queueMicrotask(() => {
       void fetchLinks();
     });
-  }, []);
+  }, [scope]);
 
   const filteredLinks = links.filter(link => 
     link.title.toLowerCase().includes(search.toLowerCase()) || 
@@ -63,11 +71,14 @@ export function LinksClient() {
   const handleOpenDialog = (link?: UsefulLink) => {
     if (link) {
       setEditingLink(link);
+      const displayTags = link.tags
+        .filter((t) => scope === "global" || t !== "ai-venture")
+        .join(", ");
       setFormData({
         title: link.title,
         url: link.url,
         description: link.description || "",
-        tags: link.tags.join(", ")
+        tags: displayTags,
       });
     } else {
       setEditingLink(null);
@@ -81,11 +92,17 @@ export function LinksClient() {
     setSaveError(null);
     setSaving(true);
     try {
+      const userTags = formData.tags.split(",").map((t) => t.trim()).filter(Boolean);
+      const finalTags =
+        scope === "ai-venture"
+          ? Array.from(new Set(["ai-venture", ...userTags]))
+          : userTags;
+
       const payload = {
         title: formData.title,
         url: formData.url,
         description: formData.description,
-        tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean)
+        tags: finalTags,
       };
 
       const url = editingLink ? `/api/links/${editingLink.id}` : "/api/links";
@@ -143,7 +160,7 @@ export function LinksClient() {
         <div className="relative max-w-sm w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search links..."
+            placeholder={scope === "ai-venture" ? "Search AI Venture links..." : "Search links..."}
             className="pl-9 bg-background"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -170,8 +187,16 @@ export function LinksClient() {
       ) : filteredLinks.length === 0 ? (
         <Reveal className="flex flex-col items-center justify-center flex-1 py-12 text-center text-muted-foreground">
           <LinkIcon className="h-12 w-12 mb-4 text-muted-foreground/30" />
-          <p>No links found.</p>
-          {search && <p className="text-sm">Try adjusting your search query.</p>}
+          <p className="font-medium text-ink-strong">
+            {scope === "ai-venture" ? "No links saved for AI Venture yet." : "No links found."}
+          </p>
+          <p className="text-xs text-ink-muted mt-1 max-w-xs">
+            {search
+              ? "Try adjusting your search query."
+              : scope === "ai-venture"
+              ? "Bookmark tools, research papers, and URLs dedicated to this venture using the Add Link button above."
+              : "Add your first bookmarked link using the button above."}
+          </p>
         </Reveal>
       ) : (
         <Stagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -230,7 +255,14 @@ export function LinksClient() {
                 <CardFooter className="pt-0">
                   <div className="flex flex-wrap gap-2">
                     {link.tags.map(tag => (
-                      <span key={tag} className="px-2 py-0.5 rounded-full bg-secondary/50 text-xs text-secondary-foreground font-medium">
+                      <span
+                        key={tag}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          tag === "ai-venture"
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "bg-secondary/50 text-secondary-foreground"
+                        }`}
+                      >
                         {tag}
                       </span>
                     ))}
@@ -249,9 +281,21 @@ export function LinksClient() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingLink ? "Edit Link" : "Add Link"}</DialogTitle>
+            <DialogTitle>
+              {editingLink
+                ? scope === "ai-venture"
+                  ? "Edit AI Venture Link"
+                  : "Edit Link"
+                : scope === "ai-venture"
+                ? "Add Link to AI Venture"
+                : "Add Link"}
+            </DialogTitle>
             <DialogDescription>
-              {editingLink ? "Update your saved link." : "Save a new link to your bookmarks."}
+              {scope === "ai-venture"
+                ? "Save a tool, reference, or website dedicated to AI Venture."
+                : editingLink
+                ? "Update your saved link."
+                : "Save a new link to your bookmarks."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -289,7 +333,11 @@ export function LinksClient() {
                 id="tags" 
                 value={formData.tags} 
                 onChange={e => setFormData({ ...formData, tags: e.target.value })} 
-                placeholder="search, tools, utility (comma separated)"
+                placeholder={
+                  scope === "ai-venture"
+                    ? "tools, research, docs (ai-venture tag added automatically)"
+                    : "search, tools, utility (comma separated)"
+                }
               />
             </div>
           </div>

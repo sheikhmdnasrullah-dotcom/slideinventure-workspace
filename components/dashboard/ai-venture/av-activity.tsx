@@ -61,8 +61,9 @@ function fromEvent(e: DomainEvent): Row {
 }
 
 // Activity scoped to this section. AI Venture writes use the "ai_venture" and
-// "concepts" categories; both map to the "ai-venture" source, so we fetch both
-// and merge, and watch that source live.
+// "concepts" categories (source "ai-venture"); agent runs use "agents"
+// (source "agents"), foreground and background alike. Fetch all three and
+// merge so an agent job finishing in the background shows up here too.
 export function AvActivity() {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,11 +73,12 @@ export function AvActivity() {
     setLoading(true)
     setError(null)
     try {
-      const [a, b] = await Promise.all([
+      const [a, b, c] = await Promise.all([
         fetch("/api/activities?category=ai_venture&limit=50").then((r) => r.json()),
         fetch("/api/activities?category=concepts&limit=50").then((r) => r.json()),
+        fetch("/api/activities?category=agents&limit=50").then((r) => r.json()),
       ])
-      const merged: Row[] = [...(a.activities ?? []), ...(b.activities ?? [])]
+      const merged: Row[] = [...(a.activities ?? []), ...(b.activities ?? []), ...(c.activities ?? [])]
         .map(toRow)
         .sort(
           (x, y) => new Date(y.timestamp).getTime() - new Date(x.timestamp).getTime()
@@ -93,7 +95,7 @@ export function AvActivity() {
     load()
   }, [load])
 
-  const { events } = useLiveEvents({ sources: ["ai-venture"] })
+  const { events } = useLiveEvents({ sources: ["ai-venture", "agents", "research-lab"] })
 
   useEffect(() => {
     if (!events.length) return
@@ -112,8 +114,10 @@ export function AvActivity() {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-4 py-2">
-        <h2 className="text-sm font-medium">Activity</h2>
-        <p className="text-xs text-muted-foreground">Work done in this section, newest first.</p>
+        <h2 className="text-sm font-medium">Agents Activity</h2>
+        <p className="text-xs text-muted-foreground">
+          Every run and edit in this venture, including agents working in the background, newest first.
+        </p>
       </div>
       {loading ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">

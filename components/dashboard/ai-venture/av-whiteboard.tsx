@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useQueryState } from "nuqs"
 import { ArrowLeft, PenTool, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -111,8 +112,19 @@ function BoardList({ engine, onOpen }: { engine: BoardEngine; onOpen: (id: strin
 }
 
 export function AvWhiteboard() {
+  const [deepLinkBoard, setDeepLinkBoard] = useQueryState("board")
   const [engine, setEngine] = useState<BoardEngine | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  // Deep link from Research Lab ("Open source"): jump straight to the
+  // referenced excalidraw board, then drop the query param.
+  useEffect(() => {
+    if (!deepLinkBoard) return
+    setEngine("excalidraw")
+    setActiveId(deepLinkBoard)
+    void setDeepLinkBoard(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkBoard])
 
   if (activeId && engine) {
     const frameUrl =

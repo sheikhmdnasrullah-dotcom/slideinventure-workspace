@@ -6,6 +6,7 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
+import { useQueryState } from "nuqs"
 import { formatDistanceToNow } from "date-fns"
 import { Plus, Trash2, FileText, Loader2, Pencil, X } from "lucide-react"
 import { toast } from "sonner"
@@ -35,6 +36,7 @@ type Note = { id: string; title: string | null; content: string; updated_at: str
 // duplicated, so AI Venture notes are real notes in the same system, not a
 // second disconnected note store.
 export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-venture" | "brainstorm" }) {
+  const [deepLinkNote, setDeepLinkNote] = useQueryState("note")
   const [notes, setNotes] = React.useState<Note[]>([])
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [content, setContent] = React.useState<string>("[]")
@@ -100,6 +102,16 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
       setStatus("idle")
     }
   }
+
+  // Deep link from Research Lab ("Open source"): once notes have loaded, open
+  // the referenced note directly, then drop the query param.
+  React.useEffect(() => {
+    if (loading || !deepLinkNote) return
+    const note = notes.find((n) => n.id === deepLinkNote)
+    if (note) selectNote(note)
+    void setDeepLinkNote(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, deepLinkNote, notes])
 
   const persist = React.useCallback(
     (id: string, nextContent: string, nextTitle: string) => {

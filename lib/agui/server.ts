@@ -63,6 +63,7 @@ export async function agentRunStarted(ctx: AgentRunContext, description = "") {
     entityType: "agent_run",
     eventType: "agent.started",
     source: "agents",
+    userEmail: ctx.userEmail ?? null,
   });
 }
 
@@ -136,6 +137,7 @@ export async function agentRunCompleted(ctx: AgentRunContext, summary = "") {
     entityType: "agent_run",
     eventType: "agent.completed",
     source: "agents",
+    userEmail: ctx.userEmail ?? null,
   });
 }
 
@@ -151,6 +153,7 @@ export async function agentRunFailed(ctx: AgentRunContext, message: string) {
     eventType: "agent.failed",
     source: "agents",
     notify: true,
+    userEmail: ctx.userEmail ?? null,
   });
 }
 

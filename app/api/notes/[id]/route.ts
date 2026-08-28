@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { waitUntil } from "@vercel/functions"
 import { getSessionUser } from "@/lib/appwrite/auth"
 import { databases, storage } from "@/lib/appwrite/server"
 import { Query } from "node-appwrite"
@@ -8,6 +9,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit"
 import { logActivity } from "@/lib/activities/client"
 import { upsertVector, deleteVector } from "@/lib/retrieval/vector-index"
 import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text"
+import { captureResearchInsight } from "@/lib/research-lab/capture"
 
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.notes
@@ -95,6 +97,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if ((doc.scope ?? "global") !== "ai-venture") {
       const text = [doc.title, blockNoteToPlainText(doc.content as string)].filter(Boolean).join("\n")
       upsertVector({ collection: "notes", docId: id, text }).catch(() => {})
+    } else if (user.email) {
+      // AI Venture notes constantly feed the Research Lab: the core idea of
+      // whatever is written here shows up there automatically, organized
+      // instead of scattered.
+      waitUntil(
+        captureResearchInsight({
+          userEmail: user.email,
+          source: "notepad",
+          sourceRef: id,
+          title: (doc.title as string) || "Untitled note",
+          rawText: blockNoteToPlainText(doc.content as string),
+          reference: { tab: "notepad", note: id },
+        }).catch(() => {})
+      )
     }
 
     return Response.json({ note: serialize(doc) })

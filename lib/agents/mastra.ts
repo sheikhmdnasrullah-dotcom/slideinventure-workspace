@@ -9,7 +9,7 @@ import { runBrowseTask } from "@/lib/browse/agent";
 import { createWorkingMemory, getWorkingMemory } from "@/lib/memory/working-memory";
 import { mem0Remember, mem0Recall, mem0Enabled } from "@/lib/memory/mem0";
 import { tavilySearch } from "@/lib/search/tavily";
-import { listComposioConnections } from "@/lib/integrations/composio";
+import { listComposioConnections, findComposioTools, executeComposioTool } from "@/lib/integrations/composio";
 import { NVIDIA_DEFAULT_MODEL } from "@/lib/llm/gateway";
 
 // DeepSeek and NVIDIA's chat APIs are both OpenAI-compatible, so we point the
@@ -148,6 +148,32 @@ export async function runMastraAgent(opts: {
     },
   });
 
+  const findToolsTool = createTool({
+    id: "find_integration_tools",
+    description:
+      "Search for specific executable actions (e.g. 'send email', 'create calendar event', 'post message') across the apps connected in the Integrations section. Returns tool slugs to pass to run_integration_tool. Only searches apps that are actually connected.",
+    inputSchema: z.object({ query: z.string().describe("what action you're looking for") }),
+    execute: async ({ query }) => {
+      const tools = await findComposioTools(query).catch(() => []);
+      if (!tools.length) return "No matching connected-integration actions found.";
+      return tools.map((t) => `${t.slug}: ${t.name} — ${t.description}`).join("\n");
+    },
+  });
+
+  const runToolTool = createTool({
+    id: "run_integration_tool",
+    description:
+      "Execute one connected-integration action by its exact slug (from find_integration_tools) with the arguments it needs. This performs the real action (e.g. actually sends the email) — only call it once you're sure of the slug and arguments.",
+    inputSchema: z.object({
+      slug: z.string().describe("exact tool slug from find_integration_tools"),
+      arguments: z.record(z.string(), z.unknown()).describe("arguments for the tool"),
+    }),
+    execute: async ({ slug, arguments: toolArgs }) => {
+      const res = await executeComposioTool(slug, toolArgs ?? {});
+      return res.ok ? res.result : `error: ${res.result}`;
+    },
+  });
+
   const agent = new Agent({
     name: persona.name,
     instructions: persona.prompt,
@@ -157,6 +183,8 @@ export async function runMastraAgent(opts: {
       retrieve: retrieveTool,
       browse: browseTool,
       integrations: integrationsTool,
+      find_integration_tools: findToolsTool,
+      run_integration_tool: runToolTool,
       remember: rememberTool,
       recall: recallTool,
     },

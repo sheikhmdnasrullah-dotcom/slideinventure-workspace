@@ -13,6 +13,7 @@ import {
   Lightbulb,
   Bot,
   Activity,
+  Send,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -22,6 +23,10 @@ import { ActiveTabIndicator, TabTransition } from "@/components/system/motion"
 const AvFiles = dynamic(() => import("./av-files").then((m) => m.AvFiles), {
   ssr: false,
   loading: () => <Loading label="Files" />,
+})
+const AvUsefulLinks = dynamic(() => import("./av-useful-links").then((m) => m.AvUsefulLinks), {
+  ssr: false,
+  loading: () => <Loading label="Useful Links" />,
 })
 const AvQuery = dynamic(() => import("./av-query").then((m) => m.AvQuery), {
   ssr: false,
@@ -59,6 +64,7 @@ const AvActivity = dynamic(() => import("./av-activity").then((m) => m.AvActivit
 type SectionId =
   | "home"
   | "files"
+  | "useful-links"
   | "query"
   | "research"
   | "playground"
@@ -72,12 +78,13 @@ const SECTIONS: { id: SectionId; label: string; icon: LucideIcon; description: s
   { id: "research", label: "Research Lab", icon: FlaskConical, description: "Investigate and gather sources" },
   { id: "playground", label: "Playground", icon: LayoutGrid, description: "Experiment with prompts and models" },
   { id: "files", label: "Files", icon: FolderOpen, description: "Uploads and generated files" },
+  { id: "useful-links", label: "Useful Links", icon: Send, description: "Curated bookmarks and resources for this venture" },
   { id: "query", label: "AI Query", icon: Sparkles, description: "Ask across your knowledge" },
   { id: "brainstorm", label: "Brainstorm", icon: PenTool, description: "Whiteboard and connect ideas visually" },
   { id: "notepad", label: "Notepad", icon: NotebookPen, description: "Free-form notes for this venture" },
   { id: "connected", label: "Connected Ideas", icon: Lightbulb, description: "Idea maps linked across research" },
   { id: "agents", label: "Agents", icon: Bot, description: "Run and monitor AI agents" },
-  { id: "activity", label: "Activity", icon: Activity, description: "Recent activity in this venture" },
+  { id: "activity", label: "Agents Activity", icon: Activity, description: "Live feed of every agent run and section edit" },
 ]
 
 const SECTION_IDS = ["home", ...SECTIONS.map((s) => s.id)] as SectionId[]
@@ -190,6 +197,7 @@ export function AiVentureWorkspace() {
           <TabTransition tabKey={active} className="flex min-w-0 flex-1 flex-col overflow-hidden">
             {active === "home" && <Launcher onSelect={select} />}
             {active === "files" && <AvFiles />}
+            {active === "useful-links" && <AvUsefulLinks />}
             {active === "query" && <AvQuery />}
             {active === "research" && <AvResearch />}
             {active === "playground" && <AvPlayground />}

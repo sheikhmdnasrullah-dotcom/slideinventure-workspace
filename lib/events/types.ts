@@ -143,6 +143,7 @@ const SUBJECT_BY_ENTITY_TYPE: Record<string, string> = {
   folder: "file",
   knowledge_item: "knowledge",
   research_thread: "research",
+  research_item: "research",
   finding: "research",
   source: "research",
   decision: "research",

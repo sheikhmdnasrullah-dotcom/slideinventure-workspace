@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryState } from "nuqs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -146,6 +147,7 @@ function getFileTypeInfo(name: string, type: "file" | "folder") {
 }
 
 export function AvFiles() {
+  const [deepLinkPath, setDeepLinkPath] = useQueryState("path");
   const [tree, setTree] = useState<VentureNode | null>(null);
   const [currentPath, setCurrentPath] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
@@ -205,6 +207,18 @@ export function AvFiles() {
       setBusy(false);
     }
   };
+
+  // Deep link from Research Lab ("Open source"): once the tree has loaded,
+  // jump straight to the referenced file and its folder, then drop the query
+  // param so it doesn't re-trigger on subsequent navigation within Files.
+  useEffect(() => {
+    if (!tree || !deepLinkPath) return;
+    const folder = deepLinkPath.includes("/") ? deepLinkPath.slice(0, deepLinkPath.lastIndexOf("/")) : "";
+    setCurrentPath(folder);
+    openFile(deepLinkPath);
+    void setDeepLinkPath(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tree, deepLinkPath]);
 
   const save = async () => {
     if (!selected) return;

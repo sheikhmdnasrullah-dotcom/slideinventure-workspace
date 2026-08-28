@@ -1,9 +1,12 @@
 import { NextRequest } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { writeFileContent, VentureFsError } from "@/lib/ai-venture/fs";
 import { logActivity } from "@/lib/activities/client";
+import { extractFileText } from "@/lib/knowledge/file-extract";
+import { captureResearchInsight } from "@/lib/research-lab/capture";
 
 // A real "pick a file from your device" upload. The AI Venture file system
 // previously only supported creating an empty text file at a path via a
@@ -43,6 +46,28 @@ export async function POST(request: NextRequest) {
       entityType: "file",
       metadata: { size: file.size, type: file.type },
     }).catch(() => {});
+
+    // Text, CSV, Markdown, and PDF uploads get analyzed and their core idea
+    // captured to the Research Lab, with a reference back to this file.
+    if (user.email) {
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+      if (["txt", "text", "md", "markdown", "csv", "tsv", "pdf"].includes(ext)) {
+        waitUntil(
+          extractFileText(new File([buffer], file.name, { type: file.type }))
+            .then((extracted) =>
+              captureResearchInsight({
+                userEmail: user.email!,
+                source: "files",
+                sourceRef: path,
+                title: file.name,
+                rawText: extracted.text,
+                reference: { tab: "files", path },
+              })
+            )
+            .catch(() => {})
+        );
+      }
+    }
 
     return Response.json({ ok: true, path }, { status: 201 });
   } catch (error) {
