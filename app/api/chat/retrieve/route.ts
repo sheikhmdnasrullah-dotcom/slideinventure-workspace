@@ -244,6 +244,26 @@ async function searchWeb(query: string): Promise<RetrievalResult[]> {
   }
 }
 
+import { getPersistentMemories } from "@/lib/memory/obsidian-memory";
+
+async function searchPersistentMemories(query: string, userEmail?: string): Promise<RetrievalResult[]> {
+  if (!query.trim()) return [];
+  try {
+    const memories = await getPersistentMemories({ userEmail, query, limit: 5 });
+    return memories.map((m) => ({
+      source: "memory",
+      title: m.title || "Persistent Memory",
+      snippet: buildExcerpt(m.content, query),
+      sourceId: m.id,
+      path: m.path,
+      score: 1.0,
+    }));
+  } catch (err) {
+    console.warn("searchPersistentMemories failed (non-fatal):", err);
+    return [];
+  }
+}
+
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
@@ -259,7 +279,8 @@ export async function POST(request: NextRequest) {
 
   const start = Date.now();
 
-  const [knowledge, leads, terminal, apps, links, web] = await Promise.all([
+  const [memories, knowledge, leads, terminal, apps, links, web] = await Promise.all([
+    searchPersistentMemories(message, user.email),
     searchKnowledgeChunks(message),
     searchExternal("leads", message),
     searchExternal("terminal", message),
@@ -269,6 +290,7 @@ export async function POST(request: NextRequest) {
   ]);
 
   const sources: SourceGroup[] = [
+    { source: "memory", label: "Dashboard Memory", results: memories, matchCount: memories.length },
     { source: "knowledge", label: "Knowledge base", results: knowledge, matchCount: knowledge.length },
     { source: "leads", label: "Leads", results: leads, matchCount: leads.length },
     { source: "terminal", label: "Terminal history", results: terminal, matchCount: terminal.length },

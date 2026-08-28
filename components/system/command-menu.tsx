@@ -279,11 +279,11 @@ function CommandMenuBody() {
         run: () =>
           createAndToast(
             router,
-            "/api/affine",
-            { section: "research" },
-            (d) => d.workspace?.id,
+            "/api/boards",
+            { title: "New Research Project", scope: "research", content: "{}" },
+            (d) => d.board?.id,
             "/research-lab",
-            "Research workspace created"
+            "Research project created"
           ),
       },
       {

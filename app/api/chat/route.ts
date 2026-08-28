@@ -8,6 +8,10 @@ import { nvidiaComplete } from "@/lib/llm/nvidia";
 import { searchVector, type VectorCollection } from "@/lib/retrieval/vector-index";
 import { tavilySearch } from "@/lib/search/tavily";
 import { logActivity } from "@/lib/activities/client";
+import {
+  getConsolidatedMemoryContext,
+  detectAndProcessMemoryIntent,
+} from "@/lib/memory/obsidian-memory";
 import { NextRequest } from "next/server";
 
 const DB = APPWRITE.databaseId;
@@ -189,40 +193,56 @@ export async function POST(request: NextRequest) {
     created_at: new Date().toISOString(),
   });
 
-  // Retrieve evidence: Knowledge (fulltext chunks) plus every other section
-  // (Documents, Notes, Terminal, Links) via the shared semantic index, so the
-  // assistant can actually answer from what's stored across the workspace,
-  // not just Knowledge.
-  const [evidence, crossSection, webHits] = await Promise.all([
+  // Check if the user is asking to save/remember something into persistent memory/knowledge
+  const memoryAction = await detectAndProcessMemoryIntent(message, user.email).catch(() => ({
+    detected: false,
+    saved: false,
+  }));
+
+  // Retrieve evidence: Persistent memory (SecondBrain/Dashboard), Knowledge (fulltext chunks),
+  // plus cross-section (Documents, Notes, Terminal, Links) and live web search.
+  const [persistentMemoryContext, evidence, crossSection, webHits] = await Promise.all([
+    getConsolidatedMemoryContext({ userEmail: user.email, query: message }).catch(() => ""),
     retrieveEvidence(message, filters),
     retrieveCrossSection(message).catch(() => [] as CrossSectionHit[]),
     tavilySearch(message, { maxResults: 5 }).catch(() => []),
   ]);
 
   // Build context for LLM
-  const contextParts = evidence.map((e, i) => {
+  const contextParts: string[] = [];
+  if (persistentMemoryContext) {
+    contextParts.push(`[Persistent Memory (Obsidian / Dashboard)]\n${persistentMemoryContext}`);
+  }
+  evidence.forEach((e, i) => {
     const header = e.heading ? `${e.heading}\n` : "";
-    return `[${i + 1}] ${header}${e.text}`;
+    contextParts.push(`[${contextParts.length + 1}] ${header}${e.text}`);
   });
-  crossSection.forEach((hit, i) => {
-    contextParts.push(`[${evidence.length + i + 1}] (from ${hit.collection}) ${hit.text}`);
+  crossSection.forEach((hit) => {
+    contextParts.push(`[${contextParts.length + 1}] (from ${hit.collection}) ${hit.text}`);
   });
-  webHits.forEach((h, i) => {
+  webHits.forEach((h) => {
     contextParts.push(
-      `[${evidence.length + crossSection.length + i + 1}] (from web, ${h.url}) ${h.title}\n${h.content}`
+      `[${contextParts.length + 1}] (from web, ${h.url}) ${h.title}\n${h.content}`
     );
   });
   const context = contextParts.join("\n\n---\n\n");
 
-  const systemPrompt = `You are the SlideIn Venture OS assistant. Answer using the provided evidence, which may be drawn from the user's internal workspace (Knowledge, Documents, Notes, Terminal, Links) and/or live web search results (labeled "from web").
-- Prefer internal evidence when it is relevant.
-- You MAY use web results to answer when internal evidence is insufficient or the question is about current or realtime information.
-- If no evidence at all is available, say you couldn't find anything in the workspace or the web.
-Cite evidence by number [1], [2], etc. Do not hallucinate.`;
+  let memoryNotice = "";
+  if (memoryAction.saved && "fact" in memoryAction && memoryAction.fact) {
+    memoryNotice = `\n\n[SYSTEM NOTIFICATION]: The fact "${memoryAction.fact}" has been successfully saved to persistent memory in the Obsidian vault (SecondBrain/Dashboard/Memory.md). Acknowledge that it has been saved, adhering to any user instructions or formatting constraints.`;
+  }
+
+  const systemPrompt = `You are the SlideIn Venture OS assistant.
+You have persistent memory across conversations stored in the workspace's Obsidian vault (SecondBrain/Dashboard/Memory.md and SecondBrain/Memory/).
+- For workspace, knowledge, or memory questions: answer accurately using the provided evidence and your persistent memory.
+- For greetings or conversational inquiries: answer warmly and helpfully.
+- Prefer internal evidence and persistent memory when relevant.
+- You MAY use web results to answer when internal evidence is insufficient or the question is about current/realtime information.
+Cite evidence sources when referring to specific documents or web links. Follow user formatting constraints strictly.${memoryNotice}`;
 
   const messages = [
     { role: "system", content: systemPrompt },
-    { role: "user", content: `Question: ${message}\n\nEvidence:\n${context}` },
+    { role: "user", content: `Question: ${message}\n\nEvidence & Memory Context:\n${context}` },
   ];
 
   // Get LLM answer

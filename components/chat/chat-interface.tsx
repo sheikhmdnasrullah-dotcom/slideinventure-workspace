@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { format, isToday, isYesterday } from "date-fns";
-import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink, Trash2, BookOpen, User, Terminal, Puzzle, Link as LinkIcon, FileText, Globe } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquarePlus, ExternalLink, Trash2, BookOpen, User, Terminal, Puzzle, Link as LinkIcon, FileText, Globe, Brain } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,7 @@ function groupMessagesByDay(messages: Message[]) {
 }
 
 const SOURCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  memory: Brain,
   knowledge: BookOpen,
   leads: User,
   terminal: Terminal,

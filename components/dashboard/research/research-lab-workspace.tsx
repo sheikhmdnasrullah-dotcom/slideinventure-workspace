@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FileText, FolderOpen, LayoutGrid, PenTool, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ function emptyProject(): Project {
 }
 
 export function ResearchLabWorkspace() {
+  const searchParams = useSearchParams();
+  const initialId = searchParams.get("id");
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
   const [active, setActive] = useState<Project | null>(null);
   const [frame, setFrame] = useState<string | null>(null);
@@ -42,6 +45,14 @@ export function ResearchLabWorkspace() {
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  // If we landed here with ?id=... (e.g. command palette "New Research"),
+  // open that project automatically once the list is loaded.
+  useEffect(() => {
+    if (!initialId || active) return;
+    void selectProject(initialId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialId, projects.length]);
 
   const persist = useCallback(async (p: Project) => {
     try {

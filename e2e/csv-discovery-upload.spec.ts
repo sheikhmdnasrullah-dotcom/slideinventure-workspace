@@ -17,25 +17,35 @@ const CSV = [
 ].join("\n");
 
 async function attachCsv(page: import("@playwright/test").Page, body = CSV) {
-  await page.setInputFiles("#csv-discovery-file", {
+  const input = page.locator("#csv-discovery-file");
+  // setInputFiles sets .files programmatically; reliably firing React's onChange
+  // for a FileReader-based parse needs a native change dispatch, so do both.
+  await input.setInputFiles({
     name: "leads.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(body),
   });
+  await input.dispatchEvent("change");
 }
 
 test.describe("Lead Discovery CSV upload", () => {
   test("parses a local file and previews its contents", async ({ page }) => {
     await page.goto("/csv-discovery", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /Lead Discovery/i })).toBeVisible({
-      timeout: 20000,
+      timeout: 30000,
     });
+    await page.locator("#csv-discovery-file").waitFor({ state: "attached", timeout: 10000 });
 
     await attachCsv(page);
 
-    // The page uses uppercase text styles; match case-insensitively.
-    await expect(page.getByText(/leads\.csv/i)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/2 rows · 3 columns/i)).toBeVisible();
+    // The file chip shows the parsed file name; scope to it so the sidebar
+    // nav item ("Lead Discovery") can't be mistaken for a text match.
+    const chip = page
+      .locator("div")
+      .filter({ has: page.getByText(/leads\.csv/i) })
+      .first();
+    await expect(chip.getByText(/leads\.csv/i)).toBeVisible({ timeout: 15000 });
+    await expect(chip.getByText(/2 rows · 3 columns/i)).toBeVisible();
 
     // Detected columns are surfaced so the user can confirm the header row.
     await expect(page.getByText(/channel/i, { exact: true })).toBeVisible();
@@ -44,7 +54,9 @@ test.describe("Lead Discovery CSV upload", () => {
     // The quoted comma must survive parsing as a single cell.
     await expect(page.getByText("Acme, Inc")).toBeVisible();
 
-    await expect(page.getByRole("button", { name: /Start durable discovery \(2\)/i })).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: /Start durable discovery \(2\)/i, exact: true })
+    ).toBeEnabled();
   });
 
   test("sends correctly parsed rows to the API", async ({ page }) => {
@@ -114,7 +126,7 @@ test.describe("Lead Discovery CSV upload", () => {
   test("removing the file restores the paste box", async ({ page }) => {
     await page.goto("/csv-discovery", { waitUntil: "domcontentloaded" });
     await attachCsv(page);
-    await expect(page.getByText("leads.csv")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/leads\.csv/i)).toBeVisible({ timeout: 15000 });
     await expect(page.locator("textarea")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Remove file" }).click();

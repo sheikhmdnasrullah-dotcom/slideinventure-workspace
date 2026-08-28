@@ -6,6 +6,10 @@ import {
   promoteToKnowledge,
   getWorkingMemoryStats,
 } from "@/lib/memory/working-memory";
+import {
+  savePersistentMemory,
+  getPersistentMemories,
+} from "@/lib/memory/obsidian-memory";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -14,11 +18,21 @@ export async function GET(request: NextRequest) {
 
   const includeExpired = request.nextUrl.searchParams.get("includeExpired") === "1";
   const stats = request.nextUrl.searchParams.get("stats") === "1";
-  const entries = await getWorkingMemory(user.email, { includeExpired });
+  const query = request.nextUrl.searchParams.get("query") || undefined;
+
+  const [entries, persistentMemories] = await Promise.all([
+    getWorkingMemory(user.email, { includeExpired }),
+    getPersistentMemories({ userEmail: user.email, query }),
+  ]);
+
   if (stats) {
-    return NextResponse.json({ entries, stats: await getWorkingMemoryStats(user.email) });
+    return NextResponse.json({
+      entries,
+      persistentMemories,
+      stats: await getWorkingMemoryStats(user.email),
+    });
   }
-  return NextResponse.json({ entries });
+  return NextResponse.json({ entries, persistentMemories });
 }
 
 export async function POST(request: NextRequest) {
@@ -28,6 +42,22 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const content = (body.content as string | undefined)?.toString().slice(0, 5000);
   if (!content) return NextResponse.json({ error: "content required" }, { status: 400 });
+
+  const isPersistent = body.persistent === true || body.type === "persistent";
+
+  if (isPersistent) {
+    const res = await savePersistentMemory({
+      userEmail: user.email,
+      content,
+      title: body.title,
+      category: body.category || "dashboard",
+      tags: body.tags,
+      source: (body.source as string) || "dashboard-manual",
+      context: body.context || {},
+    });
+    if (!res.success) return NextResponse.json({ error: res.error }, { status: 500 });
+    return NextResponse.json({ ok: true, memory: res.memoryItem });
+  }
 
   const res = await createWorkingMemory({
     user_email: user.email,

@@ -8,9 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync": "tsx --env-file=.env.local scripts/sync-knowledge.ts",
-    "sync:watch": "tsx --env-file=.env.local scripts/sync-watch.ts",
-    "task": "tsx --env-file=.env.local scripts/task.ts"
+    "sync": "tsx --conditions=react-server --env-file=.env.local scripts/sync-knowledge.ts",
+    "sync:watch": "tsx --conditions=react-server --env-file=.env.local scripts/sync-watch.ts",
+    "task": "tsx --conditions=react-server --env-file=.env.local scripts/task.ts"
   },
   "dependencies": {
     "@ag-ui/client": "^0.0.58",
