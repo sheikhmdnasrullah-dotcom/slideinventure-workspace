@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EvidenceBlock } from "@/components/system";
 import { Highlight } from "@/components/knowledge/highlight";
+import { SiteHeader } from "@/components/dashboard/site-header";
 
 type MessageRole = "user" | "assistant";
 
@@ -361,11 +362,13 @@ export function ChatInterface() {
   const messageGroups = groupMessagesByDay(messages);
 
   return (
-    <div className="flex h-full">
+    <>
+      <SiteHeader crumbs={[{ label: "Chat" }]} subtitle="Intelligent assistant" />
+      <div className="flex h-[calc(100vh-var(--header-height))]">
       {/* Sidebar - Session list */}
-      <aside className="flex w-72 shrink-0 flex-col border-r bg-background">
-        <div className="flex h-14 shrink-0 items-center justify-between border-b px-3">
-          <span className="text-sm font-medium">Conversations</span>
+      <aside className="flex w-72 shrink-0 flex-col border-r border-rule bg-[var(--surface-2)]/40">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-rule px-3">
+          <span className="font-label text-ink-faint">Conversations</span>
         </div>
 
         <ScrollArea className="flex-1">
@@ -385,14 +388,14 @@ export function ChatInterface() {
                 <button
                   onClick={() => setActiveSessionId(session.id)}
                   className={cn(
-                    "w-full rounded-md px-2 py-2 pr-8 text-left text-sm transition-colors",
+                    "w-full rounded-sm px-2 py-2 pr-8 text-left font-body-tight text-sm transition-colors",
                     activeSessionId === session.id
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      ? "bg-[var(--surface-2)] text-ink-strong"
+                      : "text-ink-muted hover:bg-[var(--surface-2)]/60 hover:text-ink-strong"
                   )}
                 >
                   <span className="block truncate">{session.title}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="font-label text-ink-faint">
                     {new Date(session.updatedAt).toLocaleDateString()}
                   </span>
                 </button>
@@ -400,7 +403,7 @@ export function ChatInterface() {
                   type="button"
                   aria-label="Delete conversation"
                   onClick={() => deleteSession(session.id)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-ink-faint opacity-0 transition-opacity hover:text-[var(--status-danger)] group-hover:opacity-100"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -413,8 +416,8 @@ export function ChatInterface() {
       {/* Main chat area */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-          <h1 className="truncate text-sm font-semibold">
+        <div className="flex h-12 shrink-0 items-center gap-3 border-b border-rule px-4">
+          <h1 className="truncate font-body-tight text-sm font-medium text-ink-strong">
             {activeSessionId ? activeSession?.title || "Conversation" : "Start a conversation"}
           </h1>
           {activeSessionId && citedCount > 0 && (
@@ -561,8 +564,8 @@ export function ChatInterface() {
         </ScrollArea>
 
         {/* Composer */}
-        <div className="shrink-0 border-t p-4">
-          <div className="flex items-end gap-2">
+        <div className="shrink-0 border-t border-rule p-4">
+          <div className="flex items-end gap-2 rounded-md border border-rule-strong bg-[var(--surface)] p-1.5 focus-within:border-[var(--text-accent)]">
             <Textarea
               ref={textareaRef}
               value={input}
@@ -571,7 +574,7 @@ export function ChatInterface() {
               disabled={streaming}
               placeholder={streaming ? "Sending" : "Ask about knowledge, research, or SOPs"}
               rows={1}
-              className="max-h-40 min-h-[40px] flex-1 resize-none"
+              className="max-h-40 min-h-[36px] flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
             />
             <Button size="icon" onClick={sendMessage} disabled={!input.trim() || streaming}>
               {streaming ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -579,6 +582,7 @@ export function ChatInterface() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

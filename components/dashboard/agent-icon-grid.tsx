@@ -24,7 +24,7 @@ export function AgentIconGrid({ agents }: { agents: RosterAgent[] }) {
           <button
             key={a.slug}
             onClick={() => router.push(`/agents/${a.slug}`)}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-rule bg-[var(--surface)] p-4 text-center transition-all hover:-translate-y-0.5 hover:border-[var(--text-accent)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+            className="group flex flex-col items-center gap-2 rounded-md border border-rule bg-[var(--surface)] p-4 text-center transition-all duration-base ease-std hover:-translate-y-0.5 hover:border-[var(--text-accent)] hover:shadow-[var(--shadow-float)]"
           >
             <span
               className="flex size-14 items-center justify-center rounded-xl text-ink-strong"

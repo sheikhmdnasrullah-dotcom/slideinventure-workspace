@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog";
+import { LUCIDCHART_URL } from "@/lib/lucidchart";
 import { IdeaMapsPanel } from "@/components/dashboard/ideas/idea-maps-panel";
 import { useLiveRefresh } from "@/components/providers/event-stream";
 import { SiteHeader } from "@/components/dashboard/site-header";
@@ -211,6 +212,14 @@ function BoardList() {
         <Button size="sm" onClick={newBoard}>
           <Plus className="size-3" /> New
         </Button>
+        <a
+          href={LUCIDCHART_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 text-sm font-medium hover:bg-accent"
+        >
+          <Plus className="size-3" /> Lucidchart
+        </a>
       </div>
 
       {loading ? (
@@ -413,6 +422,14 @@ function WorkspaceList() {
         <Button size="sm" onClick={newWorkspace}>
           <Plus className="size-3" /> New
         </Button>
+        <a
+          href={LUCIDCHART_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 text-sm font-medium hover:bg-accent"
+        >
+          <Plus className="size-3" /> Lucidchart
+        </a>
       </div>
 
       {loading ? (

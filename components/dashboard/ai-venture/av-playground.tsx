@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { PenTool, Trash2 } from "lucide-react"
 import { AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog"
+import { LUCIDCHART_URL } from "@/lib/lucidchart"
 
 type Engine = BoardEngine
 type PlaygroundItem = { id: string; engine: Engine; title: string; updated_at: string }
@@ -135,6 +136,16 @@ export function AvPlayground() {
               </div>
             </div>
           ))}
+          <a
+            href={LUCIDCHART_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative flex flex-col items-center gap-2 rounded-xl border border-dashed p-4 text-sm hover:bg-accent"
+          >
+            <PenTool className="size-8 text-muted-foreground" />
+            <span className="line-clamp-1 text-center">Lucidchart</span>
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">university</span>
+          </a>
         </div>
       )}
     </div>

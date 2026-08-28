@@ -2,15 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Beaker, Copy, Edit3, Plus, Search, Star } from "lucide-react"
+import { Beaker, ChevronRight, Copy, Plus, Search, Star, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FilterBar, LoadingState, ErrorState, EmptyState } from "@/components/system"
+import {
+  FilterBar,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+  Surface,
+  Divider,
+  SectionRule,
+  StatusBadge,
+} from "@/components/system"
 import { AddCommandDialog } from "./add-command-dialog"
 
 export type TerminalCommand = {
@@ -203,27 +211,41 @@ export function TerminalCommands() {
       ) : filteredCommands.total === 0 ? (
         <EmptyState eyebrow="Terminal" title="No commands found" description="Save reusable bash and terminal commands to build your library." />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredCommands.favorites.map((cmd) => (
-            <CommandCard
-              key={cmd.id}
-              command={cmd}
-              onCopy={handleCopy}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          ))}
-          {filteredCommands.rest.map((cmd) => (
-            <CommandCard
-              key={cmd.id}
-              command={cmd}
-              onCopy={handleCopy}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          ))}
+        <div className="flex flex-col gap-6">
+          {filteredCommands.favorites.length > 0 && (
+            <div className="flex flex-col">
+              <SectionRule label="Favorites" coordinate={filteredCommands.favorites.length} />
+              <Surface variant="raised" className="divide-y divide-rule px-0 py-0">
+                {filteredCommands.favorites.map((cmd) => (
+                  <CommandRow
+                    key={cmd.id}
+                    command={cmd}
+                    onCopy={handleCopy}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                ))}
+              </Surface>
+            </div>
+          )}
+          {filteredCommands.rest.length > 0 && (
+            <div className="flex flex-col">
+              <SectionRule label="Library" coordinate={filteredCommands.rest.length} />
+              <Surface variant="raised" className="divide-y divide-rule px-0 py-0">
+                {filteredCommands.rest.map((cmd) => (
+                  <CommandRow
+                    key={cmd.id}
+                    command={cmd}
+                    onCopy={handleCopy}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                ))}
+              </Surface>
+            </div>
+          )}
         </div>
       )}
       <AddCommandDialog
@@ -236,7 +258,7 @@ export function TerminalCommands() {
   )
 }
 
-function CommandCard({
+function CommandRow({
   command,
   onCopy,
   onEdit,
@@ -249,9 +271,11 @@ function CommandCard({
   onDelete: (id: string) => void
   onToggleFavorite: (cmd: TerminalCommand) => void
 }) {
-  const [showActions, setShowActions] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [savingToResearch, setSavingToResearch] = useState(false)
   const router = useRouter()
+
+  const hasOutput = Boolean(command.stdout || command.stderr || command.exitCode != null)
 
   // One click: create a Research workspace from this command (title +
   // description/notes) and jump to the Research lab. No picker, no form:
@@ -274,88 +298,114 @@ function CommandCard({
   }
 
   return (
-    <Card className="flex flex-col" data-favorite={command.favorite}>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div className="flex flex-col gap-1">
-          <CardTitle className="text-sm font-medium">{command.title}</CardTitle>
+    <div
+      className="group flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-[var(--surface-2)]/50"
+      data-favorite={command.favorite}
+    >
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 shrink-0 font-mono text-sm text-ink-faint select-none" aria-hidden>
+          &gt;
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-body-tight text-sm font-medium text-ink-strong">{command.title}</span>
+            {command.category && <StatusBadge tone="neutral" label={command.category} />}
+            {(command.tags ?? []).map((tag) => (
+              <StatusBadge key={tag} tone="flame" label={tag} />
+            ))}
+          </div>
           {command.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2">{command.description}</p>
+            <p className="mt-0.5 line-clamp-2 font-body text-xs text-ink-muted">{command.description}</p>
+          )}
+
+          <div className="mt-2 flex items-center gap-2 rounded-sm bg-[var(--surface-2)] px-3 py-2 ring-1 ring-rule">
+            <code className="min-w-0 flex-1 truncate font-mono text-xs text-ink-strong">
+              {command.command}
+            </code>
+            <button
+              type="button"
+              onClick={() => onCopy(command.command)}
+              className="shrink-0 text-ink-faint transition-colors hover:text-ink-strong"
+              aria-label="Copy command"
+            >
+              <Copy className="size-3.5" />
+            </button>
+          </div>
+
+          {command.notes && (
+            <p className="mt-2 line-clamp-2 font-body text-xs text-ink-muted">{command.notes}</p>
+          )}
+
+          {hasOutput && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-2 inline-flex items-center gap-1 font-label text-ink-faint transition-colors hover:text-ink-strong"
+            >
+              <ChevronRight className={cn("size-3 transition-transform", expanded && "rotate-90")} />
+              {expanded ? "Hide last run" : "Show last run"}
+              {command.exitCode != null && (
+                <StatusBadge
+                  tone={command.exitCode === 0 ? "live" : "danger"}
+                  label={`exit ${command.exitCode}`}
+                  className="ml-1"
+                />
+              )}
+            </button>
+          )}
+          {expanded && hasOutput && (
+            <div className="mt-2 flex flex-col gap-1 rounded-sm bg-[var(--surface-2)] px-3 py-2 font-mono text-xs ring-1 ring-rule">
+              {command.stdout && (
+                <pre className="whitespace-pre-wrap break-all text-ink-muted">{command.stdout}</pre>
+              )}
+              {command.stderr && (
+                <pre className="whitespace-pre-wrap break-all text-[var(--status-danger)]">{command.stderr}</pre>
+              )}
+              {command.durationMs != null && (
+                <p className="text-ink-faint">{command.durationMs}ms</p>
+              )}
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-1">
+
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 data-[favorite=true]:opacity-100" data-favorite={command.favorite}>
           <Button
             variant="ghost"
-            size="icon"
-            className="size-8"
+            size="icon-xs"
             onClick={() => onToggleFavorite(command)}
+            aria-label={command.favorite ? "Unfavorite" : "Favorite"}
           >
             <Star
               className={cn(
                 "size-3.5",
-                command.favorite ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"
+                command.favorite ? "fill-[var(--text-accent)] text-[var(--text-accent)]" : "text-ink-faint"
               )}
             />
-            <span className="sr-only">{command.favorite ? "Unfavorite" : "Favorite"}</span>
           </Button>
           <Button
             variant="ghost"
-            size="icon"
-            className="size-8"
-            onClick={() => onCopy(command.command)}
-          >
-            <Copy className="size-3.5" />
-            <span className="sr-only">Copy command</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8"
+            size="icon-xs"
             onClick={handleSaveToResearch}
             disabled={savingToResearch}
             title="Save to Research Lab"
+            aria-label="Save to Research Lab"
           >
             <Beaker className="size-3.5" />
-            <span className="sr-only">Save to Research Lab</span>
+          </Button>
+          <Button variant="ghost" size="icon-xs" onClick={() => onEdit(command)} aria-label="Edit command">
+            <span className="font-label text-[10px]">Edit</span>
           </Button>
           <Button
             variant="ghost"
-            size="icon"
-            className="size-8"
-            onClick={() => setShowActions(!showActions)}
+            size="icon-xs"
+            onClick={() => onDelete(command.id)}
+            aria-label="Delete command"
+            className="text-ink-faint hover:text-[var(--status-danger)]"
           >
-            <Edit3 className="size-3.5" />
-            <span className="sr-only">More actions</span>
+            <Trash2 className="size-3.5" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-3">
-        <div className="rounded-lg bg-muted/50 p-3">
-          <code className="whitespace-pre-wrap break-all font-mono text-xs leading-relaxed">
-            {command.command}
-          </code>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {command.category && (
-            <Badge variant="outline" className="text-xs">
-              {command.category}
-            </Badge>
-          )}
-          {(command.tags ?? []).map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-        {command.notes && (
-          <p className="text-xs text-muted-foreground line-clamp-2">{command.notes}</p>
-        )}
-        {showActions ? (
-          <div className="flex items-center gap-2 border-t pt-3">
-            <Button size="sm" variant="outline" onClick={() => onEdit(command)}>Edit</Button>
-            <Button size="sm" variant="destructive" onClick={() => onDelete(command.id)}>Delete</Button>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

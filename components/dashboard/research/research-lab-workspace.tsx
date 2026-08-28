@@ -241,7 +241,7 @@ export function ResearchLabWorkspace() {
                     className="motion-card flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
                   >
                     <PenTool className="size-4 text-ink-muted" />
-                    <span className="font-body-tight text-sm text-ink-strong">Excel Draw</span>
+                    <span className="font-body-tight text-sm text-ink-strong">Sketch board</span>
                   </button>
                   <button
                     onClick={openAffine}
@@ -249,7 +249,7 @@ export function ResearchLabWorkspace() {
                     className="motion-card flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
                   >
                     <LayoutGrid className="size-4 text-ink-muted" />
-                    <span className="font-body-tight text-sm text-ink-strong">Affine</span>
+                    <span className="font-body-tight text-sm text-ink-strong">Whiteboard</span>
                   </button>
                 </div>
                 <p className="font-body text-xs text-ink-faint">

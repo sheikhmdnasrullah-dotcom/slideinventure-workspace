@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog"
+import { LUCIDCHART_URL } from "@/lib/lucidchart"
 
 type BoardSummary = { id: string; title: string; updated_at: string }
 
@@ -165,6 +166,17 @@ export function AvWhiteboard() {
             </span>
           </button>
         ))}
+        <a
+          key="lucidchart"
+          href={LUCIDCHART_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-48 flex-col items-center gap-3 rounded-xl border border-border p-6 hover:bg-accent hover:shadow-sm transition-all"
+        >
+          <PenTool className="size-10 text-muted-foreground" />
+          <span className="text-sm font-medium">Lucidchart</span>
+          <span className="text-xs text-muted-foreground">Your university account (new tab)</span>
+        </a>
       </div>
     </div>
   )

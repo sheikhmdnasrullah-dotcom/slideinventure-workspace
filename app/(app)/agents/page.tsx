@@ -2,11 +2,10 @@ import { requireUser } from "@/lib/supabase/server";
 import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
-import { PageHeader, Section, Surface, Badge } from "@/components/system";
+import { PageHeader, Section, Surface, StatusBadge, DataTable, type Column } from "@/components/system";
 import { AgentType } from "@/lib/agents/registry";
 import { getAgentRoster, getAgentDivisions } from "@/lib/agents/roster";
 import { AgentIconGrid } from "@/components/dashboard/agent-icon-grid";
-import { cn } from "@/lib/utils";
 
 const DB = APPWRITE.databaseId;
 const RUNS = APPWRITE.collections.taskRuns;
@@ -40,6 +39,61 @@ type ProgressEvent = {
   status: string;
   created_at: string;
 };
+
+type HistoryRow = TaskRun & { startedMs: number; duration: number | null };
+
+function runStatusTone(status: string): "live" | "danger" | "warn" | "neutral" {
+  if (status === "completed") return "live";
+  if (status === "failed") return "danger";
+  if (status === "running") return "warn";
+  return "neutral";
+}
+
+const historyColumns: Column<HistoryRow>[] = [
+  {
+    key: "task_type",
+    header: "Type",
+    sortable: true,
+    render: (row) => <span className="font-label text-ink-strong">{row.task_type}</span>,
+  },
+  {
+    key: "command",
+    header: "Command",
+    render: (row) => (
+      <span className="block max-w-xs truncate font-mono text-xs text-ink-muted">{row.command ?? ""}</span>
+    ),
+  },
+  {
+    key: "status",
+    header: "Status",
+    sortable: true,
+    render: (row) => (
+      <StatusBadge tone={runStatusTone(row.status)} dot={row.status === "running"} label={row.status} />
+    ),
+  },
+  {
+    key: "startedMs",
+    header: "Started",
+    sortable: true,
+    align: "right",
+    render: (row) => (
+      <span className="font-label tabular-nums text-ink-muted">
+        {new Date(row.started_at).toLocaleTimeString()}
+      </span>
+    ),
+  },
+  {
+    key: "duration",
+    header: "Duration",
+    sortable: true,
+    align: "right",
+    render: (row) => (
+      <span className="font-label tabular-nums text-ink-muted">
+        {row.duration !== null ? `${row.duration}s` : ""}
+      </span>
+    ),
+  },
+];
 
 export default async function AgentsPage() {
   await requireUser();
@@ -122,9 +176,7 @@ export default async function AgentsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs text-ink-strong">{run.task_type}</span>
-                        <Badge variant="outline" className="border-[var(--status-live)]/30 bg-[color-mix(in_oklch,var(--status-live)_10%,transparent)] text-[var(--status-live)]">
-                          Running
-                        </Badge>
+                        <StatusBadge tone="live" dot label="Running" />
                       </div>
                       <p className="font-body text-sm text-ink-muted mt-1 truncate">{run.command ?? "Agent execution"}</p>
                       {prog && (
@@ -156,58 +208,17 @@ export default async function AgentsPage() {
       {/* History */}
       <Section tone="base">
         <PageHeader eyebrow="History" title="Recent agent runs" />
-        <Surface variant="raised">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-rule">
-                  <th className="text-left py-2 px-3 font-label text-ink-muted">Type</th>
-                  <th className="text-left py-2 px-3 font-label text-ink-muted">Command</th>
-                  <th className="text-center py-2 px-3 font-label text-ink-muted">Status</th>
-                  <th className="text-right py-2 px-3 font-label text-ink-muted">Started</th>
-                  <th className="text-right py-2 px-3 font-label text-ink-muted">Duration</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-rule">
-                {completed.map((run) => {
-                  const started = new Date(run.started_at);
-                  const ended = run.completed_at ? new Date(run.completed_at) : null;
-                  const duration = ended ? Math.round((ended.getTime() - started.getTime()) / 1000) : null;
-                  return (
-                    <tr key={run.id} className="hover:bg-[var(--surface-2)] transition-colors">
-                      <td className="py-2 px-3">
-                        <Badge variant="outline" className="text-xs">
-                          {run.task_type}
-                        </Badge>
-                      </td>
-                      <td className="py-2 px-3 font-mono text-xs text-ink-muted truncate max-w-xs">
-                        {run.command ?? ""}
-                      </td>
-                      <td className="text-center py-2 px-3">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px]",
-                            run.status === "completed" && "border-[var(--status-live)]/30 bg-[color-mix(in_oklch,var(--status-live)_10%,transparent)] text-[var(--status-live)]",
-                            run.status === "failed" && "border-[var(--status-danger)]/30 bg-[color-mix(in_oklch,var(--status-danger)_10%,transparent)] text-[var(--status-danger)]",
-                            run.status === "running" && "border-[var(--status-live)]/30 bg-[color-mix(in_oklch,var(--status-live)_10%,transparent)] text-[var(--status-live)] animate-pulse",
-                          )}
-                        >
-                          {run.status}
-                        </Badge>
-                      </td>
-                      <td className="text-right py-2 px-3 font-label text-[10px] text-ink-muted">
-                        {started.toLocaleTimeString()}
-                      </td>
-                      <td className="text-right py-2 px-3 font-label text-[10px] text-ink-muted tabular-nums">
-                        {duration !== null ? `${duration}s` : ""}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <Surface variant="raised" className="px-0 py-0">
+          <DataTable<HistoryRow>
+            data={completed.map((run) => {
+              const started = new Date(run.started_at);
+              const ended = run.completed_at ? new Date(run.completed_at) : null;
+              const duration = ended ? Math.round((ended.getTime() - started.getTime()) / 1000) : null;
+              return { ...run, startedMs: started.getTime(), duration };
+            })}
+            columns={historyColumns}
+            empty={{ title: "No runs yet", description: "Completed and failed agent runs will appear here." }}
+          />
         </Surface>
       </Section>
 
