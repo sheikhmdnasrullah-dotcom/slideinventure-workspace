@@ -8,6 +8,7 @@ import { getAgentRoster, getAgentDivisions } from "@/lib/agents/roster";
 import { AgentIconGrid } from "@/components/dashboard/agent-icon-grid";
 import { AgentHistoryTable, type AgentHistoryRow } from "@/components/dashboard/agents/agent-history-table";
 import { SiteHeader } from "@/components/dashboard/site-header";
+import { AgentModesGrid } from "@/components/dashboard/agents/agent-modes-grid";
 
 const DB = APPWRITE.databaseId;
 const RUNS = APPWRITE.collections.taskRuns;
@@ -114,6 +115,12 @@ export default async function AgentsPage() {
         title="Agents"
         meta={`${running.length} running, ${runs.length} total runs`}
       />
+
+      {/* Agent Frameworks & Dedicated Modes */}
+      <Section tone="base">
+        <PageHeader eyebrow="Frameworks" title="Agent Modes" />
+        <AgentModesGrid />
+      </Section>
 
       {/* Live agents */}
       <Section tone="base">

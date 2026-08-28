@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ArrowDown, ArrowUp, ChevronDown, RotateCcw } from "lucide-react"
+import Link from "next/link"
+import { ArrowDown, ArrowUp, ChevronDown, RotateCcw, Component, MessageSquare, ArrowUpRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -84,6 +85,58 @@ export function SettingsControlCenter() {
       <SiteHeader crumbs={[{ label: "Settings" }]} subtitle="Control center" />
       <div className="flex flex-1 flex-col gap-4 p-6">
       <PageHeader eyebrow="Workspace" title="Settings" meta="Control your workspace, theme, and navigation from one place" />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Link
+          href="/ui-kit"
+          className="group flex flex-col justify-between rounded-xl border border-rule bg-[var(--surface)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="flex size-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 ring-1 ring-indigo-500/20">
+                <Component className="size-5" />
+              </span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Design System</span>
+            </div>
+            <h3 className="mt-3 font-label text-sm font-semibold text-ink-strong group-hover:text-primary transition-colors flex items-center gap-1">
+              UI Kit (shadcn/ui)
+              <ArrowUpRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+            </h3>
+            <p className="mt-1 text-xs text-ink-muted leading-relaxed">
+              Explore component primitives, design tokens, and interactive widgets.
+            </p>
+          </div>
+          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-[11px] text-ink-muted">
+            <span>Explore Components</span>
+            <span className="font-medium text-primary">Open →</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/ai-chat"
+          className="group flex flex-col justify-between rounded-xl border border-rule bg-[var(--surface)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20">
+                <MessageSquare className="size-5" />
+              </span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">AI Tool</span>
+            </div>
+            <h3 className="mt-3 font-label text-sm font-semibold text-ink-strong group-hover:text-primary transition-colors flex items-center gap-1">
+              AI SDK Chat
+              <ArrowUpRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+            </h3>
+            <p className="mt-1 text-xs text-ink-muted leading-relaxed">
+              Real-time streaming chat powered by Vercel AI SDK and tool execution.
+            </p>
+          </div>
+          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-[11px] text-ink-muted">
+            <span>Launch Chat</span>
+            <span className="font-medium text-primary">Open →</span>
+          </div>
+        </Link>
+      </div>
 
       <SettingsSection title="Appearance" description="Theme is applied immediately and remembered across refreshes.">
         <Label htmlFor="theme">Theme</Label>

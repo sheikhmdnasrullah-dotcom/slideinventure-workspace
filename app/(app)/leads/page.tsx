@@ -4,6 +4,7 @@ import { LeadHarvest } from "@/components/dashboard/leads/lead-harvest";
 import { LeadResearchLauncher } from "@/components/dashboard/leads/lead-research-launcher";
 import { SiteHeader } from "@/components/dashboard/site-header";
 import { PageHeader } from "@/components/system";
+import { LeadsModeNav } from "@/components/dashboard/leads/leads-mode-nav";
 
 export default async function LeadsPage() {
   await requireUser();
@@ -13,6 +14,7 @@ export default async function LeadsPage() {
       <SiteHeader crumbs={[{ label: "Leads" }]} subtitle="Operational database" />
       <div className="flex flex-1 flex-col gap-6 p-6">
         <PageHeader eyebrow="Pipeline" title="Leads" actions={<LeadResearchLauncher />} />
+        <LeadsModeNav />
         <LeadHarvest />
         <LeadsTable />
       </div>

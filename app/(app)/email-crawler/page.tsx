@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/supabase/server";
 import { EmailCrawler } from "@/components/dashboard/email-crawler/email-crawler";
+import { CrawlerModeNav } from "@/components/dashboard/email-crawler/crawler-mode-nav";
 
 export default async function EmailCrawlerPage() {
   await requireUser();
@@ -14,6 +15,7 @@ export default async function EmailCrawlerPage() {
           Finds a prospect&apos;s email from any link or details.
         </p>
       </div>
+      <CrawlerModeNav />
       <EmailCrawler />
     </div>
   );

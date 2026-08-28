@@ -18,6 +18,7 @@ import {
   Mail,
   Globe,
   Loader2,
+  Workflow,
 } from "lucide-react";
 import { SiteHeader } from "@/components/dashboard/site-header";
 import { Button } from "@/components/ui/button";
@@ -257,6 +258,36 @@ export default function YouTubeEmailAgentPage() {
               </span>
             </Button>
           </div>
+        </div>
+
+        {/* Agent Modes Quick Switcher */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-ink-muted mr-1">Agent Mode:</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary/10 px-3 py-1 text-xs font-semibold text-primary shadow-xs">
+            <Video className="size-3.5" />
+            YouTube Email Extractor
+          </span>
+          <Link
+            href="/agent-canvas"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rule bg-[var(--surface)] px-3 py-1 text-xs font-medium text-ink-muted hover:border-primary hover:text-primary transition-colors"
+          >
+            <Workflow className="size-3.5" />
+            Workflow Canvas
+          </Link>
+          <Link
+            href="/leads?assistant=1"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rule bg-[var(--surface)] px-3 py-1 text-xs font-medium text-ink-muted hover:border-primary hover:text-primary transition-colors"
+          >
+            <Sparkles className="size-3.5" />
+            Lead Research Assistant
+          </Link>
+          <Link
+            href="/email-crawler"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rule bg-[var(--surface)] px-3 py-1 text-xs font-medium text-ink-muted hover:border-primary hover:text-primary transition-colors"
+          >
+            <Mail className="size-3.5" />
+            Email Crawler
+          </Link>
         </div>
 
         {/* Extractor Input Card */}

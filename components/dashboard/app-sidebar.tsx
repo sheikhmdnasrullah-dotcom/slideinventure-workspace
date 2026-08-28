@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { ChevronRight, Bot } from "lucide-react"
+import { Bot } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -37,15 +37,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getOrderedSections, NAVIGATION_HANDLE_ICON } from "@/lib/dashboard/navigation"
@@ -196,7 +188,6 @@ function SortableSidebarItem({
   pathname: string
   onPrefetch: (route: string) => void
 }) {
-  const [open, setOpen] = useState(() => isSectionActive(section.route, pathname, section.children?.map((child) => child.route)))
   const {
     attributes,
     listeners,
@@ -214,8 +205,8 @@ function SortableSidebarItem({
   const isActive = isSectionActive(section.route, pathname, section.children?.map((child) => child.route))
 
   return (
-    <SidebarMenuItem ref={setNodeRef} style={style} className={cn(isDragging && "z-20 opacity-80") }>
-      <div className={cn("rounded-lg", isDragging && "bg-sidebar-accent/60 shadow-sm") }>
+    <SidebarMenuItem ref={setNodeRef} style={style} className={cn(isDragging && "z-20 opacity-80")}>
+      <div className={cn("rounded-lg", isDragging && "bg-sidebar-accent/60 shadow-sm")}>
         <div className="flex items-start gap-1">
           <Button
             type="button"
@@ -232,69 +223,17 @@ function SortableSidebarItem({
           </Button>
 
           <div className="min-w-0 flex-1">
-            {section.children?.length ? (
-              <Collapsible open={open || isActive} onOpenChange={setOpen} className="group/collapsible">
-                <div className="flex items-center gap-1">
-                  <SidebarMenuButton
-                    tooltip={section.label}
-                    isActive={isActive}
-                    render={<Link href={section.route} prefetch />}
-                    onMouseEnter={() => onPrefetch(section.route)}
-                    onFocus={() => onPrefetch(section.route)}
-                    className="flex-1"
-                  >
-                    <ActiveRail active={isActive} />
-                    <section.icon />
-                    <span>{section.label}</span>
-                  </SidebarMenuButton>
-                  <CollapsibleTrigger
-                    aria-label={`Toggle ${section.label} submenu`}
-                    className="inline-flex size-6 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  >
-                    <ChevronRight className="size-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    {section.children.map((child) => {
-                      const activeChild = pathname === child.route
-                      return (
-                        <SidebarMenuSubItem key={child.id}>
-                          <SidebarMenuSubButton
-                            isActive={activeChild}
-                            render={
-                              child.external ? (
-                                <a href={child.route} target="_blank" rel="noreferrer noopener" />
-                              ) : (
-                                <Link href={child.route} prefetch />
-                              )
-                            }
-                            onMouseEnter={
-                              child.external ? undefined : () => onPrefetch(child.route)
-                            }
-                            onFocus={child.external ? undefined : () => onPrefetch(child.route)}
-                          >
-                            <span>{child.label}</span>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )
-                    })}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            ) : (
-              <SidebarMenuButton
-                tooltip={section.label}
-                isActive={isActive}
-                render={<Link href={section.route} prefetch />}
-                onMouseEnter={() => onPrefetch(section.route)}
-                onFocus={() => onPrefetch(section.route)}
-              >
-                <ActiveRail active={isActive} />
-                <section.icon />
-                <span>{section.label}</span>
-              </SidebarMenuButton>
-            )}
+            <SidebarMenuButton
+              tooltip={section.label}
+              isActive={isActive}
+              render={<Link href={section.route} prefetch />}
+              onMouseEnter={() => onPrefetch(section.route)}
+              onFocus={() => onPrefetch(section.route)}
+            >
+              <ActiveRail active={isActive} />
+              <section.icon />
+              <span>{section.label}</span>
+            </SidebarMenuButton>
           </div>
         </div>
       </div>

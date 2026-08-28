@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/supabase/server";
 import { VerificationPanel } from "@/components/dashboard/lead-verification/verification-panel";
 import { TruemailPanel } from "@/components/dashboard/lead-verification/truemail-panel";
+import { LeadsModeNav } from "@/components/dashboard/leads/leads-mode-nav";
 
 export const metadata = {
   title: "Lead Verification: SlideIn Venture",
@@ -20,6 +21,7 @@ export default async function LeadVerificationPage() {
           Upload a CSV and verify email deliverability at scale via Reacher.
         </p>
       </div>
+      <LeadsModeNav />
       <VerificationPanel />
       <TruemailPanel />
     </div>

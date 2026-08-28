@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/supabase/server";
 import { AppsClient } from "./apps-client";
+import { MailAppsCards } from "@/components/dashboard/apps/mail-apps-cards";
 
 export default async function AppsPage() {
   await requireUser();
@@ -14,6 +15,7 @@ export default async function AppsPage() {
         </p>
       </div>
       
+      <MailAppsCards />
       <AppsClient />
     </div>
   );

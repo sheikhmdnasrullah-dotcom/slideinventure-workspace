@@ -70,27 +70,9 @@ export type DashboardSection = {
 export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "dashboard", label: "Dashboard", route: "/dashboard", icon: LayoutDashboard },
   { id: "integrations", label: "Integrations", route: "/integrations", icon: Cable },
-  {
-    id: "leads",
-    label: "Leads",
-    route: "/leads",
-    icon: FileText,
-    children: [
-      { id: "leads-all", label: "All Leads", route: "/leads" },
-      { id: "leads-verify", label: "Verify Leads", route: "/leads/verify", icon: ShieldCheck },
-    ],
-  },
+  { id: "leads", label: "Leads", route: "/leads", icon: FileText },
   { id: "chat", label: "Look Up", route: "/chat", icon: MessageSquare },
-  {
-    id: "agents",
-    label: "Agents",
-    route: "/agents",
-    icon: Bot,
-    children: [
-      { id: "agents-roster", label: "Agent Roster", route: "/agents" },
-      { id: "agents-youtube-email", label: "YouTube Email Agent", route: "/agents/youtube-email", icon: Video },
-    ],
-  },
+  { id: "agents", label: "Agents", route: "/agents", icon: Bot },
   { id: "todoist", label: "Todoist", route: "/todoist", icon: Sparkles },
   { id: "knowledge", label: "Knowledge", route: "/knowledge", icon: BookOpen },
   { id: "documents", label: "Documents", route: "/documents", icon: FileText },
@@ -101,61 +83,13 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "ideas", label: "Ideas", route: "/ideas", icon: Network },
   { id: "terminal", label: "Terminal", route: "/terminal", icon: Terminal },
   { id: "useful-links", label: "Useful Links", route: "/useful-links", icon: Send },
-  {
-    id: "mail-apps",
-    label: "Mail Apps",
-    route: "/apps",
-    icon: Mail,
-    children: [
-      { id: "mailgo", label: "Mailgo", route: "https://admin.tanim.tech", icon: Mail, external: true },
-      { id: "sogo-mail", label: "SOGo mail", route: "https://mail.nasrullahtanim.me/admin", icon: Mail, external: true },
-    ],
-  },
+  { id: "mail-apps", label: "Mail Apps", route: "/apps", icon: Mail },
   { id: "vault", label: "Vault", route: "/vault", icon: Vault },
-  {
-    id: "settings",
-    label: "Settings",
-    route: "/settings",
-    icon: Settings,
-    children: [
-      { id: "settings-ui-kit", label: "UI Kit (shadcn/ui)", route: "/ui-kit", icon: Component },
-      { id: "settings-ai-chat", label: "AI SDK Chat", route: "/ai-chat", icon: MessageSquare },
-    ],
-  },
-  {
-    id: "email-crawler",
-    label: "Email Crawler",
-    route: "/email-crawler",
-    icon: Mail,
-    children: [
-      { id: "email-crawler-run", label: "Find emails", route: "/email-crawler" },
-      { id: "email-crawler-verify", label: "Verify Leads", route: "/leads/verify", icon: ShieldCheck },
-    ],
-  },
-  {
-    id: "csv-discovery",
-    label: "Lead Discovery",
-    route: "/csv-discovery",
-    icon: Network,
-  },
-  {
-    id: "agent-canvas",
-    label: "Agent Canvas",
-    route: "/agent-canvas",
-    icon: Workflow,
-    children: [
-      { id: "agent-canvas-run", label: "Pipeline", route: "/agent-canvas" },
-    ],
-  },
-  {
-    id: "analytics",
-    label: "Analytics",
-    route: "/analytics",
-    icon: BarChart3,
-    children: [
-      { id: "analytics-bento", label: "Live Metrics", route: "/analytics" },
-    ],
-  },
+  { id: "settings", label: "Settings", route: "/settings", icon: Settings },
+  { id: "email-crawler", label: "Email Crawler", route: "/email-crawler", icon: Mail },
+  { id: "csv-discovery", label: "Lead Discovery", route: "/csv-discovery", icon: Network },
+  { id: "agent-canvas", label: "Agent Canvas", route: "/agent-canvas", icon: Workflow },
+  { id: "analytics", label: "Analytics", route: "/analytics", icon: BarChart3 },
 ]
 
 export const DEFAULT_NAVIGATION_ORDER = DASHBOARD_SECTIONS.map((section) => section.id)
