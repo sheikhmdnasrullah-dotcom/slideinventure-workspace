@@ -1,5 +1,58 @@
 import type { MastraCatalogAgent } from "@/lib/agents/mastra-catalog";
 import type { RosterAgent } from "@/lib/agents/roster";
+import {
+  Bot,
+  Video,
+  Mail,
+  Target,
+  Globe,
+  Search,
+  BookOpen,
+  PenLine,
+  Code2,
+  Lightbulb,
+  BarChart3,
+  Share2,
+  Calendar,
+  Image,
+  Wallet,
+  LifeBuoy,
+  Users,
+  Scale,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
+import type { ReactElement } from "react";
+
+const ICON_RULES: [RegExp, LucideIcon][] = [
+  [/youtube/, Video],
+  [/(email|mail|outreach|newsletter)/, Mail],
+  [/(lead|prospect|outbound|sales|cold)/, Target],
+  [/(crawl|scrape|browser|browse|serp|web)/, Globe],
+  [/(research|search|analy|investigat|study)/, Search],
+  [/(knowledge|wiki|docs?|library|encycl)/, BookOpen],
+  [/(write|draft|content|blog|copy|editor)/, PenLine],
+  [/(code|build|dev|script|engineer|software)/, Code2],
+  [/(brainstorm|creative|idea|design|brand)/, Lightbulb],
+  [/(data|analytics|metric|report|dashboard)/, BarChart3],
+  [/(social|twitter|x\.com|linkedin|instagram)/, Share2],
+  [/(calendar|schedule|meet|book)/, Calendar],
+  [/(image|video|media|visual|photo)/, Image],
+  [/(finance|account|invoice|billing|pay)/, Wallet],
+  [/(support|help|ticket|service)/, LifeBuoy],
+  [/(hr|recruit|hire|talent)/, Users],
+  [/(legal|contract|compliance|policy)/, Scale],
+  [/(market|seo|growth|ads?)/, TrendingUp],
+];
+
+/** Pick a distinct icon per agent from its role (tools + description + name). */
+export function agentIcon(agent: NormalizedAgent, className = "size-5"): ReactElement {
+  const hay = `${agent.slug} ${agent.name} ${agent.description} ${(agent.tools ?? []).join(" ")}`.toLowerCase();
+  for (const [re, Icon] of ICON_RULES) {
+    if (re.test(hay)) return <Icon className={className} />;
+  }
+  return <Bot className={className} />;
+}
 
 export type NormalizedAgent = {
   slug: string;

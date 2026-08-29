@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
 import { RESEARCH_PERSONAS } from "@/lib/agents/research/personas";
 import { getAgentRoster } from "@/lib/agents/roster";
+import { getMastraCatalog } from "@/lib/agents/mastra-catalog";
 
 export type DeployableAgentCatalogItem = {
   slug: string;
@@ -10,9 +10,10 @@ export type DeployableAgentCatalogItem = {
   description: string;
   strategy?: string;
   category: "research" | "outbound" | "crawler" | "knowledge" | "creative";
+  runtime?: "mastra" | "claude";
 };
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   const researchItems: DeployableAgentCatalogItem[] = RESEARCH_PERSONAS.map((p) => ({
     slug: p.slug,
     name: p.name,
@@ -72,6 +73,27 @@ export async function GET(_request: NextRequest) {
       };
     });
 
-  const agents = [...researchItems, ...rosterItems];
+  const mastra = await getMastraCatalog();
+  const taken = new Set([...researchItems, ...rosterItems].map((a) => a.slug));
+  const mastraItems: DeployableAgentCatalogItem[] = mastra.agents
+    .filter((a) => !taken.has(a.slug))
+    .map((a) => {
+      const tools = a.tools ?? [];
+      let category: DeployableAgentCatalogItem["category"] = "knowledge";
+      if (tools.some((t) => /(search|web|browser|browse|research|tavily|crawl)/i.test(t))) category = "research";
+      else if (tools.some((t) => /(email|send|outbound|lead)/i.test(t))) category = "outbound";
+      else if (tools.some((t) => /(crawl|scrape)/i.test(t))) category = "crawler";
+      return {
+        slug: a.slug,
+        name: a.name,
+        emoji: a.emoji || "🛰️",
+        color: a.color || "#22d3ee",
+        description: a.description,
+        category,
+        runtime: "mastra",
+      };
+    });
+
+  const agents = [...researchItems, ...rosterItems, ...mastraItems];
   return Response.json({ agents });
 }
