@@ -19,7 +19,7 @@ import {
   FileCode2,
   File,
   Sparkles,
-  Check,
+  Eye,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -57,6 +57,7 @@ import {
   sanitizeFilename,
   saveToAiVentureFiles,
 } from "@/lib/notes/export-note"
+import { NotepadPdfPreview } from "@/components/dashboard/notepad-pdf-preview"
 
 const Notepad = dynamic(() => import("@/components/dashboard/v3/note/dynamic"), {
   ssr: false,
@@ -69,7 +70,45 @@ type Note = { id: string; title: string | null; content: string; updated_at: str
 // supports scope=global|ai-venture), parameterized by scope instead of
 // duplicated, so AI Venture notes are real notes in the same system, not a
 // second disconnected note store.
-export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-venture" | "brainstorm" }) {
+
+/**
+ * When `centered`, the note editor mounts as a large, centered pop-up overlay
+ * (an independent "playground") instead of being squeezed beside the note
+ * list. Otherwise it renders inline. The child is identical in both cases.
+ */
+function CenteredEditor({
+  centered,
+  onClose,
+  children,
+}: {
+  centered: boolean
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  if (!centered) return <>{children}</>
+  return (
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose()
+      }}
+    >
+      <DialogContent
+        showCloseButton={false}
+        className="!flex h-[88vh] w-[92vw] max-w-[1000px] flex-col !gap-0 overflow-hidden !rounded-lg !border !border-rule !bg-[var(--surface)] !p-0 shadow-2xl"
+      >
+        {children}
+      </DialogContent>
+    </Dialog>
+  )
+}
+export function NotepadView({
+  scope = "global",
+  centered = false,
+}: {
+  scope?: "global" | "ai-venture" | "brainstorm"
+  centered?: boolean
+}) {
   const [deepLinkNote, setDeepLinkNote] = useQueryState("note")
   const [notes, setNotes] = React.useState<Note[]>([])
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
@@ -83,6 +122,7 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
   const [deleteId, setDeleteId] = React.useState<string | null>(null)
   const [researchOpen, setResearchOpen] = React.useState(false)
   const [deployOpen, setDeployOpen] = React.useState(false)
+  const [previewOpen, setPreviewOpen] = React.useState(false)
   const deployed = useDeployedAgent()
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -504,13 +544,14 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
 
         <section className="flex flex-1 flex-col">
           {selectedId ? (
-            <div
-              className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-auto transition-colors"
-              data-lenis-prevent
-              data-droppable="notepad"
-              data-note-id={selectedId}
-              data-note-title={title || "Untitled"}
-            >
+            <CenteredEditor centered={centered} onClose={() => setSelectedId(null)}>
+              <div
+                className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-auto transition-colors"
+                data-lenis-prevent
+                data-droppable="notepad"
+                data-note-id={selectedId}
+                data-note-title={title || "Untitled"}
+              >
               <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-8 pb-3 border-b border-rule/50">
                 <div className="flex-1 min-w-[200px] flex items-center gap-2">
                   <input
@@ -609,6 +650,18 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                     </DropdownMenuContent>
                   </DropdownMenu>
 
+                  {/* Preview PDF Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 cursor-pointer text-xs font-medium h-8 shadow-xs hover:border-primary/50"
+                    onClick={() => setPreviewOpen(true)}
+                    disabled={!selectedId}
+                  >
+                    <Eye className="size-3.5 text-primary" />
+                    <span>Preview</span>
+                  </Button>
+
                   {/* Deploy Agent Button */}
                   <Button
                     variant="outline"
@@ -651,6 +704,18 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                       <Sparkles className="size-3.5" />
                     </Button>
                   )}
+
+                  {centered && (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => setSelectedId(null)}
+                      title="Close editor"
+                      className="size-8 text-muted-foreground hover:text-primary"
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -658,6 +723,7 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                 <Notepad key={selectedId} initialContent={content} onChange={handleChange} />
               </div>
             </div>
+            </CenteredEditor>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center text-sm text-muted-foreground p-6">
               <FileText className="size-12 mb-3 opacity-30" />
@@ -694,6 +760,13 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
         open={deployOpen}
         onOpenChange={setDeployOpen}
         noteContext={selectedId ? { id: selectedId, title: title || "Untitled", content } : null}
+      />
+
+      <NotepadPdfPreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title={title}
+        content={content}
       />
     </div>
   )

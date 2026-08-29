@@ -222,7 +222,7 @@ export function AiVentureWorkspace() {
             {active === "research" && <AvResearch />}
             {active === "playground" && <AvPlayground />}
             {active === "brainstorm" && <AvWhiteboard />}
-            {active === "notepad" && <NotepadView scope="ai-venture" />}
+            {active === "notepad" && <NotepadView scope="ai-venture" centered />}
             {active === "connected" && <IdeaMapsPanel scope="ideas" title="Connected ideas" />}
             {active === "agents" && <AvAgents />}
             {active === "activity" && <AvActivity />}
