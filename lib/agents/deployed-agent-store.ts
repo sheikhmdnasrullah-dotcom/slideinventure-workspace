@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text";
 
 export type DeployableAgent = {
   slug: string;
@@ -10,6 +11,8 @@ export type DeployableAgent = {
   description: string;
   strategy?: string;
   category?: "research" | "email" | "crawler" | "lead" | "general" | string;
+  /** Where this agent runs. "mastra" routes chat/run to the self-hosted server. */
+  runtime?: "mastra" | "claude";
 };
 
 export type NoteContext = {
@@ -36,6 +39,8 @@ export type DeployedAgentState = {
   position: { x: number; y: number };
   target: DeployTarget;
   noteContext: NoteContext | null;
+  /** Plain-text content of the section the agent is deployed into (the "context of contexts"). */
+  contextText: string | null;
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   isThinking: boolean;
 };
@@ -47,6 +52,7 @@ const DEFAULT_STATE: DeployedAgentState = {
   position: { x: 300, y: 180 },
   target: null,
   noteContext: null,
+  contextText: null,
   messages: [],
   isThinking: false,
 };
@@ -83,6 +89,7 @@ export function deployAgent(
     position: { x, y },
     target,
     noteContext,
+    contextText: null,
     messages: [
       {
         role: "assistant",
@@ -101,6 +108,7 @@ export function deployAgentToNotepad(agent: DeployableAgent, note: NoteContext) 
     agent,
     target: "notepad",
     noteContext: note,
+    contextText: note.content ? blockNoteToPlainText(note.content) : null,
     messages: [
       {
         role: "assistant",
@@ -136,12 +144,15 @@ export function attachToTarget(
     ...store,
     target,
     noteContext: { id: context?.id || "", title, content: context?.content },
+    contextText: context?.content || null,
     viewMode: "expanded",
     messages: [
       ...store.messages,
       {
         role: "assistant",
-        content: `Deployed into ${title}. Ready to assist you here!`,
+        content: context?.content
+          ? `Deployed into ${title} with its full context loaded. I've read everything — let's start researching.`
+          : `Deployed into ${title}. Ready to assist you here!`,
       },
     ],
   };
@@ -150,6 +161,11 @@ export function attachToTarget(
 
 export function updateNoteContext(noteContext: NoteContext | null) {
   store = { ...store, noteContext };
+  emit();
+}
+
+export function setDeployedContext(contextText: string | null) {
+  store = { ...store, contextText };
   emit();
 }
 
@@ -205,6 +221,11 @@ function subscribe(callback: () => void) {
 }
 
 function getSnapshot() {
+  return store;
+}
+
+/** Synchronous read of the latest state, for use outside React render cycles. */
+export function getDeployedAgent(): DeployedAgentState {
   return store;
 }
 

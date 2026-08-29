@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useDeployedAgent,
+  getDeployedAgent,
   setDeployPosition,
   setDeployViewMode,
   toggleDeployViewMode,
@@ -34,6 +35,8 @@ import {
   resetAgentConversation,
   type DeployTarget,
 } from "@/lib/agents/deployed-agent-store";
+import { getLiveContext } from "@/lib/agents/context-registry";
+import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text";
 import { toast } from "sonner";
 
 export function DraggableDeployedAgent() {
@@ -252,10 +255,33 @@ export function DraggableDeployedAgent() {
             droppable.getAttribute("data-note-id") ||
             "";
 
-          attachToTarget(targetType, { id: dropId, title: dropTitle });
-          toast.success(`${agent.name} deployed into ${dropTitle}!`, {
-            description: `Agent attached to ${dropTitle}. Use the controls or chips to collaborate.`,
+          // Resolve the section's live, full content so the agent is deployed
+          // WITH the context (not just the title). Falls back to the notepad
+          // note content already in the store when no live provider exists.
+          const live = getLiveContext(targetType);
+          let contextText: string | null = live?.content || null;
+          if (!contextText && targetType === "notepad") {
+            const nc = getDeployedAgent().noteContext;
+            if (nc?.content) contextText = blockNoteToPlainText(nc.content);
+          }
+
+          attachToTarget(targetType, {
+            id: dropId,
+            title: dropTitle,
+            content: contextText ?? undefined,
           });
+
+          toast.success(`${agent.name} deployed into ${dropTitle}!`, {
+            description: contextText
+              ? `Loaded full section context (${contextText.length} chars). Research starts now.`
+              : `Agent attached to ${dropTitle}. Use the controls or chips to collaborate.`,
+          });
+
+          // Instantly begin researching from the loaded context.
+          void runAgent(
+            "Read everything in this section and start our research together. Give me: (1) a one-paragraph brief of what this is about, (2) the 3-5 most important points, (3) the key open questions, and (4) 2-3 concrete next steps we should take.",
+            { isAuto: true }
+          );
         }
       } else {
         // If not dragged (clicked), toggle between circle and expanded mode
@@ -271,36 +297,33 @@ export function DraggableDeployedAgent() {
 
   // --- Agent Chat & Task Execution ---
 
-  const handleSendMessage = async (customPrompt?: string) => {
-    const text = customPrompt || inputMessage.trim();
-    if (!text || isThinking) return;
+  const runAgent = async (promptText: string, opts?: { isAuto?: boolean }) => {
+    const snap = getDeployedAgent();
+    if (!snap.agent) return;
+    const text = promptText.trim();
+    if (!text || snap.isThinking) return;
 
-    if (!customPrompt) setInputMessage("");
+    const { target: tgt, noteContext: nc, contextText, messages: history } = snap;
+    const sectionTitle = nc?.title || targetLabel(tgt) || "Workspace";
 
-    const userMsg = { role: "user" as const, content: text };
-    addAgentMessage(userMsg);
+    addAgentMessage({ role: "user" as const, content: text });
+    if (!opts?.isAuto) setInputMessage("");
     setAgentThinking(true);
 
     try {
-      // Build context prompt based on active deployment target
-      let enhancedMessage = text;
-      if (target === "notepad" && noteContext?.title) {
-        enhancedMessage = `Context: The user is working on note "${noteContext.title}".\n\nTask: ${text}`;
-      } else if (target === "brainstorm") {
-        enhancedMessage = `Context: The user is working on Brainstorm Whiteboard "${noteContext?.title || "Active Canvas"}".\n\nTask: ${text}`;
-      } else if (target === "files") {
-        enhancedMessage = `Context: The user is working on AI Venture Files.\n\nTask: ${text}`;
-      } else if (target === "research") {
-        enhancedMessage = `Context: The user is in the AI Venture Research Lab.\n\nTask: ${text}`;
-      }
+      // The section's full content is sent as `context` and injected into the
+      // agent's system prompt, so it is always grounded in the real material.
+      const enhancedMessage = `Request for the "${sectionTitle}" section: ${text}`;
 
       const res = await fetch("/api/agents/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slug: agent.slug,
+          slug: snap.agent.slug,
           message: enhancedMessage,
-          history: messages.slice(-8),
+          history: history.slice(-8),
+          context: contextText,
+          ...(snap.agent.runtime === "mastra" ? { tools: true } : {}),
         }),
       });
 
@@ -326,17 +349,23 @@ export function DraggableDeployedAgent() {
       const cleanAnswer = (data.answer || "Task completed.").replace(/[—–]/g, "-");
       addAgentMessage({ role: "assistant", content: cleanAnswer });
 
-      // Automatically capture insight directly into Research Lab
-      if (target === "notepad" || target === "research" || customPrompt?.toLowerCase().includes("research")) {
+      // Auto-capture user-initiated research into the Research Lab (skip the
+      // automatic deployment brief to avoid noise).
+      if (
+        !opts?.isAuto &&
+        (tgt === "notepad" ||
+          tgt === "research" ||
+          text.toLowerCase().includes("research"))
+      ) {
         fetch("/api/research-lab/capture", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             source: "agent",
-            sourceRef: `deploy-${agent.slug}-${Date.now()}`,
-            title: `${agent.name}: ${text.slice(0, 60)}`,
+            sourceRef: `deploy-${snap.agent.slug}-${Date.now()}`,
+            title: `${snap.agent.name}: ${text.slice(0, 60)}`,
             rawText: `Task: ${text}\n\nFindings:\n${cleanAnswer}`,
-            reference: { tab: target || "notepad", note: noteContext?.id || "" },
+            reference: { tab: tgt || "notepad", note: nc?.id || "" },
           }),
         }).catch(() => {});
       }
@@ -350,24 +379,78 @@ export function DraggableDeployedAgent() {
     }
   };
 
-  // Insert answer directly into note editor
+  // Human-readable label for a deployment target.
+  const targetLabel = (t?: DeployTarget | null): string => {
+    switch (t) {
+      case "notepad":
+        return "Notepad";
+      case "brainstorm":
+        return "Brainstorm Whiteboard";
+      case "files":
+        return "AI Venture Files";
+      case "research":
+        return "Research Lab";
+      case "query":
+        return "AI Query";
+      case "useful-links":
+        return "Useful Links";
+      default:
+        return "Workspace";
+    }
+  };
+
+  // Insert answer directly into the open Notepad note.
   const handleInsertToNote = (content: string) => {
     const event = new CustomEvent("notepad:insert-text", { detail: { text: content } });
     window.dispatchEvent(event);
     toast.success("Inserted findings into your note!");
   };
 
+  // Push a message into a brand-new Notepad note so it is documented.
+  const handlePushToNote = async (content: string) => {
+    try {
+      const blocks = content
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((line) => ({
+          id:
+            typeof crypto !== "undefined" && crypto.randomUUID
+              ? crypto.randomUUID()
+              : Math.random().toString(36).slice(2),
+          type: "paragraph",
+          props: { textColor: "default", backgroundColor: "default", textAlignment: "left" },
+          content: [{ type: "text", text: line, styles: {} }],
+          children: [],
+        }));
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `${agent.name} Insight`,
+          scope: "global",
+          content: JSON.stringify(blocks),
+        }),
+      });
+      if (res.ok) toast.success("Pushed insight to a new Note!");
+      else toast.error("Could not push to Notes");
+    } catch {
+      toast.error("Network error pushing to Notes");
+    }
+  };
+
   // Push specific message to Research Lab manually
   const handlePushToResearchLab = (content: string) => {
+    const snap = getDeployedAgent();
     fetch("/api/research-lab/capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         source: "agent",
-        sourceRef: `manual-${agent.slug}-${Date.now()}`,
-        title: `${agent.name} Insight`,
+        sourceRef: `manual-${snap.agent?.slug ?? "agent"}-${Date.now()}`,
+        title: `${snap.agent?.name ?? "Agent"} Insight`,
         rawText: content,
-        reference: { tab: target || "notepad", note: noteContext?.id || "" },
+        reference: { tab: snap.target || "notepad", note: snap.noteContext?.id || "" },
       }),
     })
       .then((res) => {
@@ -577,7 +660,7 @@ export function DraggableDeployedAgent() {
         {actionChips.map((chip, idx) => (
           <button
             key={idx}
-            onClick={() => handleSendMessage(chip.prompt)}
+            onClick={() => runAgent(chip.prompt)}
             disabled={isThinking}
             className="shrink-0 rounded-md bg-secondary/80 hover:bg-secondary px-2 py-1 text-secondary-foreground transition-colors cursor-pointer disabled:opacity-50"
           >
@@ -633,6 +716,16 @@ export function DraggableDeployedAgent() {
                   </button>
                 )}
 
+                {/* Push to Note (new note) */}
+                <button
+                  type="button"
+                  onClick={() => handlePushToNote(msg.content)}
+                  className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                >
+                  <FileText className="size-3" />
+                  <span>Push to notes</span>
+                </button>
+
                 {/* Push to Research Lab */}
                 <button
                   type="button"
@@ -661,7 +754,7 @@ export function DraggableDeployedAgent() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSendMessage();
+            runAgent(inputMessage);
           }}
           className="flex items-center gap-2"
         >
@@ -671,7 +764,7 @@ export function DraggableDeployedAgent() {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSendMessage();
+                runAgent(inputMessage);
               }
             }}
             placeholder={`Ask ${agent.name} anything…`}

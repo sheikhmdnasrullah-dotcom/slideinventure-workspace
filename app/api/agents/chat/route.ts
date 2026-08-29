@@ -37,11 +37,12 @@ export async function POST(request: NextRequest) {
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   const body = await request.json().catch(() => null);
-  const { slug, message, history, tools } = (body ?? {}) as {
+  const { slug, message, history, tools, context } = (body ?? {}) as {
     slug?: string;
     message?: string;
     history?: Array<{ role: string; content: string }>;
     tools?: boolean;
+    context?: string;
   };
 
   if (!slug || typeof slug !== "string") {
@@ -51,21 +52,29 @@ export async function POST(request: NextRequest) {
     return ApiError.badRequest("MISSING_MESSAGE", "message is required").toResponse();
   }
 
-  const agent = getAgentPrompt(slug);
-  if (!agent) return ApiError.notFound("AGENT_NOT_FOUND", "Unknown agent").toResponse();
+  const isMastra = Boolean(tools);
+  const persona = isMastra ? null : getAgentPrompt(slug);
+  if (!isMastra && !persona) {
+    return ApiError.notFound("AGENT_NOT_FOUND", "Unknown agent").toResponse();
+  }
 
   const ctx: AgentRunContext = {
     runId: crypto.randomUUID(),
-    agent: agent.name,
+    agent: persona?.name ?? slug,
     userEmail: user.email,
   };
 
   await agentRunStarted(ctx, message.slice(0, 200));
 
-  // Opt-in Mastra mode: persona + tools (retrieve/browse/remember/recall).
-  if (tools) {
+  // Mastra mode: persona + tools run entirely on the self-hosted server, so no
+  // local persona file is required (the server owns the agent definition).
+  if (isMastra) {
     agentToolStarted(ctx, "tools");
-    const res = await runMastraAgent({ slug, message, history, userEmail: user.email });
+    const mMessage =
+      context && context.trim()
+        ? `SECTION CONTEXT (source of truth for the user's work):\n${context.trim().slice(0, 12000)}\n\nTASK: ${message}`
+        : message;
+    const res = await runMastraAgent({ slug, message: mMessage, history, userEmail: user.email });
     if (!res.ok) {
       await agentRunFailed(ctx, res.error ?? "Agent run failed");
       return ApiError.internal("MASTRA_AGENT_FAILED", res.error ?? "agent failed").toResponse();
@@ -76,7 +85,7 @@ export async function POST(request: NextRequest) {
         userEmail: user.email,
         source: "agent",
         sourceRef: ctx.runId,
-        title: `${agent.name}: ${message.slice(0, 80)}`,
+        title: `${slug}: ${message.slice(0, 80)}`,
         rawText: `Task: ${message}\n\nResult: ${res.answer}`,
         reference: { tab: "agents" },
       }).catch((err) => console.error("CAPTURE_AGENT_ERROR:", err));
@@ -99,8 +108,13 @@ export async function POST(request: NextRequest) {
         .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))
     : [];
 
+  const contextBlock =
+    context && context.trim()
+      ? `\n\n---\nSECTION CONTEXT (you are deployed into this section; treat it as the source of truth for the user's current work):\n${context.trim().slice(0, 12000)}\n---`
+      : "";
+
   const messages: ModelMessage[] = [
-    { role: "system", content: agent.prompt },
+    { role: "system", content: (persona!.prompt || "") + contextBlock },
     ...priorTurns,
     { role: "user", content: message },
   ];
@@ -132,12 +146,12 @@ export async function POST(request: NextRequest) {
         userEmail: user.email,
         source: "agent",
         sourceRef: ctx.runId,
-        title: `${agent.name}: ${message.slice(0, 80)}`,
+        title: `${persona!.name}: ${message.slice(0, 80)}`,
         rawText: `Task: ${message}\n\nResult: ${cleanAnswer}`,
         reference: { tab: "agents" },
       }).catch((err) => console.error("CAPTURE_AGENT_ERROR:", err));
     }
-    return Response.json({ answer: cleanAnswer, agent: agent.name, runId: ctx.runId });
+    return Response.json({ answer: cleanAnswer, agent: persona!.name, runId: ctx.runId });
   } catch (err) {
     const errorMessage =
       err instanceof NoLlmProviderError

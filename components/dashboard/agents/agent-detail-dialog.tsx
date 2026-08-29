@@ -1,9 +1,25 @@
 "use client";
 
+import Link from "next/link";
+import { Rocket, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/system";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import type { NormalizedAgent } from "@/lib/agents/pipeline";
 import { derivePipeline } from "@/lib/agents/pipeline";
+import { deployAgent, type DeployableAgent } from "@/lib/agents/deployed-agent-store";
+
+function toDeployable(a: NormalizedAgent): DeployableAgent {
+  return {
+    slug: a.slug,
+    name: a.name,
+    emoji: a.emoji || (a.framework === "Mastra" ? "🛰️" : "🤖"),
+    color: a.color || (a.framework === "Mastra" ? "#22d3ee" : "#6366f1"),
+    description: a.description,
+    runtime: a.framework === "Mastra" ? "mastra" : "claude",
+  };
+}
 
 export function AgentDetailDialog({
   agent,
@@ -15,6 +31,15 @@ export function AgentDetailDialog({
   onOpenChange: (o: boolean) => void;
 }) {
   const steps = derivePipeline(agent);
+
+  const handleDeploy = () => {
+    deployAgent(toDeployable(agent));
+    toast.success(`${agent.name} deployed`, {
+      description: "Drag the floating avatar anywhere, or tap it to open and run a task.",
+    });
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
@@ -55,6 +80,19 @@ export function AgentDetailDialog({
             ))}
           </div>
         )}
+
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <Button onClick={handleDeploy}>
+            <Rocket className="size-4" />
+            Deploy
+          </Button>
+          {agent.framework === "Claude" && (
+            <Button variant="outline" render={<Link href={`/agents/${agent.slug}`} />} onClick={() => onOpenChange(false)}>
+              <Play className="size-4" />
+              Run
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

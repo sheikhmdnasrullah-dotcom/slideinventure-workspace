@@ -7,6 +7,7 @@ export type NormalizedAgent = {
   framework: "Mastra" | "Claude";
   description: string;
   iconSlug?: string;
+  emoji?: string | null;
   color?: string | null;
   model?: string;
   tools?: string[];
@@ -19,6 +20,8 @@ export function normalizeMastra(a: MastraCatalogAgent): NormalizedAgent {
     name: a.name,
     framework: "Mastra",
     description: a.description || "",
+    emoji: a.emoji,
+    color: a.color,
     model: a.modelId || undefined,
     tools: a.tools ?? [],
     instructions: a.instructions,
