@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { waitUntil } from "@vercel/functions";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { verifyInternalSecret } from "@/lib/auth/verify-internal-secret";
 import { ingestCapture } from "@/lib/brain/ingest";
+import { processAgentJob } from "@/lib/agents/worker";
 
 // Ingest endpoint for research captured outside the dashboard: the VS Code
 // workspace watcher, a terminal hook, or any other AI tool that can POST.
@@ -68,6 +70,11 @@ export async function POST(request: NextRequest) {
       tool: body.tool ?? null,
       force: body.force,
     });
+
+    // A queued job would otherwise sit until the fallback worker polls. Same
+    // pattern as /api/agents/jobs: respond now, run the agent after.
+    if (result.agentJobId) waitUntil(processAgentJob(result.agentJobId));
+
     return Response.json({ ok: true, ...result });
   } catch (error) {
     return toJson(error);

@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
   // a document whose title doesn't mention the term but whose body does).
   // Backed by the shared LanceDB index (lib/retrieval/vector-index.ts):
   // scoped to the same collections substring search already covers here,
-  // excluding Research Lab/AI Venture/Brainstorm/Concepts.
+  // excluding Brain/AI Venture/Brainstorm/Concepts.
   const VECTOR_TYPES: VectorCollection[] = ["knowledge", "documents", "notes", "terminal", "links"];
   const seen = new Set(substringResults.map((r) => `${r.type}:${r.id}`));
   let vectorResults: typeof substringResults = [];

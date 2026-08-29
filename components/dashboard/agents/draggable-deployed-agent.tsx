@@ -13,7 +13,7 @@ import {
   Copy,
   Check,
   RotateCcw,
-  FlaskConical,
+  Brain,
   PenTool,
   FolderOpen,
   HelpCircle,
@@ -100,7 +100,7 @@ export function DraggableDeployedAgent() {
       case "files":
         return { icon: FolderOpen, label: "AI Venture Files" };
       case "research":
-        return { icon: FlaskConical, label: "Research Lab" };
+        return { icon: Brain, label: "Brain" };
       case "query":
         return { icon: HelpCircle, label: "AI Query" };
       case "useful-links":
@@ -133,7 +133,7 @@ export function DraggableDeployedAgent() {
         ];
       case "research":
         return [
-          { label: "🔬 Synthesize Findings", prompt: "Synthesize the main takeaways across all research lab items into a cohesive strategy." },
+          { label: "🔬 Synthesize Findings", prompt: "Synthesize the main takeaways across all Brain items into a cohesive strategy." },
           { label: "🔎 Identify Gaps", prompt: "What crucial market data or research questions are missing from our current research items?" },
           { label: "🚀 Strategic Initiatives", prompt: "Formulate top 3 strategic initiatives based on our cumulative research findings." },
         ];
@@ -349,7 +349,7 @@ export function DraggableDeployedAgent() {
       const cleanAnswer = (data.answer || "Task completed.").replace(/[—–]/g, "-");
       addAgentMessage({ role: "assistant", content: cleanAnswer });
 
-      // Auto-capture user-initiated research into the Research Lab (skip the
+      // Auto-capture user-initiated research into the Brain (skip the
       // automatic deployment brief to avoid noise).
       if (
         !opts?.isAuto &&
@@ -389,7 +389,7 @@ export function DraggableDeployedAgent() {
       case "files":
         return "AI Venture Files";
       case "research":
-        return "Research Lab";
+        return "Brain";
       case "query":
         return "AI Query";
       case "useful-links":
@@ -439,8 +439,8 @@ export function DraggableDeployedAgent() {
     }
   };
 
-  // Push specific message to Research Lab manually
-  const handlePushToResearchLab = (content: string) => {
+  // Push specific message to the Brain manually
+  const handlePushToBrain = (content: string) => {
     const snap = getDeployedAgent();
     fetch("/api/brain/capture", {
       method: "POST",
@@ -454,10 +454,10 @@ export function DraggableDeployedAgent() {
       }),
     })
       .then((res) => {
-        if (res.ok) toast.success("Pushed insight to Research Lab!");
-        else toast.error("Could not push to Research Lab");
+        if (res.ok) toast.success("Pushed insight to the Brain!");
+        else toast.error("Could not push to the Brain");
       })
-      .catch(() => toast.error("Network error pushing to Research Lab"));
+      .catch(() => toast.error("Network error pushing to the Brain"));
   };
 
   // Copy to clipboard
@@ -726,14 +726,14 @@ export function DraggableDeployedAgent() {
                   <span>Push to notes</span>
                 </button>
 
-                {/* Push to Research Lab */}
+                {/* Push to Brain */}
                 <button
                   type="button"
-                  onClick={() => handlePushToResearchLab(msg.content)}
+                  onClick={() => handlePushToBrain(msg.content)}
                   className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
                 >
-                  <FlaskConical className="size-3" />
-                  <span>Push to lab</span>
+                  <Brain className="size-3" />
+                  <span>Push to Brain</span>
                 </button>
               </div>
             )}

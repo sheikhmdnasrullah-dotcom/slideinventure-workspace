@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       metadata: { scope },
     }).catch(() => {});
 
-    // Brainstorm sketches constantly feed the Research Lab too: a summary of
+    // Brainstorm sketches constantly feed the Brain too: a summary of
     // the drawing (its labels/text plus a shape sketch) lands there next to
     // whatever came from Notepad, Files, and Agents.
     if (scope === "ai-venture" && typeof content === "string" && user.email) {

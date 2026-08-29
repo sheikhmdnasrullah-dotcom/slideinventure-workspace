@@ -72,7 +72,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
 
     // AI Venture's block-canvas brainstorm ("concepts" section) feeds the
-    // Research Lab too, same as the Excalidraw sketch board: a summary of
+    // Brain too, same as the Excalidraw sketch board: a summary of
     // whatever is written on it, refreshed on every autosave past the
     // cooldown in captureResearchInsight.
     if (body.section === "concepts" && body.snapshot !== undefined && user.email) {

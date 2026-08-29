@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const limit = checkRateLimit(request, {
     limit: 60,
     windowMs: 60_000,
-    identifier: `research-lab-list:${user.id}`,
+    identifier: `brain-list:${user.id}`,
   });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 

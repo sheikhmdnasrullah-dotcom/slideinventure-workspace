@@ -11,7 +11,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const limit = checkRateLimit(request, {
     limit: 30,
     windowMs: 60_000,
-    identifier: `research-lab-delete:${user.id}`,
+    identifier: `brain-delete:${user.id}`,
   });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
