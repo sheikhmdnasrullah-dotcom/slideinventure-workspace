@@ -23,30 +23,17 @@ export type MastraCatalog = {
   agents: MastraCatalogAgent[];
 };
 
-function fromRoster(roster: { slug: string; name: string; description: string; division: string; emoji: string | null; color: string | null }[]): MastraCatalogAgent[] {
-  return roster.map((r) => ({
-    slug: r.slug,
-    name: r.name,
-    description: r.description,
-    instructions: "",
-    tools: [],
-    provider: "",
-    modelId: "",
-    modelVersion: null,
-    supportsMemory: false,
-    source: "persona",
-    division: r.division,
-    emoji: r.emoji,
-    color: r.color ?? "#22d3ee",
-    online: false,
-  }));
+type Json = Record<string, unknown>;
+
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
 }
 
 /**
- * Lists the agents running on the self-hosted Mastra server (VPS). Tries the
- * live server first; if it's unreachable or unconfigured, falls back to the
- * file-based persona roster so the "Mastra Agents" section always renders
- * with the catalog. `online` tells the UI whether the data is live.
+ * Lists the agents running on the self-hosted Mastra server (VPS). If the
+ * server is unreachable or unconfigured, returns an empty list with
+ * `online: false` — the "Mastra Agents" tab then shows a clear offline state
+ * instead of mixing in the Claude personas from the roster.
  */
 export async function getMastraCatalog(): Promise<MastraCatalog> {
   const { getAgentRoster } = await import("./roster");
@@ -56,7 +43,7 @@ export async function getMastraCatalog(): Promise<MastraCatalog> {
   const secret = process.env.MASTRA_INTERNAL_SECRET;
 
   if (!baseUrl) {
-    return { online: false, baseUrl: null, agents: fromRoster(roster) };
+    return { online: false, baseUrl: null, agents: [] };
   }
 
   try {
@@ -64,38 +51,45 @@ export async function getMastraCatalog(): Promise<MastraCatalog> {
       headers: secret ? { Authorization: `Bearer ${secret}` } : {},
       next: { revalidate: 60 },
     });
-    if (!res.ok) return { online: false, baseUrl, agents: fromRoster(roster) };
-    const json = await res.json();
-    const list = (json.agents ?? json) as Record<string, any>;
-    const agents: MastraCatalogAgent[] = Object.values(list).map((a: any) => {
-      const slug = String(a.name ?? a.id);
+    if (!res.ok) return { online: false, baseUrl, agents: [] };
+
+    const json = (await res.json()) as Json;
+    const maybeAgents = json.agents;
+    const list = maybeAgents && typeof maybeAgents === "object" ? (maybeAgents as Json) : json;
+
+    const agents: MastraCatalogAgent[] = Object.values(list).map((a) => {
+      const x = a as Json;
+      const slug = str(x.name) || str(x.id);
       const r = rosterBySlug.get(slug);
-      const rawTools = a.tools;
-      const tools: string[] = Array.isArray(rawTools)
-        ? rawTools.map((t: any) => (typeof t === "string" ? t : t?.id ?? t?.name)).filter(Boolean)
-        : rawTools && typeof rawTools === "object"
-          ? Object.keys(rawTools)
-          : [];
+      const rawTools = x.tools;
+      let tools: string[] = [];
+      if (Array.isArray(rawTools)) {
+        tools = rawTools
+          .map((t) => (typeof t === "string" ? t : str((t as Json)?.id || (t as Json)?.name)))
+          .filter(Boolean);
+      } else if (rawTools && typeof rawTools === "object") {
+        tools = Object.keys(rawTools as Json);
+      }
       return {
         slug,
         name: slug,
-        description: typeof a.description === "string" ? a.description : "",
-        instructions: typeof a.instructions === "string" ? a.instructions : "",
+        description: str(x.description),
+        instructions: str(x.instructions),
         tools,
-        provider: a.provider ?? "",
-        modelId: a.modelId ?? "",
-        modelVersion: a.modelVersion ?? null,
-        supportsMemory: Boolean(a.supportsMemory),
-        source: a.source ?? "mastra",
+        provider: str(x.provider),
+        modelId: str(x.modelId),
+        modelVersion: typeof x.modelVersion === "string" ? x.modelVersion : null,
+        supportsMemory: Boolean(x.supportsMemory),
+        source: str(x.source) || "mastra",
         division: r?.division ?? "Mastra",
         emoji: r?.emoji ?? null,
         color: r?.color ?? "#22d3ee",
         online: true,
       };
     });
-    agents.sort((x, y) => x.name.localeCompare(y.name));
+    agents.sort((m, n) => m.name.localeCompare(n.name));
     return { online: true, baseUrl, agents };
   } catch {
-    return { online: false, baseUrl, agents: fromRoster(roster) };
+    return { online: false, baseUrl, agents: [] };
   }
 }
