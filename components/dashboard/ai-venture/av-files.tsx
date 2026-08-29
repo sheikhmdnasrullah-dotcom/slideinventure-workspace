@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveRefresh } from "@/components/providers/event-stream";
+import { registerContextProvider, unregisterContextProvider } from "@/lib/agents/context-registry";
 import { PdfEditorLink } from "@/components/dashboard/v3/documents/pdf-editor-link";
 import { cn } from "@/lib/utils";
 
@@ -187,6 +188,15 @@ export function AvFiles() {
   }, [load]);
 
   useLiveRefresh(load, { types: ["file."] });
+
+  // Expose the open file's content to the deployed agent when dropped here.
+  useEffect(() => {
+    registerContextProvider("files", () => ({
+      title: selected ? `File: ${selected.split("/").pop()}` : "AI Venture Files",
+      content,
+    }));
+    return () => unregisterContextProvider("files");
+  }, [selected, content]);
 
   const selectedExt = selected ? extOf(selected) : "";
   const isBinarySelected = BINARY_EXT.includes(selectedExt);

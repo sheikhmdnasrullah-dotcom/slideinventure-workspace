@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useLiveRefresh } from "@/components/providers/event-stream";
+import { registerContextProvider, unregisterContextProvider } from "@/lib/agents/context-registry";
 import { formatDistanceToNow } from "date-fns";
 
 type ResearchLabSource = "notepad" | "brainstorm" | "files" | "agent" | "chat";
@@ -98,6 +99,19 @@ export function AvResearch() {
   }, [load, sync]);
 
   useLiveRefresh(load, { sources: ["research-lab"] });
+
+  // Expose the current Research Lab items to the deployed agent so dropping an
+  // agent here hands it the real content, not just the section title.
+  useEffect(() => {
+    registerContextProvider("research", () => {
+      if (!items.length) return null;
+      return {
+        title: "Research Lab",
+        content: items.map((i) => `• ${i.title}\n${i.summary}`).join("\n\n"),
+      };
+    });
+    return () => unregisterContextProvider("research");
+  }, [items]);
 
   const openSource = (item: ResearchLabItem) => {
     const ref = item.reference;

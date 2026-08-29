@@ -1,10 +1,11 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Loader2, Send, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { registerContextProvider, unregisterContextProvider } from "@/lib/agents/context-registry"
 
 type Msg = { role: "user" | "assistant"; content: string }
 
@@ -18,6 +19,21 @@ export function AvQuery() {
   const [input, setInput] = useState("")
   const [busy, setBusy] = useState(false)
   const sessionIdRef = useRef<string | null>(null)
+
+  // Expose the live AI Query conversation to the deployed agent so dropping it
+  // here hands it the current discussion as context.
+  useEffect(() => {
+    registerContextProvider("query", () => {
+      if (!messages.length) return null
+      return {
+        title: "AI Query conversation",
+        content: messages
+          .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+          .join("\n\n"),
+      }
+    })
+    return () => unregisterContextProvider("query")
+  }, [messages])
 
   const ask = async () => {
     const question = input.trim()

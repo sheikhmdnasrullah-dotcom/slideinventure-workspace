@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 import { AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog"
 import { LUCIDCHART_URL } from "@/lib/lucidchart"
+import { registerContextProvider, unregisterContextProvider } from "@/lib/agents/context-registry"
+import { summarizeExcalidrawScene } from "@/lib/research-lab/excalidraw-summary"
 
 type BoardSummary = { id: string; title: string; updated_at: string }
 
@@ -128,6 +130,29 @@ export function AvWhiteboard() {
     void setDeepLinkEngine(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkBoard])
+
+  // Expose the latest Brainstorm board's drawn content to the deployed agent
+  // so dropping an agent here hands it the real canvas, not just the title.
+  useEffect(() => {
+    let active = true
+    fetch("/api/boards?scope=ai-venture")
+      .then((r) => r.json())
+      .then((json) => {
+        const boards: Array<{ title?: string; content?: string }> = json.boards ?? []
+        const latest = boards[0]
+        if (!latest || !active) return
+        const summary = summarizeExcalidrawScene(latest.content || "{}")
+        registerContextProvider("brainstorm", () => ({
+          title: latest.title || "Brainstorm Whiteboard",
+          content: summary,
+        }))
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+      unregisterContextProvider("brainstorm")
+    }
+  }, [])
 
   if (activeId && engine) {
     const frameUrl =
