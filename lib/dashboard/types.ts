@@ -131,13 +131,6 @@ export type NextBestAction = {
   priority: "high" | "medium";
 };
 
-export type ContextMessageInfo = {
-  headline: string;
-  subtext: string;
-  badge?: string;
-  tone: "focus" | "momentum" | "caution" | "action";
-};
-
 export type DashboardResponse = {
   kpis: KpiCard[];
   chart: ChartPoint[];
@@ -151,7 +144,6 @@ export type DashboardResponse = {
   continueItems?: ContinueItem[];
   needsAttention?: AttentionItem[];
   nextBestActions?: NextBestAction[];
-  contextMessage?: ContextMessageInfo;
 };
 
 export type DashboardWidget =

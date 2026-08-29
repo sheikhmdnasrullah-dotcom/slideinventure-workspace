@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { formatDistanceToNow } from "date-fns"
 import { useLiveEvents } from "@/components/providers/event-stream"
 import { labelForEventType } from "@/lib/events/types"
 import type { DomainEvent } from "@/lib/events/types"
@@ -11,29 +9,8 @@ import type { Activity } from "@/lib/activities/types"
 import { eventTypeForActivity, sourceForCategory } from "@/lib/events/types"
 import { MotionDiv, Ease, Duration } from "@/lib/motion"
 import { AnimatePresence } from "framer-motion"
-import { toast } from "sonner"
-import {
-  FileText,
-  NotebookPen,
-  Terminal,
-  Link2,
-  MessageSquare,
-  Rocket,
-  CheckCircle2,
-  LibraryBig,
-  Users,
-  Beaker,
-  Sparkles,
-  Lightbulb,
-  FileCode2,
-  Bot,
-  Plus,
-  Command,
-  type LucideIcon,
-} from "lucide-react"
-import { commandMenuStore } from "@/lib/command-menu-store"
 import { StatusBadge } from "@/components/system"
-import { Button } from "@/components/ui/button"
+import { Panel } from "@/components/dashboard/panel"
 
 type LiveRow = {
   id: string
@@ -76,27 +53,6 @@ function dedupeKey(row: LiveRow): string {
   return `${row.entityId ?? row.id}__${row.type}__${row.timestamp}`
 }
 
-const SOURCE_ICON: Record<string, LucideIcon> = {
-  notes: NotebookPen,
-  documents: FileText,
-  knowledge: LibraryBig,
-  terminal: Terminal,
-  leads: Users,
-  chat: MessageSquare,
-  "ai-venture": Rocket,
-  brainstorm: Lightbulb,
-  links: Link2,
-  vault: CheckCircle2,
-  integrations: Link2,
-  agents: Bot,
-  todoist: CheckCircle2,
-  research: Beaker,
-  "research-lab": Beaker,
-  ideas: Sparkles,
-  system: FileCode2,
-  dashboard: FileCode2,
-}
-
 const SOURCE_ROUTE: Record<string, string> = {
   notes: "/notepad",
   documents: "/documents",
@@ -126,10 +82,6 @@ function hrefForRow(row: LiveRow): string {
   if (row.entityType === "lead") return "/leads"
   if (row.entityType === "document" || row.entityType === "file") return "/documents"
   return SOURCE_ROUTE[row.source] ?? "/activity"
-}
-
-function iconForSource(source: string): LucideIcon {
-  return SOURCE_ICON[source] ?? FileCode2
 }
 
 function dayHeader(ts: string): string {
@@ -195,54 +147,60 @@ export function LiveActivity() {
   const groups = React.useMemo(() => groupByDay(rows), [rows])
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex items-center justify-between gap-2 pb-3">
-        <div>
-          <p className="font-label text-ink-faint">Recent activity</p>
-          <p className="font-body-tight text-sm text-ink-muted">What happened while you were away</p>
-        </div>
-        <ConnectionDot status={status} />
-      </div>
+    <Panel
+      title="Activity"
+      action={<ConnectionDot status={status} />}
+      bodyClassName="p-0"
+    >
       {!loaded ? (
-        <div className="flex h-[360px] items-center justify-center font-body text-sm text-ink-muted">
-          Loading activity
-        </div>
+        <p className="px-4 py-8 font-body text-sm text-ink-muted">Loading</p>
       ) : rows.length === 0 ? (
-        <p className="py-12 text-center font-body text-sm text-ink-muted">
-          No activity yet. Work done in any section shows up here.
-        </p>
+        <div className="px-4 py-8">
+          <p className="font-body text-sm text-ink-muted">No activity yet.</p>
+          <p className="font-body text-xs text-ink-faint">
+            Work done in any section is recorded here automatically.
+          </p>
+        </div>
       ) : (
-        <div data-lenis-prevent className="h-[360px] overflow-y-auto pr-2">
+        <div data-lenis-prevent className="max-h-[420px] overflow-y-auto">
           <AnimatePresence initial={false}>
             {groups.map((group) => (
-              <div key={group.header} className="mb-1">
-                <div className="sticky top-0 z-10 bg-[var(--page-fill)]/90 py-1 font-label text-ink-faint backdrop-blur-sm">
+              <div key={group.header}>
+                <div className="sticky top-0 z-10 border-b border-rule bg-[var(--surface-2)]/90 px-4 py-1.5 font-label text-xs text-ink-faint backdrop-blur-sm">
                   {group.header}
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col divide-y divide-rule">
                   {group.items.map((row) => {
-                    const Icon = iconForSource(row.source)
                     const href = hrefForRow(row)
+                    const time = new Date(row.timestamp).toLocaleTimeString(undefined, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
                     const body = (
                       <MotionDiv
                         layout
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: Duration.fast, ease: Ease.expo }}
-                        className="flex items-start gap-3 border-l border-rule py-2 pl-3 transition-colors hover:bg-[var(--surface-2)]/50"
+                        className="flex items-baseline gap-3 px-4 py-2 transition-colors hover:bg-[var(--surface-2)]"
                       >
-                        <Icon className="mt-0.5 size-3.5 shrink-0 text-ink-faint" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-body-tight text-sm text-ink-strong">{row.title}</p>
+                        <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">
+                          {time}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-body-tight text-sm text-ink-strong">
+                            {row.title}
+                          </span>
                           {row.description ? (
-                            <p className="truncate font-body text-xs text-ink-muted">{row.description}</p>
+                            <span className="block truncate font-body text-xs text-ink-muted">
+                              {row.description}
+                            </span>
                           ) : null}
-                          <p className="mt-0.5 font-label text-ink-faint">
-                            {labelForEventType(row.type)} ·{" "}
-                            {formatDistanceToNow(new Date(row.timestamp), { addSuffix: true })}
-                          </p>
-                        </div>
+                        </span>
+                        <span className="shrink-0 font-label text-xs text-ink-faint">
+                          {labelForEventType(row.type)}
+                        </span>
                       </MotionDiv>
                     )
                     return href !== "/activity" ? (
@@ -259,7 +217,7 @@ export function LiveActivity() {
           </AnimatePresence>
         </div>
       )}
-    </div>
+    </Panel>
   )
 }
 
@@ -271,54 +229,5 @@ function ConnectionDot({ status }: { status: "connecting" | "live" | "offline" }
       dot
       label={live ? "Live" : "Reconnecting"}
     />
-  )
-}
-
-export function QuickActions() {
-  const router = useRouter()
-
-  async function create(url: string, body: unknown, href: string, label: string) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) throw new Error("request failed")
-      toast.success(`${label} created`)
-      router.push(href)
-    } catch {
-      toast.error(`Could not create ${label.toLowerCase()}`)
-    }
-  }
-
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="font-label text-ink-faint">Quick actions</span>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => create("/api/notes", { title: "New note", content: "[]", scope: "global" }, "/notepad", "Note")}
-      >
-        <Plus className="size-3.5" /> New note
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => create("/api/boards", { title: "New board", scope: "brainstorm" }, "/brainstorm-sketch", "Board")}
-      >
-        <Plus className="size-3.5" /> New board
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => create("/api/idea-maps", { title: "New idea map" }, "/ideas", "Idea map")}
-      >
-        <Plus className="size-3.5" /> New idea map
-      </Button>
-      <Button size="sm" variant="outline" onClick={() => commandMenuStore.toggle()}>
-        <Command className="size-3.5" /> Command palette
-      </Button>
-    </div>
   )
 }

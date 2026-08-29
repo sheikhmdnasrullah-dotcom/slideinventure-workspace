@@ -19,7 +19,6 @@ import type {
 } from "@/lib/dashboard/types";
 import { ensureWorkSessionsCollection } from "@/lib/time-tracker/ensure";
 import type { WorkSession, WorkTimeSummary, LastSessionInfo } from "@/lib/time-tracker/types";
-import { getSmartContextMessage } from "@/lib/dashboard/context-messages";
 import { formatDurationHuman } from "@/lib/time-tracker/timer-store";
 
 const DB = APPWRITE.databaseId;
@@ -416,36 +415,26 @@ export async function GET() {
     needsAttention.push({
       id: "unsynthesized-docs",
       severity: "medium",
-      title: "Document awaiting analysis",
-      description: `"${recentDocs[0].title || recentDocs[0].filename}" was uploaded and is ready for synthesis.`,
+      title: "Document with no research entry",
+      description: `"${recentDocs[0].title || recentDocs[0].filename}" was uploaded ${formatRelativeTime(recentDocs[0].created_at ?? recentDocs[0].updated_at)}.`,
       href: "/documents",
-      actionLabel: "Open Document",
+      actionLabel: "Open",
       category: "documents",
     });
   }
 
-  if (leadsRes.total > 0) {
-    needsAttention.push({
-      id: "active-leads-milestone",
-      severity: "good",
-      title: `${leadsRes.total} active leads ready`,
-      description: "Lead repository is populated and ready for campaign outreach.",
-      href: "/leads",
-      actionLabel: "View Leads",
-      category: "leads",
-    });
-  }
-
-  // Next Best Action Recommendations (explainable, data-backed)
+  // Next up: each entry names a specific item and states the fact that surfaced
+  // it. No encouragement, no invented priorities — if there is no concrete open
+  // loop in the data, this list stays empty.
   const nextBestActions: NextBestAction[] = [];
 
   if (recentDocs.length > 0) {
     const doc = recentDocs[0];
     nextBestActions.push({
       id: "next-analyze-doc",
-      title: `Synthesize "${doc.title || doc.filename || 'Recent Document'}"`,
-      reason: `Uploaded ${formatRelativeTime(doc.created_at ?? doc.updated_at)} and ready to be turned into structured research.`,
-      actionLabel: "Open Document",
+      title: `Synthesize "${doc.title || doc.filename || "recent document"}"`,
+      reason: `Uploaded ${formatRelativeTime(doc.created_at ?? doc.updated_at)}, no research entry references it.`,
+      actionLabel: "Open document",
       href: "/documents",
       category: "documents",
       priority: "high",
@@ -456,8 +445,8 @@ export async function GET() {
     const resItem = recentResearch[0];
     nextBestActions.push({
       id: "next-continue-research",
-      title: `Continue research on "${resItem.title}"`,
-      reason: "You have captured insights that can be expanded into strategic decisions or concepts.",
+      title: `Continue "${resItem.title}"`,
+      reason: `Last edited ${formatRelativeTime(resItem.updated_at ?? resItem.created_at)}.`,
       actionLabel: "Open Research Lab",
       href: "/research-lab",
       category: "research",
@@ -465,43 +454,17 @@ export async function GET() {
     });
   }
 
-  if (todayFocusSeconds === 0) {
+  if (openTasks.length > 0) {
     nextBestActions.push({
-      id: "next-start-timer",
-      title: "Start a 25-minute focus session",
-      reason: "No focused work time recorded today yet. Build momentum on your highest-leverage priority.",
-      actionLabel: "Start Timer",
-      href: "#stopwatch",
-      category: "timer",
-      priority: "medium",
-    });
-  } else if (leadsRes.total > 0 && completedRuns.length === 0) {
-    nextBestActions.push({
-      id: "next-outreach",
-      title: "Launch outbound campaign sequence",
-      reason: `${leadsRes.total} leads are available in your workspace pipeline ready for outreach.`,
-      actionLabel: "Review Leads",
-      href: "/leads",
-      category: "leads",
+      id: "next-open-task",
+      title: openTasks[0].content || "Open task",
+      reason: `${openTasks.length} task${openTasks.length === 1 ? "" : "s"} still open.`,
+      actionLabel: "Open Todoist",
+      href: "/todoist",
+      category: "todoist",
       priority: "medium",
     });
   }
-
-  // Contextual message
-  const lastSessionMinutesAgo = lastSession
-    ? Math.max(0, Math.floor((now.getTime() - new Date(lastSession.endTime).getTime()) / (1000 * 60)))
-    : null;
-
-  const contextMessage = getSmartContextMessage({
-    hour: now.getHours(),
-    dayOfWeek: now.getDay(),
-    todayActivityCount: todayActivities.length,
-    todayFocusMinutes: Math.floor(todayFocusSeconds / 60),
-    openTasksCount: openTasks.length,
-    openResearchCount: recentResearch.length,
-    lastSessionMinutesAgo,
-    lastSessionDurationMinutes: lastSession ? Math.floor(lastSession.duration / 60) : null,
-  });
 
   // Recent consolidated activity rows
   const activity: ActivityRow[] = recentActivities.map((d: any) => ({
@@ -593,7 +556,6 @@ export async function GET() {
     continueItems,
     needsAttention,
     nextBestActions,
-    contextMessage,
   };
 
   return Response.json(response);

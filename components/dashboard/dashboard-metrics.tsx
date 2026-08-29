@@ -1,10 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLiveRefresh } from "@/components/providers/event-stream"
-import { Metric, MetricRow, MetricCell, SectionRule } from "@/components/system"
+import { Panel, PanelEmpty, Stat } from "@/components/dashboard/panel"
 import { dashboardSummaryQuery } from "@/lib/dashboard/queries"
 import type { DashboardResponse, DashboardCounts } from "@/lib/dashboard/types"
 
@@ -72,24 +71,28 @@ export function DashboardMetrics({ initial }: { initial: DashboardResponse | nul
   const totalVolume = volume.reduce((s, p) => s + p.count, 0)
 
   return (
-    <div className="flex flex-col">
-      <SectionRule
-        label="Workspace pulse"
-        coordinate={totalVolume > 0 ? <Sparkline points={volume.map((p) => p.count)} /> : undefined}
-      />
+    <Panel
+      title="Workspace"
+      action={
+        totalVolume > 0 ? (
+          <span className="flex items-center gap-2">
+            <span className="font-label text-xs text-ink-faint">14d</span>
+            <Sparkline points={volume.map((p) => p.count)} />
+          </span>
+        ) : undefined
+      }
+    >
       {tiles.length === 0 ? (
-        <p className="font-body text-sm text-ink-muted">
-          No workspace activity yet. Numbers appear here as you create notes, documents and boards.
-        </p>
+        <PanelEmpty hint="Counts appear as you create notes, documents and boards.">
+          Nothing recorded yet.
+        </PanelEmpty>
       ) : (
-        <MetricRow>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4 lg:grid-cols-7">
           {tiles.map((tile) => (
-            <MetricCell key={tile.label}>
-              <Metric label={tile.label} value={tile.value ?? "0"} href={tile.href} />
-            </MetricCell>
+            <Stat key={tile.label} label={tile.label} value={tile.value ?? 0} href={tile.href} />
           ))}
-        </MetricRow>
+        </div>
       )}
-    </div>
+    </Panel>
   )
 }
