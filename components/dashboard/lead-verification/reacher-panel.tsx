@@ -77,14 +77,7 @@ export function ReacherPanel() {
           onChange={(e) => setInput(e.target.value)}
           rows={4}
         />
-        <Button
-          onClick={() => {
-            console.log("REACHER_ONCLICK input=", JSON.stringify(input));
-            run();
-          }}
-          disabled={running}
-          className="self-start"
-        >
+        <Button onClick={run} disabled={running} className="self-start">
           {running ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
           {running ? "Verifying" : "Verify with Reacher"}
         </Button>

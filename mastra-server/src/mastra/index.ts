@@ -145,5 +145,5 @@ const deepResearch = createWorkflow({
 export const mastra = new Mastra({
   agents,
   workflows: { deepResearch },
-  memory,
+  memory: { default: memory },
 });
