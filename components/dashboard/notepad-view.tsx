@@ -37,7 +37,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -309,6 +308,87 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
     }
   }
 
+  // Notes that should never be included in a bulk export (e.g. test scratch
+  // notes the user keeps around in the Notepad but doesn't want in research
+  // material). Match is case-insensitive on the trimmed title.
+  const SKIP_TITLES = new Set(["Notes on SlideIn Venture Concept"].map((t) => t.toLowerCase()))
+
+  /**
+   * Bulk-exports every note in the current scope as Markdown: downloads each
+   * file locally AND saves it to AI Venture Files under the "Notepad" folder,
+   * then writes a `_notes-index.md` manifest so every exported note can be
+   * located again. The test note is excluded.
+   */
+  const handleExportAll = async () => {
+    if (notes.length === 0) {
+      toast.error("No notes to export")
+      return
+    }
+    setExporting(true)
+    const toastId = toast.loading("Exporting all notes (.txt, .md, .pdf)...")
+    try {
+      const manifest: string[] = [
+        "# AI Venture Notepad — Exported Notes",
+        "",
+        `_Generated ${new Date().toISOString()} • ${notes.length} note(s) in scope_`,
+        "",
+        "## Files (saved to AI Venture Files → Notepad/ and downloaded locally)",
+        "",
+      ]
+
+      let exported = 0
+      let skipped = 0
+
+      for (const note of notes) {
+        const title = (note.title || "Untitled Note").trim()
+        if (SKIP_TITLES.has(title.toLowerCase())) {
+          skipped++
+          continue
+        }
+        const base = sanitizeFilename(title)
+        const md = noteToMarkdown(title, note.content)
+        const txt = noteToPlainText(title, note.content)
+
+        // Local browser downloads
+        downloadFile(txt, `${base}.txt`, "text/plain;charset=utf-8")
+        downloadFile(md, `${base}.md`, "text/markdown;charset=utf-8")
+        const pdfBlob = await noteToPdfBlob(title, note.content)
+        downloadFile(pdfBlob, `${base}.pdf`, "application/pdf")
+
+        // Saved into AI Venture Files → Notepad/ (also visible in the Files subsection)
+        const savedMd = await saveToAiVentureFiles("Notepad", `${base}.md`, md)
+        const savedTxt = await saveToAiVentureFiles("Notepad", `${base}.txt`, txt)
+        const savedPdf = await saveToAiVentureFiles("Notepad", `${base}.pdf`, pdfBlob)
+
+        if (savedMd || savedTxt || savedPdf) {
+          const files = [
+            savedTxt && `\`Notepad/${base}.txt\``,
+            savedMd && `\`Notepad/${base}.md\``,
+            savedPdf && `\`Notepad/${base}.pdf\``,
+          ]
+            .filter(Boolean)
+            .join(", ")
+          manifest.push(`- **${title}** → ${files}`)
+          exported++
+        }
+      }
+
+      const manifestContent = manifest.join("\n").trim() + "\n"
+      // Local + Files manifest so all notes can be located for business planning
+      downloadFile(manifestContent, "_notes-index.md", "text/markdown;charset=utf-8")
+      await saveToAiVentureFiles("Notepad", "_notes-index.md", manifestContent)
+
+      toast.success(
+        `Exported ${exported} note(s) as .txt/.md/.pdf to Notepad/ (skipped ${skipped} test note). Index: Notepad/_notes-index.md.`,
+        { id: toastId, duration: 6000 }
+      )
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Bulk export failed", { id: toastId })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-6 py-4">
@@ -316,9 +396,26 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
           <h1 className="font-display text-2xl text-ink-strong">Notepad</h1>
           <p className="font-body text-sm text-ink-muted">Rich-text notes, autosaved to your workspace.</p>
         </div>
-        <Button onClick={handleWrite} className="gap-2 shadow-xs font-medium">
-          <Plus className="size-4" /> New note
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportAll}
+            disabled={exporting || notes.length === 0}
+            className="gap-1.5 cursor-pointer text-xs font-medium h-8 shadow-xs hover:border-primary/50"
+            title="Download every note as .txt, .md and .pdf to Notepad/ (skips the test note)"
+          >
+            {exporting ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Download className="size-3.5 text-primary" />
+            )}
+            <span>Download all</span>
+          </Button>
+          <Button onClick={handleWrite} className="gap-2 shadow-xs font-medium">
+            <Plus className="size-4" /> New note
+          </Button>
+        </div>
       </div>
       <Separator />
       <div className="flex flex-1 overflow-hidden">
@@ -451,9 +548,9 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-68">
-                      <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal pb-1">
+                      <div className="px-2.5 py-1.5 text-[11px] text-muted-foreground font-normal">
                         Downloads file locally and saves to <span className="font-semibold text-foreground">AI Venture / Files</span> simultaneously:
-                      </DropdownMenuLabel>
+                      </div>
                       <DropdownMenuSeparator />
                       
                       <DropdownMenuItem
