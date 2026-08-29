@@ -1,0 +1,66 @@
+{
+  "name": "toolbox",
+  "displayName": "Toolbox",
+  "description": "Launch any AI Venture dashboard tool directly inside VS Code — opens the live tool, same backend and logs.",
+  "version": "0.2.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "toolbox",
+          "title": "Toolbox",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "toolbox": [
+        {
+          "type": "webview",
+          "id": "toolbox.launcher",
+          "name": "AI Venture Tools"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Toolbox",
+      "properties": {
+        "toolbox.dashboardUrl": {
+          "type": "string",
+          "default": "http://localhost:3000/ai-venture",
+          "description": "Base URL of the AI Venture dashboard to iframe (e.g. http://localhost:3000/ai-venture or https://your-app.vercel.app/ai-venture)."
+        }
+      }
+    },
+    "commands": [
+      { "command": "toolbox.openResearch", "title": "Toolbox: Open Research Lab" },
+      { "command": "toolbox.openPlayground", "title": "Toolbox: Open Playground" },
+      { "command": "toolbox.openFiles", "title": "Toolbox: Open Files" },
+      { "command": "toolbox.openUsefulLinks", "title": "Toolbox: Open Useful Links" },
+      { "command": "toolbox.openQuery", "title": "Toolbox: Open AI Query" },
+      { "command": "toolbox.openBrainstorm", "title": "Toolbox: Open Brainstorm" },
+      { "command": "toolbox.openNotepad", "title": "Toolbox: Open Notepad (Foam)" },
+      { "command": "toolbox.openConnected", "title": "Toolbox: Open Connected Ideas" },
+      { "command": "toolbox.openAgents", "title": "Toolbox: Open Agents" },
+      { "command": "toolbox.openActivity", "title": "Toolbox: Open Agents Activity" }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}
