@@ -24,7 +24,7 @@ const VERDICT_STYLE: Record<Verdict, string> = {
   error: "!bg-amber-500/10 !text-amber-500 !border-amber-500/20",
 };
 
-export function TruemailPanel() {
+export function ReacherPanel() {
   const [input, setInput] = useState("");
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<{ email: string; status: Verdict; detail?: string }[]>([]);
@@ -41,7 +41,7 @@ export function TruemailPanel() {
     setRunning(true);
     setResults([]);
     try {
-      const resp = await fetch("/api/verify/truemail", {
+      const resp = await fetch("/api/verify/reacher", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails }),
@@ -52,7 +52,7 @@ export function TruemailPanel() {
         return;
       }
       setResults(data.results);
-      toast.success(`Verified ${data.results.length} email(s) via TrueMail`);
+      toast.success(`Verified ${data.results.length} email(s) via Reacher`);
     } catch {
       toast.error("Verification failed");
     } finally {
@@ -64,11 +64,11 @@ export function TruemailPanel() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <ShieldCheck className="size-4" /> TrueMail Verification
-        </CardTitle>
-        <CardDescription>
-          Verify email deliverability through your VPS TrueMail engine (truemail-rb).
-        </CardDescription>
+          <ShieldCheck className="size-4" /> Reacher Verification
+          </CardTitle>
+          <CardDescription>
+            Verify email deliverability through your VPS Reacher engine.
+          </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <Textarea
@@ -79,7 +79,7 @@ export function TruemailPanel() {
         />
         <Button onClick={run} disabled={running} className="self-start">
           {running ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
-          {running ? "Verifying" : "Verify with TrueMail"}
+          {running ? "Verifying" : "Verify with Reacher"}
         </Button>
 
         {results.length > 0 && (

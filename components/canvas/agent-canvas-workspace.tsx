@@ -74,9 +74,9 @@ export function AgentCanvasWorkspace() {
     }
 
     setStatus("crawl", "done");
-    setStatus("truemail", "running");
+    setStatus("reacher", "running");
     await wait(500);
-    setStatus("truemail", "done");
+    setStatus("reacher", "done");
 
     const emails: string[] = Array.isArray(data?.emails) ? data.emails : [];
     setStatus("lead", emails.length ? "done" : "error");

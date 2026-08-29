@@ -20,7 +20,7 @@ export function LeadsModeNav() {
     {
       id: "leads-verify",
       title: "Verify Leads",
-      description: "Bulk email deliverability verification via TrueMail & Reacher",
+      description: "Bulk email deliverability verification via Reacher",
       href: "/leads/verify",
       icon: ShieldCheck,
       active: pathname === "/leads/verify",

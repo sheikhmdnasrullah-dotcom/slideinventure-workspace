@@ -120,7 +120,7 @@ export function EmailCrawler() {
               <Mail className="size-4" /> Found emails
             </CardTitle>
             <CardDescription>
-              Verified with TrueMail. {imported} new lead(s) imported into Leads.
+              Verified with Reacher. {imported} new lead(s) imported into Leads.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">

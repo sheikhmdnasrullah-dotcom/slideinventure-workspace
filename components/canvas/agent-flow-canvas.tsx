@@ -26,7 +26,7 @@ const NODE_META: Record<
   browser: { label: "Browser Navigation", sub: "Headless surf", icon: Globe },
   captcha: { label: "CAPTCHA Solver", sub: "2Captcha bridge", icon: ShieldCheck },
   crawl: { label: "Deep Crawler", sub: "crawl4ai / browser-use", icon: Network },
-  truemail: { label: "TrueMail Validation", sub: "SMTP verify", icon: MailCheck },
+  reacher: { label: "Reacher Validation", sub: "SMTP verify", icon: MailCheck },
   lead: { label: "Lead Emitted", sub: "Imported to CRM", icon: UserPlus },
 };
 

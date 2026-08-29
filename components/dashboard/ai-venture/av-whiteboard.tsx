@@ -145,7 +145,11 @@ export function AvWhiteboard() {
 
   if (engine) {
     return (
-      <div className="flex h-full flex-col">
+      <div
+        data-droppable="brainstorm"
+        data-drop-title="Brainstorm Whiteboard"
+        className="flex h-full flex-col"
+      >
         <div className="flex items-center gap-2 border-b border-border px-3 py-2">
           <Button size="icon-sm" variant="ghost" onClick={() => setEngine(null)}>
             <ArrowLeft className="size-4" />
@@ -160,7 +164,11 @@ export function AvWhiteboard() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
+    <div
+      data-droppable="brainstorm"
+      data-drop-title="Brainstorm Whiteboard"
+      className="flex h-full flex-col items-center justify-center gap-6 p-8"
+    >
       <div className="text-center">
         <h2 className="text-lg font-medium">Choose a whiteboard engine</h2>
         <p className="text-sm text-muted-foreground">Both save automatically and stay right here in AI Venture.</p>

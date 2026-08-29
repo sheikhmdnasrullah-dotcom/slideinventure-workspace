@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchVector } from "@/lib/retrieval/vector-index";
-import { runBrowseTask } from "@/lib/browse/agent";
 import { createWorkingMemory, getWorkingMemory } from "@/lib/memory/working-memory";
 import { mem0Remember, mem0Recall, mem0Enabled } from "@/lib/memory/mem0";
 
@@ -53,6 +52,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ text: entries.map((e) => `- ${e.content}`).join("\n") || "(no memory)" });
       }
       case "browse": {
+        const { runBrowseTask } = await import("@/lib/browse/agent");
         const task = String(body.task ?? "");
         if (!task) return NextResponse.json({ ok: false, error: "missing task" }, { status: 400 });
         const res = await runBrowseTask({

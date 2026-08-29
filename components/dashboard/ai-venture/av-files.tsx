@@ -374,7 +374,11 @@ export function AvFiles() {
   };
 
   return (
-    <div className="grid h-full grid-cols-1 gap-3 p-3 lg:grid-cols-[1fr_440px]">
+    <div
+      data-droppable="files"
+      data-drop-title="AI Venture Files"
+      className="grid h-full grid-cols-1 gap-3 p-3 lg:grid-cols-[1fr_440px]"
+    >
       {/* Left Pane: Files & Folders Explorer */}
       <div
         onDragOver={handleDragOver}

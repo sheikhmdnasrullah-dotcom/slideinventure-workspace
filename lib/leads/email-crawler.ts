@@ -2,7 +2,7 @@ import "server-only";
 import { runBrowseTask } from "@/lib/browse/agent";
 import { databases, ID, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
-import { verifyEmail } from "@/lib/verify/truemail";
+import { verifyEmail } from "@/lib/verify/reacher";
 import { enrichWithPythonService } from "@/lib/email-crawler/service";
 import { logActivity } from "@/lib/activities/client";
 
@@ -27,7 +27,7 @@ export type EmailCrawlerResult = {
  * Email Crawler: given a prospect link + free-form details, the agent surfs the
  * web (no prerequisites: it starts immediately), searches any site it needs,
  * solves CAPTCHAs via 2captcha wherever they appear, and returns the prospect's
- * email(s). Each find is verified with TrueMail and imported as a lead.
+ * email(s). Each find is verified with Reacher and imported as a lead.
  */
 export async function crawlEmails(opts: {
   link?: string;

@@ -17,7 +17,7 @@ export function CrawlerModeNav() {
     {
       id: "crawler-verify",
       title: "Verify Leads",
-      description: "Bulk deliverability verification via TrueMail & Reacher",
+      description: "Bulk deliverability verification via Reacher",
       href: "/leads/verify",
       icon: ShieldCheck,
       active: false,

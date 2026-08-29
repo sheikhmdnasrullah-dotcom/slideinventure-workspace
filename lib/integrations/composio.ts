@@ -132,9 +132,20 @@ export async function initiateComposioConnection(
   const client = await getComposioClient();
   if (!client) return { error: "Composio is not configured." };
   try {
-    const existing = await client.authConfigs.list({ toolkit });
-    const existingItems = existing?.items ?? existing ?? [];
-    let authConfigId: string | undefined = existingItems[0]?.id ?? existingItems[0]?.nanoid;
+    // List every auth config and pick the one that actually belongs to THIS
+    // toolkit. The SDK's server-side `toolkit` filter is unreliable across
+    // versions, so we filter client-side by the returned toolkit slug —
+    // otherwise we'd reuse a *different* app's auth config (e.g. link Notion
+    // through GitHub's config and bounce the user to GitHub's consent
+    // screen). See the 2026-08-29 integration fix.
+    const all = await client.authConfigs.list().catch(() => ({ items: [] }));
+    const items: any[] = all?.items ?? all ?? [];
+    const match = items.find((c) => {
+      const t = c?.toolkit;
+      const slug = typeof t === "string" ? t : (t?.slug ?? "");
+      return slug === toolkit;
+    });
+    let authConfigId: string | undefined = match?.id ?? match?.nanoid;
 
     if (!authConfigId) {
       const created = await client.authConfigs.create(toolkit, {
@@ -145,10 +156,13 @@ export async function initiateComposioConnection(
     }
     if (!authConfigId) return { error: "Could not set up this integration." };
 
+    // allowMultiple lets a user re-connect / re-auth an app that already has a
+    // connected account without Composio throwing
+    // COMPOSIO_MULTIPLE_CONNECTED_ACCOUNTS.
     const connectionRequest = await client.connectedAccounts.link(
       COMPOSIO_USER_ID,
       authConfigId,
-      callbackUrl ? { callbackUrl } : undefined
+      callbackUrl ? { callbackUrl, allowMultiple: true } : { allowMultiple: true }
     );
     const redirectUrl = connectionRequest?.redirectUrl ?? connectionRequest?.redirect_url;
     if (!redirectUrl) return { error: "Could not start the connection." };

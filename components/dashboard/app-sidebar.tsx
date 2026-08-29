@@ -162,33 +162,45 @@ export function AppSidebar({
             </div>
           )}
           <div className="px-2 pb-2 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                if (deployed.agent && !deployed.isOpen) {
-                  deployAgent(deployed.agent)
-                } else {
-                  setDeployOpen(true)
-                }
-              }}
-              title="Deploy an agent as a draggable circle icon"
-              className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 cursor-pointer"
-            >
-              {deployed.agent ? (
-                <span
-                  className="flex size-5 items-center justify-center rounded-full text-xs shadow-xs"
-                  style={{ backgroundColor: `${deployed.agent.color || "#6366f1"}25` }}
-                >
-                  {deployed.agent.emoji || "🤖"}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (deployed.agent && !deployed.isOpen) {
+                    deployAgent(deployed.agent)
+                  } else {
+                    setDeployOpen(true)
+                  }
+                }}
+                title={deployed.agent && !deployed.isOpen ? `Summon ${deployed.agent.name}` : "Deploy an agent as a floating circle"}
+                className="flex flex-1 items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 cursor-pointer min-w-0"
+              >
+                {deployed.agent ? (
+                  <span
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full text-xs shadow-xs"
+                    style={{ backgroundColor: `${deployed.agent.color || "#6366f1"}25` }}
+                  >
+                    {deployed.agent.emoji || "🤖"}
+                  </span>
+                ) : (
+                  <Rocket className="size-4 shrink-0 text-primary" />
+                )}
+                <span className="truncate">{deployed.agent && !deployed.isOpen ? `Summon ${deployed.agent.name}` : "Deploy Agent"}</span>
+                <span className="ml-auto shrink-0 text-[10px] text-sidebar-foreground/50">
+                  {deployed.agent && !deployed.isOpen ? "docked" : "circle"}
                 </span>
-              ) : (
-                <Rocket className="size-4 text-primary" />
+              </button>
+              {deployed.agent && (
+                <button
+                  type="button"
+                  onClick={() => setDeployOpen(true)}
+                  title="Pick or deploy another agent"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-foreground/70 hover:text-foreground hover:bg-sidebar-accent/70 transition-colors cursor-pointer"
+                >
+                  <Rocket className="size-3.5 text-primary" />
+                </button>
               )}
-              <span>{deployed.agent && !deployed.isOpen ? `Summon ${deployed.agent.name}` : "Deploy Agent"}</span>
-              <span className="ml-auto text-[10px] text-sidebar-foreground/50">
-                {deployed.agent && !deployed.isOpen ? "docked" : "circle"}
-              </span>
-            </button>
+            </div>
           </div>
       </SidebarContent>
 

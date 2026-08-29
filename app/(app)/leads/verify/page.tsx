@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/supabase/server";
 import { VerificationPanel } from "@/components/dashboard/lead-verification/verification-panel";
-import { TruemailPanel } from "@/components/dashboard/lead-verification/truemail-panel";
+import { ReacherPanel } from "@/components/dashboard/lead-verification/reacher-panel";
 import { LeadsModeNav } from "@/components/dashboard/leads/leads-mode-nav";
 
 export const metadata = {
@@ -23,7 +23,7 @@ export default async function LeadVerificationPage() {
       </div>
       <LeadsModeNav />
       <VerificationPanel />
-      <TruemailPanel />
+      <ReacherPanel />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { getSessionUser } from "@/lib/appwrite/auth";
-import { verifyEmails } from "@/lib/verify/truemail";
+import { verifyEmails } from "@/lib/verify/reacher";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

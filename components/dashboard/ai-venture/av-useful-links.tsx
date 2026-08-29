@@ -5,7 +5,12 @@ import { Send } from "lucide-react";
 
 export function AvUsefulLinks() {
   return (
-    <div className="flex-1 overflow-y-auto p-6" data-lenis-prevent>
+    <div
+      data-droppable="useful-links"
+      data-drop-title="Useful Links"
+      className="flex-1 overflow-y-auto p-6"
+      data-lenis-prevent
+    >
       <div className="flex items-center justify-between gap-4 border-b border-rule pb-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">

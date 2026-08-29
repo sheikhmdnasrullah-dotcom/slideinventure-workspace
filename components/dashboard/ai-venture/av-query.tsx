@@ -79,7 +79,11 @@ export function AvQuery() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div
+      data-droppable="query"
+      data-drop-title="AI Query"
+      className="flex h-full flex-col"
+    >
       <div className="flex-1 overflow-y-auto p-6">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">

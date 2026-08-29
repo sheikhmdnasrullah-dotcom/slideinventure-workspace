@@ -9,7 +9,7 @@ export type DeployableAgent = {
   color: string;
   description: string;
   strategy?: string;
-  category?: "research" | "email" | "crawler" | "lead" | "general";
+  category?: "research" | "email" | "crawler" | "lead" | "general" | string;
 };
 
 export type NoteContext = {
@@ -18,12 +18,23 @@ export type NoteContext = {
   content?: string;
 };
 
+export type DeployTarget =
+  | "notepad"
+  | "brainstorm"
+  | "files"
+  | "research"
+  | "query"
+  | "useful-links"
+  | "screen"
+  | "workspace"
+  | null;
+
 export type DeployedAgentState = {
   isOpen: boolean;
   viewMode: "circle" | "expanded";
   agent: DeployableAgent | null;
   position: { x: number; y: number };
-  target: "notepad" | "screen" | "workspace" | null;
+  target: DeployTarget;
   noteContext: NoteContext | null;
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   isThinking: boolean;
@@ -47,9 +58,22 @@ function emit() {
   listeners.forEach((l) => l());
 }
 
-export function deployAgent(agent: DeployableAgent, initialPos?: { x: number; y: number }) {
-  const x = initialPos?.x ?? (typeof window !== "undefined" ? Math.max(80, window.innerWidth / 2 - 30) : 300);
-  const y = initialPos?.y ?? (typeof window !== "undefined" ? Math.max(100, window.innerHeight / 3) : 200);
+export function deployAgent(
+  agent: DeployableAgent,
+  initialPos?: { x: number; y: number },
+  targetContext?: { target?: DeployTarget; id?: string; title?: string }
+) {
+  const x =
+    initialPos?.x ??
+    (typeof window !== "undefined" ? Math.max(80, window.innerWidth / 2 - 30) : 300);
+  const y =
+    initialPos?.y ??
+    (typeof window !== "undefined" ? Math.max(100, window.innerHeight / 3) : 200);
+
+  const target = targetContext?.target ?? "screen";
+  const noteContext = targetContext?.id
+    ? { id: targetContext.id, title: targetContext.title || "Workspace" }
+    : null;
 
   store = {
     ...store,
@@ -57,11 +81,12 @@ export function deployAgent(agent: DeployableAgent, initialPos?: { x: number; y:
     viewMode: "circle",
     agent,
     position: { x, y },
-    target: "screen",
+    target,
+    noteContext,
     messages: [
       {
         role: "assistant",
-        content: `I am ${agent.name}. Drag me onto your Notepad or anywhere you want me deployed, or tap to open my controls!`,
+        content: `I am ${agent.name}. Drag me onto your Notepad, Brainstorm, or anywhere you want me deployed, or tap to open my controls!`,
       },
     ],
   };
@@ -101,12 +126,24 @@ export function toggleDeployViewMode() {
   emit();
 }
 
-export function attachToTarget(target: "notepad" | "screen" | "workspace", noteContext?: NoteContext | null) {
+export function attachToTarget(
+  target: DeployTarget,
+  context?: { id?: string; title?: string; content?: string } | null
+) {
+  const title =
+    context?.title || (target ? target.charAt(0).toUpperCase() + target.slice(1) : "Workspace");
   store = {
     ...store,
     target,
-    noteContext: noteContext ?? store.noteContext,
+    noteContext: { id: context?.id || "", title, content: context?.content },
     viewMode: "expanded",
+    messages: [
+      ...store.messages,
+      {
+        role: "assistant",
+        content: `Deployed into ${title}. Ready to assist you here!`,
+      },
+    ],
   };
   emit();
 }
@@ -143,6 +180,20 @@ export function setAgentThinking(isThinking: boolean) {
 
 export function clearAgentMessages() {
   store = { ...store, messages: [] };
+  emit();
+}
+
+export function resetAgentConversation() {
+  if (!store.agent) return;
+  store = {
+    ...store,
+    messages: [
+      {
+        role: "assistant",
+        content: `Conversation reset. I am ${store.agent.name}. How can I help you?`,
+      },
+    ],
+  };
   emit();
 }
 

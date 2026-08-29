@@ -345,35 +345,48 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                   {status === "saving" && <Loader2 className="size-3 animate-spin" />}
                   {status === "saving" ? "Saving" : status === "saved" ? "Saved" : ""}
                 </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`ml-2 gap-1.5 cursor-pointer ${
-                    deployed.target === "notepad" && deployed.noteContext?.id === selectedId
-                      ? "border-primary/60 bg-primary/10 text-primary shadow-xs"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    if (deployed.agent && deployed.target === "notepad" && deployed.noteContext?.id === selectedId) {
-                      toggleDeployViewMode()
-                    } else {
-                      setDeployOpen(true)
-                    }
-                  }}
-                  disabled={!selectedId}
-                >
-                  {deployed.target === "notepad" && deployed.noteContext?.id === selectedId ? (
-                    <>
-                      <span className="text-xs">{deployed.agent?.emoji || "🤖"}</span>
-                      <span>{deployed.agent?.name} Active</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="size-4 text-primary" />
-                      <span>Deploy Agent</span>
-                    </>
+                <div className="flex items-center gap-1 ml-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`gap-1.5 cursor-pointer ${
+                      deployed.target === "notepad" && deployed.noteContext?.id === selectedId
+                        ? "border-primary/60 bg-primary/10 text-primary shadow-xs"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      if (deployed.agent && deployed.target === "notepad" && deployed.noteContext?.id === selectedId) {
+                        toggleDeployViewMode()
+                      } else {
+                        setDeployOpen(true)
+                      }
+                    }}
+                    disabled={!selectedId}
+                  >
+                    {deployed.target === "notepad" && deployed.noteContext?.id === selectedId ? (
+                      <>
+                        <span className="text-xs">{deployed.agent?.emoji || "🤖"}</span>
+                        <span>{deployed.agent?.name} Active</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="size-4 text-primary" />
+                        <span>Deploy Agent</span>
+                      </>
+                    )}
+                  </Button>
+                  {deployed.target === "notepad" && deployed.noteContext?.id === selectedId && (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => setDeployOpen(true)}
+                      title="Switch or deploy another agent to this note"
+                      className="size-8 text-muted-foreground hover:text-primary"
+                    >
+                      <Sparkles className="size-3.5" />
+                    </Button>
                   )}
-                </Button>
+                </div>
               </div>
               <div className="px-6 pb-10">
                 <Notepad key={selectedId} initialContent={content} onChange={handleChange} />

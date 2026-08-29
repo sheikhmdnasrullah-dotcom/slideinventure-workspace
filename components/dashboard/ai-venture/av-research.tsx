@@ -133,7 +133,11 @@ export function AvResearch() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+    <div
+      data-droppable="research"
+      data-drop-title="Research Lab"
+      className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+    >
       <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/20 px-6 py-3.5">
         <div>
           <div className="flex items-center gap-2">

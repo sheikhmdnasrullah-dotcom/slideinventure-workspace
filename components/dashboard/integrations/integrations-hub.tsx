@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { WindmillRun } from "@/components/dashboard/windmill/windmill-run";
 import { ComposioConnections } from "@/components/dashboard/integrations/composio-connections";
+import { IntegrationErrorBoundary } from "@/components/dashboard/integrations/integration-error-boundary";
 import type { IntegrationStatus, IntegrationGroup } from "@/lib/integrations/status";
 
 const GROUP_ORDER: IntegrationGroup[] = ["Agent surfaces", "Connected services"];
@@ -169,20 +170,42 @@ function ActionArea({ item }: { item: IntegrationStatus }) {
   switch (item.action) {
     case "link":
       return (
-        <Button size="sm" variant="outline" render={<a href={item.pageHref} />}>
-          Open
-        </Button>
+        <IntegrationErrorBoundary label="This integration">
+          <Button size="sm" variant="outline" render={<a href={item.pageHref} />}>
+            Open
+          </Button>
+        </IntegrationErrorBoundary>
       );
     case "temporal":
-      return <TemporalControl />;
+      return (
+        <IntegrationErrorBoundary label="Temporal">
+          <TemporalControl />
+        </IntegrationErrorBoundary>
+      );
     case "windmill":
-      return <WindmillRun />;
+      return (
+        <IntegrationErrorBoundary label="Windmill">
+          <WindmillRun />
+        </IntegrationErrorBoundary>
+      );
     case "composio":
-      return <ComposioConnections />;
+      return (
+        <IntegrationErrorBoundary label="Composio">
+          <ComposioConnections />
+        </IntegrationErrorBoundary>
+      );
     case "novu":
-      return <NovuControl />;
+      return (
+        <IntegrationErrorBoundary label="Novu">
+          <NovuControl />
+        </IntegrationErrorBoundary>
+      );
     case "mem0":
-      return <Mem0Control />;
+      return (
+        <IntegrationErrorBoundary label="Mem0">
+          <Mem0Control />
+        </IntegrationErrorBoundary>
+      );
     default:
       return (
         <p className="text-xs text-foreground/40">

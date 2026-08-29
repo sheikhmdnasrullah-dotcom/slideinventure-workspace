@@ -17,7 +17,7 @@ export type AgentStage =
   | "browser"
   | "captcha"
   | "crawl"
-  | "truemail"
+  | "reacher"
   | "lead";
 
 export const AGENT_STAGES: AgentStage[] = [
@@ -25,7 +25,7 @@ export const AGENT_STAGES: AgentStage[] = [
   "browser",
   "captcha",
   "crawl",
-  "truemail",
+  "reacher",
   "lead",
 ];
 
@@ -34,7 +34,7 @@ export const STAGE_LABELS: Record<AgentStage, string> = {
   browser: "Browser",
   captcha: "Captcha",
   crawl: "Crawl",
-  truemail: "Verify",
+  reacher: "Verify",
   lead: "Lead",
 };
 
