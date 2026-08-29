@@ -1,0 +1,62 @@
+# Research: Agentic Client Dashboard / Command Center (Phase 13)
+
+## Executive Answer
+
+A lightweight, branded client-facing dashboard is a real and increasingly expected trust/retention lever for agencies selling high-ticket retainers — but the specific feature you're weighing, a plain-language natural-language query box over lead/meeting data, is not a differentiator anymore at the platform level (BI/embedded-analytics vendors ship it as table stakes) and is overkill for a solo operator's pilot client. The bigger, well-evidenced lever is simply *making progress visible on a predictable cadence* — a branded portal with a live status view plus a weekly narrative summary. The right sequencing is: build the cheapest version that makes you look credible and organized for client #1 (mostly static/semi-automated, single-tenant-by-folder, no real auth complexity), harden multi-tenant plumbing only once you have 3-5 paying clients proving the model, and treat "plain-language query" and full SaaS-grade tenancy as backlog items you build *because you already have the general framework*, not because pilot client #1 needs them. In the first 90 days, this dashboard work is a trap if it displaces outreach/content/lead-gen — it should ride on the coattails of the internal framework you're already building, not become its own project.
+
+## 1. Comparable products and how differentiated is "plain-language query"
+
+The category already exists and is crowded on the agency side: **white-label client-portal/CRM platforms** (GoHighLevel and its alternatives — SuiteDash, DashClicks, Simvoly, Systeme.io, Vendasta, Kartra), **dedicated client-portal tools** (Copilot.app — positioned as "the client-facing operating system for modern agencies," $39–$399/mo depending on client count, with branded portal, messaging, billing, e-signatures, lightweight CRM; ClientVenue — marketing-agency-specific, from $24/user/mo, campaign approvals and retainer tracking), and **reporting/analytics dashboards** (AgencyAnalytics, Swydo, layerfive). In 2026 the market narrative has also shifted toward reselling *AI agents that do revenue work* (SMS/voice reactivation, churn recovery) rather than reselling dashboards themselves, per white-label AI agency coverage.
+
+On the "ask your data in plain English" feature specifically: this is now common in the broader BI/embedded-analytics world, not a novel edge. Toucan, ThoughtSpot Embedded, Sisense, GoodData, Looker Conversational Analytics (GA April 2026), Sigma Assistant, Domo, and IBM Cognos Reporting Agents all ship natural-language query as a core embedded feature in 2026. None of the agency-specific client-portal tools above (Copilot, ClientVenue, SuiteDash) advertise this yet as a client-facing feature — so relative to *direct agency-tool competitors* it is a genuine near-term edge; relative to the *broader analytics-tooling category* it is unremarkable and easy to commoditize once any competitor wires an LLM to their database.
+
+**Sources:** [SuiteDash GoHighLevel alternative](https://suitedash.com/gohighlevel-alternative-white-label/), [Pickaxe white-label AI tools](https://pickaxe.co/post/white-label-ai-tools-for-agencies), [Copilot review 2026](https://www.linktly.com/accounting-software/copilot-review/), [Agiled best client portal software 2026](https://agiled.app/blog/best-client-portal-software-for-agencies), [Toucan embedded analytics NLQ tools](https://www.toucantoco.com/en/blog/best-embedded-analytics-toolsnatural-language-query-analytics), [Holistics AI BI tools 2026](https://www.holistics.io/bi-tools/ai-analytics/)
+
+## 2. Engineering complexity: clone-per-client multi-tenant vs. internal-only tool
+
+Real multi-tenant SaaS — proper auth isolation, per-tenant data isolation, per-client branding/subdomain, billing — is a meaningfully different engineering project from a single internal tool, even reusing the same codebase. Industry cost benchmarks put a standard-scope multi-tenant SaaS build at **$10,000–$50,000** in outsourced dev cost (complex/enterprise scope $30,000–$200,000; multi-tenant architecture alone frequently quoted around $20-35K), and the core risk called out repeatedly is cross-tenant data exposure from under-invested isolation work, not the UI. Hosting itself is cheap at low scale (rule of thumb ~$0.05–$0.20 per monthly active user; a solo operator can likely stay under $100/mo for the first several clients on something like Vercel), so the cost center is engineering time on auth/tenancy correctness, not infra spend. Shared-database multi-tenancy with row-level security is the cheapest viable model up to a few thousand customers — appropriate here.
+
+The pragmatic alternative — cloning the internal framework per client as a **separate, single-tenant deployment per client** (own subdomain, own database/project, no shared multi-tenant auth layer) — sidesteps almost all of the isolation risk and most of the engineering cost, at the price of higher marginal hosting/ops overhead per client and manual provisioning work. For a solo operator with under ~10 clients, single-tenant-per-client (i.e., "clone and deploy," not "multi-tenant SaaS") is very plausibly cheaper *and* safer than building real multi-tenancy, and only becomes the wrong call once client count and provisioning toil both scale up.
+
+**Sources:** [Northflank multi-tenant SaaS 2026 production guide](https://northflank.com/blog/multi-tenant-saas-platform-deployment), [Naveck SaaS development cost 2026](https://www.naveck.com/blog/saas-development-cost/), [MarsDevs multi-tenant vs single-tenant 2026](https://www.marsdevs.com/compare/multi-tenant-vs-single-tenant-saas), [Ariel Softwares multi-tenant architecture guide 2026](https://www.arielsoftwares.com/multi-tenant-architecture-saas-guide/)
+
+## 3. Is client-facing login + NL query actually valued, or does simpler reporting satisfy the same need?
+
+The evidence on what drives agency-client retention consistently points to **visibility and communication cadence**, not feature sophistication. Industry sources report that agencies "don't lose clients because campaigns underperform — they lose clients because clients can't see the performance," and that self-service portals reduce status-update emails and raise perceived professionalism, which agencies tie directly to retention and referrals. One vendor-sourced claim states agencies using automated weekly/bi-weekly reporting dashboards retain clients notably longer than those on manual monthly PDF reports (cited figure: ~34% longer) — treat that specific number as vendor marketing, not an independently verified study, but directionally consistent with everything else found. Retention strategies named as most effective (proactive communication cadence, transparent ROI reporting, structured sign-offs, self-service dashboards, regular strategy sessions) do **not** single out AI chat/query interfaces as a driver — a self-service dashboard with a *recurring, digestible report* is what's credited, not an open-ended query box.
+
+This supports the operator's instinct that a **weekly narrative report + always-on branded login showing status** covers the trust/transparency job. A plain-language query interface is a nice-to-have differentiator for an operator building it anyway (via the shared framework), not something this ICP is demanding or comparing against — no competitor evidence found of it being requested by clients specifically, only offered as a platform feature.
+
+**Sources:** [Layerfive unified client dashboards 2026](https://layerfive.com/blog/unified-client-dashboards-for-marketing-agencies/), [Swydo client retention strategies 2026](https://www.swydo.com/blog/client-retention/), [AgencyAnalytics client portals](https://agencyanalytics.com/features/agency-client-portals), [Taskip client portal for agencies 2026](https://taskip.net/client-portal-for-agencies/)
+
+## 4. Realistic MVP scope: tiered recommendation
+
+**Pilot client #1 (Phase 1 MVP):**
+- Branded login (auth via your existing framework, single-tenant clone/subfolder — not multi-tenant)
+- Upcoming-meetings module + lead-list-with-context (pull from existing CRM/data source, read-only)
+- Real-time lead-status timeline (simple state machine: new → contacted → booked → closed)
+- Guarantee-tracking ledger as a simple timestamped log (even a structured table is fine — no need for automated proof-capture yet)
+- Auto-generated weekly narrative report (this is the highest-leverage single feature per the retention evidence above — prioritize it over the query interface)
+- Skip: plain-language query interface, automations module UI, assets module, ICP module as a separate UI (fold ICP into onboarding doc/report, not a live module)
+
+**By client #5:**
+- Automations module (what's running, simple status list)
+- Assets module (content/domains/tool suite as a reference page)
+- Per-client branding automation (logo/colors templated, not hand-coded per client)
+- Basic plain-language query interface if the underlying framework already supports it cheaply (reuse, don't build bespoke)
+
+**Defer indefinitely (until clear demand or scale forces it):**
+- True multi-tenant SaaS architecture (shared DB, tenant-scoped auth, self-serve provisioning) — only justified at meaningfully higher client volume than a solo operator will have in year one
+- Enterprise-grade audit/compliance tooling, SSO, granular role-based permissions
+- Any billing/payment surface inside the dashboard itself
+
+**Sources:** [Sigma MVP scoping guide](https://www.sigmainfo.net/blog/how-to-scope-an-mvp-what-to-include-what-to-cut-and-why/), [F22 Labs MVP planning](https://www.f22labs.com/blogs/mvp-planning-scope-management/)
+
+## 5. Scope-creep risk: is this a good use of first-90-days time?
+
+Honest assessment: **yes, this is a real distraction risk**, and the research on solo-founder failure modes backs that up directly — the most cited cause of solo-project failure is spending too long building before getting real client usage/feedback, and the standard scope-creep test ("who asked for this — if the answer is 'me,' skip it") applies squarely to a full guarantee-ledger + assets module + NL-query build for a client who hasn't been landed yet. The mitigating factor here is real, though: the operator is *already* building the general internal framework for their own workspace use, so the dashboard isn't a from-scratch SaaS project competing with client work — it's a by-product of tooling they need anyway, deployed to one client with minimal extra work (auth wrapper, filtered views, one branded login page). That reframes the right question from "should I build a dashboard" to "how much *additional* scope beyond my own internal tool does client #1 actually require" — and the answer, per section 4, is small: login, a filtered read view, and an automated weekly report. Anything past that (real multi-tenancy, NL query, automations UI) should not touch the calendar until there are 3+ paying clients validating that the dashboard itself is closing/retaining deals, not just a feature the operator finds satisfying to build.
+
+**Sources:** [Fortune: solo founders AI automation limits 2026](https://fortune.com/2026/05/18/solo-founders-ai-automation-entire-teams-entrepreneurs/), [Cipher Projects solo founder tools 2026](https://www.cipherprojects.com/blog/posts/top-5-tools-solo-founders-2026/)
+
+## Recommendation
+
+Build the dashboard as a **thin client-facing wrapper around the internal framework you're already building**, not a standalone product. For pilot client #1: branded login, meetings/leads/status-timeline views (read-only, pulled from existing data), a guarantee ledger as a simple timestamped table, and an automated weekly narrative report — skip the plain-language query interface and skip true multi-tenancy entirely; clone-and-deploy single-tenant per client instead. Add the query interface and lighter multi-tenant plumbing only once you have proof (3-5 clients, clear signal the portal itself affects retention/close rate) — and even then, prioritize the weekly narrative report and visible status cadence over query sophistication, since that's what the retention evidence actually supports. Guard the first 90 days aggressively: any dashboard work beyond the four items above should be treated as scope creep against revenue-generating work (content, outreach, lead gen) until the pilot client is signed and the model is proven.
