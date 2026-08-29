@@ -6,6 +6,7 @@ import { PageHeader, Section, Surface, StatusBadge } from "@/components/system";
 import { AgentType } from "@/lib/agents/registry";
 import { getAgentRoster, getAgentDivisions } from "@/lib/agents/roster";
 import { AgentIconGrid } from "@/components/dashboard/agent-icon-grid";
+import { MastraAgentsPanel } from "@/components/dashboard/agents/mastra-agents-panel";
 import { AgentHistoryTable, type AgentHistoryRow } from "@/components/dashboard/agents/agent-history-table";
 import { SiteHeader } from "@/components/dashboard/site-header";
 import { AgentModesGrid } from "@/components/dashboard/agents/agent-modes-grid";
@@ -121,6 +122,9 @@ export default async function AgentsPage() {
         <PageHeader eyebrow="Frameworks" title="Agent Modes" />
         <AgentModesGrid />
       </Section>
+
+      {/* Mastra Agents — self-hosted runtime on the VPS */}
+      <MastraAgentsPanel />
 
       {/* Live agents */}
       <Section tone="base">
