@@ -117,8 +117,10 @@ export function AvResearch() {
 
   useEffect(() => {
     load();
-    // Also trigger initial background sync to ensure latest AI Venture items are captured
-    sync();
+    const t = setTimeout(() => {
+      void sync();
+    }, 1500);
+    return () => clearTimeout(t);
   }, [load, sync]);
 
   useLiveRefresh(load, { sources: ["research-lab"] });

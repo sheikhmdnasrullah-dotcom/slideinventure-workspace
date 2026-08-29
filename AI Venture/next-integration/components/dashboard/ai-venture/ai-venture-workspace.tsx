@@ -145,29 +145,27 @@ export function AiVentureWorkspace() {
     parseAsStringLiteral(SECTION_IDS).withDefault("home")
   )
 
-  // Active 10-second background watcher: automatically summarizes and pushes
-  // any updates in Notepad, Brainstorm, Files, or chat into the Brain.
+  // Active 10-second background watcher for the Brain tab: automatically
+  // summarizes and pushes any updates in Notepad, Brainstorm, Files, or chat
+  // into the Brain. Only runs when the Brain tab is open to avoid unnecessary
+  // work on inactive tabs.
   useEffect(() => {
+    if (active !== "research") return;
     const triggerSync = () => {
       fetch("/api/brain/sync", { method: "POST" }).catch(() => {})
     }
 
-    // Initial sync
     const initial = setTimeout(triggerSync, 1500)
-    // Continuous 10-second interval push
     const interval = setInterval(triggerSync, 10_000)
 
     return () => {
       clearTimeout(initial)
       clearInterval(interval)
     }
-  }, [])
+  }, [active])
 
   const select = (id: SectionId) => {
     void setActive(id)
-    if (id === "research") {
-      fetch("/api/brain/sync", { method: "POST" }).catch(() => {})
-    }
   }
 
   return (

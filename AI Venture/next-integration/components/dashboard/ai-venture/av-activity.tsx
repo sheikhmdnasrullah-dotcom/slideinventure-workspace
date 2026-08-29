@@ -17,6 +17,7 @@ type Row = {
   description: string
   timestamp: string
   entityType?: string
+  category?: string
 }
 
 function iconForRow(row: Row) {
@@ -36,6 +37,20 @@ function iconForRow(row: Row) {
   }
 }
 
+const CATEGORY_META: Record<string, { label: string; Icon: typeof Rocket }> = {
+  ai_venture: { label: "AI Venture", Icon: Rocket },
+  concepts: { label: "Concepts", Icon: Lightbulb },
+  agents: { label: "Agents", Icon: Bot },
+  research_lab: { label: "Research", Icon: FileText },
+  brainstorm: { label: "Brainstorm", Icon: PenTool },
+  notes: { label: "Notes", Icon: NotebookPen },
+}
+
+function categoryMeta(source: string, entityType?: string): { label: string; Icon: typeof Rocket } {
+  if (entityType === "agent_run") return CATEGORY_META.agents
+  return CATEGORY_META[source] ?? { label: source, Icon: ActivityIcon }
+}
+
 function toRow(a: Activity): Row {
   return {
     id: a.id,
@@ -45,6 +60,7 @@ function toRow(a: Activity): Row {
     description: a.description,
     timestamp: a.timestamp,
     entityType: a.entityType,
+    category: a.category,
   }
 }
 
@@ -57,6 +73,7 @@ function fromEvent(e: DomainEvent): Row {
     description: e.description,
     timestamp: e.timestamp,
     entityType: e.entityType,
+    category: e.source,
   }
 }
 
@@ -111,6 +128,16 @@ export function AvActivity() {
     })
   }, [events])
 
+  const grouped = rows.reduce<Map<string, Row[]>>((acc, row) => {
+    const cat = row.category || row.source
+    const list = acc.get(cat) || []
+    list.push(row)
+    acc.set(cat, list)
+    return acc
+  }, new Map())
+
+  const categoryOrder = ["ai_venture", "concepts", "agents", "research_lab", "brainstorm", "notes"]
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-4 py-2">
@@ -137,27 +164,51 @@ export function AvActivity() {
         </div>
       ) : (
         <ScrollArea className="flex-1" data-lenis-prevent>
-          <div className="flex flex-col gap-1 p-3">
-            {rows.map((row) => {
-              const Icon = iconForRow(row)
-              return (
-                <div
-                  key={row.id}
-                  className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2"
-                >
-                  <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium leading-tight">{row.title}</p>
-                    {row.description ? (
-                      <p className="truncate text-xs text-muted-foreground">{row.description}</p>
-                    ) : null}
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(row.timestamp), { addSuffix: true })}
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
+          <div className="flex flex-col gap-5 p-3">
+            {Array.from(grouped.entries())
+              .sort((a, b) => {
+                const ai = categoryOrder.indexOf(a[0])
+                const bi = categoryOrder.indexOf(b[0])
+                if (ai === -1 && bi === -1) return 0
+                if (ai === -1) return 1
+                if (bi === -1) return -1
+                return ai - bi
+              })
+              .map(([cat, catRows]) => {
+                const meta = categoryMeta(cat, catRows[0]?.entityType)
+                const Icon = meta.Icon
+                return (
+                  <section key={cat} className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Icon className="size-3.5" />
+                      <span>{meta.label}</span>
+                      <span className="text-[10px] text-muted-foreground/70">{catRows.length}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {catRows.map((row) => {
+                        const RowIcon = iconForRow(row)
+                        return (
+                          <div
+                            key={row.id}
+                            className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2"
+                          >
+                            <RowIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium leading-tight">{row.title}</p>
+                              {row.description ? (
+                                <p className="truncate text-xs text-muted-foreground">{row.description}</p>
+                              ) : null}
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                {formatDistanceToNow(new Date(row.timestamp), { addSuffix: true })}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                )
+              })}
           </div>
         </ScrollArea>
       )}

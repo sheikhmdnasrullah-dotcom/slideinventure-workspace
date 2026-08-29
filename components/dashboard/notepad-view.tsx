@@ -8,7 +8,19 @@ import * as React from "react"
 import dynamic from "next/dynamic"
 import { useQueryState } from "nuqs"
 import { formatDistanceToNow } from "date-fns"
-import { Plus, Trash2, FileText, Loader2, Pencil, X } from "lucide-react"
+import {
+  Plus,
+  Trash2,
+  FileText,
+  Loader2,
+  Pencil,
+  X,
+  Download,
+  FileCode2,
+  File,
+  Sparkles,
+  Check,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -21,6 +33,14 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { useLiveRefresh } from "@/components/providers/event-stream"
 import { DeployAgentPalette } from "@/components/dashboard/agents/deploy-agent-palette"
@@ -30,7 +50,14 @@ import {
   toggleDeployViewMode,
 } from "@/lib/agents/deployed-agent-store"
 import { ResearchPanel } from "@/components/dashboard/research/research-panel"
-import { Sparkles } from "lucide-react"
+import {
+  noteToMarkdown,
+  noteToPlainText,
+  noteToPdfBlob,
+  downloadFile,
+  sanitizeFilename,
+  saveToAiVentureFiles,
+} from "@/lib/notes/export-note"
 
 const Notepad = dynamic(() => import("@/components/dashboard/v3/note/dynamic"), {
   ssr: false,
@@ -51,6 +78,7 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
   const [title, setTitle] = React.useState<string>("")
   const [loading, setLoading] = React.useState(true)
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved">("idle")
+  const [exporting, setExporting] = React.useState(false)
   const [renamingId, setRenamingId] = React.useState<string | null>(null)
   const [draftTitle, setDraftTitle] = React.useState("")
   const [deleteId, setDeleteId] = React.useState<string | null>(null)
@@ -234,6 +262,53 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
     }
   }
 
+  /**
+   * Exports the active note to local file download and simultaneously saves
+   * to AI Venture Files under the "Notepad" directory.
+   */
+  const handleExport = async (format: "txt" | "md" | "pdf" | "all") => {
+    if (!selectedId) return
+    const base = sanitizeFilename(title || "Untitled Note")
+    setExporting(true)
+    const toastId = toast.loading(`Exporting as ${format.toUpperCase()}...`)
+
+    try {
+      const savedNames: string[] = []
+
+      if (format === "txt" || format === "all") {
+        const txt = noteToPlainText(title, content)
+        downloadFile(txt, `${base}.txt`, "text/plain;charset=utf-8")
+        const ok = await saveToAiVentureFiles("Notepad", `${base}.txt`, txt)
+        if (ok) savedNames.push(`${base}.txt`)
+      }
+
+      if (format === "md" || format === "all") {
+        const md = noteToMarkdown(title, content)
+        downloadFile(md, `${base}.md`, "text/markdown;charset=utf-8")
+        const ok = await saveToAiVentureFiles("Notepad", `${base}.md`, md)
+        if (ok) savedNames.push(`${base}.md`)
+      }
+
+      if (format === "pdf" || format === "all") {
+        const pdfBlob = await noteToPdfBlob(title, content)
+        downloadFile(pdfBlob, `${base}.pdf`, "application/pdf")
+        const ok = await saveToAiVentureFiles("Notepad", `${base}.pdf`, pdfBlob)
+        if (ok) savedNames.push(`${base}.pdf`)
+      }
+
+      toast.success(
+        format === "all"
+          ? `Downloaded & saved .txt, .md, and .pdf to AI Venture Files (Notepad/)`
+          : `Downloaded & saved ${base}.${format} to AI Venture Files (Notepad/)`,
+        { id: toastId }
+      )
+    } catch (err: any) {
+      toast.error(err instanceof Error ? err.message : "Export failed", { id: toastId })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-6 py-4">
@@ -241,29 +316,31 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
           <h1 className="font-display text-2xl text-ink-strong">Notepad</h1>
           <p className="font-body text-sm text-ink-muted">Rich-text notes, autosaved to your workspace.</p>
         </div>
-        <Button onClick={handleWrite} className="gap-2">
+        <Button onClick={handleWrite} className="gap-2 shadow-xs font-medium">
           <Plus className="size-4" /> New note
         </Button>
       </div>
       <Separator />
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-72 shrink-0 border-r">
+        <aside className="w-72 shrink-0 border-r bg-card/30">
           <ScrollArea className="h-full" data-lenis-prevent>
             <div className="flex flex-col gap-1 p-3">
               {loading ? (
-                <div className="p-4 text-sm text-muted-foreground">Loading</div>
+                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="size-4 animate-spin" /> Loading notes...
+                </div>
               ) : notes.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground">No notes yet. Click "Write Note".</div>
+                <div className="p-4 text-sm text-muted-foreground">No notes yet. Click "New note".</div>
               ) : (
                 notes.map((n) => (
                   <div
                     key={n.id}
                     className={cn(
-                      "group flex items-center gap-2 border-l border-rule py-2 pl-3 text-left text-sm transition-colors hover:bg-[var(--surface-2)]/50",
-                      selectedId === n.id && "bg-[var(--surface-2)]"
+                      "group flex items-center gap-2 rounded-lg border border-transparent py-2 px-3 text-left text-sm transition-colors hover:bg-muted/60 cursor-pointer",
+                      selectedId === n.id && "bg-muted font-medium border-rule shadow-2xs"
                     )}
                   >
-                    <FileText className="size-4 shrink-0 text-ink-faint" />
+                    <FileText className={cn("size-4 shrink-0", selectedId === n.id ? "text-primary" : "text-ink-faint")} />
                     {renamingId === n.id ? (
                       <input
                         autoFocus
@@ -284,12 +361,12 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                     ) : (
                       <button
                         onClick={() => selectNote(n)}
-                        className="flex-1 truncate text-left font-medium hover:underline"
+                        className="flex-1 truncate text-left font-medium hover:underline cursor-pointer"
                       >
                         {n.title || "Untitled"}
                       </button>
                     )}
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <span className="shrink-0 text-[11px] text-muted-foreground/80">
                       {n.updated_at
                         ? formatDistanceToNow(new Date(n.updated_at), { addSuffix: true })
                         : ""}
@@ -298,22 +375,28 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                       <button
                         type="button"
                         aria-label="Rename"
-                        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                        onClick={() => {
+                        className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation()
                           setRenamingId(n.id)
                           setDraftTitle(n.title || "Untitled")
                         }}
+                        title="Rename note"
                       >
-                        <Pencil className="size-4" />
+                        <Pencil className="size-3.5" />
                       </button>
                     )}
                     <button
                       type="button"
                       aria-label="Delete"
-                      className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => requestDelete(n.id)}
+                      className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        requestDelete(n.id)
+                      }}
+                      title="Delete note"
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-3.5" />
                     </button>
                   </div>
                 ))
@@ -331,25 +414,109 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
               data-note-id={selectedId}
               data-note-title={title || "Untitled"}
             >
-              <div className="flex items-center gap-2 px-6 pt-8 pb-2">
-                <input
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value)
-                    persist(selectedId, content, e.target.value)
-                  }}
-                  placeholder="Untitled"
-                  className="flex-1 bg-transparent text-3xl font-bold outline-none placeholder:text-muted-foreground/40"
-                />
-                <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                  {status === "saving" && <Loader2 className="size-3 animate-spin" />}
-                  {status === "saving" ? "Saving" : status === "saved" ? "Saved" : ""}
-                </span>
-                <div className="flex items-center gap-1 ml-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-8 pb-3 border-b border-rule/50">
+                <div className="flex-1 min-w-[200px] flex items-center gap-2">
+                  <input
+                    value={title}
+                    onChange={(e) => {
+                      setTitle(e.target.value)
+                      persist(selectedId, content, e.target.value)
+                    }}
+                    placeholder="Untitled"
+                    className="w-full bg-transparent text-2xl lg:text-3xl font-bold outline-none placeholder:text-muted-foreground/40 text-foreground"
+                  />
+                  <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                    {status === "saving" && <Loader2 className="size-3 animate-spin" />}
+                    {status === "saving" ? "Saving" : status === "saved" ? "Saved" : ""}
+                  </span>
+                </div>
+
+                {/* Top Action Toolbar: Export & Download + Deploy Agent */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Export & Save Menu */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!selectedId || exporting}
+                        className="gap-1.5 cursor-pointer text-xs font-medium h-8 shadow-xs hover:border-primary/50"
+                      >
+                        {exporting ? (
+                          <Loader2 className="size-3.5 animate-spin text-primary" />
+                        ) : (
+                          <Download className="size-3.5 text-primary" />
+                        )}
+                        <span>Export &amp; Download</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-68">
+                      <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal pb-1">
+                        Downloads file locally and saves to <span className="font-semibold text-foreground">AI Venture / Files</span> simultaneously:
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      
+                      <DropdownMenuItem
+                        onClick={() => handleExport("txt")}
+                        className="cursor-pointer gap-2.5 py-2 text-xs"
+                      >
+                        <div className="flex size-7 items-center justify-center rounded-md bg-blue-500/10 text-blue-500 shrink-0">
+                          <FileText className="size-4" />
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="font-medium text-foreground">Plain Text (.txt)</span>
+                          <span className="text-[10px] text-muted-foreground">Clean formatted text file</span>
+                        </div>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => handleExport("md")}
+                        className="cursor-pointer gap-2.5 py-2 text-xs"
+                      >
+                        <div className="flex size-7 items-center justify-center rounded-md bg-cyan-500/10 text-cyan-500 shrink-0">
+                          <FileCode2 className="size-4" />
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="font-medium text-foreground">Markdown (.md)</span>
+                          <span className="text-[10px] text-muted-foreground">With headings, lists &amp; links</span>
+                        </div>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => handleExport("pdf")}
+                        className="cursor-pointer gap-2.5 py-2 text-xs"
+                      >
+                        <div className="flex size-7 items-center justify-center rounded-md bg-rose-500/10 text-rose-500 shrink-0">
+                          <File className="size-4" />
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="font-medium text-foreground">PDF Document (.pdf)</span>
+                          <span className="text-[10px] text-muted-foreground">Print-ready paginated PDF</span>
+                        </div>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem
+                        onClick={() => handleExport("all")}
+                        className="cursor-pointer gap-2.5 py-2 text-xs font-medium"
+                      >
+                        <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 shrink-0">
+                          <Download className="size-4" />
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="text-foreground font-semibold">Export All Formats</span>
+                          <span className="text-[10px] text-muted-foreground">Download &amp; save .txt, .md, .pdf</span>
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Deploy Agent Button */}
                   <Button
                     variant="outline"
                     size="sm"
-                    className={`gap-1.5 cursor-pointer ${
+                    className={`gap-1.5 cursor-pointer h-8 text-xs font-medium ${
                       deployed.target === "notepad" && deployed.noteContext?.id === selectedId
                         ? "border-primary/60 bg-primary/10 text-primary shadow-xs"
                         : ""
@@ -370,11 +537,12 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                       </>
                     ) : (
                       <>
-                        <Sparkles className="size-4 text-primary" />
+                        <Sparkles className="size-3.5 text-primary" />
                         <span>Deploy Agent</span>
                       </>
                     )}
                   </Button>
+
                   {deployed.target === "notepad" && deployed.noteContext?.id === selectedId && (
                     <Button
                       variant="ghost"
@@ -388,13 +556,16 @@ export function NotepadView({ scope = "global" }: { scope?: "global" | "ai-ventu
                   )}
                 </div>
               </div>
-              <div className="px-6 pb-10">
+
+              <div className="px-6 pb-10 pt-4">
                 <Notepad key={selectedId} initialContent={content} onChange={handleChange} />
               </div>
             </div>
           ) : (
-            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-              Select a note or click "Write Note" to start.
+            <div className="flex flex-1 flex-col items-center justify-center text-sm text-muted-foreground p-6">
+              <FileText className="size-12 mb-3 opacity-30" />
+              <p className="font-medium text-foreground">No Note Selected</p>
+              <p className="text-xs text-muted-foreground mt-1">Select a note from the sidebar or click "New note" to start writing.</p>
             </div>
           )}
         </section>
