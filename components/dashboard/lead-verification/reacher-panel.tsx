@@ -30,7 +30,6 @@ export function ReacherPanel() {
   const [results, setResults] = useState<{ email: string; status: Verdict; detail?: string }[]>([]);
 
   const run = useCallback(async () => {
-    console.log("REACHER_PANEL_RUN clicked, input=", input);
     const emails = input
       .split(/[\s,;]+/)
       .map((e) => e.trim())
@@ -47,9 +46,7 @@ export function ReacherPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails }),
       });
-      console.log("REACHER_PANEL_RESP", resp.status);
       const data = await resp.json();
-      console.log("REACHER_PANEL_DATA", JSON.stringify(data).slice(0, 200));
       if (!resp.ok) {
         toast.error(data.error || "Verification failed");
         return;
@@ -80,7 +77,14 @@ export function ReacherPanel() {
           onChange={(e) => setInput(e.target.value)}
           rows={4}
         />
-        <Button onClick={run} disabled={running} className="self-start">
+        <Button
+          onClick={() => {
+            console.log("REACHER_ONCLICK input=", JSON.stringify(input));
+            run();
+          }}
+          disabled={running}
+          className="self-start"
+        >
           {running ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
           {running ? "Verifying" : "Verify with Reacher"}
         </Button>

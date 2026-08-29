@@ -24,7 +24,18 @@ async function listComposioConnections(): Promise<{ id: string; app: string; sta
   if (!client) return [];
   try {
     const res = await client.connectedAccounts.list();
-    return (res.items ?? res ?? []).map((a: any) => ({ id: a.id, app: a.appName || a.app, status: a.status }));
+    return (res.items ?? res ?? []).map((a: any) => {
+      const raw = a.app;
+      const appVal =
+        typeof raw === "string"
+          ? raw
+          : raw?.name || raw?.slug || raw?.appName || raw?.toolkit;
+      return {
+        id: a.id,
+        app: appVal || a.appName || a.toolkit || a.toolkitSlug || a.name || "",
+        status: a.status,
+      };
+    });
   } catch {
     return [];
   }
@@ -35,7 +46,12 @@ export async function getComposioSessionTools(): Promise<Record<string, unknown>
   if (!client) return {};
   const connections = await listComposioConnections();
   const toolkits = Array.from(
-    new Set(connections.filter((c) => c.status === "ACTIVE" || c.status === "active").map((c) => c.app.toLowerCase()))
+    new Set(
+      connections
+        .filter((c) => (c.status === "ACTIVE" || c.status === "active") && c.app)
+        .map((c) => (typeof c.app === "string" ? c.app : c.app?.name || c.app?.slug || "").toLowerCase())
+        .filter(Boolean)
+    )
   );
   if (!toolkits.length) return {};
   try {
@@ -95,7 +111,7 @@ export async function getIntegrationsListTool() {
     execute: async () => {
       const connections = await listComposioConnections();
       if (!connections.length) return "No external integrations are connected.";
-      return connections.map((c) => `- ${c.app} (${c.status})`).join("\n");
+       return connections.map((c) => `- ${c.app || "unknown"} (${c.status})`).join("\n");
     },
   });
 }
