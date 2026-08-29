@@ -1,7 +1,7 @@
 import "server-only";
 
 // Optional Python microservice (server/email-crawler-service) that wraps
-// crawl4ai, playwright+stealth, 2captcha-python and truemail. Used only when
+// crawl4ai, playwright+stealth, 2captcha-python and Reacher. Used only when
 // EMAIL_CRAWLER_SERVICE_URL is configured. Graceful: failures are ignored and
 // the Node browse agent remains the source of truth.
 

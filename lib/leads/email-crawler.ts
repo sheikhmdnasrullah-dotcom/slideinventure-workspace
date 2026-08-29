@@ -97,7 +97,7 @@ export async function crawlEmails(opts: {
     return { email, source: source || "web" };
   });
 
-  // Verify each with TrueMail, then import as leads.
+  // Verify each with Reacher, then import as leads.
   const out: CrawledEmail[] = [];
   let imported = 0;
   const DB = APPWRITE.databaseId;

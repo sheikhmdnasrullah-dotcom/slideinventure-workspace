@@ -4,7 +4,7 @@ Wraps the requested open-source repos so the Node dashboard can call them over H
   - unclecode/crawl4ai        -> async web crawl -> markdown + extracted links/emails
   - microsoft/playwright-python + AtuboDad/playwright_stealth -> stealth page fetch
   - 2captcha/2captcha-python  -> CAPTCHA solving
-  - truemail-rb/truemail      -> email verification (delegates to the VPS truemail server)
+  - Reacher (reacherhq/backend) -> email verification via the VPS Reacher endpoint
 
 Run (VPS):
   pip install -r requirements.txt
@@ -23,7 +23,10 @@ EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 app = FastAPI(title="Email Crawler Service")
 
-TRUEMAIL_BASE = os.environ.get("TRUEMAIL_URL", "http://127.0.0.1:9292").rstrip("/")
+# Reacher email verification (https://reacher.email). Mirrors the VPS
+# verify_leads.py contract: POST {REACHER_URL}/v0/check_email with x-reacher-secret.
+REACHER_URL = os.environ.get("REACHER_URL", "https://mailtest.nasrullahtanim.me").rstrip("/")
+REACHER_SECRET = os.environ.get("REACHER_SECRET", "")
 TWOCAPTCHA_KEY = os.environ.get("TWOCAPTCHA_API_KEY", "")
 
 
@@ -137,17 +140,24 @@ async def solve_captcha(req: SolveRequest):
 
 @app.post("/verify")
 async def verify(req: VerifyRequest):
-    """truemail: verify an email via the VPS truemail server."""
+    """Reacher: verify an email via the VPS Reacher endpoint."""
     import httpx
 
+    if not REACHER_SECRET:
+        return {"email": req.email, "status": "error", "detail": "REACHER_SECRET not set"}
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get(f"{TRUEMAIL_BASE}/verify_email", params={"email": req.email})
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.post(
+                f"{REACHER_URL}/v0/check_email",
+                headers={"content-type": "application/json", "x-reacher-secret": REACHER_SECRET},
+                json={"to_email": req.email},
+            )
             if r.status_code != 200:
                 return {"email": req.email, "status": "error", "detail": f"HTTP {r.status_code}"}
             data = r.json()
-            status = str(data.get("status", data.get("result", ""))).lower()
-            return {"email": req.email, "status": status or "unknown", "raw": data}
+            reach = str(data.get("is_reachable", "")).lower()
+            status = "valid" if reach in ("safe", "valid", "risky") else "invalid" if reach == "invalid" else "unknown"
+            return {"email": req.email, "status": status, "raw": data}
     except Exception as e:
         return {"email": req.email, "status": "error", "detail": str(e)}
 
