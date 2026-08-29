@@ -33,13 +33,14 @@ import {
   FolderPlus,
   FilePlus,
   ArrowUp,
-  ExternalLink,
   Code2,
   FileSpreadsheet,
   FileArchive,
   Save,
-  Check,
   Eye,
+  Music,
+  Film,
+  FileCode2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveRefresh } from "@/components/providers/event-stream";
@@ -55,11 +56,31 @@ type VentureNode = {
   children?: VentureNode[];
 };
 
-const IMAGE_EXT = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
-const BINARY_EXT = [...IMAGE_EXT, "pdf", "docx", "pptx", "xlsx", "zip"];
+const IMAGE_EXT = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "avif", "tif", "tiff"];
+const AUDIO_EXT = ["mp3", "wav", "ogg", "m4a", "flac", "aac", "wma"];
+const VIDEO_EXT = ["mp4", "webm", "mov", "avi", "mkv", "wmv", "m4v"];
+const CODE_EXT = [
+  "js", "jsx", "mjs", "cjs", "ts", "tsx", "d.ts",
+  "html", "htm", "css", "scss", "sass", "less",
+  "json", "jsonld", "jsonc", "yaml", "yml", "toml", "xml", "ini", "conf", "config", "env",
+  "py", "pyw", "ipynb", "sh", "bash", "zsh", "fish", "sql", "graphql", "gql",
+  "rs", "go", "c", "h", "cpp", "hpp", "java", "kt", "swift", "php", "rb", "lua", "r",
+];
+const SPREADSHEET_EXT = ["csv", "tsv", "tab", "xls", "xlsx", "ods"];
+const DOCUMENT_EXT = ["doc", "docx", "odt", "rtf", "pages"];
+const ARCHIVE_EXT = ["zip", "tar", "gz", "tgz", "7z", "rar", "bz2", "xz"];
+const TEXT_EDITOR_EXT = [
+  "txt", "text", "log", "md", "markdown", "mdown", "tldr",
+  ...CODE_EXT,
+  ...SPREADSHEET_EXT,
+];
 
 function extOf(name: string): string {
   return name.split(".").pop()?.toLowerCase() ?? "";
+}
+
+function isTextFormat(ext: string): boolean {
+  return TEXT_EDITOR_EXT.includes(ext) || ext === "";
 }
 
 function findNode(tree: VentureNode | null, path: string): VentureNode | null {
@@ -111,7 +132,7 @@ function getFileTypeInfo(name: string, type: "file" | "folder") {
       borderColor: "rgba(239, 68, 68, 0.25)",
     };
   }
-  if (["csv", "xls", "xlsx"].includes(ext)) {
+  if (SPREADSHEET_EXT.includes(ext)) {
     return {
       label: ext.toUpperCase(),
       icon: FileSpreadsheet,
@@ -120,7 +141,25 @@ function getFileTypeInfo(name: string, type: "file" | "folder") {
       borderColor: "rgba(16, 185, 129, 0.25)",
     };
   }
-  if (["json", "yaml", "yml", "toml", "ts", "js", "html", "css"].includes(ext)) {
+  if (AUDIO_EXT.includes(ext)) {
+    return {
+      label: ext.toUpperCase(),
+      icon: Music,
+      color: "#f59e0b",
+      bgColor: "rgba(245, 158, 11, 0.12)",
+      borderColor: "rgba(245, 158, 11, 0.25)",
+    };
+  }
+  if (VIDEO_EXT.includes(ext)) {
+    return {
+      label: ext.toUpperCase(),
+      icon: Film,
+      color: "#f97316",
+      bgColor: "rgba(249, 115, 22, 0.12)",
+      borderColor: "rgba(249, 115, 22, 0.25)",
+    };
+  }
+  if (CODE_EXT.includes(ext)) {
     return {
       label: ext.toUpperCase(),
       icon: Code2,
@@ -129,7 +168,7 @@ function getFileTypeInfo(name: string, type: "file" | "folder") {
       borderColor: "rgba(6, 182, 212, 0.25)",
     };
   }
-  if (["zip", "tar", "gz", "rar"].includes(ext)) {
+  if (ARCHIVE_EXT.includes(ext)) {
     return {
       label: ext.toUpperCase(),
       icon: FileArchive,
@@ -138,9 +177,18 @@ function getFileTypeInfo(name: string, type: "file" | "folder") {
       borderColor: "rgba(236, 72, 153, 0.25)",
     };
   }
+  if (DOCUMENT_EXT.includes(ext) || ext === "md" || ext === "txt") {
+    return {
+      label: ext ? ext.toUpperCase() : "DOC",
+      icon: FileText,
+      color: "#3b82f6",
+      bgColor: "rgba(59, 130, 246, 0.12)",
+      borderColor: "rgba(59, 130, 246, 0.25)",
+    };
+  }
   return {
     label: ext ? ext.toUpperCase() : "FILE",
-    icon: FileText,
+    icon: File,
     color: "#64748b",
     bgColor: "rgba(100, 116, 139, 0.12)",
     borderColor: "rgba(100, 116, 139, 0.25)",
@@ -199,13 +247,18 @@ export function AvFiles() {
   }, [selected, content]);
 
   const selectedExt = selected ? extOf(selected) : "";
-  const isBinarySelected = BINARY_EXT.includes(selectedExt);
   const isImageSelected = IMAGE_EXT.includes(selectedExt);
+  const isAudioSelected = AUDIO_EXT.includes(selectedExt);
+  const isVideoSelected = VIDEO_EXT.includes(selectedExt);
+  const isTextSelected = isTextFormat(selectedExt);
 
   const openFile = async (path: string) => {
     setSelected(path);
     const ext = extOf(path);
-    if (BINARY_EXT.includes(ext)) return;
+    if (!isTextFormat(ext)) {
+      setContent("");
+      return;
+    }
     setBusy(true);
     try {
       const res = await fetch(`/api/ai-venture/file?path=${encodeURIComponent(path)}`);
@@ -231,7 +284,7 @@ export function AvFiles() {
   }, [tree, deepLinkPath]);
 
   const save = async () => {
-    if (!selected) return;
+    if (!selected || !isTextSelected) return;
     setBusy(true);
     try {
       const res = await fetch("/api/ai-venture/file", {
@@ -251,14 +304,14 @@ export function AvFiles() {
   // Keyboard shortcut Cmd+S / Ctrl+S to save
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s" && selected && !isBinarySelected) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s" && selected && isTextSelected) {
         e.preventDefault();
         save();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selected, isBinarySelected, content]);
+  }, [selected, isTextSelected, content]);
 
   const handleDialogSubmit = async () => {
     const { type, value, targetPath } = dialogState;
@@ -310,7 +363,7 @@ export function AvFiles() {
           throw new Error(err?.error?.message || "Delete failed");
         }
         toast.success(`Deleted ${targetPath.split("/").pop()}`);
-        if (selected === targetPath) {
+        if (selected === targetPath || (selected && selected.startsWith(`${targetPath}/`))) {
           setSelected(null);
           setContent("");
         }
@@ -322,30 +375,40 @@ export function AvFiles() {
     }
   };
 
-  const uploadFile = async (file: File) => {
+  const uploadFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (list.length === 0) return;
     setUploading(true);
+    let successCount = 0;
     try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("folder", currentPath);
-      const res = await fetch("/api/ai-venture/upload", { method: "POST", body: form });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || "Upload failed");
+      for (const file of list) {
+        const form = new FormData();
+        form.append("file", file);
+        form.append("folder", currentPath);
+        const res = await fetch("/api/ai-venture/upload", { method: "POST", body: form });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err?.error?.message || `Failed to upload ${file.name}`);
+        }
+        successCount++;
       }
-      toast.success(`Uploaded ${file.name}`);
+      toast.success(
+        successCount === 1 ? `Uploaded ${list[0].name}` : `Uploaded ${successCount} files`
+      );
       load();
-    } catch (err) {
+    } catch (err: any) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
+      if (successCount > 0) load();
     } finally {
       setUploading(false);
     }
   };
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    if (e.target.files && e.target.files.length > 0) {
+      uploadFiles(e.target.files);
+    }
     e.target.value = "";
-    if (file) uploadFile(file);
   };
 
   // Drag & Drop handlers
@@ -361,8 +424,9 @@ export function AvFiles() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) uploadFile(file);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      uploadFiles(e.dataTransfer.files);
+    }
   };
 
   const rawItems = getChildren(tree, currentPath);
@@ -395,10 +459,17 @@ export function AvFiles() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "flex flex-col rounded-xl border border-rule bg-card/50 shadow-xs transition-colors overflow-hidden",
+          "flex flex-col rounded-xl border border-rule bg-card/50 shadow-xs transition-colors overflow-hidden relative",
           isDragOver && "border-primary bg-primary/5 ring-2 ring-primary/20"
         )}
       >
+        {isDragOver && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-primary/10 backdrop-blur-xs border-2 border-dashed border-primary pointer-events-none">
+            <Upload className="size-10 text-primary mb-2 animate-bounce" />
+            <p className="text-sm font-semibold text-primary">Drop files here to upload to {currentPath ? `/${currentPath}` : "root"}</p>
+          </div>
+        )}
+
         {/* Breadcrumb & Navigation Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule bg-muted/30 px-3.5 py-2.5">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -459,6 +530,7 @@ export function AvFiles() {
             <input
               ref={fileInputRef}
               type="file"
+              multiple
               className="hidden"
               onChange={handleFileSelected}
             />
@@ -470,7 +542,7 @@ export function AvFiles() {
               className="h-7 gap-1.5 text-xs font-medium shadow-xs"
             >
               <Upload className="size-3" />
-              {uploading ? "Uploading…" : "Upload"}
+              {uploading ? "Uploading…" : "Upload from Local"}
             </Button>
 
             <Button
@@ -571,11 +643,11 @@ export function AvFiles() {
               <Folder className="size-10 mb-2 opacity-30 text-muted-foreground" />
               <p className="text-sm font-medium text-ink-strong">This folder is empty</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                Drag and drop files here, or use the buttons above to create files and folders.
+                Drag and drop files here, or use the buttons above to upload or create files and folders.
               </p>
             </div>
           ) : viewMode === "grid" ? (
-            /* Adaptive Responsive Grid: Cards NEVER squish or overlap */
+            /* Adaptive Responsive Grid */
             <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3.5">
               {items.map((item) => {
                 const info = getFileTypeInfo(item.name, item.type);
@@ -602,13 +674,18 @@ export function AvFiles() {
                     )}
                   >
                     {/* Action buttons (Rename, Delete) */}
-                    <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div
+                      className="absolute right-1.5 top-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
                       <button
                         type="button"
                         aria-label="Rename"
                         title="Rename"
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           setDialogState({
                             open: true,
                             type: "rename",
@@ -626,6 +703,7 @@ export function AvFiles() {
                         title="Delete"
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           setDialogState({
                             open: true,
                             type: "delete",
@@ -670,7 +748,7 @@ export function AvFiles() {
                       )}
                     </div>
 
-                    {/* Name & Type Tag - Full width with clean wrapping */}
+                    {/* Name & Type Tag */}
                     <div className="w-full mt-2 space-y-0.5">
                       <p
                         className="w-full text-center text-xs font-medium text-ink-strong leading-tight break-words line-clamp-2"
@@ -736,6 +814,7 @@ export function AvFiles() {
                           <div
                             className="flex items-center justify-end gap-1"
                             onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
                           >
                             {item.type === "file" && (
                               <a
@@ -751,14 +830,16 @@ export function AvFiles() {
                             )}
                             <button
                               type="button"
-                              onClick={() =>
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
                                 setDialogState({
                                   open: true,
                                   type: "rename",
                                   targetPath: item.path,
                                   value: item.name,
-                                })
-                              }
+                                });
+                              }}
                               className="rounded p-1 text-muted-foreground hover:text-foreground transition-colors"
                               title="Rename"
                             >
@@ -766,14 +847,16 @@ export function AvFiles() {
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
                                 setDialogState({
                                   open: true,
                                   type: "delete",
                                   targetPath: item.path,
                                   value: item.name,
-                                })
-                              }
+                                });
+                              }}
                               className="rounded p-1 text-muted-foreground hover:text-rose-500 transition-colors"
                               title="Delete"
                             >
@@ -811,7 +894,7 @@ export function AvFiles() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {selected && !isBinarySelected && (
+            {selected && isTextSelected && (
               <Button
                 size="xs"
                 onClick={save}
@@ -904,24 +987,30 @@ export function AvFiles() {
               className="flex-1 size-full border-0"
               title={selected}
             />
-          ) : isBinarySelected ? (
-            <div className="flex flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
-              <File className="size-10 mb-2 opacity-40" />
-              <p className="text-sm font-semibold text-ink-strong">Binary Document</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Inline preview not available for this format.
-              </p>
-              <a
-                href={`/api/ai-venture/file/raw?path=${encodeURIComponent(selected)}`}
-                download
-                className="mt-3"
-              >
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs">
-                  <Download className="size-3.5" /> Download to view
-                </Button>
-              </a>
+          ) : isAudioSelected ? (
+            <div className="flex flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground gap-4">
+              <div className="flex size-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20">
+                <Music className="size-8" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-ink-strong">{selected.split("/").pop()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Audio Recording / Track</p>
+              </div>
+              <audio
+                controls
+                src={`/api/ai-venture/file/raw?path=${encodeURIComponent(selected)}`}
+                className="w-full max-w-sm mt-2"
+              />
             </div>
-          ) : (
+          ) : isVideoSelected ? (
+            <div className="flex flex-1 items-center justify-center p-4 bg-black/90">
+              <video
+                controls
+                src={`/api/ai-venture/file/raw?path=${encodeURIComponent(selected)}`}
+                className="max-h-full max-w-full rounded-lg shadow-lg"
+              />
+            </div>
+          ) : isTextSelected ? (
             <div className="flex flex-1 flex-col overflow-hidden">
               <Textarea
                 value={content}
@@ -935,6 +1024,23 @@ export function AvFiles() {
                 <span className="text-ink-faint">Press Cmd+S to save</span>
               </div>
             </div>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
+              <File className="size-12 mb-3 opacity-40 text-muted-foreground" />
+              <p className="text-sm font-semibold text-ink-strong">{selected.split("/").pop()}</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                Binary or document format. Preview is not rendered inline.
+              </p>
+              <a
+                href={`/api/ai-venture/file/raw?path=${encodeURIComponent(selected)}`}
+                download
+                className="mt-4"
+              >
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs font-medium">
+                  <Download className="size-3.5" /> Download File
+                </Button>
+              </a>
+            </div>
           )}
         </div>
       </div>
@@ -944,7 +1050,15 @@ export function AvFiles() {
         open={dialogState.open}
         onOpenChange={(open) => setDialogState((s) => ({ ...s, open }))}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && dialogState.type === "delete") {
+              e.preventDefault();
+              handleDialogSubmit();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>
               {dialogState.type === "new-file" && "Create New File"}
@@ -971,7 +1085,7 @@ export function AvFiles() {
                 onChange={(e) => setDialogState((s) => ({ ...s, value: e.target.value }))}
                 placeholder={
                   dialogState.type === "new-file"
-                    ? "notes.md"
+                    ? "data.csv, notes.md, script.py"
                     : dialogState.type === "new-folder"
                     ? "My Folder"
                     : "New name"
@@ -984,7 +1098,11 @@ export function AvFiles() {
                 }}
               />
             </div>
-          ) : null}
+          ) : (
+            <div className="py-2 text-xs text-muted-foreground">
+              This will remove <span className="font-mono font-semibold text-foreground">{dialogState.targetPath}</span> and any files within it.
+            </div>
+          )}
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
@@ -995,6 +1113,7 @@ export function AvFiles() {
               Cancel
             </Button>
             <Button
+              autoFocus={dialogState.type === "delete"}
               variant={dialogState.type === "delete" ? "destructive" : "default"}
               size="sm"
               onClick={handleDialogSubmit}

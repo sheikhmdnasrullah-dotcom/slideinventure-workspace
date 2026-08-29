@@ -15,7 +15,10 @@
     "venture:new": "tsx --env-file=.env.local scripts/venture-paper.ts new",
     "venture:pull": "tsx --env-file=.env.local scripts/venture-paper.ts pull",
     "venture:push": "tsx --env-file=.env.local scripts/venture-paper.ts push",
-    "venture:watch": "tsx --env-file=.env.local scripts/venture-paper.ts watch"
+    "venture:watch": "tsx --env-file=.env.local scripts/venture-paper.ts watch",
+    "brain:watch": "tsx --env-file=.env.local scripts/brain.ts watch",
+    "brain:capture": "tsx --env-file=.env.local scripts/brain.ts capture",
+    "brain:run": "tsx --env-file=.env.local scripts/brain.ts run"
   },
   "dependencies": {
     "@ag-ui/client": "^0.0.58",

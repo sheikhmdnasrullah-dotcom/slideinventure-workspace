@@ -1,0 +1,19 @@
+{
+  // Runs the Brain capture watcher alongside the dev server. Start it with
+  // Terminal > Run Task > "Brain: watch captures"; it is a background task, so
+  // it keeps running and reports each capture in its own terminal panel.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Brain: watch captures",
+      "type": "npm",
+      "script": "brain:watch",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

@@ -12,13 +12,13 @@ import { captureResearchInsight } from "@/lib/brain/capture";
 // previously only supported creating an empty text file at a path via a
 // prompt() dialog. No required title/description/category: the file itself
 // is the only input.
-const MAX_SIZE = 25 * 1024 * 1024;
+const MAX_SIZE = 50 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return ApiError.unauthorized().toResponse();
 
-  const limit = checkRateLimit(request, { limit: 20, windowMs: 60_000, identifier: `ai-venture-upload:${user.id}` });
+  const limit = checkRateLimit(request, { limit: 60, windowMs: 60_000, identifier: `ai-venture-upload:${user.id}` });
   if (!limit.allowed) return ApiError.rateLimited().toResponse();
 
   try {

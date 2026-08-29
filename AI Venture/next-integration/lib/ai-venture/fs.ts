@@ -24,15 +24,88 @@ const WORKSPACE = "ai-venture";
 
 export const VENTURE_ROOT_FOLDERS = ["PDF", "Brainstormed Ideas", "Brainstorm Sketches"];
 
-const TEXT_EXTENSIONS = new Set([".md", ".txt", ".tldr", ".json", ".csv"]);
-const PDF_EXTENSIONS = new Set([".pdf"]);
-// Uploaded as-is (base64), streamed back as raw bytes: same treatment as
-// PDFs already got, just not limited to PDFs. Docs/slides/sheets included so
-// "upload other reasonable document types" doesn't need a case-by-case list.
-const BINARY_EXTENSIONS = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp",
-  ".docx", ".pptx", ".xlsx", ".zip",
+const TEXT_EXTENSIONS = new Set([
+  ".md", ".markdown", ".mdown", ".mkd",
+  ".txt", ".text", ".log", ".rtf",
+  ".csv", ".tsv", ".tab",
+  ".json", ".jsonld", ".jsonc", ".tldr",
+  ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".d.ts",
+  ".html", ".htm", ".xhtml",
+  ".css", ".scss", ".sass", ".less",
+  ".xml", ".yaml", ".yml", ".toml", ".ini", ".conf", ".config", ".env",
+  ".sql", ".graphql", ".gql",
+  ".py", ".pyw", ".ipynb",
+  ".sh", ".bash", ".zsh", ".fish", ".bat", ".cmd", ".ps1",
+  ".rs", ".go", ".c", ".h", ".cpp", ".hpp", ".cc", ".cs", ".java", ".kt", ".kts", ".scala", ".swift", ".dart",
+  ".php", ".rb", ".lua", ".r", ".pl", ".pm",
+  ".dockerfile", ".gitignore", ".gitattributes", ".editorconfig"
 ]);
+
+const IMAGE_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".avif", ".tif", ".tiff"
+]);
+
+const AUDIO_EXTENSIONS = new Set([
+  ".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".wma"
+]);
+
+const VIDEO_EXTENSIONS = new Set([
+  ".mp4", ".webm", ".mov", ".avi", ".mkv", ".wmv", ".m4v"
+]);
+
+const MIME_TYPE_MAP: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".md": "text/markdown; charset=utf-8",
+  ".markdown": "text/markdown; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".text": "text/plain; charset=utf-8",
+  ".log": "text/plain; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".jsonc": "application/json; charset=utf-8",
+  ".tldr": "application/json; charset=utf-8",
+  ".csv": "text/csv; charset=utf-8",
+  ".tsv": "text/tab-separated-values; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+  ".bmp": "image/bmp",
+  ".ico": "image/x-icon",
+  ".avif": "image/avif",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+  ".m4a": "audio/mp4",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
+  ".js": "text/javascript; charset=utf-8",
+  ".ts": "text/typescript; charset=utf-8",
+  ".tsx": "text/typescript-jsx; charset=utf-8",
+  ".jsx": "text/javascript-jsx; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
+  ".yaml": "text/yaml; charset=utf-8",
+  ".yml": "text/yaml; charset=utf-8",
+  ".toml": "text/plain; charset=utf-8",
+  ".py": "text/x-python; charset=utf-8",
+  ".sh": "text/x-shellscript; charset=utf-8",
+  ".sql": "text/x-sql; charset=utf-8",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".doc": "application/msword",
+  ".ppt": "application/vnd.ms-powerpoint",
+  ".xls": "application/vnd.ms-excel",
+  ".zip": "application/zip",
+  ".tar": "application/x-tar",
+  ".gz": "application/gzip",
+  ".7z": "application/x-7z-compressed",
+  ".rar": "application/vnd.rar",
+};
 
 type DocumentRow = {
   $id: string;
@@ -79,20 +152,35 @@ function extOf(name: string): string | null {
   return i > 0 ? name.slice(i).toLowerCase() : null;
 }
 
-export function isTextFile(name: string): boolean {
-  return TEXT_EXTENSIONS.has(extOf(name) || "");
+export function getMimeType(name: string): string {
+  const ext = extOf(name) || "";
+  return MIME_TYPE_MAP[ext] || (isTextFile(name) ? "text/plain; charset=utf-8" : "application/octet-stream");
 }
 
-function isPdfFile(name: string): boolean {
-  return PDF_EXTENSIONS.has(extOf(name) || "");
+export function isTextFile(name: string): boolean {
+  const ext = extOf(name) || "";
+  if (!ext) return true;
+  return TEXT_EXTENSIONS.has(ext);
+}
+
+export function isPdfFile(name: string): boolean {
+  return extOf(name) === ".pdf";
+}
+
+export function isImageFile(name: string): boolean {
+  return IMAGE_EXTENSIONS.has(extOf(name) || "");
+}
+
+export function isAudioFile(name: string): boolean {
+  return AUDIO_EXTENSIONS.has(extOf(name) || "");
+}
+
+export function isVideoFile(name: string): boolean {
+  return VIDEO_EXTENSIONS.has(extOf(name) || "");
 }
 
 export function isBinaryFile(name: string): boolean {
-  return BINARY_EXTENSIONS.has(extOf(name) || "");
-}
-
-function isImageFile(name: string): boolean {
-  return [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"].includes(extOf(name) || "");
+  return !isTextFile(name);
 }
 
 // Validates and normalizes a virtual path: the only gate between the
@@ -257,19 +345,24 @@ export async function listTree(): Promise<VentureNode> {
 
 export async function readFileContent(
   relativePath: string
-): Promise<{ content: string; name: string; size: number; modifiedAt: string }> {
+): Promise<{ content: string; name: string; size: number; modifiedAt: string; isBinary: boolean }> {
   const p = normalizePath(relativePath);
   const row = await findRowByPath(p);
   if (!row) throw new VentureFsError("File not found", 404);
   if (row.node_type === "folder") throw new VentureFsError("Not a file", 400);
 
   const name = row.filename || nameOf(p);
-  if (!isTextFile(name) && !isPdfFile(name) && !isBinaryFile(name)) throw new VentureFsError("Unsupported file type", 415);
+  const isBinary = isBinaryFile(name);
 
-  if (isPdfFile(name) || isBinaryFile(name)) {
-    // PDFs and other binary types stream their raw bytes via
-    // /api/ai-venture/file/raw instead of being read as text.
-    return { content: "", name, size: row.size_bytes || 0, modifiedAt: row.updated_at || new Date().toISOString() };
+  if (isBinary) {
+    // Binary types stream their raw bytes via /api/ai-venture/file/raw
+    return {
+      content: "",
+      name,
+      size: row.size_bytes || 0,
+      modifiedAt: row.updated_at || new Date().toISOString(),
+      isBinary: true,
+    };
   }
 
   let content = "";
@@ -281,7 +374,13 @@ export async function readFileContent(
       content = "";
     }
   }
-  return { content, name, size: row.size_bytes || 0, modifiedAt: row.updated_at || new Date().toISOString() };
+  return {
+    content,
+    name,
+    size: row.size_bytes || 0,
+    modifiedAt: row.updated_at || new Date().toISOString(),
+    isBinary: false,
+  };
 }
 
 function publicFileUrl(fileId: string): string {
@@ -310,13 +409,9 @@ async function replaceStorageContent(
 async function reindexIfLinkable(row: DocumentRow, name: string, buffer: Buffer) {
   try {
     const ext = extOf(name);
-    // Images/zip/pptx/xlsx have no real text-extraction path (extractFileText
-    // would just produce a placeholder string). Skip rather than mirror
-    // junk into Knowledge. .docx does have real extraction (mammoth), so it
-    // proceeds despite being in BINARY_EXTENSIONS (streamed raw, but also
-    // worth indexing).
+    // Images/zip/audio/video have no meaningful text extraction
     if (!isTextFile(name) && !isPdfFile(name) && ext !== ".docx") return;
-    if (ext === ".tldr" || ext === ".json") return; // canvas snapshots, not readable text
+    if (ext === ".tldr") return; // canvas snapshots
     const file = new File([new Uint8Array(buffer)], name);
     const extracted = await extractFileText(file);
     if (!extracted.text) return;
@@ -339,30 +434,9 @@ export async function writeFileContent(
 ): Promise<void> {
   const p = normalizePath(relativePath);
   const name = nameOf(p);
-  if (!isTextFile(name) && !isPdfFile(name) && !isBinaryFile(name)) {
-    throw new VentureFsError("Unsupported file type", 415);
-  }
 
   const buffer = encoding === "base64" ? Buffer.from(content, "base64") : Buffer.from(content, "utf-8");
-  const mimeMap: Record<string, string> = {
-    ".pdf": "application/pdf",
-    ".md": "text/markdown",
-    ".txt": "text/plain",
-    ".json": "application/json",
-    ".tldr": "application/json",
-    ".csv": "text/csv",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-    ".webp": "image/webp",
-    ".svg": "image/svg+xml",
-    ".bmp": "image/bmp",
-    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ".zip": "application/zip",
-  };
+  const mimeType = getMimeType(name);
   const now = new Date().toISOString();
   const existing = await findRowByPath(p);
 
@@ -373,18 +447,18 @@ export async function writeFileContent(
     await databases.updateDocument(DB, COL, existing.$id, {
       storage_path: fileId,
       size_bytes: buffer.byteLength,
-      mime_type: mimeMap[extOf(name) || ""] || "application/octet-stream",
+      mime_type: mimeType,
       url,
       updated_at: now,
     });
-    row = { ...existing, storage_path: fileId, size_bytes: buffer.byteLength };
+    row = { ...existing, storage_path: fileId, size_bytes: buffer.byteLength, mime_type: mimeType };
   } else {
     const parent = parentOf(p);
     if (parent) await ensureFolderRow(parent);
     const doc = await databases.createDocument(DB, COL, ID.unique(), {
       title: name,
       filename: name,
-      mime_type: mimeMap[extOf(name) || ""] || "application/octet-stream",
+      mime_type: mimeType,
       size_bytes: buffer.byteLength,
       storage_path: fileId,
       url,
@@ -398,7 +472,7 @@ export async function writeFileContent(
       created_at: now,
       updated_at: now,
     });
-    row = doc;
+    row = doc as unknown as DocumentRow;
   }
 
   await reindexIfLinkable(row, name, buffer);
@@ -429,7 +503,7 @@ async function ensureFolderRow(path: string): Promise<void> {
       updated_at: now,
     });
   } catch {
-    // best-effort; a duplicate create races here are harmless (folder is virtual)
+    // best-effort; duplicate create races here are harmless (folder is virtual)
   }
 }
 
@@ -444,10 +518,6 @@ export async function createEntry(relativePath: string, type: "file" | "folder")
     return;
   }
 
-  const name = nameOf(p);
-  if (!isTextFile(name) && !isPdfFile(name)) {
-    throw new VentureFsError("Only .md, .txt, .pdf, .tldr and .json files can be created", 415);
-  }
   await writeFileContent(p, "", "utf-8");
 }
 
@@ -502,37 +572,45 @@ export async function readFileStream(relativePath: string): Promise<{
     },
   });
 
-  const contentTypeMap: Record<string, string> = {
-    ".pdf": "application/pdf",
-    ".md": "text/markdown; charset=utf-8",
-    ".txt": "text/plain; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".tldr": "application/json; charset=utf-8",
-  };
-  const ext = extOf(row.filename || nameOf(p)) || "";
+  const name = row.filename || nameOf(p);
+  const contentType = getMimeType(name) || row.mime_type || "application/octet-stream";
 
   return {
     stream,
     size: bytes.byteLength,
-    contentType: contentTypeMap[ext] || row.mime_type || "application/octet-stream",
-    filename: row.filename || nameOf(p),
+    contentType,
+    filename: name,
   };
 }
 
 export async function deleteEntry(relativePath: string): Promise<void> {
   const p = normalizePath(relativePath);
   if (!p) throw new VentureFsError("Cannot delete the root folder", 400);
-  const row = await findRowByPath(p);
-  if (!row) throw new VentureFsError("Not found", 404);
 
-  const toDelete: DocumentRow[] = [row];
-  if (row.node_type === "folder") {
-    const prefix = `${p}/`;
-    const rows = await fetchAllNodes();
-    for (const child of rows) {
-      const childPath = child.folder_path as string | undefined;
-      if (childPath && childPath.startsWith(prefix)) toDelete.push(child);
+  const prefix = `${p}/`;
+  const allRows = await fetchAllNodes();
+
+  // Find target row (if any) and all child rows (if this is a folder or prefix)
+  const toDelete: DocumentRow[] = [];
+  for (const row of allRows) {
+    const fp = row.folder_path as string | undefined;
+    if (!fp) continue;
+    if (fp === p || fp.startsWith(prefix)) {
+      toDelete.push(row);
     }
+  }
+
+  // If not found in fetched rows, try direct findRowByPath as fallback
+  if (toDelete.length === 0) {
+    const directRow = await findRowByPath(p);
+    if (directRow) {
+      toDelete.push(directRow);
+    }
+  }
+
+  // If still nothing to delete, return gracefully (item already deleted)
+  if (toDelete.length === 0) {
+    return;
   }
 
   for (const doc of toDelete) {

@@ -150,10 +150,11 @@ async function summarizeContent(title: string, text: string): Promise<string> {
 }
 
 /**
- * Turns raw content from Notepad, Brainstorm, Files, Chat, or an agent run into one
- * organized Research Lab item: a short "core idea" summary plus a pointer back
- * to where it came from. Keyed by (source, sourceRef) so repeated edits update
- * the same item in place.
+ * Turns raw content from Notepad, Brainstorm, Files, Chat, an agent run, or an
+ * external capture (VS Code, terminal, another AI tool) into one organized
+ * Brain item: a short "core idea" summary plus a pointer back to where it came
+ * from. Keyed by (source, sourceRef) so repeated edits update the same item in
+ * place.
  */
 export async function captureResearchInsight(input: CaptureInput): Promise<ResearchLabItem | null> {
   const text = input.rawText.trim();
@@ -212,7 +213,7 @@ export async function captureResearchInsight(input: CaptureInput): Promise<Resea
     logActivity({
       category: "knowledge",
       action: existing ? "updated" : "created",
-      title: `Research Lab: ${cleanTitle}`,
+      title: `Brain: ${cleanTitle}`,
       description: structuredSummary.split("\n")[0]?.replace(/^- /, "") ?? "",
       entityId: input.sourceRef,
       entityType: "research_item",

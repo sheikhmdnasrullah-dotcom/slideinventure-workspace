@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { databases, ID, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { captureResearchInsight, type ResearchLabItem, type ResearchLabSource } from "@/lib/brain/capture";
@@ -14,6 +15,10 @@ const NOTES = APPWRITE.collections.notes;
 // Everything captured from outside the dashboard lands under one folder in the
 // AI Venture file tree, so it never mixes with files the user placed by hand.
 const CAPTURE_FOLDER = "Captured";
+
+// Text extensions writeFileContent accepts; see TEXT_EXTENSIONS in
+// AI Venture/next-integration/lib/ai-venture/fs.ts.
+const WRITABLE_EXTENSIONS = new Set([".md", ".txt", ".json", ".csv", ".tldr"]);
 
 export type IngestInput = {
   userEmail: string;
@@ -39,7 +44,11 @@ export type IngestResult = {
   warnings: string[];
 };
 
-/** `Captured/<sanitized path>`; falls back to the title when there is no path. */
+/**
+ * `Captured/<sanitized path>`. Anything whose extension the AI Venture file
+ * store would reject (a `.ts` file forced to Files, say) gets `.md` appended so
+ * the write lands as text instead of failing with a 415.
+ */
 function capturePathFor(input: IngestInput): string {
   const raw = (input.path || input.title || "capture.md").replace(/\\/g, "/");
   const segments = raw
@@ -48,7 +57,8 @@ function capturePathFor(input: IngestInput): string {
     .filter((s) => s && s !== "." && s !== "..")
     .map((s) => s.replace(/[^A-Za-z0-9._ -]/g, "-"));
   const cleaned = segments.join("/") || "capture.md";
-  const withExt = /\.[A-Za-z0-9]+$/.test(cleaned) ? cleaned : `${cleaned}.md`;
+  const ext = /\.[A-Za-z0-9]+$/.exec(cleaned)?.[0]?.toLowerCase() ?? "";
+  const withExt = WRITABLE_EXTENSIONS.has(ext) ? cleaned : `${cleaned}.md`;
   return `${CAPTURE_FOLDER}/${withExt}`;
 }
 
@@ -249,6 +259,3 @@ export async function ingestCapture(input: IngestInput): Promise<IngestResult> {
   return { destinations, reasons, brainItem, filePath, noteId, agentJobId, warnings };
 }
 
-    return null;
-  }
-}

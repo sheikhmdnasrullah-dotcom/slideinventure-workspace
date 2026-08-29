@@ -30,18 +30,12 @@ export type Classification = {
   reasons: string[];
 };
 
-// Extensions worth keeping as a real file in the Files section rather than only
-// as a summary. Matches the set AI Venture's own file system accepts.
-const FILE_EXTENSIONS = new Set([
-  ".md",
-  ".markdown",
-  ".txt",
-  ".csv",
-  ".tsv",
-  ".json",
-  ".pdf",
-  ".docx",
-]);
+// Extensions the AI Venture file store actually accepts as text (see
+// TEXT_EXTENSIONS / PDF_EXTENSIONS in AI Venture/.../lib/ai-venture/fs.ts).
+// Anything outside this set - a .ts file saved in VS Code, for instance - is
+// still summarized into the Brain; it just isn't mirrored as a file, because
+// writeFileContent would reject it with a 415.
+const FILE_EXTENSIONS = new Set([".md", ".txt", ".json", ".csv", ".tldr"]);
 
 // A note is prose the user is thinking in, not a document they produced.
 const NOTE_PATH_HINT = /(^|\/)(notes?|journal|scratch|ideas?)(\/|$)/i;
