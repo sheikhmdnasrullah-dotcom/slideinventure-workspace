@@ -4,9 +4,9 @@ import { databases } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { ApiError, toJson } from "@/lib/api/errors";
-import { captureResearchInsight, listResearchLabItems } from "@/lib/research-lab/capture";
+import { captureResearchInsight, listResearchLabItems } from "@/lib/brain/capture";
 import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text";
-import { summarizeExcalidrawScene } from "@/lib/research-lab/excalidraw-summary";
+import { summarizeExcalidrawScene } from "@/lib/brain/excalidraw-summary";
 import { readFileContent } from "../../../../AI Venture/next-integration/lib/ai-venture/fs";
 
 const DB = APPWRITE.databaseId;

@@ -75,7 +75,7 @@ export function AvQuery() {
       }
 
       if (answer.trim()) {
-        fetch("/api/research-lab/capture", {
+        fetch("/api/brain/capture", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

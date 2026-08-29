@@ -357,7 +357,7 @@ export function DraggableDeployedAgent() {
           tgt === "research" ||
           text.toLowerCase().includes("research"))
       ) {
-        fetch("/api/research-lab/capture", {
+        fetch("/api/brain/capture", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -442,7 +442,7 @@ export function DraggableDeployedAgent() {
   // Push specific message to Research Lab manually
   const handlePushToResearchLab = (content: string) => {
     const snap = getDeployedAgent();
-    fetch("/api/research-lab/capture", {
+    fetch("/api/brain/capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

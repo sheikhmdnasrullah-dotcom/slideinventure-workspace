@@ -9,8 +9,8 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { logActivity } from "@/lib/activities/client";
 import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
 import { ensureBoardsCollection } from "@/lib/boards/ensure";
-import { captureResearchInsight } from "@/lib/research-lab/capture";
-import { summarizeExcalidrawScene } from "@/lib/research-lab/excalidraw-summary";
+import { captureResearchInsight } from "@/lib/brain/capture";
+import { summarizeExcalidrawScene } from "@/lib/brain/excalidraw-summary";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.boards;

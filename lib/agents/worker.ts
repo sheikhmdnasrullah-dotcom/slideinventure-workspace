@@ -3,7 +3,7 @@ import { enqueueAgentJob, getAgentJobById, updateAgentJob } from "@/lib/agents/j
 import type { AgentJobInput } from "@/lib/agents/jobs-store";
 import { getAgentPrompt } from "@/lib/agents/roster";
 import { agentRunStarted, agentRunCompleted, agentRunFailed } from "@/lib/agui/server";
-import { captureResearchInsight } from "@/lib/research-lab/capture";
+import { captureResearchInsight } from "@/lib/brain/capture";
 
 // Dispatches a queued agent job to the self-hosted Mastra server (VPS) and
 // records the result, independent of any browser session. Triggered via

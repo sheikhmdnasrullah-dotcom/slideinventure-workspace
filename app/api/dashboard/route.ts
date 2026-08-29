@@ -315,7 +315,7 @@ export async function GET() {
 
   const changeItems: WhatChangedItem[] = [];
   if (notesDelta > 0) changeItems.push({ label: `${notesDelta} note${notesDelta === 1 ? "" : "s"}`, count: notesDelta, href: "/notepad" });
-  if (researchDelta > 0) changeItems.push({ label: `${researchDelta} research finding${researchDelta === 1 ? "" : "s"}`, count: researchDelta, href: "/research-lab" });
+  if (researchDelta > 0) changeItems.push({ label: `${researchDelta} Brain item${researchDelta === 1 ? "" : "s"}`, count: researchDelta, href: "/concepts?tab=research" });
   if (leadsDelta > 0) changeItems.push({ label: `${leadsDelta} lead${leadsDelta === 1 ? "" : "s"}`, count: leadsDelta, href: "/leads" });
   if (runsDelta > 0) changeItems.push({ label: `${runsDelta} agent run${runsDelta === 1 ? "" : "s"}`, count: runsDelta, href: "/agents" });
   if (boardsDelta > 0) changeItems.push({ label: `${boardsDelta} brainstorm board${boardsDelta === 1 ? "" : "s"}`, count: boardsDelta, href: "/brainstorm-sketch" });
@@ -336,9 +336,9 @@ export async function GET() {
       id: item.$id,
       category: "research",
       title: item.title || "Untitled Research",
-      sectionLabel: "Research Lab",
-      lastOpenedLabel: `Research Lab · ${formatRelativeTime(item.updated_at ?? item.created_at)}`,
-      href: "/research-lab",
+      sectionLabel: "Brain",
+      lastOpenedLabel: `Brain · ${formatRelativeTime(item.updated_at ?? item.created_at)}`,
+      href: "/concepts?tab=research",
       updatedAt: item.updated_at ?? item.created_at,
     });
   }
@@ -447,8 +447,8 @@ export async function GET() {
       id: "next-continue-research",
       title: `Continue "${resItem.title}"`,
       reason: `Last edited ${formatRelativeTime(resItem.updated_at ?? resItem.created_at)}.`,
-      actionLabel: "Open Research Lab",
-      href: "/research-lab",
+      actionLabel: "Open Brain",
+      href: "/concepts?tab=research",
       category: "research",
       priority: "high",
     });
@@ -511,11 +511,11 @@ export async function GET() {
     },
     {
       id: "research-items",
-      label: "Research Items",
+      label: "Brain Items",
       value: String(recentResearch.length),
       trend: { direction: recentResearch.length > 0 ? "up" : "flat", label: `${researchUpdatesToday} today` },
-      context: "Active research findings",
-      subline: "Live from Research Lab",
+      context: "Captured research summaries",
+      subline: "Live from the Brain",
     },
     {
       id: "task-runs",

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQueryState } from "nuqs";
 import {
-  FlaskConical,
+  Brain,
   NotebookPen,
   PenTool,
   FolderOpen,
@@ -14,6 +14,9 @@ import {
   MessageSquare,
   RefreshCw,
   Sparkles,
+  Terminal,
+  Code2,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -21,7 +24,15 @@ import { useLiveRefresh } from "@/components/providers/event-stream";
 import { registerContextProvider, unregisterContextProvider } from "@/lib/agents/context-registry";
 import { formatDistanceToNow } from "date-fns";
 
-type ResearchLabSource = "notepad" | "brainstorm" | "files" | "agent" | "chat";
+type ResearchLabSource =
+  | "notepad"
+  | "brainstorm"
+  | "files"
+  | "agent"
+  | "chat"
+  | "terminal"
+  | "editor"
+  | "external";
 
 type ResearchLabItem = {
   id: string;
@@ -38,6 +49,9 @@ const SOURCE_META: Record<
   ResearchLabSource,
   { label: string; icon: typeof NotebookPen; color: string }
 > = {
+  editor: { label: "From VS Code", icon: Code2, color: "text-sky-500" },
+  terminal: { label: "From Terminal", icon: Terminal, color: "text-lime-500" },
+  external: { label: "From other AI tools", icon: Globe, color: "text-fuchsia-500" },
   notepad: { label: "From Notepad", icon: NotebookPen, color: "text-amber-500" },
   brainstorm: { label: "From Brainstorm", icon: PenTool, color: "text-blue-500" },
   files: { label: "From Files", icon: FolderOpen, color: "text-purple-500" },
@@ -45,7 +59,16 @@ const SOURCE_META: Record<
   chat: { label: "From AI Query & Chat", icon: MessageSquare, color: "text-cyan-500" },
 };
 
-const SOURCE_ORDER: ResearchLabSource[] = ["notepad", "brainstorm", "files", "agent", "chat"];
+const SOURCE_ORDER: ResearchLabSource[] = [
+  "editor",
+  "terminal",
+  "external",
+  "notepad",
+  "brainstorm",
+  "files",
+  "agent",
+  "chat",
+];
 
 export function AvResearch() {
   const [, setTab] = useQueryState("tab");
@@ -62,13 +85,13 @@ export function AvResearch() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/research-lab/items");
-      if (!res.ok) throw new Error("Could not load the Research Lab");
+      const res = await fetch("/api/brain/items");
+      if (!res.ok) throw new Error("Could not load the Brain");
       const json = await res.json();
       setItems(json.items ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load the Research Lab");
+      setError(e instanceof Error ? e.message : "Could not load the Brain");
     } finally {
       setLoading(false);
     }
@@ -77,7 +100,7 @@ export function AvResearch() {
   const sync = useCallback(async () => {
     setSyncing(true);
     try {
-      const res = await fetch("/api/research-lab/sync", { method: "POST" });
+      const res = await fetch("/api/brain/sync", { method: "POST" });
       if (res.ok) {
         const json = await res.json();
         if (json.items) {
@@ -100,13 +123,13 @@ export function AvResearch() {
 
   useLiveRefresh(load, { sources: ["research-lab"] });
 
-  // Expose the current Research Lab items to the deployed agent so dropping an
+  // Expose the current Brain items to the deployed agent so dropping an
   // agent here hands it the real content, not just the section title.
   useEffect(() => {
     registerContextProvider("research", () => {
       if (!items.length) return null;
       return {
-        title: "Research Lab",
+        title: "Brain",
         content: items.map((i) => `• ${i.title}\n${i.summary}`).join("\n\n"),
       };
     });
@@ -130,9 +153,9 @@ export function AvResearch() {
     const prev = items;
     setItems((cur) => cur.filter((i) => i.id !== id));
     try {
-      const res = await fetch(`/api/research-lab/items/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/brain/items/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      toast.success("Research item removed");
+      toast.success("Brain item removed");
     } catch {
       setItems(prev);
       toast.error("Could not remove this item");
@@ -149,17 +172,17 @@ export function AvResearch() {
   return (
     <div
       data-droppable="research"
-      data-drop-title="Research Lab"
+      data-drop-title="Brain"
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
     >
       <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/20 px-6 py-3.5">
         <div>
           <div className="flex items-center gap-2">
-            <FlaskConical className="size-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Research Lab</h2>
+            <Brain className="size-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Brain</h2>
           </div>
           <p className="mt-0.5 max-w-2xl text-xs text-muted-foreground">
-            Structured summaries of your notes, brainstorm sketches, files, agent findings, and chat discussions.
+            Everything you research, captured automatically: VS Code, terminal, other AI tools, notes, sketches, files, agent findings, and chat.
           </p>
         </div>
 
@@ -184,7 +207,7 @@ export function AvResearch() {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          <Loader2 className="mr-2 size-4 animate-spin text-primary" /> Loading research items
+          <Loader2 className="mr-2 size-4 animate-spin text-primary" /> Loading the Brain
         </div>
       ) : error ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground p-6">
@@ -198,9 +221,9 @@ export function AvResearch() {
           <div className="flex size-14 items-center justify-center rounded-2xl bg-muted/40 text-muted-foreground/60 ring-1 ring-border">
             <Sparkles className="size-7 text-primary/70" />
           </div>
-          <p className="text-sm font-semibold text-ink-strong">No research summaries yet</p>
+          <p className="text-sm font-semibold text-ink-strong">The Brain is empty so far</p>
           <p className="max-w-md text-xs leading-relaxed">
-            Write in Notepad, sketch in Brainstorm, upload a file, or ask in AI Query. The core ideas are summarized into structured bullet points and automatically pushed here every 10 seconds.
+            Research in VS Code or the terminal (run <code className="rounded bg-muted px-1">npm run brain:watch</code>), write in Notepad, sketch in Brainstorm, upload a file, or ask in AI Query. Core ideas are summarized into bullet points and pushed here automatically every 10 seconds.
           </p>
           <Button
             size="sm"

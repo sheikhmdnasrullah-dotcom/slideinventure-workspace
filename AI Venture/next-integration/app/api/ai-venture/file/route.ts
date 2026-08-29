@@ -5,7 +5,7 @@ import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { deleteEntry, moveEntry, readFileContent, VentureFsError, writeFileContent } from "../../../../lib/ai-venture/fs";
 import { logActivity } from "@/lib/activities/client";
-import { captureResearchInsight } from "@/lib/research-lab/capture";
+import { captureResearchInsight } from "@/lib/brain/capture";
 
 function fsErrorToResponse(error: unknown) {
   if (error instanceof VentureFsError) return new ApiError(error.status, "VENTURE_FS_ERROR", error.message).toResponse();

@@ -6,7 +6,7 @@ import dynamic from "next/dynamic"
 import {
   FolderOpen,
   Sparkles,
-  FlaskConical,
+  Brain,
   LayoutGrid,
   LayoutDashboard,
   PenTool,
@@ -35,7 +35,7 @@ const AvQuery = dynamic(() => import("./av-query").then((m) => m.AvQuery), {
 })
 const AvResearch = dynamic(() => import("./av-research").then((m) => m.AvResearch), {
   ssr: false,
-  loading: () => <Loading label="Research" />,
+  loading: () => <Loading label="Brain" />,
 })
 const AvPlayground = dynamic(() => import("./av-playground").then((m) => m.AvPlayground), {
   ssr: false,
@@ -76,7 +76,7 @@ type SectionId =
   | "activity"
 
 const SECTIONS: { id: SectionId; label: string; icon: LucideIcon; description: string }[] = [
-  { id: "research", label: "Research Lab", icon: FlaskConical, description: "Investigate and gather sources" },
+  { id: "research", label: "Brain", icon: Brain, description: "Auto-captured summaries of everything you research" },
   { id: "playground", label: "Playground", icon: LayoutGrid, description: "Experiment with prompts and models" },
   { id: "files", label: "Files", icon: FolderOpen, description: "Uploads and generated files" },
   { id: "useful-links", label: "Useful Links", icon: Send, description: "Curated bookmarks and resources for this venture" },
@@ -146,10 +146,10 @@ export function AiVentureWorkspace() {
   )
 
   // Active 10-second background watcher: automatically summarizes and pushes
-  // any updates in Notepad, Brainstorm, Files, or chat into the Research Lab.
+  // any updates in Notepad, Brainstorm, Files, or chat into the Brain.
   useEffect(() => {
     const triggerSync = () => {
-      fetch("/api/research-lab/sync", { method: "POST" }).catch(() => {})
+      fetch("/api/brain/sync", { method: "POST" }).catch(() => {})
     }
 
     // Initial sync
@@ -166,7 +166,7 @@ export function AiVentureWorkspace() {
   const select = (id: SectionId) => {
     void setActive(id)
     if (id === "research") {
-      fetch("/api/research-lab/sync", { method: "POST" }).catch(() => {})
+      fetch("/api/brain/sync", { method: "POST" }).catch(() => {})
     }
   }
 

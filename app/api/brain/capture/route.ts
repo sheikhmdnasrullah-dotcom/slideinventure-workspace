@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
-import { captureResearchInsight, ResearchLabSource } from "@/lib/research-lab/capture";
+import { captureResearchInsight, ResearchLabSource } from "@/lib/brain/capture";
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();

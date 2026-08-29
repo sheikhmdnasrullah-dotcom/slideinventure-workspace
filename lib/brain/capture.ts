@@ -1,14 +1,40 @@
 import "server-only";
 import { databases, ID, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
-import { ensureResearchLabCollection } from "@/lib/research-lab/ensure";
+import { ensureResearchLabCollection } from "@/lib/brain/ensure";
 import { logActivity } from "@/lib/activities/client";
 import { chatCompletion } from "@/lib/llm/gateway";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.researchLabItems;
 
-export type ResearchLabSource = "notepad" | "brainstorm" | "files" | "agent" | "chat";
+// Where a Brain item came from. The first three are captured outside the
+// dashboard (VS Code, terminal, any other AI tool) and arrive via
+// /api/brain/ingest; the rest are produced by the dashboard's own sections.
+export type ResearchLabSource =
+  | "notepad"
+  | "brainstorm"
+  | "files"
+  | "agent"
+  | "chat"
+  | "terminal"
+  | "editor"
+  | "external";
+
+export const BRAIN_SOURCES: ResearchLabSource[] = [
+  "notepad",
+  "brainstorm",
+  "files",
+  "agent",
+  "chat",
+  "terminal",
+  "editor",
+  "external",
+];
+
+export function isBrainSource(value: unknown): value is ResearchLabSource {
+  return typeof value === "string" && (BRAIN_SOURCES as string[]).includes(value);
+}
 
 export type ResearchLabItem = {
   id: string;

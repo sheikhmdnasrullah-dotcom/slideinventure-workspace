@@ -7,7 +7,7 @@ import { generateText, type ModelMessage } from "ai";
 import { NextRequest } from "next/server";
 import { NoLlmProviderError, resolveChatModel } from "@/lib/llm/models";
 import { chatCompletion } from "@/lib/llm/gateway";
-import { captureResearchInsight } from "@/lib/research-lab/capture";
+import { captureResearchInsight } from "@/lib/brain/capture";
 import {
   agentRunCompleted,
   agentRunFailed,

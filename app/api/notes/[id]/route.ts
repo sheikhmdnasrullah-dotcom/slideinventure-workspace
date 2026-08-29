@@ -9,7 +9,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit"
 import { logActivity } from "@/lib/activities/client"
 import { upsertVector, deleteVector } from "@/lib/retrieval/vector-index"
 import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text"
-import { captureResearchInsight } from "@/lib/research-lab/capture"
+import { captureResearchInsight } from "@/lib/brain/capture"
 
 const DB = APPWRITE.databaseId
 const COL = APPWRITE.collections.notes

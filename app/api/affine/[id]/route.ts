@@ -7,8 +7,8 @@ import { logActivity } from "@/lib/activities/client";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { normalizeBoardScope, BOARD_SCOPE_ACTIVITY } from "@/lib/boards/scope";
-import { captureResearchInsight } from "@/lib/research-lab/capture";
-import { summarizeAffineSnapshot } from "@/lib/research-lab/affine-summary";
+import { captureResearchInsight } from "@/lib/brain/capture";
+import { summarizeAffineSnapshot } from "@/lib/brain/affine-summary";
 
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.affineWorkspaces;

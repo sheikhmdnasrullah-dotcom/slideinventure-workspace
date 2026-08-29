@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { writeFileContent, VentureFsError } from "../../../../lib/ai-venture/fs";
 import { logActivity } from "@/lib/activities/client";
 import { extractFileText } from "@/lib/knowledge/file-extract";
-import { captureResearchInsight } from "@/lib/research-lab/capture";
+import { captureResearchInsight } from "@/lib/brain/capture";
 
 // A real "pick a file from your device" upload. The AI Venture file system
 // previously only supported creating an empty text file at a path via a

@@ -9,7 +9,7 @@ import { AFFINE_SECTION, type BoardEngine } from "./av-whiteboard-editor"
 import { AppFrameDialog } from "@/components/dashboard/v3/app-frame-dialog"
 import { LUCIDCHART_URL } from "@/lib/lucidchart"
 import { registerContextProvider, unregisterContextProvider } from "@/lib/agents/context-registry"
-import { summarizeExcalidrawScene } from "@/lib/research-lab/excalidraw-summary"
+import { summarizeExcalidrawScene } from "@/lib/brain/excalidraw-summary"
 
 type BoardSummary = { id: string; title: string; updated_at: string }
 
