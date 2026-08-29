@@ -3,7 +3,7 @@ import { waitUntil } from "@vercel/functions";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
-import { writeFileContent, VentureFsError } from "@/lib/ai-venture/fs";
+import { writeFileContent, VentureFsError } from "../../../../lib/ai-venture/fs";
 import { logActivity } from "@/lib/activities/client";
 import { extractFileText } from "@/lib/knowledge/file-extract";
 import { captureResearchInsight } from "@/lib/research-lab/capture";

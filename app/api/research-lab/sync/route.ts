@@ -7,7 +7,7 @@ import { ApiError, toJson } from "@/lib/api/errors";
 import { captureResearchInsight, listResearchLabItems } from "@/lib/research-lab/capture";
 import { blockNoteToPlainText } from "@/lib/retrieval/blocknote-text";
 import { summarizeExcalidrawScene } from "@/lib/research-lab/excalidraw-summary";
-import { readFileContent } from "@/lib/ai-venture/fs";
+import { readFileContent } from "../../../../AI Venture/next-integration/lib/ai-venture/fs";
 
 const DB = APPWRITE.databaseId;
 

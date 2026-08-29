@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { ApiError, toJson } from "@/lib/api/errors";
 import { checkRateLimit } from "@/lib/api/rate-limit";
-import { readFileStream, VentureFsError } from "@/lib/ai-venture/fs";
+import { readFileStream, VentureFsError } from "../../../../../lib/ai-venture/fs";
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser();

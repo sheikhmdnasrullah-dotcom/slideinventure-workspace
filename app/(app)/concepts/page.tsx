@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { requireUser } from "@/lib/supabase/server"
-import { AiVentureWorkspace } from "@/components/dashboard/ai-venture/ai-venture-workspace"
+import { AiVentureWorkspace } from "../../../AI Venture/next-integration/components/dashboard/ai-venture/ai-venture-workspace"
 
 export default async function ConceptsPage() {
   await requireUser()
