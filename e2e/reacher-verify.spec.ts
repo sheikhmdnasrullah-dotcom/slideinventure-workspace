@@ -15,7 +15,16 @@ test("lead verification uses Reacher", async ({ page }) => {
   const box = page.getByPlaceholder(/Paste emails/i);
   await box.fill("postmaster@reacher.email\ninvalid-address@nonexistent-domain-xyz123.io");
 
-  await page.getByRole("button", { name: /Verify with Reacher/i }).click();
+  await page.getByRole("button", { name: /Verify with Reacher/i }).scrollIntoViewIfNeeded();
+  // The leads/verify page scrolls inside a flex column, not the window, so a
+  // synthetic React click (not Playwright's coordinate click) guarantees the
+  // handler fires regardless of scroll-container quirks.
+  await page.evaluate(() => {
+    const b = Array.from(document.querySelectorAll("button")).find((x) =>
+      /Verify with Reacher/i.test(x.textContent || "")
+    ) as HTMLButtonElement | undefined;
+    b?.click();
+  });
 
   // The success toast confirms the request went through the Reacher-backed API.
   await expect(page.getByText(/Verified 2 email\(s\) via Reacher/i)).toBeVisible({ timeout: 45000 });

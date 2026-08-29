@@ -30,6 +30,7 @@ export function ReacherPanel() {
   const [results, setResults] = useState<{ email: string; status: Verdict; detail?: string }[]>([]);
 
   const run = useCallback(async () => {
+    console.log("REACHER_PANEL_RUN clicked, input=", input);
     const emails = input
       .split(/[\s,;]+/)
       .map((e) => e.trim())
@@ -46,7 +47,9 @@ export function ReacherPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails }),
       });
+      console.log("REACHER_PANEL_RESP", resp.status);
       const data = await resp.json();
+      console.log("REACHER_PANEL_DATA", JSON.stringify(data).slice(0, 200));
       if (!resp.ok) {
         toast.error(data.error || "Verification failed");
         return;
