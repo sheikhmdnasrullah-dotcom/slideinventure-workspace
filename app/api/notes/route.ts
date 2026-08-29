@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       content: typeof body.content === "string" ? body.content : "[]",
       scope,
       tags: Array.isArray(body.tags) ? body.tags.filter((t: unknown) => typeof t === "string").slice(0, 20) : [],
-      links: [],
+      links: Array.isArray(body.links) ? body.links.filter((l: unknown) => typeof l === "string").slice(0, 50) : [],
       created_at: now,
       updated_at: now,
     })
