@@ -49,10 +49,6 @@ const NotepadView = dynamic(
   () => import("@/components/dashboard/notepad-view").then((m) => m.NotepadView),
   { ssr: false, loading: () => <Loading label="Notepad" /> }
 )
-const FoamNotebook = dynamic(
-  () => import("@/components/dashboard/ai-venture/foam-notebook").then((m) => m.FoamNotebook),
-  { ssr: false, loading: () => <Loading label="Foam Notes" /> }
-)
 const IdeaMapsPanel = dynamic(
   () => import("@/components/dashboard/ideas/idea-maps-panel").then((m) => m.IdeaMapsPanel),
   { ssr: false, loading: () => <Loading label="Connected Ideas" /> }
@@ -228,7 +224,7 @@ export function AiVentureWorkspace() {
             {active === "research" && <AvResearch />}
             {active === "playground" && <AvPlayground />}
             {active === "brainstorm" && <AvWhiteboard />}
-            {active === "notepad" && <FoamNotebook />}
+            {active === "notepad" && <NotepadView scope="ai-venture" />}
             {active === "connected" && <IdeaMapsPanel scope="ideas" title="Connected ideas" />}
             {active === "agents" && <AvAgents />}
             {active === "activity" && <AvActivity />}
