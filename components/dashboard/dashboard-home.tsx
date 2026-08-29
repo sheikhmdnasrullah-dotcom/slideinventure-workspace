@@ -1,63 +1,44 @@
-import { SiteHeader } from "@/components/dashboard/site-header"
-import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics"
-import { LiveActivity, QuickActions } from "@/components/dashboard/live-activity"
-import { Section, SectionRule, Surface } from "@/components/system"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { DataTable, type ActivityItem } from "@/components/dashboard/v3/data-table"
-import type { DashboardResponse, ActivityRow, ActivityStatus } from "@/lib/dashboard/types"
-import {
-  Beaker,
-  Terminal,
-  Users,
-  Lightbulb,
-  FileText,
-  MessageSquare,
-  CheckCircle2,
-  Loader,
-  CircleDashed,
-  Sparkles,
-  FileCode2,
-  LibraryBig,
-  Rocket,
-  NotebookPen,
-  Link2,
-  ArrowRight,
-} from "lucide-react"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import dynamic from "next/dynamic"
-import { headers } from "next/headers"
-import { Suspense, cache } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { SiteHeader } from "@/components/dashboard/site-header";
+import { DashboardMetrics } from "@/components/dashboard/dashboard-metrics";
+import { LiveActivity } from "@/components/dashboard/live-activity";
+import { CommandCenterHeader } from "@/components/dashboard/command-center-header";
+import { WorkStopwatch } from "@/components/dashboard/work-stopwatch";
+import { WorkTimeStats } from "@/components/dashboard/work-time-stats";
+import { WorkSessionsHistory } from "@/components/dashboard/work-sessions-history";
+import { TodayAtAGlance } from "@/components/dashboard/today-at-a-glance";
+import { WhatChanged } from "@/components/dashboard/what-changed";
+import { ContinueWorking } from "@/components/dashboard/continue-working";
+import { NeedsAttention } from "@/components/dashboard/needs-attention";
+import { NextBestAction } from "@/components/dashboard/next-best-action";
+import { Section, SectionRule, Surface } from "@/components/system";
+import { DataTable, type ActivityItem } from "@/components/dashboard/v3/data-table";
+import type { DashboardResponse, ActivityRow, ActivityStatus } from "@/lib/dashboard/types";
+import dynamic from "next/dynamic";
+import { headers } from "next/headers";
+import { Suspense, cache } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Deduplicated per-request loader.
- *
- * Several independently-suspending sections need this payload. `cache()` keeps
- * them to a single upstream request while still letting each one stream into its
- * own skeleton, so one slow section never gates the others.
- *
- * The incoming session cookie is forwarded because a raw server fetch would 401
- * and silently render an empty dashboard.
+ * Cached so multiple suspending components share the same upstream fetch.
  */
 const getDashboardData = cache(async (): Promise<DashboardResponse | null> => {
-  const cookie = (await headers()).get("cookie") ?? ""
+  const cookie = (await headers()).get("cookie") ?? "";
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/dashboard`,
     { cache: "no-store", headers: cookie ? { cookie } : undefined }
-  ).catch(() => null)
+  ).catch(() => null);
 
-  return res?.ok ? ((await res.json()) as DashboardResponse) : null
-})
+  return res?.ok ? ((await res.json()) as DashboardResponse) : null;
+});
 
 const DataTableLazy = dynamic(
   () => import("@/components/dashboard/v3/data-table").then((m) => m.DataTable),
-  { loading: () => <div className="h-64 animate-pulse rounded-lg border" /> }
-)
+  { loading: () => <div className="h-64 animate-pulse rounded-lg border border-rule bg-[var(--surface-2)]/30" /> }
+);
 
 function toDataTableItem(row: ActivityRow): ActivityItem {
-  const status = mapStatus(row.status)
+  const status = mapStatus(row.status);
   return {
     id: row.id,
     header: row.item,
@@ -68,222 +49,247 @@ function toDataTableItem(row: ActivityRow): ActivityItem {
     reviewer: row.source,
     source: row.source,
     updatedAt: row.updatedAt,
-  }
+  };
 }
 
 function mapStatus(status: ActivityStatus): ActivityItem["status"] {
-  if (status === "completed" || status === "active") return "Done"
-  if (status === "running") return "In Progress"
-  if (status === "failed") return "Failed"
-  if (status === "proposed") return "Not Started"
-  return "Not Started"
+  if (status === "completed" || status === "active") return "Done";
+  if (status === "running") return "In Progress";
+  if (status === "failed") return "Failed";
+  if (status === "proposed") return "Not Started";
+  return "Not Started";
 }
 
 function humanize(value: string): string {
   switch (value) {
     case "cold_email":
-      return "Cold Email"
+      return "Cold Email";
     case "documents":
-      return "Document"
+      return "Document";
     case "notes":
-      return "Note"
+      return "Note";
     case "terminal":
-      return "Terminal"
+      return "Terminal";
     case "links":
-      return "Link"
+      return "Link";
     case "chat":
-      return "Chat"
+      return "Chat";
     case "ai_venture":
-      return "Concepts"
+      return "Concepts";
     case "todoist":
-      return "Todoist"
+      return "Todoist";
     case "knowledge":
-      return "Knowledge"
+      return "Knowledge";
     case "leads":
-      return "Lead"
+      return "Lead";
     case "brainstorm":
-      return "Brainstorm"
+      return "Brainstorm";
     case "ideas":
-      return "Idea Map"
+      return "Idea Map";
     case "research":
-      return "Research"
+      return "Research";
     default:
-      return value.charAt(0).toUpperCase() + value.slice(1)
+      return value.charAt(0).toUpperCase() + value.slice(1);
   }
-}
-
-function statusBadge(status: ActivityStatus) {
-  const map: Record<ActivityStatus, { icon: typeof CheckCircle2; className: string }> = {
-    completed: { icon: CheckCircle2, className: "text-emerald-600" },
-    active: { icon: Loader, className: "text-sky-600" },
-    running: { icon: Loader, className: "text-sky-600 animate-spin" },
-    failed: { icon: CircleDashed, className: "text-rose-600" },
-    ai_inferred: { icon: Sparkles, className: "text-amber-600" },
-    proposed: { icon: CircleDashed, className: "text-muted-foreground" },
-  }
-  const { icon: Icon, className } = map[status] ?? map.proposed
-  return (
-    <Badge variant="outline" className={cn("gap-1", className)}>
-      <Icon className="size-3" />
-      {humanize(status)}
-    </Badge>
-  )
-}
-
-const SECTION_HREF: Record<string, string> = {
-  notes: "/notepad",
-  documents: "/documents",
-  knowledge: "/knowledge",
-  terminal: "/terminal",
-  leads: "/leads",
-  chat: "/chat",
-  ai_venture: "/concepts",
-  concepts: "/concepts",
-  brainstorm: "/brainstorm-sketch",
-  links: "/useful-links",
-  vault: "/vault",
-  integrations: "/integrations",
-  agents: "/agents",
-  todoist: "/todoist",
-  research: "/research",
-  ideas: "/ideas",
-}
-
-const SECTION_LABEL: Record<string, string> = {
-  notes: "Notes",
-  documents: "Documents",
-  knowledge: "Knowledge",
-  terminal: "Terminal",
-  leads: "Leads",
-  chat: "Chat",
-  ai_venture: "Concepts",
-  concepts: "Concepts",
-  brainstorm: "Brainstorm",
-  links: "Links",
-  vault: "Vault",
-  integrations: "Integrations",
-  agents: "Agents",
-  todoist: "Todoist",
-  research: "Research",
-  ideas: "Idea Maps",
-}
-
-function hrefForRow(row: ActivityRow): string {
-  return SECTION_HREF[row.category ?? row.source] ?? "/activity"
-}
-
-function categoryIcon(category: string) {
-  const iconMap: Record<string, typeof FileText> = {
-    documents: FileText,
-    notes: NotebookPen,
-    terminal: Terminal,
-    links: Link2,
-    chat: MessageSquare,
-    ai_venture: Rocket,
-    todoist: CheckCircle2,
-    knowledge: LibraryBig,
-    leads: Users,
-    research: Beaker,
-    concepts: Sparkles,
-    brainstorm: Lightbulb,
-    ideas: Lightbulb,
-  }
-  const Icon = iconMap[category] ?? FileCode2
-  return <Icon className="size-3.5 text-muted-foreground" />
-}
-
-function greetingFor(hour: number): string {
-  if (hour < 5) return "Still up."
-  if (hour < 12) return "Good morning."
-  if (hour < 18) return "Good afternoon."
-  return "Good evening."
 }
 
 export function DashboardHome() {
-  const now = new Date()
-
   return (
     <>
-      <SiteHeader crumbs={[{ label: "Dashboard" }]} />
-      <div className="flex flex-1 flex-col gap-6 p-6">
-        {/*
-          The shell below renders on the first frame. Every piece that needs
-          /api/dashboard sits behind its own Suspense boundary, so a slow
-          upstream (that route currently makes ~17 sequential Appwrite calls)
-          streams into a skeleton instead of holding back the whole page.
-        */}
-        <div className="flex flex-col gap-1">
-          <span className="font-label text-ink-faint">
-            {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          </span>
-          <h1 className="font-display text-2xl text-ink-strong sm:text-3xl">
-            {greetingFor(now.getHours())}
-          </h1>
-          <p className="font-body text-sm text-ink-muted">
-            Here&apos;s what happened while you were away.{" "}
-            <Suspense fallback={null}>
-              <SyncedAt />
+      <SiteHeader crumbs={[{ label: "Command Center" }]} />
+
+      <div className="flex flex-1 flex-col gap-7 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+        {/* Tier 1: Command Center Header (Live Date/Time, Contextual Message, Quick Actions) */}
+        <Suspense fallback={<HeaderSkeleton />}>
+          <HeaderSection />
+        </Suspense>
+
+        {/* Tier 2: Today at a Glance (8 Live Workspace Metrics) */}
+        <Suspense fallback={<TodaySkeleton />}>
+          <TodaySection />
+        </Suspense>
+
+        {/* Tier 3: Work Time Tracking Engine (Manual Stopwatch + Focus Time Intelligence) */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-stretch">
+          <div className="lg:col-span-6 flex flex-col">
+            <WorkStopwatch />
+          </div>
+          <div className="lg:col-span-6 flex flex-col">
+            <Suspense fallback={<TimeStatsSkeleton />}>
+              <TimeStatsSection />
             </Suspense>
-          </p>
+          </div>
         </div>
 
-        <Section tone="base" className="py-0">
+        {/* Tier 4: Workspace State & Resumption (What Changed? + Continue Where You Left Off) */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
+          <Suspense fallback={<CardSkeleton />}>
+            <WhatChangedSection />
+          </Suspense>
+
+          <Suspense fallback={<CardSkeleton />}>
+            <ContinueSection />
+          </Suspense>
+        </div>
+
+        {/* Tier 5: Strategic Attention & Next Move (Needs Attention + Next Best Action) */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
+          <Suspense fallback={<CardSkeleton />}>
+            <AttentionSection />
+          </Suspense>
+
+          <Suspense fallback={<CardSkeleton />}>
+            <NextMoveSection />
+          </Suspense>
+        </div>
+
+        {/* Tier 6: Live Activity Stream & Work Sessions Log */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
+          <LiveActivity />
+
+          <Suspense fallback={<SessionsHistorySkeleton />}>
+            <SessionsHistorySection />
+          </Suspense>
+        </div>
+
+        {/* Tier 7: Global Workspace Pulse & Consolidated Data Table */}
+        <Section tone="base" className="py-2">
           <Suspense fallback={<MetricsSkeleton />}>
             <MetricsSection />
           </Suspense>
         </Section>
-
-        <QuickActions />
-
-        <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-2">
-          <LiveActivity />
-          <Suspense fallback={<RecentWorkSkeleton />}>
-            <RecentWorkSection />
-          </Suspense>
-        </div>
 
         <Suspense fallback={<ActivityTableSkeleton />}>
           <ActivityTableSection />
         </Suspense>
       </div>
     </>
-  )
+  );
 }
 
-async function SyncedAt() {
-  const data = await getDashboardData()
-  if (!data?.syncedAt) return null
+async function HeaderSection() {
+  const data = await getDashboardData();
   return (
-    <>
-      {`Synced ${new Date(data.syncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`}
-    </>
-  )
+    <CommandCenterHeader
+      contextMessage={data?.contextMessage}
+      syncedAt={data?.syncedAt}
+    />
+  );
+}
+
+async function TodaySection() {
+  const data = await getDashboardData();
+  return <TodayAtAGlance today={data?.todaySummary} />;
+}
+
+async function TimeStatsSection() {
+  const data = await getDashboardData();
+  return <WorkTimeStats workTime={data?.workTime} />;
+}
+
+async function WhatChangedSection() {
+  const data = await getDashboardData();
+  return <WhatChanged whatChanged={data?.whatChanged} />;
+}
+
+async function ContinueSection() {
+  const data = await getDashboardData();
+  return <ContinueWorking items={data?.continueItems} />;
+}
+
+async function AttentionSection() {
+  const data = await getDashboardData();
+  return <NeedsAttention items={data?.needsAttention} />;
+}
+
+async function NextMoveSection() {
+  const data = await getDashboardData();
+  return <NextBestAction actions={data?.nextBestActions} />;
+}
+
+async function SessionsHistorySection() {
+  const data = await getDashboardData();
+  return <WorkSessionsHistory sessions={data?.workTime?.recentSessions} />;
 }
 
 async function MetricsSection() {
-  const data = await getDashboardData()
-  return <DashboardMetrics initial={data} />
-}
-
-async function RecentWorkSection() {
-  const data = await getDashboardData()
-  return <RecentWork activity={data?.activity ?? []} />
+  const data = await getDashboardData();
+  return <DashboardMetrics initial={data} />;
 }
 
 async function ActivityTableSection() {
-  const data = await getDashboardData()
-  const tableItems: ActivityItem[] = (data?.activity ?? []).map(toDataTableItem)
+  const data = await getDashboardData();
+  const tableItems: ActivityItem[] = (data?.activity ?? []).map(toDataTableItem);
   return (
     <div>
       <SectionRule
-        label="All activity"
-        coordinate={`${tableItems.length} item${tableItems.length === 1 ? "" : "s"}`}
+        label="Consolidated workspace ledger"
+        coordinate={`${tableItems.length} record${tableItems.length === 1 ? "" : "s"}`}
       />
-      <Surface variant="raised" className="px-0 py-0">
+      <Surface variant="raised" className="px-0 py-0 overflow-hidden border border-rule rounded-xl">
         <DataTableLazy data={tableItems} />
       </Surface>
     </div>
-  )
+  );
+}
+
+/* Skeleton Loaders */
+
+function HeaderSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 border-b border-rule pb-6">
+      <Skeleton className="h-4 w-48" />
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-4 w-96" />
+    </div>
+  );
+}
+
+function TodaySkeleton() {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-rule p-5">
+      <Skeleton className="h-5 w-36" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 w-full rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TimeStatsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 rounded-xl border border-rule p-5 h-full min-h-[220px]">
+      <Skeleton className="h-5 w-44" />
+      <div className="grid grid-cols-3 gap-3 my-auto">
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+function CardSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-rule p-5 h-full min-h-[200px]">
+      <Skeleton className="h-5 w-40" />
+      <Skeleton className="h-16 w-full rounded-lg" />
+      <Skeleton className="h-16 w-full rounded-lg" />
+    </div>
+  );
+}
+
+function SessionsHistorySkeleton() {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-rule p-5 h-full min-h-[300px]">
+      <Skeleton className="h-5 w-36" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+      <Skeleton className="h-14 w-full rounded-lg" />
+    </div>
+  );
 }
 
 function MetricsSkeleton() {
@@ -299,102 +305,16 @@ function MetricsSkeleton() {
         ))}
       </div>
     </div>
-  )
-}
-
-function RecentWorkSkeleton() {
-  return (
-    <div className="flex flex-1 flex-col">
-      <p className="font-label pb-3 text-ink-faint">Work in progress</p>
-      <div className="flex flex-col gap-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex flex-col gap-2">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  );
 }
 
 function ActivityTableSkeleton() {
   return (
     <div>
-      <SectionRule label="All activity" />
+      <SectionRule label="Consolidated workspace ledger" />
       <Surface variant="raised" className="px-0 py-0">
         <Skeleton className="h-64 w-full rounded-lg" />
       </Surface>
     </div>
-  )
-}
-
-function RecentWork({ activity }: { activity: ActivityRow[] }) {
-  if (activity.length === 0) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <p className="font-label pb-3 text-ink-faint">Work in progress</p>
-        <p className="font-body text-sm text-ink-muted">
-          No work recorded yet. Notes, documents, boards, research and idea maps appear here as you create them.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button render={<Link href="/notepad" />} variant="outline" size="sm">
-            New note <ArrowRight className="size-3.5" />
-          </Button>
-          <Button render={<Link href="/documents" />} variant="outline" size="sm">
-            Upload document <ArrowRight className="size-3.5" />
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  const bySection = new Map<string, { href: string; items: ActivityRow[] }>()
-  for (const row of activity) {
-    const key = row.category ?? row.source
-    const label = SECTION_LABEL[key] ?? humanize(row.type)
-    if (!bySection.has(label)) bySection.set(label, { href: hrefForRow(row), items: [] })
-    bySection.get(label)!.items.push(row)
-  }
-
-  const sections = Array.from(bySection.entries()).map(([label, v]) => ({
-    label,
-    href: v.href,
-    items: v.items.slice(0, 3),
-  }))
-
-  return (
-    <div className="flex flex-1 flex-col">
-      <p className="font-label pb-3 text-ink-faint">Work in progress</p>
-      <div className="flex flex-1 flex-col gap-4">
-        {sections.map((section) => (
-          <div key={section.label} className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <span className="font-label text-ink-faint">{section.label}</span>
-              <Button render={<Link href={section.href} />} variant="ghost" size="xs">
-                View
-              </Button>
-            </div>
-            {section.items.map((item) => (
-              <Link
-                key={item.id}
-                href={section.href}
-                className="flex items-center gap-2 border-l border-rule py-1.5 pl-3 transition-colors hover:bg-[var(--surface-2)]/50"
-              >
-                {categoryIcon(item.category ?? item.source)}
-                <span className="flex-1 truncate font-body-tight text-sm text-ink-strong">{item.item}</span>
-                <span className="font-label text-ink-faint" suppressHydrationWarning>
-                  {new Date(item.updatedAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-              </Link>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  );
 }

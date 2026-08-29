@@ -107,6 +107,7 @@ const SOURCE_BY_CATEGORY: Record<ActivityCategory, EventSource> = {
   agents: "agents",
   concepts: "ai-venture",
   brainstorm: "brainstorm",
+  system: "system",
 };
 
 /** Category -> the noun used in the event name. */
@@ -125,6 +126,7 @@ const SUBJECT_BY_CATEGORY: Record<ActivityCategory, string> = {
   agents: "agent",
   concepts: "file",
   brainstorm: "board",
+  system: "system",
 };
 
 export function sourceForCategory(category: ActivityCategory): EventSource {

@@ -14,7 +14,8 @@ export type ActivityCategory =
   | "integrations"
   | "agents"
   | "concepts"
-  | "brainstorm";
+  | "brainstorm"
+  | "system";
 
 export type ActivityAction =
   | "created"

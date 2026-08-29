@@ -20,19 +20,24 @@ import {
   Mail,
   MessageSquare,
   NotebookPen,
+  Pause,
+  Play,
   RefreshCw,
   Rocket,
   Search,
   Settings,
   ShieldCheck,
   Sparkles,
+  Square,
   Target,
   Terminal,
+  Timer,
   Users,
   Workflow,
 } from "lucide-react";
 import { toast } from "sonner";
 import { commandMenuStore, useCommandMenu } from "@/lib/command-menu-store";
+import { timerStore } from "@/lib/time-tracker/timer-store";
 import { useLiveRefresh } from "@/components/providers/event-stream";
 import { cn } from "@/lib/utils";
 import {
@@ -346,6 +351,64 @@ function CommandMenuBody() {
 
   const actionEntries = useMemo<CmdEntry[]>(
     () => [
+      {
+        id: "act-start-timer",
+        label: "Start work timer",
+        hint: "begin focus session",
+        group: "Actions",
+        icon: Play,
+        run: () => {
+          timerStore.start("AI Venture");
+          toast.success("Work timer started");
+        },
+      },
+      {
+        id: "act-pause-timer",
+        label: "Pause work timer",
+        hint: "pause focus session",
+        group: "Actions",
+        icon: Pause,
+        run: () => {
+          timerStore.pause();
+          toast.info("Work timer paused");
+        },
+      },
+      {
+        id: "act-stop-timer",
+        label: "Stop & save timer",
+        hint: "save focus session",
+        group: "Actions",
+        icon: Square,
+        run: async () => {
+          const session = timerStore.stop();
+          if (session) {
+            await fetch("/api/time-tracker/sessions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(session),
+            }).catch(() => {});
+            toast.success("Work session saved");
+          } else {
+            toast.info("Timer reset");
+          }
+        },
+      },
+      {
+        id: "act-show-activity",
+        label: "Show today's activity",
+        hint: "/dashboard",
+        group: "Actions",
+        icon: Activity,
+        run: () => router.push("/dashboard"),
+      },
+      {
+        id: "act-open-research-lab",
+        label: "Open Research Lab",
+        hint: "/research-lab",
+        group: "Actions",
+        icon: Beaker,
+        run: () => router.push("/research-lab"),
+      },
       {
         id: "act-open-terminal",
         label: "Open terminal",

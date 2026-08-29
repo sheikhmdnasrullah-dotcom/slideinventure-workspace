@@ -117,8 +117,14 @@ const SOURCE_ROUTE: Record<string, string> = {
 }
 
 function hrefForRow(row: LiveRow): string {
-  if (row.entityType === "idea_map") return "/ideas"
-  if (row.entityType === "board") return "/brainstorm-sketch"
+  if (row.entityType === "idea_map" && row.entityId) return `/ideas?id=${encodeURIComponent(row.entityId)}`
+  if (row.entityType === "board" && row.entityId) return `/brainstorm-sketch?id=${encodeURIComponent(row.entityId)}`
+  if (row.entityType === "note" && row.entityId) return `/notepad?id=${encodeURIComponent(row.entityId)}`
+  if (row.entityType === "research_item") return "/research-lab"
+  if (row.entityType === "work_session") return "#stopwatch-section"
+  if (row.entityType === "todoist_task") return "/todoist"
+  if (row.entityType === "lead") return "/leads"
+  if (row.entityType === "document" || row.entityType === "file") return "/documents"
   return SOURCE_ROUTE[row.source] ?? "/activity"
 }
 

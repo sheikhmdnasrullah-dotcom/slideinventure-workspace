@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { commandMenuStore } from "@/lib/command-menu-store"
 import { NotificationsBell } from "@/components/dashboard/notifications-bell"
+import { LiveWorkStatus } from "@/components/dashboard/live-work-status"
 
 type Crumb = { label: string; href?: string }
 
@@ -84,6 +85,7 @@ export function SiteHeader({
           <span className="hidden truncate font-label text-ink-faint sm:inline">{subtitle}</span>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <LiveWorkStatus />
           <NotificationsBell />
           <Button
             size="sm"

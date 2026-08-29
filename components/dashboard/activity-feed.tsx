@@ -25,6 +25,7 @@ const CATEGORY_LABEL: Record<ActivityCategory, string> = {
   agents: "Agents",
   concepts: "Concepts",
   brainstorm: "Brainstorm",
+  system: "System",
 }
 
 const CATEGORY_ROUTE: Partial<Record<ActivityCategory, string>> = {
