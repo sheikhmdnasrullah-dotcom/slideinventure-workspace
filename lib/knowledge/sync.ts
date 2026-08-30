@@ -11,7 +11,7 @@ const COL = APPWRITE.collections.knowledgeItems
 
 const KNOWLEDGE_DIR = path.join(process.cwd(), 'knowledge')
 
-async function upsertItem(item: Record<string, unknown>): Promise<string> {
+export async function upsertItem(item: Record<string, unknown>): Promise<string> {
   const res = await databases.listDocuments(DB, COL, [
     Query.equal("slug", item.slug as string),
     Query.limit(1),

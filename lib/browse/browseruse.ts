@@ -1,13 +1,54 @@
 import "server-only";
+import type { BaseChatModel } from "browser-use/llm/base";
+import { primaryProvider, modelFor, type LlmProvider } from "@/lib/llm/models";
 
 export function browserUseEnabled(): boolean {
   if (process.env.BROWSER_USE_ENABLED === "false") return false;
-  // Default ON when an OpenRouter-compatible key is available.
   return Boolean(
     process.env.BROWSER_USE_ENABLED === "true" ||
-      process.env.OPENROUTER_API_KEY ||
-      process.env.BROWSER_USE_LLM_API_KEY
+      process.env.BROWSER_USE_LLM_API_KEY ||
+      primaryProvider()
   );
+}
+
+/**
+ * Resolve the LLM browser-use should drive its actions with. An explicit
+ * BROWSER_USE_LLM_API_KEY always wins (lets an operator point browsing at a
+ * different/cheaper OpenRouter model than the main gateway). Otherwise this
+ * reuses the exact same verified provider chain as lib/llm/models.ts instead
+ * of independently guessing at a key — hardcoding browser-use to real
+ * OpenRouter with whatever happened to be in OPENROUTER_API_KEY silently 401s
+ * whenever that value is actually a DeepSeek/NVIDIA/LiteLLM key, which is
+ * exactly the "key pointed at the wrong host" failure mode models.ts's own
+ * availableProviders() was built to prevent everywhere else.
+ */
+async function resolveBrowserUseLlm(): Promise<BaseChatModel | null> {
+  if (process.env.BROWSER_USE_LLM_API_KEY) {
+    const { ChatOpenRouter } = await import("browser-use/llm/openrouter");
+    return new ChatOpenRouter({
+      apiKey: process.env.BROWSER_USE_LLM_API_KEY,
+      model: process.env.BROWSER_USE_MODEL || "openai/gpt-4o",
+    });
+  }
+
+  const provider = primaryProvider();
+  if (!provider) return null;
+  return llmForProvider(provider);
+}
+
+async function llmForProvider(provider: LlmProvider): Promise<BaseChatModel> {
+  const model = modelFor(provider, process.env.BROWSER_USE_MODEL);
+  if (provider.id === "deepseek") {
+    const { ChatDeepSeek } = await import("browser-use/llm/deepseek");
+    return new ChatDeepSeek({ apiKey: provider.apiKey, baseURL: provider.baseURL, model });
+  }
+  if (provider.id === "openrouter") {
+    const { ChatOpenRouter } = await import("browser-use/llm/openrouter");
+    return new ChatOpenRouter({ apiKey: provider.apiKey, baseURL: provider.baseURL, model });
+  }
+  // seekai / nvidia / litellm are OpenAI-compatible hosts with a custom baseURL.
+  const { ChatOpenAI } = await import("browser-use/llm/openai");
+  return new ChatOpenAI({ apiKey: provider.apiKey, baseURL: provider.baseURL, model });
 }
 
 export type BrowserUseTaskResult = {
@@ -25,13 +66,12 @@ export async function runBrowserUseTask(
   const steps: { step: number; action: string; detail?: string }[] = [];
 
   try {
+    const llm = await resolveBrowserUseLlm();
+    if (!llm) {
+      return { ok: false, backend: "browser-use", steps, result: "", error: "no LLM provider configured" };
+    }
+
     const { Agent } = await import("browser-use");
-    const { ChatOpenRouter } = await import("browser-use/llm/openrouter");
-
-    const apiKey = process.env.BROWSER_USE_LLM_API_KEY || process.env.OPENROUTER_API_KEY || "";
-    const model = process.env.BROWSER_USE_MODEL || "openai/gpt-4o";
-
-    const llm = new ChatOpenRouter({ model, apiKey });
     const agent = new Agent({ task, llm });
     const history = await agent.run(opts.maxSteps ?? 20);
 

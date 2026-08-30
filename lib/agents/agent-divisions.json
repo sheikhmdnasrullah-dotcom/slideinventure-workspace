@@ -19,6 +19,5 @@
   { "slug": "eval-agent", "division": "Research", "team": "Intelligence" },
   { "slug": "litellm-router", "division": "Infrastructure", "team": "Platform" },
   { "slug": "agui-agent", "division": "Infrastructure", "team": "Platform" },
-  { "slug": "copilot-agent", "division": "Product", "team": "Studio" },
-  { "slug": "youtube-email", "division": "Lead Generation", "team": "Growth" }
+  { "slug": "copilot-agent", "division": "Product", "team": "Studio" }
 ]

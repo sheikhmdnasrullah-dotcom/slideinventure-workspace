@@ -34,12 +34,9 @@ export async function GET() {
       let emoji = r.emoji || "🤖";
       let category: DeployableAgentCatalogItem["category"] = "knowledge";
 
-      if (r.slug.includes("youtube") || r.slug.includes("email") || r.slug.includes("outreach") || r.slug.includes("lead")) {
+      if (r.slug.includes("email") || r.slug.includes("outreach") || r.slug.includes("lead")) {
         category = "outbound";
-        if (r.slug === "youtube-email") {
-          emoji = "🎥";
-          color = "#ef4444";
-        } else if (r.slug === "cold-outreach") {
+        if (r.slug === "cold-outreach") {
           emoji = "📬";
           color = "#f59e0b";
         } else if (r.slug === "lead-qualifier") {

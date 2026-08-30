@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { addKnowledgeItem } from "@/lib/knowledge/sync";
+import { upsertItem } from "@/lib/knowledge/sync";
 
 export interface YouTubeProspect {
   id: string;
@@ -174,15 +174,25 @@ ${markdownRows.join("\n")}
       // ignore
     }
 
-    // 3. Upsert into Appwrite knowledge base
-    await addKnowledgeItem({
+    // 3. Upsert into Appwrite knowledge base under a fixed slug. addKnowledgeItem()
+    // generates a fresh unique slug every call (checked against the local
+    // filesystem mirror, which this function has just written to), so calling
+    // it here would create a new "-1", "-2", "-3" ... item on every sync
+    // instead of updating one running sheet. upsertItem() keys on `slug`
+    // directly, which is what this recurring summary actually needs.
+    await upsertItem({
+      slug: "youtube-researched-prospects-sheet",
+      item_id: "youtube-researched-prospects-sheet",
+      type: "research",
       title: "YouTube Researched Prospects Sheet",
       body: markdownContent,
-      category: "research",
-      tags: ["youtube", "prospects", "leads", "email-extractor"],
+      content_path: "/knowledge/youtube-researched-prospects-sheet.md",
+      content_type: "markdown",
+      status: "proposed",
       source: "youtube-email-agent",
       author: "YouTube Email Agent",
-    }).catch((e) => console.warn("Failed to addKnowledgeItem for youtube leads:", e));
+      tags: ["youtube", "prospects", "leads", "email-extractor"],
+    }).catch((e) => console.warn("Failed to upsert youtube leads knowledge item:", e));
   } catch (err) {
     console.error("Error in syncToKnowledge:", err);
   }

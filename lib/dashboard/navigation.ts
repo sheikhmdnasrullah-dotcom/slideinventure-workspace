@@ -48,7 +48,6 @@ export type DashboardSectionId =
   | "analytics"
   | "ai-chat"
   | "ui-kit"
-  | "youtube-email"
   | "csv-discovery"
 
 export type DashboardSectionChild = {

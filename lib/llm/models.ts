@@ -56,7 +56,11 @@ export type LlmProvider = {
   defaultModel: string;
 };
 
-export const NVIDIA_DEFAULT_MODEL = "nvidia/nemotron-3-ultra-550b-a55b";
+// nemotron-3-ultra-550b-a55b is listed in NVIDIA's /v1/models catalog but its
+// serving function 404s (nvcf-status: errored) — verified dead against the
+// live account, not a guess. nemotron-3-super-120b-a12b is confirmed working
+// against the same key.
+export const NVIDIA_DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b";
 export const OPENROUTER_DEFAULT_MODEL =
   process.env.OPENROUTER_FALLBACK_MODEL || "openai/gpt-oss-120b";
 

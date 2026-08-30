@@ -2,6 +2,27 @@ import { NextRequest } from "next/server";
 import { ApiError } from "@/lib/api/errors";
 import { getSessionUser } from "@/lib/appwrite/auth";
 import { saveProspects } from "@/lib/youtube-email/storage";
+import { crawlEmails } from "@/lib/leads/email-crawler";
+
+// Kept as a thin, backward-compatible wrapper (Agent Canvas "youtube" nodes and
+// any external caller still hit this route) over the same unified multi-agent
+// email crawler used by /api/email-crawler. It no longer hard-requires the
+// Temporal gateway: crawlEmails() tries the gateway first when configured and
+// automatically hands off to the local browse agent otherwise.
+const CONCURRENCY = 3;
+
+async function runBatched<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < items.length) {
+      const idx = cursor++;
+      results[idx] = await fn(items[idx]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
@@ -18,37 +39,23 @@ export async function POST(request: NextRequest) {
     return ApiError.badRequest("MISSING_CHANNEL", "channel or channels required").toResponse();
   }
 
-  const gateway = process.env.TEMPORAL_GATEWAY_URL;
-  const key = process.env.TEMPORAL_GATEWAY_KEY;
-  if (!gateway || !key) {
-    return Response.json({ results: [], error: "Browse gateway not configured" }, { status: 503 });
-  }
-
   try {
-    const results = await Promise.all(
-      clean.map(async (channel) => {
-        const res = await fetch(`${gateway.replace(/\/$/, "")}/youtube-email`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-temporal-gateway-key": key,
-          },
-          body: JSON.stringify({ channel }),
-        });
-        const data = await res.json().catch(() => ({}));
-        return {
-          channel,
-          email: data.email ?? null,
-          emails: Array.isArray(data.emails) ? data.emails : data.email ? [data.email] : [],
-          websites: Array.isArray(data.websites) ? data.websites : [],
-          method: data.method ?? null,
-          error: data.error ?? null,
-        };
-      }),
-    );
+    const results = await runBatched(clean, CONCURRENCY, async (channel) => {
+      const outcome = await crawlEmails({ link: channel, userEmail: user.email });
+      const emails = outcome.emails.map((e) => e.email);
+      const winner = outcome.trail.find((t) => t.status === "success")?.label ?? null;
+      return {
+        channel,
+        email: emails[0] ?? null,
+        emails,
+        websites: [] as string[],
+        method: winner,
+        error: emails.length ? null : (outcome.error ?? null),
+      };
+    });
 
     // Instantly save extracted prospects to persistent storage and knowledge base
-    const validToSave = results.filter((r) => !r.error && ((r.emails && r.emails.length > 0) || r.email || (r.websites && r.websites.length > 0)));
+    const validToSave = results.filter((r) => !r.error && ((r.emails && r.emails.length > 0) || r.email));
     if (validToSave.length > 0) {
       await saveProspects(validToSave).catch((e) => console.warn("Failed to auto-save prospects:", e));
     }

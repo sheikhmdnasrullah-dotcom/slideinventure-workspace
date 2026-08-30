@@ -1,5 +1,50 @@
 [
   {
+    "id": "yt-1788092590801-842qp",
+    "channel": "https://youtube.com/@coachchadcarson",
+    "channelName": "@coachchadcarson",
+    "emails": [
+      "service@coachcarson.com"
+    ],
+    "websites": [],
+    "method": "YouTube Extractor",
+    "researchedAt": "2026-08-30T12:23:10.800Z"
+  },
+  {
+    "id": "yt-1788089865659-vd97n",
+    "channel": "https://youtube.com/@victorjmenasce6734?si=FI8pmQ24C5eNmaoM",
+    "channelName": "@victorjmenasce6734",
+    "emails": [
+      "michael@bullrealty.com",
+      "info@ystreetcapital.com"
+    ],
+    "websites": [],
+    "method": "YouTube Extractor",
+    "researchedAt": "2026-08-30T11:37:45.659Z"
+  },
+  {
+    "id": "yt-1788089827728-iei2u",
+    "channel": "https://youtube.com/@claytonmorris?si=icNXaZsB_6SSmazr",
+    "channelName": "@claytonmorris",
+    "emails": [
+      "contact@redacted.inc"
+    ],
+    "websites": [],
+    "method": "YouTube Extractor",
+    "researchedAt": "2026-08-30T11:37:07.727Z"
+  },
+  {
+    "id": "yt-1788089795977-kaows",
+    "channel": "https://youtube.com/@coachchadcarson?si=7ENe8ZIJJOr2SIYb",
+    "channelName": "@coachchadcarson",
+    "emails": [
+      "service@coachcarson.com"
+    ],
+    "websites": [],
+    "method": "YouTube Extractor",
+    "researchedAt": "2026-08-30T11:36:35.977Z"
+  },
+  {
     "id": "yt-1787938962607-qor83",
     "channel": "https://www.youtube.com/@MrBeast/about",
     "channelName": "@MrBeast",

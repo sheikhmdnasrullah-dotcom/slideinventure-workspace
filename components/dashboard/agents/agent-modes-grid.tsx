@@ -1,19 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Video, Workflow, Sparkles, Mail, ArrowUpRight } from "lucide-react";
+import { Workflow, Sparkles, Mail, ArrowUpRight } from "lucide-react";
 
 export function AgentModesGrid() {
   const modes = [
-    {
-      id: "youtube-email",
-      title: "YouTube Email Extractor",
-      description: "Dedicated agent with headless browsing & CAPTCHA solving to extract verified business emails and auto-sync to Knowledge.",
-      href: "/agents/youtube-email",
-      icon: Video,
-      color: "#ef4444",
-      tag: "Lead Gen",
-    },
     {
       id: "agent-canvas",
       title: "Agent Workflow Canvas",
@@ -34,8 +25,8 @@ export function AgentModesGrid() {
     },
     {
       id: "email-crawler",
-      title: "Email Crawler Agent",
-      description: "Deep web crawler powered by Stagehand and crawl4ai that surfaces verified prospect emails and phone numbers.",
+      title: "Email Crawler",
+      description: "Unified multi-agent pipeline — YouTube Extractor, Deep Crawler, Browse Agent, Pattern Verifier, and OSINT Harvester hand off to each other until a verified email is found.",
       href: "/email-crawler",
       icon: Mail,
       color: "#10b981",

@@ -43,6 +43,7 @@ export const APPWRITE = {
     notifications: "notifications",
     searchVectors: "search_vectors",
     agentJobs: "agent_jobs",
+    emailCrawlerBatches: "email_crawler_batches",
     researchLabItems: "research_lab_items",
     workSessions: "work_sessions",
   },

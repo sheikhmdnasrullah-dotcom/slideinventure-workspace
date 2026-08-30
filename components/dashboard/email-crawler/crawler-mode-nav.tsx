@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, ShieldCheck, Video } from "lucide-react";
+import { Mail, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function CrawlerModeNav() {
   const options = [
     {
       id: "crawler-find",
-      title: "Find Emails (Crawler)",
-      description: "Deep web crawling via Stagehand & Crawl4AI",
+      title: "Find Emails (Multi-Agent Crawler)",
+      description: "YouTube, deep crawl, live browsing, pattern verify & OSINT harvest — one pipeline, automatic handoff",
       href: "/email-crawler",
       icon: Mail,
       active: true,
@@ -22,18 +22,10 @@ export function CrawlerModeNav() {
       icon: ShieldCheck,
       active: false,
     },
-    {
-      id: "youtube-extractor",
-      title: "YouTube Email Agent",
-      description: "Automated YouTube channel business email scraper",
-      href: "/agents/youtube-email",
-      icon: Video,
-      active: false,
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {options.map((opt) => {
         const Icon = opt.icon;
         return (
