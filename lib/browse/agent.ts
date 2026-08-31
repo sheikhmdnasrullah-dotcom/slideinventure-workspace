@@ -1,5 +1,5 @@
 import "server-only";
-import { chromium, Browser, Page } from "playwright";
+import type { Browser, Page } from "playwright";
 import { chatCompletion } from "@/lib/llm/gateway";
 import { solveCaptcha, isCaptchaSolvingEnabled } from "@/lib/integrations/captcha";
 import { logActivity } from "@/lib/activities/client";
@@ -141,6 +141,7 @@ export async function runBrowseTask(opts: {
     if (steel) {
       page = await steel.page();
     } else {
+      const { chromium } = await import("playwright");
       browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
       const context = await browser.newContext({
         userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
