@@ -1,5 +1,5 @@
 import "server-only";
-import { databases, ID } from "@/lib/appwrite/server";
+import { databases, ID, Query } from "@/lib/appwrite/server";
 import { APPWRITE } from "@/lib/appwrite/config";
 import { crawlEmails, type CrawlStep } from "@/lib/leads/email-crawler";
 import { detectRowLink, type DetectedLinkType } from "@/lib/leads/link-detect";
@@ -16,7 +16,12 @@ import { detectRowLink, type DetectedLinkType } from "@/lib/leads/link-detect";
 const DB = APPWRITE.databaseId;
 const COL = APPWRITE.collections.emailCrawlerBatches;
 
-export const MAX_BATCH_ROWS = 100;
+// Rows are stored as one JSON blob per batch on a single Appwrite string
+// attribute (capped at 500 KB), so a big upload is split into several batches
+// of BATCH_CHUNK_SIZE rather than imposing a hard per-intake row limit. 100
+// rows per chunk keeps the blob comfortably under that ceiling and lets the
+// batches run in parallel across background workers.
+export const BATCH_CHUNK_SIZE = 100;
 // Longer than the slowest single-row run observed in practice (a full 5-agent
 // exhaustion took ~6 minutes), so a batch is only ever resumed once a worker
 // has clearly died, never while it's just working a slow row.
@@ -174,8 +179,7 @@ export async function createEmailCrawlerBatch(
   rows: Record<string, string>[]
 ): Promise<EmailCrawlerBatch> {
   await ensureEmailCrawlerBatchesCollection();
-  const capped = rows.slice(0, MAX_BATCH_ROWS);
-  const batchRows: EmailCrawlerBatchRow[] = capped.map((input, index) => {
+  const batchRows: EmailCrawlerBatchRow[] = rows.map((input, index) => {
     const detected = detectRowLink(input);
     return {
       index,
@@ -204,12 +208,44 @@ export async function createEmailCrawlerBatch(
   return serialize(doc as unknown as Parameters<typeof serialize>[0]);
 }
 
+/**
+ * Splits an arbitrarily large CSV upload into several background batches (each
+ * capped at BATCH_CHUNK_SIZE so no single Appwrite document blows past the
+ * 500 KB rows attribute), then returns every batch. Previously a hard per-intake
+ * cap silently truncated big lists — now there is no intake limit; the upload is
+ * just chunked and every chunk is processed.
+ */
+export async function createEmailCrawlerBatches(
+  owner: string,
+  filename: string,
+  rows: Record<string, string>[]
+): Promise<EmailCrawlerBatch[]> {
+  const batches: EmailCrawlerBatch[] = [];
+  for (let i = 0; i < rows.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + BATCH_CHUNK_SIZE);
+    const suffix = Math.floor(i / BATCH_CHUNK_SIZE) > 0 ? ` (part ${Math.floor(i / BATCH_CHUNK_SIZE) + 1})` : "";
+    batches.push(await createEmailCrawlerBatch(owner, `${filename}${suffix}`, chunk));
+  }
+  return batches;
+}
+
 export async function getEmailCrawlerBatch(id: string, owner: string): Promise<EmailCrawlerBatch | null> {
   try {
     const doc = await databases.getDocument(DB, COL, id);
     const batch = serialize(doc as unknown as Parameters<typeof serialize>[0]);
     if (batch.owner !== owner) return null;
     return batch;
+  } catch {
+    return null;
+  }
+}
+
+/** Like getEmailCrawlerBatch but skips the owner check — used by internal
+ * background workers that drive a batch by id alone. */
+export async function getEmailCrawlerBatchRaw(id: string): Promise<EmailCrawlerBatch | null> {
+  try {
+    const doc = await databases.getDocument(DB, COL, id);
+    return serialize(doc as unknown as Parameters<typeof serialize>[0]);
   } catch {
     return null;
   }
@@ -339,4 +375,34 @@ export async function processEmailCrawlerBatch(id: string): Promise<void> {
       updated_at: new Date().toISOString(),
     })
     .catch(() => {});
+}
+
+/**
+ * Processes a batch, then — if any row is still pending/running — schedules the
+ * next cycle in a *fresh* background window by pinging the resume endpoint.
+ * This is what lets a large upload keep crawling long after the dashboard tab is
+ * closed: serverless `waitUntil` only lasts `maxDuration` seconds, so instead of
+ * one big run we chain many short windows together until every row is done.
+ */
+export async function processEmailCrawlerBatchAndChain(id: string, origin: string): Promise<void> {
+  await processEmailCrawlerBatch(id);
+  const batch = await getEmailCrawlerBatchRaw(id);
+  if (!batch) return;
+  const stillPending = batch.rows.some((r) => r.status === "pending" || r.status === "running");
+  if (stillPending) {
+    const url = `${origin.replace(/\/$/, "")}/api/email-crawler/batch/${id}/resume`;
+    await fetch(url, { method: "GET" }).catch(() => {});
+  }
+}
+
+/** Ids of batches stuck in "running" past the stale threshold — used by the
+ * CRON worker as a safety net that re-drives batches the chain missed. */
+export async function listStaleEmailCrawlerBatches(limit = 50): Promise<string[]> {
+  const now = Date.now();
+  const res = await databases
+    .listDocuments(DB, COL, [Query.equal("status", "running"), Query.limit(limit)])
+    .catch(() => ({ documents: [] as Array<{ $id: string; updated_at: string }> }));
+  return (res.documents as Array<{ $id: string; updated_at: string }>)
+    .filter((d) => now - new Date(d.updated_at).getTime() > STALE_MS)
+    .map((d) => d.$id);
 }

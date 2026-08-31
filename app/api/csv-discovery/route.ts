@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
   if (!rows.length) {
     return ApiError.badRequest("NO_ROWS", "provide rows or csv").toResponse();
   }
-  rows = rows.slice(0, 200);
 
   const gateway = process.env.TEMPORAL_GATEWAY_URL;
   const key = process.env.TEMPORAL_GATEWAY_KEY;

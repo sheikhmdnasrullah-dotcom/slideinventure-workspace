@@ -16,9 +16,8 @@ type ParsedCsv = {
   rows: Record<string, string>[];
 };
 
-/** Mirrors the server-side cap in app/api/csv-discovery/route.ts. */
-const MAX_ROWS = 200;
-
+/** No per-intake row limit — the entire upload is handed to one durable,
+ * multi-agent Temporal workflow that runs on the server regardless of tab state. */
 const TERMINAL_STATUSES = new Set(["COMPLETED", "FAILED", "TERMINATED"]);
 
 /**
@@ -149,7 +148,6 @@ export default function CsvDiscoveryPage() {
   }, [parsed, input]);
 
   const canStart = pendingRows.length > 0 && !loading;
-  const truncated = pendingRows.length > MAX_ROWS;
 
   async function start() {
     if (!canStart) return;
@@ -162,7 +160,7 @@ export default function CsvDiscoveryPage() {
         headers: { "content-type": "application/json" },
         // Send parsed rows rather than raw text: the route accepts either, and
         // rows skip its simpler server-side comma splitter entirely.
-        body: JSON.stringify({ rows: pendingRows.slice(0, MAX_ROWS) }),
+        body: JSON.stringify({ rows: pendingRows }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.workflowId) {
@@ -337,12 +335,6 @@ export default function CsvDiscoveryPage() {
           </>
         )}
 
-        {truncated && (
-          <p className="mt-3 text-xs text-amber-500">
-            {pendingRows.length} rows detected. Only the first {MAX_ROWS} will be queued.
-          </p>
-        )}
-
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button
             onClick={start}
@@ -353,7 +345,7 @@ export default function CsvDiscoveryPage() {
             {loading
               ? "Starting"
               : pendingRows.length > 0
-                ? `Start durable discovery (${Math.min(pendingRows.length, MAX_ROWS)})`
+                ? `Start durable discovery (${pendingRows.length})`
                 : "Start durable discovery"}
           </button>
           <div className="flex items-center gap-2">

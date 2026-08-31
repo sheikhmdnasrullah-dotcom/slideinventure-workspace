@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import Papa from "papaparse";
 import { waitUntil } from "@vercel/functions";
 import { getSessionUser } from "@/lib/appwrite/auth";
-import { createEmailCrawlerBatch, processEmailCrawlerBatch, MAX_BATCH_ROWS } from "@/lib/leads/email-crawler-batch";
+import {
+  createEmailCrawlerBatches,
+  processEmailCrawlerBatchAndChain,
+} from "@/lib/leads/email-crawler-batch";
 
 // A batch can run well past a single request/response cycle (worst case
 // observed: ~6 minutes for one row that exhausts all five agents). waitUntil
-// keeps this running after the response is sent; the status-poll route
-// resumes it if the platform still kills it before every row finishes.
+// keeps this running after the response is sent; the self-chaining processor
+// re-schedules follow-up windows so large uploads finish even with no tab open.
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
@@ -48,13 +51,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "CSV has no usable rows" }, { status: 400 });
   }
 
-  const batch = await createEmailCrawlerBatch(user.email, file?.name || "leads.csv", rows);
-  waitUntil(processEmailCrawlerBatch(batch.id));
+  // No per-intake cap: chunk the upload into as many background batches as
+  // needed, and chain each one so it keeps running to completion unattended.
+  const batches = await createEmailCrawlerBatches(user.email, file?.name || "leads.csv", rows);
+  const origin = new URL(request.url).origin;
+  for (const batch of batches) {
+    waitUntil(processEmailCrawlerBatchAndChain(batch.id, origin));
+  }
 
   return NextResponse.json({
-    batchId: batch.id,
-    total: batch.total,
-    truncated: rows.length > MAX_BATCH_ROWS,
-    maxRows: MAX_BATCH_ROWS,
+    batchIds: batches.map((b) => b.id),
+    total: rows.length,
+    batchCount: batches.length,
   });
 }

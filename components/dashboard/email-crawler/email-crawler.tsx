@@ -153,26 +153,38 @@ const POLL_MS = 4000;
 function BulkCsvImport() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [batch, setBatch] = useState<Batch | null>(null);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [batchIds, setBatchIds] = useState<string[]>([]);
 
-  const poll = useCallback(async (id: string) => {
+  const pollAll = useCallback(async (ids: string[]) => {
     try {
-      const res = await fetch(`/api/email-crawler/batch/${id}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setBatch(data);
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const res = await fetch(`/api/email-crawler/batch/${id}`);
+            if (!res.ok) return null;
+            return (await res.json()) as Batch;
+          } catch {
+            return null;
+          }
+        })
+      );
+      const valid = results.filter(Boolean) as Batch[];
+      if (valid.length) setBatches(valid);
     } catch {
       // next poll tick will retry
     }
   }, []);
 
+  const total = batches.reduce((s, b) => s + b.total, 0);
+  const completed = batches.reduce((s, b) => s + b.completed, 0);
+  const anyRunning = batches.length > 0 && batches.some((b) => b.status !== "done");
+
   useEffect(() => {
-    if (!batch || batch.status === "done") return;
-    const id = batch.id;
-    const interval = setInterval(() => poll(id), POLL_MS);
+    if (!batchIds.length || !anyRunning) return;
+    const interval = setInterval(() => pollAll(batchIds), POLL_MS);
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only the id/status pairing should restart the interval
-  }, [batch?.id, batch?.status, poll]);
+  }, [batchIds, anyRunning, pollAll]);
 
   async function upload() {
     if (!file) {
@@ -180,6 +192,8 @@ function BulkCsvImport() {
       return;
     }
     setUploading(true);
+    setBatches([]);
+    setBatchIds([]);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -189,10 +203,11 @@ function BulkCsvImport() {
         toast.error(data.error || "Upload failed");
         return;
       }
+      setBatchIds(data.batchIds || []);
       toast.success(
-        `Processing ${data.total} row(s)${data.truncated ? ` (capped at ${data.maxRows})` : ""} — five agents run per row`
+        `Processing ${data.total} row(s) across ${data.batchCount} background batch(es) — five agents run per row`
       );
-      await poll(data.batchId);
+      await pollAll(data.batchIds || []);
     } catch {
       toast.error("Upload failed");
     } finally {
@@ -200,10 +215,17 @@ function BulkCsvImport() {
     }
   }
 
-  const found = batch?.rows.filter((r) => r.status === "done" && r.emails.length).length ?? 0;
-  const notFound = batch?.rows.filter((r) => r.status === "done" && !r.emails.length).length ?? 0;
-  const errored = batch?.rows.filter((r) => r.status === "error").length ?? 0;
-  const pct = batch && batch.total ? Math.round((batch.completed / batch.total) * 100) : 0;
+  const found = batches.reduce(
+    (s, b) => s + b.rows.filter((r) => r.status === "done" && r.emails.length).length,
+    0
+  );
+  const notFound = batches.reduce(
+    (s, b) => s + b.rows.filter((r) => r.status === "done" && !r.emails.length).length,
+    0
+  );
+  const errored = batches.reduce((s, b) => s + b.rows.filter((r) => r.status === "error").length, 0);
+  const pct = total ? Math.round((completed / total) * 100) : 0;
+  const allDone = batches.length > 0 && !anyRunning;
 
   return (
     <Card>
@@ -213,9 +235,10 @@ function BulkCsvImport() {
         </CardTitle>
         <CardDescription>
           Upload a CSV of leads — any mix of YouTube channels, LinkedIn/Facebook/Instagram links, plain
-          websites, or just names — and it&apos;s smartly analyzed row by row: the same five-agent pipeline
-          runs per prospect, verifies every hit with Reacher, and gives back a CSV with an email column
-          added. Up to 100 rows per upload.
+          websites, or just names. Large lists are split into background batches and processed by the same
+          five-agent pipeline, which verifies every hit with Reacher and hands off between agents on any
+          failure. There is no per-upload row limit; the job keeps running in the background and you can
+          return anytime to download the results.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -232,13 +255,18 @@ function BulkCsvImport() {
           </Button>
         </div>
 
-        {batch && (
+        {batches.length > 0 && (
           <div className="flex flex-col gap-3 rounded-md border border-border/50 bg-background/40 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="font-medium">{batch.filename}</span>
+              <span className="font-medium">
+                {batches.length} background batch(es)
+                {batches.some((b) => b.filename) && (
+                  <span className="ml-1 text-foreground/40">({batches.map((b) => b.filename).join(", ")})</span>
+                )}
+              </span>
               <span className="text-foreground/50">
-                {batch.completed}/{batch.total} processed
-                {batch.status !== "done" && " — keep this tab open to keep it moving"}
+                {completed}/{total} processed
+                {!allDone && " — running in background"}
               </span>
             </div>
             <Progress value={pct} />
@@ -246,14 +274,14 @@ function BulkCsvImport() {
               <span className="text-emerald-500">{found} found</span>
               <span>{notFound} not found</span>
               {errored > 0 && <span className="text-amber-500">{errored} errored</span>}
-              <span>{Math.max(batch.total - batch.completed, 0)} pending</span>
+              <span>{Math.max(total - completed, 0)} pending</span>
             </div>
             <a
-              href={`/api/email-crawler/batch/${batch.id}/download`}
+              href={`/api/email-crawler/batch/download-all?ids=${encodeURIComponent(batchIds.join(","))}`}
               className={buttonVariants({ variant: "outline", size: "sm" }) + " self-start gap-2"}
             >
               <Download className="size-3.5" />
-              {batch.status === "done" ? "Download CSV" : "Download CSV (partial)"}
+              {allDone ? "Download combined CSV" : "Download combined CSV (partial)"}
             </a>
           </div>
         )}

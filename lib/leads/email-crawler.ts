@@ -460,41 +460,56 @@ export async function crawlEmails(opts: {
     };
   }
 
-  // Verify + import whatever the winning agent produced.
+  // Verify + import whatever the winning agent produced. Wrapped so that even if
+  // the lead-store write fails for one candidate, the emails we already found
+  // are still returned and the row is marked done (not a hard error that would
+  // make a single agent's failure look like a broken pipeline).
   const out: CrawledEmail[] = [];
   let imported = 0;
   const DB = APPWRITE.databaseId;
   const COL = APPWRITE.collections.leads;
   const now = new Date().toISOString();
 
-  for (const c of candidates) {
-    const verdict = (await verifyEmail(c.email).catch(() => ({ status: "unknown" as const }))).status;
-    let leadId: string | null = null;
+  try {
+    for (const c of candidates) {
+      const verdict = (await verifyEmail(c.email).catch(() => ({ status: "unknown" as const }))).status;
+      let leadId: string | null = null;
 
-    const existing = await databases
-      .listDocuments(DB, COL, [Query.equal("email", c.email), Query.limit(1)])
-      .catch(() => ({ documents: [] as unknown[] }));
-    if (!existing.documents.length) {
-      const doc = await databases
-        .createDocument(DB, COL, ID.unique(), {
-          first_name: "",
-          last_name: "",
-          email: c.email,
-          company: details.slice(0, 80) || null,
-          source: "email-crawler",
-          status: "new",
-          tags: ["email-crawler"],
-          custom_fields: JSON.stringify({ link: link || null, details: details || null, source: c.source }),
-          created_at: now,
-          updated_at: now,
-        })
-        .catch(() => null);
-      if (doc) {
-        leadId = doc.$id;
-        imported++;
+      const existing = await databases
+        .listDocuments(DB, COL, [Query.equal("email", c.email), Query.limit(1)])
+        .catch(() => ({ documents: [] as unknown[] }));
+      if (!existing.documents.length) {
+        const doc = await databases
+          .createDocument(DB, COL, ID.unique(), {
+            first_name: "",
+            last_name: "",
+            email: c.email,
+            company: details.slice(0, 80) || null,
+            source: "email-crawler",
+            status: "new",
+            tags: ["email-crawler"],
+            custom_fields: JSON.stringify({ link: link || null, details: details || null, source: c.source }),
+            created_at: now,
+            updated_at: now,
+          })
+          .catch(() => null);
+        if (doc) {
+          leadId = doc.$id;
+          imported++;
+        }
       }
+      out.push({ email: c.email, source: c.source, verdict, leadId });
     }
-    out.push({ email: c.email, source: c.source, verdict, leadId });
+  } catch (e) {
+    await logActivity({
+      category: "leads",
+      action: "imported",
+      title: "Email Crawler run — import hiccup",
+      description: `Found ${out.length} email(s) but lead import failed: ${e instanceof Error ? e.message : "unknown"}`,
+      entityType: "leads",
+      notify: true,
+      metadata: { link: link || null, candidateCount: candidates.length },
+    }).catch(() => {});
   }
 
   if (YOUTUBE_RE.test(link)) {
