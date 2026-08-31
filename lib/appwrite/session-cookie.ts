@@ -9,18 +9,17 @@ export function sessionCookieOptions(request: NextRequest) {
     .get("x-forwarded-proto")
     ?.split(",")[0]
     ?.trim()
-  const host = request.nextUrl.hostname
-  const isLocalhost =
-    host === "localhost" || host === "127.0.0.1" || host === "::1"
-  const isSecure =
-    forwarded === "https" ||
-    request.nextUrl.protocol === "https:" ||
-    isLocalhost
+  const isHttps =
+    forwarded === "https" || request.nextUrl.protocol === "https:"
 
+  // `Secure` may only be true over a real TLS connection. Marking an http://
+  // cookie Secure makes the browser drop it, so the a_session_* cookie never
+  // reaches the API routes and every request 401s. SameSite=None also requires
+  // Secure, so over plain http we use Lax (correct for same-origin API calls).
   return {
     httpOnly: true as const,
     path: "/",
-    sameSite: (isSecure ? "none" : "lax") as "none" | "lax",
-    secure: isSecure,
+    sameSite: (isHttps ? "none" : "lax") as "none" | "lax",
+    secure: isHttps,
   }
 }

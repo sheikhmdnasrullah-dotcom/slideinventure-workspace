@@ -51,17 +51,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "CSV has no usable rows" }, { status: 400 });
   }
 
-  // No per-intake cap: chunk the upload into as many background batches as
-  // needed, and chain each one so it keeps running to completion unattended.
-  const batches = await createEmailCrawlerBatches(user.email, file?.name || "leads.csv", rows);
-  const origin = new URL(request.url).origin;
-  for (const batch of batches) {
-    waitUntil(processEmailCrawlerBatchAndChain(batch.id, origin));
-  }
+  try {
+    // No per-intake cap: chunk the upload into as many background batches as
+    // needed, and chain each one so it keeps running to completion unattended.
+    const batches = await createEmailCrawlerBatches(user.email, file?.name || "leads.csv", rows);
+    const origin = new URL(request.url).origin;
+    for (const batch of batches) {
+      waitUntil(processEmailCrawlerBatchAndChain(batch.id, origin));
+    }
 
-  return NextResponse.json({
-    batchIds: batches.map((b) => b.id),
-    total: rows.length,
-    batchCount: batches.length,
-  });
+    return NextResponse.json({
+      batchIds: batches.map((b) => b.id),
+      total: rows.length,
+      batchCount: batches.length,
+    });
+  } catch (e: any) {
+    console.error("[email-crawler/batch] upload failed:", e);
+    return NextResponse.json(
+      { error: e?.message ? `Upload failed: ${e.message}` : "Upload failed" },
+      { status: 500 },
+    );
+  }
 }
