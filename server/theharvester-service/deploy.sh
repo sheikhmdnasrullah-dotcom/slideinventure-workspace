@@ -25,6 +25,10 @@ VPS_HOST="${VPS_HOST:-169.58.207.75}"
 VPS_USER="${VPS_USER:-root}"
 VPS_DIR="${VPS_DIR:-/opt/theharvester-service}"
 THEHARVESTER_PORT="${THEHARVESTER_PORT:-5000}"
+# Public port the app actually reaches (must differ from THEHARVESTER_PORT, which
+# the upstream compose already binds to 127.0.0.1 — binding the same host port
+# twice in the override would collide).
+THEHARVESTER_PUBLIC_PORT="${THEHARVESTER_PUBLIC_PORT:-5005}"
 
 if [ -z "${THEHARVESTER_API_KEY:-}" ]; then
   echo "THEHARVESTER_API_KEY is required. Generate one with: openssl rand -hex 32" >&2
@@ -39,7 +43,10 @@ else
     echo "sshpass not found. Install it (brew install hpass) or set up an SSH key." >&2
     exit 1
   fi
-  SSH="sshpass -p '${VPS_PASS}' ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST}"
+  # Use sshpass -e (SSHPASS env) so the password is never passed as a literal
+  # argv (the old -p '$VPS_PASS' form shipped the quotes into the password).
+  export SSHPASS="${VPS_PASS}"
+  SSH="sshpass -e ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST}"
 fi
 
 echo ">> Cloning/updating theHarvester on ${VPS_USER}@${VPS_HOST}:${VPS_DIR}"
@@ -58,21 +65,21 @@ printf '%s' "${THEHARVESTER_API_KEY}" > "${VPS_DIR}/.secrets/operator-api-key"
 chmod 600 "${VPS_DIR}/.secrets/operator-api-key"
 
 # Upstream's docker-compose.yml only binds 127.0.0.1. Our app needs to reach
-# it from wherever Next.js runs, so bind every interface here (the mandatory
-# X-API-Key header is still the access control, same pattern as
-# REACHER_SECRET / TWOCAPTCHA_API_KEY on the other VPS services).
+# it from wherever Next.js runs, so bind every interface here on a SEPARATE host
+# port (the mandatory X-API-Key header is still the access control, same pattern
+# as REACHER_SECRET / TWOCAPTCHA_API_KEY on the other VPS services).
 cat > "${VPS_DIR}/docker-compose.override.yml" <<OVERRIDE
 services:
   theharvester.svc.local:
     ports:
-      - "0.0.0.0:${THEHARVESTER_PORT}:8000"
+      - "0.0.0.0:${THEHARVESTER_PUBLIC_PORT}:8000"
+    environment:
+      THEHARVESTER_API_KEY: "${THEHARVESTER_API_KEY}"
 OVERRIDE
 
 cd "${VPS_DIR}"
 docker compose up -d --build
-echo "theHarvester (HarvestView REST API) started on :${THEHARVESTER_PORT}"
-EOF
-
+echo "theHarvester (HarvestView REST API) started on :${THEHARVESTER_PUBLIC_PORT}"
 echo ">> Done. In the app .env.local set:"
-echo "     THEHARVESTER_API_URL=http://${VPS_HOST}:${THEHARVESTER_PORT}"
+echo "     THEHARVESTER_API_URL=http://${VPS_HOST}:${THEHARVESTER_PUBLIC_PORT}"
 echo "     THEHARVESTER_API_KEY=${THEHARVESTER_API_KEY}"

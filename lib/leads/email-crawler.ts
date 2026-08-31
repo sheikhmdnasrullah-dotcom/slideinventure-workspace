@@ -85,8 +85,17 @@ function extractDomain(link: string): string | null {
   }
 }
 
-function coerceResultText(result: unknown): string {
-  return typeof result === "string" ? result : JSON.stringify(result ?? "");
+/**
+ * HARD RULE — authentic source only. An email is only ever accepted if it was
+ * scraped from text a browser actually rendered on a visited page (YouTube About,
+ * a company site, crawl4ai markdown, or OSINT public sources). The LLM is NEVER
+ * allowed to invent, guess, or infer an address: callers must feed this strictly
+ * `pagesText` (real DOM text) and must NOT fall back to the model's narrative
+ * answer. Any candidate that didn't appear on a real page is rejected here.
+ */
+function extractAuthenticCandidates(pagesText: string[] | undefined): Candidate[] {
+  const text = (pagesText ?? []).filter(Boolean).join("\n");
+  return extractCandidates(text);
 }
 
 /**
@@ -150,12 +159,14 @@ async function runYoutubeExtractor(link: string, userEmail: string): Promise<Can
     "3. Read the revealed email and any listed business links/websites.",
     "4. Return the email exactly as shown, plus any website links, formatted as: email: source.",
     'If no email is revealed after checking, say "No email found".',
+    "HARD RULE: Only report an email that was actually revealed on the About page. Never guess, invent, or infer an address from the channel name or URL.",
   ].join("\n");
 
   const res = await runBrowseTask({ task, startUrl: aboutUrl, userEmail, maxSteps: 10 });
   if (!res.ok) return null;
-  const observed = res.pagesText?.length ? res.pagesText.join("\n") : coerceResultText(res.result);
-  return extractCandidates(observed);
+  // Authentic-source-only: only the real DOM text the browser rendered on the
+  // About page is eligible. The model's summary answer is ignored on purpose.
+  return extractAuthenticCandidates(res.pagesText);
 }
 
 /**
@@ -188,6 +199,10 @@ async function runBrowseAgent(opts: {
   const task = [
     "You are an email-finding agent. Find the email address(es) for the prospect described below.",
     "",
+    "HARD RULE: Never guess, predict, infer, or fabricate an email address. You may ONLY report",
+    "addresses that literally appeared on a page you visited. If you did not see a real email,",
+    'return "No email found". Do not construct an address from a name + domain.',
+    "",
     "PROSPECT DETAILS:",
     details || "(none provided)",
     "",
@@ -209,8 +224,9 @@ async function runBrowseAgent(opts: {
   const startUrl = link || `https://www.google.com/search?q=${encodeURIComponent((details || "prospect") + " email contact")}`;
   const res = await runBrowseTask({ task, startUrl, userEmail, maxSteps: 16 });
   if (!res.ok) return null;
-  const observed = res.pagesText?.length ? res.pagesText.join("\n") : coerceResultText(res.result);
-  return extractCandidates(observed);
+  // Authentic-source-only: only real DOM text from visited pages is eligible.
+  // The model's own summary answer is NEVER used as a candidate source.
+  return extractAuthenticCandidates(res.pagesText);
 }
 
 /**
