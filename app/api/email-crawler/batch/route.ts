@@ -17,41 +17,41 @@ export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let file: File | null = null;
-  let csvText: string | null = null;
-
-  const contentType = request.headers.get("content-type") || "";
-  if (contentType.includes("multipart/form-data")) {
-    const formData = await request.formData().catch(() => null);
-    const f = formData?.get("file");
-    if (f instanceof File) file = f;
-  } else {
-    const body = await request.json().catch(() => null);
-    if (typeof body?.csv === "string") csvText = body.csv;
-  }
-
-  if (file) {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      return NextResponse.json({ error: "Only .csv files are accepted" }, { status: 400 });
-    }
-    csvText = await file.text();
-  }
-
-  if (!csvText || !csvText.trim()) {
-    return NextResponse.json({ error: "No CSV file or content provided" }, { status: 400 });
-  }
-
-  const parsed = Papa.parse<Record<string, string>>(csvText, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (h) => h.trim(),
-  });
-  const rows = (parsed.data || []).filter((r) => Object.values(r).some((v) => (v ?? "").toString().trim()));
-  if (!rows.length) {
-    return NextResponse.json({ error: "CSV has no usable rows" }, { status: 400 });
-  }
-
   try {
+    let file: File | null = null;
+    let csvText: string | null = null;
+
+    const contentType = request.headers.get("content-type") || "";
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData().catch(() => null);
+      const f = formData?.get("file");
+      if (f instanceof File) file = f;
+    } else {
+      const body = await request.json().catch(() => null);
+      if (typeof body?.csv === "string") csvText = body.csv;
+    }
+
+    if (file) {
+      if (!file.name.toLowerCase().endsWith(".csv")) {
+        return NextResponse.json({ error: "Only .csv files are accepted" }, { status: 400 });
+      }
+      csvText = await file.text();
+    }
+
+    if (!csvText || !csvText.trim()) {
+      return NextResponse.json({ error: "No CSV file or content provided" }, { status: 400 });
+    }
+
+    const parsed = Papa.parse<Record<string, string>>(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (h) => h.trim(),
+    });
+    const rows = (parsed.data || []).filter((r) => Object.values(r).some((v) => (v ?? "").toString().trim()));
+    if (!rows.length) {
+      return NextResponse.json({ error: "CSV has no usable rows" }, { status: 400 });
+    }
+
     // No per-intake cap: chunk the upload into as many background batches as
     // needed, and chain each one so it keeps running to completion unattended.
     const batches = await createEmailCrawlerBatches(user.email, file?.name || "leads.csv", rows);
