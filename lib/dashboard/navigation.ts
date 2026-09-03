@@ -9,6 +9,7 @@ import {
   Network,
   LayoutDashboard,
   Mail,
+  Megaphone,
   MessageSquare,
   Rocket,
   Send,
@@ -49,6 +50,7 @@ export type DashboardSectionId =
   | "ai-chat"
   | "ui-kit"
   | "csv-discovery"
+  | "custom-message"
 
 export type DashboardSectionChild = {
   id: string
@@ -87,6 +89,7 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "settings", label: "Settings", route: "/settings", icon: Settings },
   { id: "email-crawler", label: "Email Crawler", route: "/email-crawler", icon: Mail },
   { id: "csv-discovery", label: "Lead Discovery", route: "/csv-discovery", icon: Network },
+  { id: "custom-message", label: "Custom Message", route: "/custom-message", icon: Megaphone },
   { id: "agent-canvas", label: "Agent Canvas", route: "/agent-canvas", icon: Workflow },
   { id: "analytics", label: "Analytics", route: "/analytics", icon: BarChart3 },
 ]
