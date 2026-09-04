@@ -120,6 +120,7 @@ export interface GophishCreateCampaignInput {
   sendingProfileName: string;
   landingPageName: string;
   url: string;
+  launchDate?: string;
 }
 
 export async function createGroup(name: string, targets: GophishTarget[]): Promise<GophishGroup> {
@@ -146,17 +147,21 @@ export async function createTemplate(
 export async function createAndLaunchCampaign(
   input: GophishCreateCampaignInput
 ): Promise<GophishCampaign> {
+  const body: Record<string, unknown> = {
+    name: input.name,
+    template: { name: input.templateName },
+    url: input.url,
+    smtp: { name: input.sendingProfileName },
+    page: { name: input.landingPageName },
+    groups: [{ name: input.groupName }],
+  };
+  if (input.launchDate) {
+    body.launch_date = input.launchDate;
+  }
   return gophishFetch<GophishCampaign>({
     method: "POST",
     endpoint: "campaigns/",
-    body: {
-      name: input.name,
-      template: { name: input.templateName },
-      url: input.url,
-      smtp: { name: input.sendingProfileName },
-      page: { name: input.landingPageName },
-      groups: [{ name: input.groupName }],
-    },
+    body,
   });
 }
 

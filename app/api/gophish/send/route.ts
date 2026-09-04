@@ -26,6 +26,9 @@ const SendSchema = z.object({
   recipients: z.array(RecipientSchema).min(1).max(500),
   sendingProfileName: z.string().min(1),
   landingPageName: z.string().min(1),
+  campaignName: z.string().optional(),
+  groupName: z.string().optional(),
+  launchDate: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -39,11 +42,17 @@ export async function POST(request: NextRequest) {
   let recipients: z.infer<typeof SendSchema>["recipients"];
   let sendingProfileName: string;
   let landingPageName: string;
+  let campaignBase: string | undefined;
+  let groupBase: string | undefined;
+  let launchDate: string | undefined;
   try {
     const validated = validate(SendSchema, body);
     recipients = validated.data.recipients;
     sendingProfileName = validated.data.sendingProfileName;
     landingPageName = validated.data.landingPageName;
+    campaignBase = validated.data.campaignName;
+    groupBase = validated.data.groupName;
+    launchDate = validated.data.launchDate;
   } catch (error) {
     return toJson(error);
   }
@@ -70,9 +79,11 @@ export async function POST(request: NextRequest) {
   for (let i = 0; i < recipients.length; i++) {
     const recipient = recipients[i];
     const timestamp = Date.now();
-    const groupName = `custom-${recipient.email}-${timestamp}`;
-    const templateName = `custom-${recipient.email}-${timestamp}`;
-    const campaignName = `custom-${recipient.email}-${timestamp}`;
+    const baseLabel = campaignBase?.trim() || "custom-email";
+    const groupBaseLabel = groupBase?.trim() || baseLabel;
+    const groupName = `${groupBaseLabel}-${recipient.email}-${timestamp}`;
+    const templateName = `${baseLabel}-${recipient.email}-${timestamp}`;
+    const campaignName = `${baseLabel}-${recipient.email}-${timestamp}`;
 
     try {
       await createGroup(groupName, [
@@ -97,6 +108,7 @@ export async function POST(request: NextRequest) {
         sendingProfileName,
         landingPageName,
         url: campaignUrl,
+        launchDate,
       });
 
       results.push({
@@ -107,7 +119,6 @@ export async function POST(request: NextRequest) {
         campaignId: campaign.id,
       });
     } catch (error) {
-      // Log failure WITHOUT ever logging the API key (it is only sent via header).
       const message =
         error instanceof GophishError
           ? error.message
@@ -126,7 +137,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Pause between recipients to avoid burst-sending (skip after the last one).
     if (i < recipients.length - 1) {
       await sleep(SEND_DELAY_MS);
     }

@@ -22,6 +22,7 @@ import {
   Video,
   BarChart3,
   Component,
+  FileSearch,
   type LucideIcon,
 } from "lucide-react"
 
@@ -50,7 +51,8 @@ export type DashboardSectionId =
   | "ai-chat"
   | "ui-kit"
   | "csv-discovery"
-  | "custom-message"
+  | "custom-email"
+  | "lead-research"
 
 export type DashboardSectionChild = {
   id: string
@@ -89,7 +91,8 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "settings", label: "Settings", route: "/settings", icon: Settings },
   { id: "email-crawler", label: "Email Crawler", route: "/email-crawler", icon: Mail },
   { id: "csv-discovery", label: "Lead Discovery", route: "/csv-discovery", icon: Network },
-  { id: "custom-message", label: "Custom Message", route: "/custom-message", icon: Megaphone },
+  { id: "custom-email", label: "Custom Email", route: "/custom-email", icon: Megaphone },
+  { id: "lead-research", label: "Lead Research", route: "/lead-research", icon: FileSearch },
   { id: "agent-canvas", label: "Agent Canvas", route: "/agent-canvas", icon: Workflow },
   { id: "analytics", label: "Analytics", route: "/analytics", icon: BarChart3 },
 ]
