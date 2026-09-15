@@ -18,10 +18,17 @@ export function MailAppsCards() {
       href: "https://mail.nasrullahtanim.me/admin",
       color: "#06b6d4",
     },
+    {
+      id: "warmbly",
+      title: "Warmbly",
+      description: "Automated mailbox warmup, deliverability monitoring, and sending platform",
+      href: "https://warmly.tanim.tech",
+      color: "#f59e0b",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {mailApps.map((app) => (
         <a
           key={app.id}
