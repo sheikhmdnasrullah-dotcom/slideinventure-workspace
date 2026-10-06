@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
+  allowedDevOrigins: ["app.slideinventure.com", "*.slideinventure.com", "localhost:3001", "localhost:3000"],
 
   async rewrites() {
     return [{ source: "/ai-venture", destination: "/concepts" }]
