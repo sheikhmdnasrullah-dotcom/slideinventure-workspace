@@ -1,7 +1,14 @@
 import { requireUser } from "@/lib/supabase/server"
-import { DashboardHome } from "@/components/dashboard/dashboard-home"
+import { SiteHeader } from "@/components/dashboard/site-header"
+import { AcquisitionCommandCenter } from "@/components/dashboard/acquisition-command-center"
 
 export default async function DashboardPage() {
   await requireUser()
-  return <DashboardHome />
+  return (
+    <>
+      <SiteHeader crumbs={[{ label: "Command Center" }]} />
+      <AcquisitionCommandCenter />
+    </>
+  )
 }
+

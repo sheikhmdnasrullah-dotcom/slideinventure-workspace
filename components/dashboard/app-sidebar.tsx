@@ -115,12 +115,12 @@ export function AppSidebar({
               onMouseEnter={() => prefetch(homeRoute)}
               onFocus={() => prefetch(homeRoute)}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-foreground font-mono text-xs font-semibold text-background">
-                SV
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary font-mono text-xs font-semibold text-primary-foreground shadow-sm">
+                OS
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">SlideIn Venture</span>
-                <span className="truncate text-xs text-muted-foreground">Ops console</span>
+                <span className="truncate font-semibold tracking-tight">SlideIn OS</span>
+                <span className="truncate text-[11px] text-muted-foreground font-mono">Acquisition Engine</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

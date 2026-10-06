@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/dashboard/site-header";
 import { PageHeader } from "@/components/system";
 import { OpportunityPipelineView } from "@/components/dashboard/opportunities/opportunity-pipeline-view";
 
-export default async function LeadsPage() {
+export default async function OpportunitiesPage() {
   await requireUser();
 
   return (
@@ -20,4 +20,3 @@ export default async function LeadsPage() {
     </>
   );
 }
-

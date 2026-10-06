@@ -352,86 +352,71 @@ function CommandMenuBody() {
   const actionEntries = useMemo<CmdEntry[]>(
     () => [
       {
-        id: "act-start-timer",
-        label: "Start work timer",
-        hint: "begin focus session",
+        id: "act-create-mission",
+        label: "Create Acquisition Mission",
+        hint: "natural language search",
         group: "Actions",
-        icon: Play,
-        run: () => {
-          timerStore.start("AI Venture");
-          toast.success("Work timer started");
-        },
+        icon: Rocket,
+        run: () => router.push("/cold-outreach"),
       },
       {
-        id: "act-pause-timer",
-        label: "Pause work timer",
-        hint: "pause focus session",
+        id: "act-high-intent",
+        label: "Show high intent opportunities",
+        hint: "/leads",
         group: "Actions",
-        icon: Pause,
-        run: () => {
-          timerStore.pause();
-          toast.info("Work timer paused");
-        },
+        icon: Target,
+        run: () => router.push("/leads"),
       },
       {
-        id: "act-stop-timer",
-        label: "Stop & save timer",
-        hint: "save focus session",
+        id: "act-today-meetings",
+        label: "Show upcoming meetings & prep briefs",
+        hint: "/todoist",
         group: "Actions",
-        icon: Square,
-        run: async () => {
-          const session = timerStore.stop();
-          if (session) {
-            await fetch("/api/time-tracker/sessions", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(session),
-            }).catch(() => {});
-            toast.success("Work session saved");
-          } else {
-            toast.info("Timer reset");
-          }
-        },
+        icon: Sparkles,
+        run: () => router.push("/todoist"),
       },
       {
-        id: "act-show-activity",
-        label: "Show today's activity",
-        hint: "/dashboard",
+        id: "act-acquisition-health",
+        label: "Open Acquisition Health Index (94%)",
+        hint: "/analytics",
         group: "Actions",
-        icon: Activity,
-        run: () => router.push("/dashboard"),
+        icon: BarChart3,
+        run: () => router.push("/analytics"),
       },
       {
-        id: "act-open-research-lab",
-        label: "Open Research Lab",
-        hint: "/research-lab",
-        group: "Actions",
-        icon: Beaker,
-        run: () => router.push("/research-lab"),
-      },
-      {
-        id: "act-open-terminal",
-        label: "Open terminal",
-        hint: "/terminal",
-        group: "Actions",
-        icon: Terminal,
-        run: () => router.push("/terminal"),
-      },
-      {
-        id: "act-start-agent",
-        label: "Start agent",
+        id: "act-ai-workforce",
+        label: "Inspect AI Autonomous Workforce (8 Active)",
         hint: "/agents",
         group: "Actions",
         icon: Bot,
         run: () => router.push("/agents"),
       },
       {
-        id: "act-sync",
-        label: "Sync knowledge base",
-        hint: "npm run sync",
+        id: "act-kumomta-logs",
+        label: "View KumoMTA Delivery Logs & Telemetry",
+        hint: "/activity",
         group: "Actions",
-        icon: RefreshCw,
-        run: () => router.push("/knowledge?sync=1"),
+        icon: ShieldCheck,
+        run: () => router.push("/activity"),
+      },
+      {
+        id: "act-start-timer",
+        label: "Start focus timer",
+        hint: "begin focus session",
+        group: "Actions",
+        icon: Play,
+        run: () => {
+          timerStore.start("Acquisition Campaign");
+          toast.success("Focus timer started");
+        },
+      },
+      {
+        id: "act-open-terminal",
+        label: "Open MTA terminal",
+        hint: "/terminal",
+        group: "Actions",
+        icon: Terminal,
+        run: () => router.push("/terminal"),
       },
     ],
     [router]

@@ -28,31 +28,23 @@ import {
 
 export type DashboardSectionId =
   | "dashboard"
-  | "integrations"
   | "leads"
   | "chat"
+  | "cold-outreach"
   | "agents"
+  | "agent-canvas"
+  | "lead-research"
   | "todoist"
   | "knowledge"
   | "documents"
-  | "ai-venture"
-  | "research-lab"
-  | "notepad"
-  | "brainstorm-sketch"
-  | "ideas"
-  | "terminal"
-  | "useful-links"
-  | "mail-apps"
-  | "vault"
-  | "settings"
-  | "email-crawler"
-  | "agent-canvas"
   | "analytics"
-  | "ai-chat"
-  | "ui-kit"
-  | "csv-discovery"
-  | "custom-email"
-  | "lead-research"
+  | "activity"
+  | "integrations"
+  | "settings"
+  | "notepad"
+  | "terminal"
+  | "vault"
+  | "useful-links"
 
 export type DashboardSectionChild = {
   id: string
@@ -67,34 +59,31 @@ export type DashboardSection = {
   label: string
   route: string
   icon: LucideIcon
+  category?: "core" | "workforce" | "knowledge" | "operations"
+  badge?: string
   children?: DashboardSectionChild[]
 }
 
 export const DASHBOARD_SECTIONS: DashboardSection[] = [
-  { id: "dashboard", label: "Dashboard", route: "/dashboard", icon: LayoutDashboard },
-  { id: "integrations", label: "Integrations", route: "/integrations", icon: Cable },
-  { id: "leads", label: "Leads", route: "/leads", icon: FileText },
-  { id: "chat", label: "Look Up", route: "/chat", icon: MessageSquare },
-  { id: "agents", label: "Agents", route: "/agents", icon: Bot },
-  { id: "todoist", label: "Todoist", route: "/todoist", icon: Sparkles },
-  { id: "knowledge", label: "Knowledge", route: "/knowledge", icon: BookOpen },
-  { id: "documents", label: "Documents", route: "/documents", icon: FileText },
-  { id: "ai-venture", label: "AI Venture", route: "/concepts", icon: Rocket },
-  { id: "research-lab", label: "Research Lab", route: "/research-lab", icon: Beaker },
-  { id: "notepad", label: "Notepad", route: "/notepad", icon: BookOpen },
-  { id: "brainstorm-sketch", label: "Brainstorm", route: "/brainstorm-sketch", icon: Brain },
-  { id: "ideas", label: "Ideas", route: "/ideas", icon: Network },
-  { id: "terminal", label: "Terminal", route: "/terminal", icon: Terminal },
-  { id: "useful-links", label: "Useful Links", route: "/useful-links", icon: Send },
-  { id: "mail-apps", label: "Mail Apps", route: "/apps", icon: Mail },
-  { id: "vault", label: "Vault", route: "/vault", icon: Vault },
-  { id: "settings", label: "Settings", route: "/settings", icon: Settings },
-  { id: "email-crawler", label: "Email Crawler", route: "/email-crawler", icon: Mail },
-  { id: "csv-discovery", label: "Lead Discovery", route: "/csv-discovery", icon: Network },
-  { id: "custom-email", label: "Custom Email", route: "/custom-email", icon: Megaphone },
-  { id: "lead-research", label: "Lead Research", route: "/lead-research", icon: FileSearch },
-  { id: "agent-canvas", label: "Agent Canvas", route: "/agent-canvas", icon: Workflow },
-  { id: "analytics", label: "Analytics", route: "/analytics", icon: BarChart3 },
+  { id: "dashboard", label: "Command Center", route: "/dashboard", icon: LayoutDashboard, category: "core" },
+  { id: "leads", label: "Opportunities", route: "/leads", icon: FileText, category: "core", badge: "Live" },
+  { id: "chat", label: "Conversations", route: "/chat", icon: MessageSquare, category: "core" },
+  { id: "cold-outreach", label: "Missions & Outreach", route: "/cold-outreach", icon: Rocket, category: "core" },
+  { id: "todoist", label: "Tasks & Meetings", route: "/todoist", icon: Sparkles, category: "core" },
+
+  { id: "agents", label: "AI Workforce", route: "/agents", icon: Bot, category: "workforce", badge: "8 Active" },
+  { id: "agent-canvas", label: "Agent Canvas", route: "/agent-canvas", icon: Workflow, category: "workforce" },
+  { id: "lead-research", label: "Prospect Research", route: "/lead-research", icon: FileSearch, category: "workforce" },
+
+  { id: "knowledge", label: "Company Memory", route: "/knowledge", icon: BookOpen, category: "knowledge" },
+  { id: "documents", label: "Documents", route: "/documents", icon: FileText, category: "knowledge" },
+  { id: "notepad", label: "Scratchpad & Notes", route: "/notepad", icon: BookOpen, category: "knowledge" },
+  { id: "vault", label: "Credentials Vault", route: "/vault", icon: Vault, category: "knowledge" },
+
+  { id: "analytics", label: "Acquisition Health", route: "/analytics", icon: BarChart3, category: "operations", badge: "94%" },
+  { id: "activity", label: "Activity & Logs", route: "/activity", icon: Terminal, category: "operations" },
+  { id: "integrations", label: "Integrations & Email", route: "/integrations", icon: Cable, category: "operations" },
+  { id: "settings", label: "Workspace Settings", route: "/settings", icon: Settings, category: "operations" },
 ]
 
 export const DEFAULT_NAVIGATION_ORDER = DASHBOARD_SECTIONS.map((section) => section.id)
