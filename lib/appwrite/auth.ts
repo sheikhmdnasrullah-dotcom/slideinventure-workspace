@@ -11,6 +11,16 @@ function sessionClient(secret: string) {
 }
 
 export async function getSessionUser(): Promise<{ id: string; email: string } | null> {
+  // Open-dashboard mode (initial launch): every request acts as the owner.
+  // Reversible in 30s: unset DISABLE_AUTH and restart. While open, everyone
+  // shares one identity and all data is public — see the report for the
+  // Caddy basic-auth option. Script execution stays locked (tasks/execute).
+  if (process.env.DISABLE_AUTH === "true") {
+    return {
+      id: process.env.DISABLE_AUTH_USER_ID || "owner",
+      email: process.env.DISABLE_AUTH_USER_EMAIL || "hello@nasrullahtanim.me",
+    }
+  }
   const store = await cookies()
   const secret = store.get(SESSION_COOKIE)?.value
   if (!secret) return null

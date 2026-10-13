@@ -16,7 +16,21 @@ export async function GET(request: NextRequest) {
       listSendingProfiles(),
       listLandingPages(),
     ]);
-    return Response.json({ sendingProfiles, landingPages });
+    // GoPhish returns SMTP credentials in cleartext; the UI only needs names.
+    // Never forward password/username to the browser (critical in open mode).
+    const safe = (o: { id?: unknown; name?: unknown; from_address?: unknown }) => ({
+      id: o.id ?? null,
+      name: String(o.name ?? ""),
+      from_address: String(o.from_address ?? ""),
+    });
+    return Response.json({
+      sendingProfiles: (sendingProfiles as unknown[]).map((p) =>
+        safe(p as { id?: unknown; name?: unknown; from_address?: unknown })
+      ),
+      landingPages: (landingPages as unknown[]).map((p) =>
+        safe(p as { id?: unknown; name?: unknown; from_address?: unknown })
+      ),
+    });
   } catch (error) {
     return toJson(error);
   }

@@ -17,7 +17,8 @@ module.exports = {
       autorestart: true,
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        // 3001: Grafana owns :3000 on the SlideIn VPS (loopback).
+        PORT: 3001,
       },
     },
     {

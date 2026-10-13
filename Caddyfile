@@ -1,14 +1,51 @@
-# Caddyfile for the workstation.
+# Caddyfile for the SlideIn production VPS.
 #
-# - All HTTPS is handled by Caddy (auto-TLS via the email below).
-# - The Next.js app listens on :3000.
+# - www/app: the workspace-app dashboard (Next.js on :3001)
+# - track: GoPhish landing + click-tracking server (:8080), the public
+#   URL baked into campaigns via GOPHISH_CAMPAIGN_URL
+# - GoPhish admin (:8333) is intentionally NOT exposed; use ssh -L.
 #
 # Place at /etc/caddy/Caddyfile and run: caddy reload --config /etc/caddy/Caddyfile
 
 {
-	email admin@yourdomain.com
+	email hello@nasrullahtanim.me
 }
 
-yourdomain.com {
-	reverse_proxy localhost:3000
+# NOTE: www stays on Vercel (marketing site) — never point it here.
+slideinventure.com {
+	reverse_proxy localhost:3001
+}
+
+app.slideinventure.com {
+	reverse_proxy localhost:3001
+}
+
+track.slideinventure.com {
+	reverse_proxy localhost:8080
+}
+
+# GoPhish campaign console (admin UI + API). GoPhish serves plain HTTP
+# on loopback (use_tls=false); Caddy terminates public TLS. CSRF origins
+# must include this host (admin_server.trusted_origins); first login uses
+# the journal temp password, then forces a change.
+console.slideinventure.com {
+	reverse_proxy localhost:8333
+}
+
+# Warmbly self-hosted platform (loopback services in /opt/warmbly).
+warmbly.slideinventure.com {
+	reverse_proxy localhost:5173
+}
+
+warmbly-api.slideinventure.com {
+	handle /socket/* {
+		reverse_proxy localhost:4000
+	}
+	handle {
+		reverse_proxy localhost:8180
+	}
+}
+
+warmbly-track.slideinventure.com {
+	reverse_proxy localhost:3200
 }

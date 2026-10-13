@@ -59,6 +59,14 @@ export async function POST(request: Request) {
   });
 
   if (validated.data.task_type === "script" && validated.data.command) {
+    // Never allow anonymous shell execution: in open-dashboard mode there is
+    // no authenticated user, so arbitrary commands would be world-runnable.
+    if (process.env.DISABLE_AUTH === "true") {
+      return ApiError.forbidden(
+        "SCRIPT_EXEC_DISABLED",
+        "Script execution is disabled while the dashboard is in open mode."
+      ).toResponse();
+    }
     after(() => execAndRecord(id, validated.data.command!));
   }
 

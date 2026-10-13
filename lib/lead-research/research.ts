@@ -3,6 +3,7 @@ import { getAgentRoster } from "@/lib/agents/roster";
 import { RESEARCH_PERSONAS } from "@/lib/agents/research/personas";
 import { chatCompletion } from "@/lib/llm/gateway";
 import { searchTavily } from "@/lib/cold-outreach/tavily";
+import { agentReachSnippets } from "@/lib/search/agent-reach";
 import { getSession, updateSession } from "./store";
 import type { LeadResearchRow } from "./types";
 
@@ -113,20 +114,22 @@ export async function researchOne(
   const query = buildLeadResearchQuery(lead);
   let snippets: string[] = [];
   try {
-    const [basic, advanced] = await Promise.allSettled([
+    const [basic, advanced, reach] = await Promise.allSettled([
       searchTavily(query, { maxResults: 5, searchDepth: "basic" }),
       searchTavily(`${lead.email} ${lead.company} ${lead.firstName}`, {
         maxResults: 5,
         searchDepth: "advanced",
       }),
+      // Agent-Reach backend (company page + GitHub footprint); best-effort.
+      agentReachSnippets(lead),
     ]);
     const merge = (r: PromiseSettledResult<{ results: { title: string; content: string; url?: string }[] }>) =>
       r.status === "fulfilled"
         ? r.value.results.map((s) => `${s.title} — ${s.content}`)
         : [];
-    snippets = [...merge(basic), ...merge(advanced)]
+    snippets = [...merge(basic), ...merge(advanced), ...merge(reach)]
       .filter((s) => s.trim().length > 0)
-      .slice(0, 8);
+      .slice(0, 10);
   } catch {
     snippets = [];
   }
