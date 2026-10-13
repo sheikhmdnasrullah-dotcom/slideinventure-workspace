@@ -4,6 +4,7 @@ import { RESEARCH_PERSONAS } from "@/lib/agents/research/personas";
 import { chatCompletion } from "@/lib/llm/gateway";
 import { searchTavily } from "@/lib/cold-outreach/tavily";
 import { agentReachSnippets } from "@/lib/search/agent-reach";
+import { buildBusinessContext } from "@/lib/intake/store";
 import { getSession, updateSession } from "./store";
 import type { LeadResearchRow } from "./types";
 
@@ -135,7 +136,12 @@ export async function researchOne(
   }
 
   const systemPrompt = buildSystemPrompt(agentName);
-  const userPrompt = buildUserPrompt(lead, snippets, usedLines.slice(-MAX_USED_LINES));
+  const businessContext = buildBusinessContext();
+  const userPrompt =
+    buildUserPrompt(lead, snippets, usedLines.slice(-MAX_USED_LINES)) +
+    (businessContext
+      ? `\n\nOUR BUSINESS (use only to judge whether our offers fit this prospect — never invent facts about the lead):\n${businessContext}\n`
+      : "");
 
   let bullets: string[] = [];
   try {

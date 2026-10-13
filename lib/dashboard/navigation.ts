@@ -4,6 +4,7 @@ import {
   Beaker,
   Brain,
   Cable,
+  ClipboardList,
   FileText,
   GripVertical,
   Network,
@@ -28,6 +29,7 @@ import {
 
 export type DashboardSectionId =
   | "dashboard"
+  | "intake"
   | "leads"
   | "chat"
   | "cold-outreach"
@@ -66,6 +68,7 @@ export type DashboardSection = {
 
 export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "dashboard", label: "Command Center", route: "/dashboard", icon: LayoutDashboard, category: "core" },
+  { id: "intake", label: "Business Setup", route: "/intake", icon: ClipboardList, category: "core" },
   { id: "leads", label: "Opportunities", route: "/leads", icon: FileText, category: "core", badge: "Live" },
   { id: "chat", label: "Conversations", route: "/chat", icon: MessageSquare, category: "core" },
   { id: "cold-outreach", label: "Missions & Outreach", route: "/cold-outreach", icon: Rocket, category: "core" },
