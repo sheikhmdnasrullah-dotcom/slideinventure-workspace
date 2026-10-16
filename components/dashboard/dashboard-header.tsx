@@ -60,7 +60,7 @@ export function DashboardHeader() {
         <h1 className="font-display text-xl font-semibold tracking-tight text-ink-strong">
           Dashboard
         </h1>
-        <p className="font-mono text-xs tabular-nums text-ink-muted" suppressHydrationWarning>
+        <p className="font-code text-xs tabular-nums text-ink-muted" suppressHydrationWarning>
           {stamp || "\u00a0"}
         </p>
       </div>
@@ -86,7 +86,7 @@ export function DashboardHeader() {
           className="gap-1.5 text-xs font-normal text-ink-muted"
         >
           Search
-          <kbd className="rounded border border-rule px-1 font-mono text-[10px] text-ink-faint">
+          <kbd className="rounded border border-rule px-1 font-code text-xs text-ink-faint">
             ⌘K
           </kbd>
         </Button>

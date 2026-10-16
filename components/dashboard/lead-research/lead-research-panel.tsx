@@ -266,9 +266,9 @@ export function LeadResearchPanel() {
               Upload your lead list
             </CardTitle>
             <p className="mt-1 text-xs text-muted-foreground">
-              CSV with an <span className="font-mono">Email</span> column. First Name, Last Name,
+              CSV with an <span className="font-code">Email</span> column. First Name, Last Name,
               Company, Position are picked up automatically if present. An existing{" "}
-              <span className="font-mono">Personalized Information</span> column is preserved.
+              <span className="font-code">Personalized Information</span> column is preserved.
             </p>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -290,7 +290,7 @@ export function LeadResearchPanel() {
                 {pasteMode ? "Use a file" : "Paste text"}
               </Button>
               {fileName !== "leads.csv" && (
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-xs">
                   {fileName}
                 </Badge>
               )}
@@ -304,14 +304,14 @@ export function LeadResearchPanel() {
                   onChange={(e) => setCsvText(e.target.value)}
                   placeholder={"Email,First Name,Last Name,Company,Position\njohn@acme.com,John,Doe,Acme,CEO"}
                   rows={8}
-                  className="font-mono text-xs"
+                  className="font-code text-xs"
                 />
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-foreground/20 p-6 text-center text-xs text-muted-foreground">
+              <div className="rounded-lg border border-dashed border-rule-strong bg-surface p-6 text-center text-xs text-muted-foreground">
                 {csvText ? (
                   <div className="flex flex-col items-center gap-2">
-                    <CheckCircle2 className="size-6 text-emerald-600" />
+                    <CheckCircle2 className="size-6 text-status-live" />
                     <span>{fileName} loaded ({csvText.split(/\r?\n/).filter(Boolean).length - 1} rows)</span>
                     <Button size="sm" variant="outline" onClick={() => setPasteMode(true)} className="text-xs">
                       View / edit as text
@@ -341,13 +341,13 @@ export function LeadResearchPanel() {
                   <FileSpreadsheet className="size-4" />
                   {session.fileName}
                 </div>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {session.rows.length} leads · {doneCount} researched
                 </span>
               </div>
 
               <div className="flex flex-1 flex-col gap-1 min-w-[200px]">
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{Math.round(progress * 100)}%</span>
                   <span>
                     {session.status === "done"
@@ -377,7 +377,7 @@ export function LeadResearchPanel() {
                     </Button>
                   </>
                 ) : session.status === "running" ? (
-                  <Badge className="border border-sky-300 bg-sky-100 text-sky-800">
+                  <Badge className="border-transparent bg-status-neutral-bg text-status-neutral">
                     <Loader2 className="mr-1 size-3 animate-spin" />
                     {doneCount}/{session.rows.length} researched
                   </Badge>
@@ -412,7 +412,7 @@ export function LeadResearchPanel() {
                   .map((a) => (
                     <span
                       key={a.slug}
-                      className="flex items-center gap-1 rounded-full border border-foreground/10 bg-secondary/40 px-2 py-0.5 text-[10px]"
+                      className="flex items-center gap-1 rounded-full border border-foreground/10 bg-secondary/40 px-2 py-0.5 text-xs"
                     >
                       <Bot className="size-3" />
                       {a.emoji ? `${a.emoji} ` : ""}
@@ -420,7 +420,7 @@ export function LeadResearchPanel() {
                     </span>
                   ))}
                 {agents.filter((a) => session.agentSlugs.includes(a.slug)).length === 0 && (
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     Using research personas (MiroThinker, Open Deep Research, DeepResearchAgent).
                   </span>
                 )}
@@ -441,12 +441,12 @@ export function LeadResearchPanel() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-[10px]">Email</TableHead>
-                      <TableHead className="text-[10px]">Name</TableHead>
-                      <TableHead className="text-[10px]">Company</TableHead>
-                      <TableHead className="text-[10px]">Position</TableHead>
-                      <TableHead className="text-[10px] min-w-[280px]">Personalized Information</TableHead>
-                      <TableHead className="w-20 text-[10px]">Status</TableHead>
+                      <TableHead className="text-xs">Email</TableHead>
+                      <TableHead className="text-xs">Name</TableHead>
+                      <TableHead className="text-xs">Company</TableHead>
+                      <TableHead className="text-xs">Position</TableHead>
+                      <TableHead className="text-xs min-w-[280px]">Personalized Information</TableHead>
+                      <TableHead className="w-20 text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -464,7 +464,7 @@ export function LeadResearchPanel() {
                               );
                             }}
                             onBlur={() => patchRows([{ id: row.id, email: row.email }]).catch(() => {})}
-                            className="h-7 text-[11px]"
+                            className="h-7 text-xs"
                           />
                         </TableCell>
                         <TableCell className="py-1 align-top">
@@ -480,7 +480,7 @@ export function LeadResearchPanel() {
                                 );
                               }}
                               onBlur={() => patchRows([{ id: row.id, firstName: row.firstName }]).catch(() => {})}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                               placeholder="First"
                             />
                             <Input
@@ -494,7 +494,7 @@ export function LeadResearchPanel() {
                                 );
                               }}
                               onBlur={() => patchRows([{ id: row.id, lastName: row.lastName }]).catch(() => {})}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                               placeholder="Last"
                             />
                           </div>
@@ -511,7 +511,7 @@ export function LeadResearchPanel() {
                               );
                             }}
                             onBlur={() => patchRows([{ id: row.id, company: row.company }]).catch(() => {})}
-                            className="h-7 text-[11px]"
+                            className="h-7 text-xs"
                           />
                         </TableCell>
                         <TableCell className="py-1 align-top">
@@ -526,7 +526,7 @@ export function LeadResearchPanel() {
                               );
                             }}
                             onBlur={() => patchRows([{ id: row.id, position: row.position }]).catch(() => {})}
-                            className="h-7 text-[11px]"
+                            className="h-7 text-xs"
                           />
                         </TableCell>
                         <TableCell className="py-1 align-top">
@@ -536,13 +536,13 @@ export function LeadResearchPanel() {
                                 value={draftInfo}
                                 onChange={(e) => setDraftInfo(e.target.value)}
                                 rows={4}
-                                className="font-mono text-[11px]"
+                                className="font-code text-xs"
                               />
                               <div className="flex items-center gap-1">
-                                <Button size="sm" onClick={() => saveEdit(row)} className="text-[10px]">
+                                <Button size="sm" onClick={() => saveEdit(row)} className="text-xs">
                                   Save
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={() => setEditingId(null)} className="text-[10px]">
+                                <Button size="sm" variant="outline" onClick={() => setEditingId(null)} className="text-xs">
                                   Cancel
                                 </Button>
                               </div>
@@ -555,11 +555,11 @@ export function LeadResearchPanel() {
                               title="Click to edit"
                             >
                               {row.personalizedInfo ? (
-                                <span className="block whitespace-pre-wrap font-mono text-[11px] text-emerald-800">
+                                <span className="block whitespace-pre-wrap text-xs text-ink-strong">
                                   {row.personalizedInfo}
                                 </span>
                               ) : (
-                                <span className="text-[11px] text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                   {row.status === "done" ? "—" : "Pending research"}
                                 </span>
                               )}
@@ -569,28 +569,28 @@ export function LeadResearchPanel() {
                         <TableCell className="py-1 align-top">
                           <div className="flex flex-col items-start gap-1">
                             {row.status === "done" ? (
-                              <Badge className="border border-emerald-300 bg-emerald-100 text-emerald-800">
+                              <Badge className="border-transparent bg-status-live-bg text-status-live">
                                 <CheckCircle2 className="mr-1 size-3" />
                                 Done
                               </Badge>
                             ) : row.status === "researching" ? (
-                              <Badge className="border border-sky-300 bg-sky-100 text-sky-800">
+                              <Badge className="border-transparent bg-status-neutral-bg text-status-neutral">
                                 <Loader2 className="mr-1 size-3 animate-spin" />
                                 Researching
                               </Badge>
                             ) : row.status === "error" ? (
-                              <Badge className="border border-rose-300 bg-rose-100 text-rose-800" title={row.error}>
+                              <Badge className="border-transparent bg-status-danger-bg text-status-danger" title={row.error}>
                                 <XCircle className="mr-1 size-3" />
                                 Error
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px]">
+                              <Badge variant="outline" className="text-xs">
                                 Pending
                               </Badge>
                             )}
                             <div className="flex items-center gap-1">
                               {row.researchSnippets.length > 0 && (
-                                <span className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                                <span className="flex items-center gap-1 text-xs tabular-nums text-ink-muted">
                                   <Globe className="size-3" />
                                   {row.researchSnippets.length} sources
                                 </span>
@@ -598,7 +598,7 @@ export function LeadResearchPanel() {
                               <button
                                 type="button"
                                 onClick={() => removeRow(row)}
-                                className="text-rose-600 hover:text-rose-700"
+                                className="text-status-danger"
                                 title="Remove row"
                               >
                                 <Trash2 className="size-3" />
@@ -611,7 +611,7 @@ export function LeadResearchPanel() {
                   </TableBody>
                 </Table>
               </ScrollArea>
-              <div className="mt-3 flex items-center justify-between text-[10px] text-muted-foreground">
+              <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Click the Personalized Information cell to edit it. Edits are saved to the revised CSV.</span>
                 <span>{doneCount}/{session.rows.length} researched</span>
               </div>

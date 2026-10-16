@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect } from "react"
-import { AlertTriangle, RotateCcw } from "lucide-react"
+import { RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { GlossTile } from "@/components/system/gloss-tile"
 
 // Next.js route-group error boundary: catches a render error anywhere under
 // app/(app)/* that doesn't have its own error.tsx. This keeps a crash in one
@@ -21,17 +23,19 @@ export default function AppSegmentError({
   }, [error])
 
   return (
-    <div className="flex h-full min-h-[320px] flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-      <div className="flex size-10 items-center justify-center rounded-full bg-[var(--status-danger)]/10 text-[var(--status-danger)]">
-        <AlertTriangle className="size-5" />
-      </div>
-      <p className="text-sm font-medium text-[color:var(--ink-strong)]">This section hit a problem</p>
-      <p className="max-w-sm text-sm text-[color:var(--ink-muted)]">
-        The rest of the dashboard is unaffected. Try again, or come back to it later. Your data hasn&apos;t been touched.
-      </p>
-      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => reset()}>
-        <RotateCcw className="size-3.5" /> Try again
-      </Button>
+    <div className="flex h-full min-h-[320px] flex-1 flex-col items-center justify-center p-8">
+      <Card className="w-full max-w-[440px] items-center text-center">
+        <CardContent className="items-center">
+          <GlossTile icon="inbox" size={64} float={false} />
+          <p className="text-base font-semibold text-ink-strong">This section hit a problem</p>
+          <p className="max-w-[360px] text-sm leading-[22px] text-ink-muted">
+            The rest of the dashboard is unaffected. Try again, or come back to it later. Your data hasn&apos;t been touched.
+          </p>
+          <Button size="sm" variant="outline" className="mt-1 gap-1.5" onClick={() => reset()}>
+            <RotateCcw className="size-4" /> Try again
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

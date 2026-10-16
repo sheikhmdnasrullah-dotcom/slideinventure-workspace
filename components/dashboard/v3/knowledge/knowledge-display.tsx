@@ -108,7 +108,7 @@ export function KnowledgeDisplay() {
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border-none px-0 text-2xl font-bold shadow-none focus-visible:ring-0"
+            className="border-none px-0 font-display text-2xl shadow-none"
             placeholder="Untitled"
           />
           <Button
@@ -142,14 +142,14 @@ export function KnowledgeDisplay() {
               <button
                 type="button"
                 onClick={() => setViewMode("sheet")}
-                className={`rounded px-2 py-0.5 font-medium transition-colors ${viewMode === "sheet" ? "bg-background text-ink-strong shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex h-8 items-center rounded-pill px-3.5 text-[13px] font-medium transition-colors ${viewMode === "sheet" ? "bg-surface text-ink-strong shadow-raised" : "text-ink-muted hover:text-ink-strong"}`}
               >
                 Sheet View
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("raw")}
-                className={`rounded px-2 py-0.5 font-medium transition-colors ${viewMode === "raw" ? "bg-background text-ink-strong shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex h-8 items-center rounded-pill px-3.5 text-[13px] font-medium transition-colors ${viewMode === "raw" ? "bg-surface text-ink-strong shadow-raised" : "text-ink-muted hover:text-ink-strong"}`}
               >
                 Markdown Editor
               </button>
@@ -179,7 +179,7 @@ export function KnowledgeDisplay() {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Start writing..."
-            className="min-h-[300px] w-full resize-none border-none p-0 font-mono text-sm leading-relaxed shadow-none focus-visible:ring-0"
+            className="min-h-[300px] w-full resize-none border-none p-0 font-code text-sm leading-relaxed shadow-none"
           />
         )}
       </div>
@@ -192,7 +192,7 @@ function MarkdownTableView({ content }: { content: string }) {
   const tableStartIndex = lines.findIndex((l) => l.trim().startsWith("|") && l.includes("|---|"));
   
   if (tableStartIndex <= 0) {
-    return <div className="whitespace-pre-wrap font-mono text-xs">{content}</div>;
+    return <div className="whitespace-pre-wrap font-code text-xs">{content}</div>;
   }
 
   const headerLine = lines[tableStartIndex - 1];
@@ -218,7 +218,7 @@ function MarkdownTableView({ content }: { content: string }) {
           {preamble}
         </div>
       )}
-      <div className="overflow-hidden rounded-xl border border-rule bg-card/40 shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-rule bg-surface shadow-raised">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-rule bg-muted/50 font-label">
@@ -249,7 +249,7 @@ function MarkdownTableView({ content }: { content: string }) {
                           <ExternalLink className="size-2.5 opacity-60" />
                         </a>
                       ) : cell.includes("@") && cell.includes(".") ? (
-                        <span className="font-mono font-medium text-emerald-500">{cell}</span>
+                        <span className="font-code font-medium text-status-live">{cell}</span>
                       ) : (
                         cell.replace(/\*\*/g, "")
                       )}

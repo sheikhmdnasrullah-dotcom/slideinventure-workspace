@@ -85,7 +85,7 @@ export function ChartAreaInteractive({
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="flex w-40 @[767px]/card:hidden rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+            className="flex h-11 w-40 @[767px]/card:hidden rounded-md border border-rule-strong bg-surface px-3 text-sm text-ink-strong outline-none"
             aria-label="Select a range"
           >
             <option value="90d">Last 3 months</option>

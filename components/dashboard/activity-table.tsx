@@ -39,12 +39,12 @@ const TYPE_LABELS: Partial<Record<ActivityType, string>> = {
 };
 
 const STATUS_STYLES: Record<ActivityStatus, string> = {
-  ai_inferred: "border-border bg-muted text-muted-foreground",
-  proposed: "border-brand/30 bg-brand-soft text-signal",
-  active: "border-signal/30 bg-signal/10 text-signal",
-  completed: "border-signal/30 bg-signal/10 text-signal",
-  failed: "border-red-500/30 bg-red-500/10 text-red-500",
-  running: "border-brand/30 bg-brand-soft text-signal",
+  ai_inferred: "border-transparent bg-status-neutral-bg text-status-neutral",
+  proposed: "border-transparent bg-flame-wash text-flame",
+  active: "border-transparent bg-flame-wash text-flame",
+  completed: "border-transparent bg-status-live-bg text-status-live",
+  failed: "border-transparent bg-status-danger-bg text-status-danger",
+  running: "border-transparent bg-flame-wash text-flame",
 };
 
 const STATUS_LABELS: Record<ActivityStatus, string> = {
@@ -124,7 +124,7 @@ export function ActivityTable({ data }: { data: ActivityRow[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{row.source}</TableCell>
-                <TableCell className="text-right font-mono text-xs tabular-nums text-foreground/60">
+                <TableCell className="text-right font-code text-xs tabular-nums text-foreground/60">
                   {dateFormat.format(new Date(row.updatedAt))}
                 </TableCell>
               </TableRow>
@@ -154,7 +154,7 @@ function SortButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground",
+        "inline-flex items-center gap-1 font-label text-ink-muted transition-colors hover:text-ink-strong",
         align === "right" && "flex-row-reverse"
       )}
     >

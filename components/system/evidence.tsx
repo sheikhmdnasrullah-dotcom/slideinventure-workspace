@@ -42,12 +42,12 @@ export function SourceCitation({
     <div
       data-slot="source-citation"
       className={cn(
-        "flex flex-wrap items-center gap-2 font-label text-ink-faint",
+        "flex flex-wrap items-center gap-2 font-label text-ink-muted",
         className
       )}
     >
       {type && (
-        <span className="rounded-xs bg-[var(--accent-wash)] px-1.5 py-0.5 text-[var(--text-accent)]">
+        <span className="rounded-pill bg-flame-wash px-2.5 py-1 text-flame">
           {type}
         </span>
       )}
@@ -58,7 +58,7 @@ export function SourceCitation({
       {href && (
         <Link
           href={href}
-          className="normal-case text-ink-muted transition-colors hover:text-[var(--text-accent)]"
+          className="text-ink-muted transition-colors hover:text-flame"
         >
           Open source
         </Link>
@@ -92,7 +92,7 @@ export function EvidenceBlock({
         className
       )}
     >
-      <p className="break-words font-body text-sm leading-relaxed text-ink-default">
+      <p className="break-words font-body text-sm leading-relaxed text-ink-strong">
         {query ? <Highlight text={text} query={query} /> : text}
       </p>
       <SourceCitation type={type} source={source} position={position} href={href} />

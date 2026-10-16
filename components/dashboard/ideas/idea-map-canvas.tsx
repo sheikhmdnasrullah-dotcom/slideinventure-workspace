@@ -63,7 +63,7 @@ function IdeaNode({ id, data }: NodeProps) {
   };
 
   return (
-    <div className="min-w-[130px] rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-sm">
+    <div className="min-w-[130px] rounded-md border border-rule bg-surface px-3 py-2 text-sm shadow-raised">
       <Handle id="t" type="source" position={Position.Top} className="!h-2.5 !w-2.5 !bg-primary" />
       <Handle id="b" type="source" position={Position.Bottom} className="!h-2.5 !w-2.5 !bg-primary" />
       <Handle id="l" type="source" position={Position.Left} className="!h-2.5 !w-2.5 !bg-primary" />
@@ -314,7 +314,7 @@ function IdeaMapCanvasInner({ mapId }: { mapId: string }) {
           </Button>
           <span
             className={`ml-auto text-xs ${
-              status === "unsaved" ? "text-amber-500" : status === "saving" ? "text-muted-foreground" : "text-emerald-500"
+              status === "unsaved" ? "text-status-warn" : status === "saving" ? "text-ink-muted" : "text-status-live"
             }`}
           >
             {statusText}

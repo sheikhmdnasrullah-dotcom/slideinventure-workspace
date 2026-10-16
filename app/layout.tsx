@@ -1,28 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
+import { appFace } from "./fonts";
 import { ThemeProvider } from "@/components/theme-provider";
 import DatadogInit from "@/components/datadog-init";
 import { AppwritePing } from "@/components/appwrite-ping";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-fraunces",
-  axes: ["SOFT", "WONK", "opsz"],
-  weight: "variable",
-  fallback: ["Georgia", "serif"],
-});
 
 export const metadata: Metadata = {
   title: "SlideIn Venture: Ops Console",
@@ -44,7 +25,7 @@ export default function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${appFace.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AppwritePing />

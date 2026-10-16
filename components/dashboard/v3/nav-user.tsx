@@ -51,31 +51,31 @@ export function NavUser({
               />
             }
           >
-            <Avatar size="sm" className="rounded-lg">
-                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+            <Avatar size="sm">
+                  <AvatarFallback>{initials}</AvatarFallback>
            </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-              <span className="truncate text-xs text-muted-foreground">
+                  <span className="truncate text-sm font-medium">{user.name}</span>
+              <span className="truncate text-xs text-ink-muted">
                 {user.email}
              </span>
            </div>
             <ChevronsUpDown className="ml-auto size-4" />
          </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--anchor-width) min-w-56 rounded-lg"
+            className="w-(--anchor-width) min-w-56 rounded-[16px]"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar size="sm" className="rounded-lg">
-              <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                <Avatar size="sm">
+              <AvatarFallback>{initials}</AvatarFallback>
                </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
+                  <span className="truncate text-xs text-ink-muted">
                     {user.email}
                  </span>
                </div>

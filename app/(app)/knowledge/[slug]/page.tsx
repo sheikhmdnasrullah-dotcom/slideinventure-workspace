@@ -32,18 +32,18 @@ export default async function KnowledgeItemPage(
   if (!doc) {
     return (
       <div className="flex flex-1 flex-col items-start gap-4 p-6">
-        <Link href="/knowledge" className="text-xs text-foreground/40 hover:underline">
+        <Link href="/knowledge" className="text-xs text-ink-faint hover:text-ink-strong hover:underline">
           ← Knowledge Base
         </Link>
-        <div className="flex flex-col gap-2 rounded-lg border border-dashed p-6">
-          <h1 className="text-lg font-medium">This source is no longer available</h1>
+        <div className="flex flex-col gap-2 rounded-lg border border-rule bg-surface p-6 shadow-raised">
+          <h1 className="font-display text-lg font-semibold text-ink-strong">This source is no longer available</h1>
           <p className="max-w-prose text-sm text-muted-foreground">
             The knowledge source referenced by this link could not be found. It may have been
             deleted or moved. Your other data and the rest of the dashboard are unaffected.
           </p>
           <Link
             href="/chat"
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-ink-strong underline decoration-rule-strong underline-offset-4 hover:decoration-ink-strong"
           >
             Back to search results
           </Link>
@@ -67,7 +67,7 @@ export default async function KnowledgeItemPage(
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
-      <Link href="/knowledge" className="text-xs text-foreground/40 hover:underline">
+      <Link href="/knowledge" className="text-xs text-ink-faint hover:text-ink-strong hover:underline">
         ← Knowledge Base
       </Link>
 

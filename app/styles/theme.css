@@ -6,33 +6,48 @@
    THE CONTRACT. The only colour names a new component may consume. Components
    write `text-[var(--text-muted)]`, never `dark:text-neutral-400`.
 
-     --page-fill      what the document is painted with under/around surfaces
-     --surface        raised card fill sitting on this page
-     --surface-2      inset / nested fill (a well INSIDE a card)
+     --page-fill      #FAFAFA: the document under/around surfaces
+     --surface        #FFFFFF: raised card fill sitting on this page
+     --surface-2      #FAFAFA: inset / nested fill (a well INSIDE a card)
+     --sidebar-fill   #FDFDFD: sidebar ground with a right hairline
+     --table-header-fill  #FDFDFD: table header row ground
+     --hover-tint     row/control hover wash
      --text-strong    headings. Darkest ink on this theme
      --text-default   body text
      --text-muted     secondary text (≥4.5:1 on --surface)
      --text-faint     NOT TEXT. Icons, ticks, disabled, decorative hairlines
      --on-surface     alias of --text-default (primary text + hairline ink)
-     --rule           hairline divider (between rows, inside cards)
-     --rule-strong    visible divider, card border
+     --rule           hairline divider (7%)
+     --rule-soft      table row dividers (6%)
+     --rule-strong    visible divider, card border, input border (14%)
      --text-accent    the orange that clears 4.5:1 AS TEXT on this surface
-     --accent-vivid   the orange for fills, strokes and graphics
-     --accent-wash    low-alpha orange fill (selected backgrounds)
-     --accent-ring    mid-alpha orange border (focus/selected rings)
+     --accent-vivid   the orange for fills, strokes and graphics (#FF6200)
+     --accent-wash    10% orange fill (selected backgrounds)
+     --accent-highlight 18% orange fill (highlights)
+     --accent-ring    mid-alpha orange border
+     --focus-ring     2px keyboard-focus outline (accent at 60%)
      --on-accent      text sitting on a solid orange fill
+     --button-primary #151515 primary button fill
+     --on-button-primary  text on the primary button
      --surface-glass  translucent --surface, for backdrop-blur chrome
-     --status-live   green legible here        (system running)
-     --status-info   blue legible here          (asset ready)
-     --status-warn   amber legible here         (needs attention)
-     --status-danger red legible here           (failed)
-     --scrim         the veil behind a modal
+     --status-live    green legible here        (system running)
+     --status-live-bg green tint                (chip ground)
+     --status-info    ink legible here           (asset ready)
+     --status-info-bg neutral tint
+     --status-warn    amber legible here         (needs attention)
+     --status-warn-bg amber tint
+     --status-danger  red legible here           (failed)
+     --status-danger-bg red tint
+     --status-neutral grey legible here
+     --status-neutral-bg grey tint
+     --skeleton       skeleton bar fill
+     --input-focus-ring   4px input focus halo (accent 14%)
+     --input-focus-border input focus border (ink 60%)
+     --scrim         the veil behind a modal (32%)
+     --backdrop-soft the veil behind the nav drawer (24%)
 
    RULE 1 HOLDS ON BOTH THEMES. --text-accent and --accent-vivid are always
-   hue 42.28. A dark surface does not get a second orange. It gets the same
-   orange read at the lightness that clears AA against it (brand-hi, 6.47:1 on
-   graphite-900). Never #FFFFFF or #000000 anywhere: paper-25 is the lightest
-   value; ink-deep the darkest.
+   the same orange #FF6200. A dark surface does not get a second orange.
 
    LEGACY ALIASES. The shadcn primitives (built on @base-ui/react) ship
    `dark:` variants and read `--background / --foreground / --card / --muted /
@@ -40,17 +55,20 @@
    contract so the stock components pick the theme up for free, WITHOUT
    colliding with our text/surface split (shadcn's --muted and --accent are
    SURFACES. `bg-muted`, `bg-accent` hover states. Not text colors, so they
-   map to --surface-2, not to the text contract).
+   map to --surface-2 and --hover-tint, not to the text contract).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────────────────────
-   DAY. Paper surfaces, ink type, orange accent.
+   DAY. Near-white page, white cards, ink type, one orange accent.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
   --page-fill:       var(--color-paper-50);
 
   --surface:         var(--color-paper-25);
-  --surface-2:       var(--color-paper-100);
+  --surface-2:       var(--color-paper-50);
+  --sidebar-fill:    #fdfdfd;
+  --table-header-fill: #fdfdfd;
+  --hover-tint:      rgb(10 10 10 / 4%);
 
   --text-strong:     var(--color-ink);
   --text-default:    var(--color-ink);
@@ -59,21 +77,36 @@
   --on-surface:      var(--text-default);
 
   --rule:            var(--color-bone-300);
-  --rule-strong:     color-mix(in oklch, var(--color-ink) 14%, transparent);
+  --rule-soft:       rgb(10 10 10 / 6%);
+  --rule-strong:     rgb(10 10 10 / 14%);
 
   --text-accent:     var(--color-signal-deep);
   --accent-vivid:    var(--color-brand);
-  --accent-wash:     color-mix(in oklch, var(--color-brand) 8%, transparent);
-  --accent-ring:     color-mix(in oklch, var(--color-brand) 35%, transparent);
+  --accent-wash:     rgb(255 98 0 / 10%);
+  --accent-highlight: rgb(255 98 0 / 18%);
+  --accent-ring:     rgb(255 98 0 / 24%);
+  --focus-ring:      rgb(255 98 0 / 60%);
   --on-accent:       var(--color-paper-25);
+  --button-primary:  #151515;
+  --on-button-primary: #ffffff;
 
-  --surface-glass:   color-mix(in oklch, var(--color-paper-25) 80%, transparent);
+  --surface-glass:   rgb(255 255 255 / 80%);
 
   --status-live:     var(--color-live-deep);
+  --status-live-bg:  var(--color-live-tint);
   --status-info:     var(--color-info-deep);
+  --status-info-bg:  var(--color-info-tint);
   --status-warn:     var(--color-warn-deep);
+  --status-warn-bg:  var(--color-warn-tint);
   --status-danger:   var(--color-danger);
-  --scrim:           color-mix(in oklch, var(--color-ink) 50%, transparent);
+  --status-danger-bg: var(--color-danger-tint);
+  --status-neutral:  var(--color-neutral-ink);
+  --status-neutral-bg: var(--color-neutral-tint);
+  --skeleton:        rgb(10 10 10 / 6%);
+  --input-focus-ring: rgb(255 98 0 / 14%);
+  --input-focus-border: rgb(10 10 10 / 60%);
+  --scrim:           rgb(10 10 10 / 32%);
+  --backdrop-soft:   rgb(10 10 10 / 24%);
 
   /* shadcn legacy surface tokens → semantic contract (surfaces, not text) */
   --background:        var(--page-fill);
@@ -82,20 +115,21 @@
   --card-foreground:   var(--text-default);
   --popover:           var(--surface);
   --popover-foreground: var(--text-default);
-  --primary:           var(--color-ink);
-  --primary-foreground: var(--color-paper-25);
-  --secondary:         var(--surface-2);
+  --primary:           var(--button-primary);
+  --primary-foreground: var(--on-button-primary);
+  --secondary:         var(--surface);
   --secondary-foreground: var(--text-default);
   /* shadcn's --muted / --accent are HOVER SURFACES, not text. Keep them as
      surfaces; the text roles are --text-muted / --text-accent above. */
   --muted:             var(--surface-2);
   --muted-foreground:  var(--text-muted);
-  --accent:            var(--surface-2);
+  --accent:            var(--hover-tint);
   --accent-foreground:  var(--text-default);
   --destructive:       var(--color-danger);
+  --destructive-foreground: var(--color-paper-25);
   --border:            var(--rule);
   --input:             var(--rule-strong);
-  --ring:              var(--text-accent);
+  --ring:              var(--focus-ring);
   --chart-1:           var(--color-graphite-900);
   --chart-2:           var(--color-slate-500);
   --chart-3:           var(--color-slate-600);
@@ -103,14 +137,14 @@
   --chart-5:           var(--color-brand);
 
   /* sidebar reuses shadcn sidebar-* tokens; point at the same contract */
-  --sidebar:                   var(--color-paper-50);
+  --sidebar:                   var(--sidebar-fill);
   --sidebar-foreground:        var(--text-default);
-  --sidebar-primary:            var(--text-accent);
+  --sidebar-primary:            var(--accent-vivid);
   --sidebar-primary-foreground: var(--on-accent);
-  --sidebar-accent:             var(--surface-2);
+  --sidebar-accent:             var(--accent-wash);
   --sidebar-accent-foreground:  var(--text-default);
   --sidebar-border:             var(--rule);
-  --sidebar-ring:               var(--text-accent);
+  --sidebar-ring:               var(--focus-ring);
 
   color-scheme: light;
 }
@@ -129,6 +163,9 @@ html {
 
   --surface:         var(--color-graphite-800);
   --surface-2:       var(--color-graphite-900);
+  --sidebar-fill:    #101013;
+  --table-header-fill: #1c1c1f;
+  --hover-tint:      rgb(255 255 255 / 6%);
 
   --text-strong:     var(--color-ash-200);
   --text-default:     var(--color-ash-200);
@@ -136,22 +173,37 @@ html {
   --text-faint:      var(--color-ash-500);
   --on-surface:      var(--text-default);
 
-  --rule:            color-mix(in oklch, var(--color-ash-200) 12%, transparent);
-  --rule-strong:     color-mix(in oklch, var(--color-ash-200) 20%, transparent);
+  --rule:            rgb(228 228 231 / 12%);
+  --rule-soft:       rgb(228 228 231 / 8%);
+  --rule-strong:     rgb(228 228 231 / 20%);
 
   --text-accent:     var(--color-brand-hi);
   --accent-vivid:    var(--color-brand);
-  --accent-wash:     color-mix(in oklch, var(--color-brand) 16%, transparent);
-  --accent-ring:     color-mix(in oklch, var(--color-brand) 42%, transparent);
+  --accent-wash:     rgb(255 98 0 / 16%);
+  --accent-highlight: rgb(255 98 0 / 24%);
+  --accent-ring:     rgb(255 98 0 / 42%);
+  --focus-ring:      rgb(255 122 41 / 70%);
   --on-accent:       var(--color-paper-25);
+  --button-primary:  #f4f4f5;
+  --on-button-primary: #0a0a0a;
 
-  --surface-glass:   color-mix(in oklch, var(--color-graphite-800) 80%, transparent);
+  --surface-glass:   rgb(24 24 27 / 80%);
 
   --status-live:     var(--color-live-hi);
+  --status-live-bg:  rgb(74 222 128 / 14%);
   --status-info:     var(--color-info-hi);
-  --status-warn:     var(--color-warn);
+  --status-info-bg:  rgb(228 228 231 / 12%);
+  --status-warn:     #fbbf24;
+  --status-warn-bg:  rgb(251 191 36 / 14%);
   --status-danger:   var(--color-danger-hi);
-  --scrim:           color-mix(in oklch, var(--color-ink-deep) 72%, transparent);
+  --status-danger-bg: rgb(248 113 113 / 14%);
+  --status-neutral:  var(--color-ash-400);
+  --status-neutral-bg: rgb(228 228 231 / 10%);
+  --skeleton:        rgb(255 255 255 / 10%);
+  --input-focus-ring: rgb(255 122 41 / 22%);
+  --input-focus-border: rgb(228 228 231 / 60%);
+  --scrim:           rgb(9 9 11 / 72%);
+  --backdrop-soft:   rgb(9 9 11 / 50%);
 
   --background:        var(--page-fill);
   --foreground:        var(--text-default);
@@ -159,32 +211,33 @@ html {
   --card-foreground:   var(--text-default);
   --popover:           var(--surface);
   --popover-foreground: var(--text-default);
-  --primary:           var(--color-paper-25);
-  --primary-foreground: var(--color-ink);
-  --secondary:         var(--surface-2);
+  --primary:           var(--button-primary);
+  --primary-foreground: var(--on-button-primary);
+  --secondary:         var(--surface);
   --secondary-foreground: var(--text-default);
   --muted:             var(--surface-2);
   --muted-foreground:  var(--text-muted);
-  --accent:            var(--surface-2);
+  --accent:            var(--hover-tint);
   --accent-foreground:  var(--text-default);
   --destructive:       var(--color-danger-hi);
+  --destructive-foreground: var(--color-ink);
   --border:            var(--rule);
   --input:             var(--rule-strong);
-  --ring:              var(--text-accent);
+  --ring:              var(--focus-ring);
   --chart-1:           var(--color-ash-300);
   --chart-2:           var(--color-ash-400);
   --chart-3:           var(--color-ash-500);
   --chart-4:           var(--color-brand);
   --chart-5:           var(--color-brand-lift);
 
-  --sidebar:                   var(--color-graphite-900);
+  --sidebar:                   var(--sidebar-fill);
   --sidebar-foreground:        var(--text-default);
   --sidebar-primary:            var(--text-accent);
   --sidebar-primary-foreground: var(--on-accent);
-  --sidebar-accent:             var(--surface-2);
+  --sidebar-accent:             var(--accent-wash);
   --sidebar-accent-foreground:  var(--text-default);
   --sidebar-border:             var(--rule);
-  --sidebar-ring:               var(--text-accent);
+  --sidebar-ring:               var(--focus-ring);
 
   color-scheme: dark;
 }

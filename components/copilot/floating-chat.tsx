@@ -227,22 +227,23 @@ export function FloatingChat() {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           style={posStyle()}
-          className="fixed z-50 flex size-12 cursor-grab touch-none items-center justify-center rounded-full border border-border bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 active:cursor-grabbing"
+          className="fixed z-50 flex size-[52px] cursor-grab touch-none items-center justify-center rounded-full border border-transparent bg-button-primary text-on-button-primary shadow-float transition-transform duration-[120ms] ease-out hover:-translate-y-0.5 active:cursor-grabbing"
         >
           <Bot className="size-6" />
+          <span aria-hidden className="absolute top-1 right-1 size-2 rounded-full bg-flame-vivid ring-2 ring-button-primary" />
         </button>
       )}
 
       {dock.open && (
         <div
           style={panelStyle()}
-          className="fixed z-50 flex h-[34rem] max-h-[80vh] w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
+          className="fixed z-50 flex h-[34rem] max-h-[80vh] w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-rule bg-card shadow-float"
         >
-          <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <div className="flex items-center justify-between border-b border-rule px-4 py-3">
             <div className="flex items-center gap-2">
-              <Bot className="size-4 text-primary" />
-              <span className="text-sm font-medium">Assistant</span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              <Bot className="size-[18px] text-ink-strong" />
+              <span className="text-[15px] font-semibold tracking-[-0.01em] text-ink-strong">Assistant</span>
+              <span className="inline-flex h-[26px] items-center gap-1 rounded-full bg-status-neutral-bg px-2.5 text-xs font-medium text-status-neutral">
                 <Globe className="size-3" /> web
               </span>
             </div>
@@ -250,7 +251,7 @@ export function FloatingChat() {
               type="button"
               aria-label="Close assistant"
               onClick={() => setOpen(false)}
-              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="flex size-9 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-hover-tint hover:text-ink-strong"
             >
               <X className="size-4" />
             </button>
@@ -258,8 +259,8 @@ export function FloatingChat() {
 
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3">
             {messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
-                <Bot className="mb-2 size-8 opacity-60" />
+              <div className="flex h-full flex-col items-center justify-center text-center text-ink-muted">
+                <Bot className="mb-2 size-8 text-ink-faint" />
                 <p className="text-sm">Ask me anything.</p>
                 <p className="mt-1 text-xs">I can search the web and help across the app.</p>
               </div>
@@ -271,10 +272,10 @@ export function FloatingChat() {
                 >
                   <div
                     className={
-                      "max-w-[85%] whitespace-pre-wrap break-words rounded-lg px-3 py-2 text-sm " +
+                      "max-w-[85%] whitespace-pre-wrap break-words rounded-[14px] px-3.5 py-2.5 text-sm leading-[22px] " +
                       (m.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground")
+                        ? "bg-button-primary text-on-button-primary"
+                        : "bg-surface-2 text-ink-strong")
                     }
                   >
                     {m.content || (streaming && i === messages.length - 1 ? "…" : "")}
@@ -294,14 +295,14 @@ export function FloatingChat() {
                 disabled={streaming}
                 rows={1}
                 placeholder="Ask a question…"
-                className="max-h-28 min-h-[36px] flex-1 resize-none rounded-md border border-border bg-background px-2 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                className="max-h-28 min-h-[44px] flex-1 resize-none rounded-md border border-rule-strong bg-surface px-3.5 py-3 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] placeholder:text-ink-faint focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]"
               />
               <button
                 type="button"
                 onClick={() => void send()}
                 disabled={!input.trim() || streaming}
                 aria-label="Send"
-                className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-button-primary text-on-button-primary shadow-button transition-transform duration-[120ms] hover:-translate-y-px active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
               >
                 {streaming ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               </button>

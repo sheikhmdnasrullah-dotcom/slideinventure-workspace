@@ -35,8 +35,8 @@ export default async function AppLayout({
                   <SidebarProvider
                     style={
                       {
-                        "--sidebar-width": "calc(var(--spacing) * 64)",
-                        "--header-height": "calc(var(--spacing) * 12 + 1px)",
+                        "--sidebar-width": "264px",
+                        "--header-height": "calc(var(--spacing) * 16)",
                       } as React.CSSProperties
                     }
                   >

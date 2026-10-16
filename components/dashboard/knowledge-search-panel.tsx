@@ -85,7 +85,7 @@ export function KnowledgeSearchPanel() {
               <a
                 key={item.id}
                 href={`/knowledge/${item.slug}`}
-                className="flex items-start gap-3 rounded-lg border border-foreground/10 bg-background/60 p-3 transition-colors hover:bg-background/80"
+                className="flex items-start gap-3 rounded-lg border border-rule bg-surface p-3 transition-colors hover:border-rule-strong"
               >
                 <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <div className="flex flex-col gap-1">

@@ -45,7 +45,7 @@ export function TodayPanel({
           </span>
           {deltas.map((d) => (
             <span key={d.label} className="font-body text-xs text-ink-muted">
-              <span className="font-mono tabular-nums text-ink-strong">+{d.count}</span>{" "}
+              <span className="font-value text-sm text-ink-strong">+{d.count}</span>{" "}
               {d.label.replace(/^\d+\s*/, "")}
             </span>
           ))}

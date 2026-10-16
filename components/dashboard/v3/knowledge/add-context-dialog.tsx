@@ -140,7 +140,7 @@ export function AddContextDialog() {
               onChange={e => setContent(e.target.value)} 
               placeholder={file ? "Leave blank to use the uploaded file's contents." : "Paste your context, code snippets, or notes here..."}
               disabled={!!file}
-              className="min-h-[200px] font-mono text-sm"
+              className="min-h-[200px] font-code text-sm"
             />
           </div>
 

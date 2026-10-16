@@ -23,39 +23,36 @@ export type StatusTone =
   | "neutral"
   | "flame";
 
-const TONE_STYLE: Record<
-  StatusTone,
-  { border: string; bg: string; color: string }
-> = {
+const TONE_STYLE: Record<StatusTone, { bg: string; color: string; dot: string }> = {
   live: {
-    border: "color-mix(in oklch, var(--status-live) 30%, transparent)",
-    bg: "color-mix(in oklch, var(--status-live) 10%, transparent)",
+    bg: "var(--status-live-bg)",
     color: "var(--status-live)",
+    dot: "var(--status-live)",
   },
   info: {
-    border: "color-mix(in oklch, var(--status-info) 30%, transparent)",
-    bg: "color-mix(in oklch, var(--status-info) 10%, transparent)",
+    bg: "var(--status-info-bg)",
     color: "var(--status-info)",
+    dot: "var(--status-info)",
   },
   warn: {
-    border: "color-mix(in oklch, var(--status-warn) 30%, transparent)",
-    bg: "color-mix(in oklch, var(--status-warn) 10%, transparent)",
+    bg: "var(--status-warn-bg)",
     color: "var(--status-warn)",
+    dot: "var(--status-warn)",
   },
   danger: {
-    border: "color-mix(in oklch, var(--status-danger) 30%, transparent)",
-    bg: "color-mix(in oklch, var(--status-danger) 10%, transparent)",
+    bg: "var(--status-danger-bg)",
     color: "var(--status-danger)",
+    dot: "var(--status-danger)",
   },
   neutral: {
-    border: "var(--rule-strong)",
-    bg: "var(--surface-2)",
-    color: "var(--text-muted)",
+    bg: "var(--status-neutral-bg)",
+    color: "var(--status-neutral)",
+    dot: "var(--status-neutral)",
   },
   flame: {
-    border: "var(--accent-ring)",
     bg: "var(--accent-wash)",
     color: "var(--text-accent)",
+    dot: "var(--accent-vivid)",
   },
 };
 
@@ -66,7 +63,7 @@ function titleCase(s: string) {
 export function StatusBadge({
   tone,
   label,
-  dot = false,
+  dot = true,
   className,
 }: {
   tone: StatusTone;
@@ -78,15 +75,16 @@ export function StatusBadge({
   return (
     <Badge
       variant="outline"
-      className={cn("gap-1 font-label normal-case", className)}
-      style={{ borderColor: s.border, backgroundColor: s.bg, color: s.color }}
+      className={cn("border-transparent", className)}
+      style={{ backgroundColor: s.bg, color: s.color }}
     >
       {dot && (
         <span
           className={cn(
-            "size-1.5 rounded-full bg-current",
+            "size-1.5 shrink-0 rounded-full",
             tone === "live" && "animate-pulse"
           )}
+          style={{ backgroundColor: s.dot }}
           aria-hidden
         />
       )}

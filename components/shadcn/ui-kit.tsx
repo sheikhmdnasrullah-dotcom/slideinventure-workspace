@@ -98,7 +98,7 @@ export function UiKit() {
         </TabsContent>
 
         <TabsContent value="table">
-          <div className="rounded-xl border">
+          <div className="rounded-lg border border-rule bg-surface shadow-raised">
             <Table>
               <TableHeader>
                 <TableRow>

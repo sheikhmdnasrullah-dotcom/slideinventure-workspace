@@ -100,7 +100,7 @@ const VARIABLE_KEYS = ["FirstName", "LastName", "Email", "Position", "Company", 
 function SafetyBadge({ score, violations }: { score: number; violations: SpamViolation[] }) {
   if (score >= 90 && violations.length === 0) {
     return (
-      <Badge className="border border-emerald-300 bg-emerald-100 text-emerald-800">
+      <Badge className="border-transparent bg-status-live-bg text-status-live">
         <CheckCircle2 className="mr-1 size-3" />
         100% Safe
       </Badge>
@@ -108,14 +108,14 @@ function SafetyBadge({ score, violations }: { score: number; violations: SpamVio
   }
   if (violations.length > 0) {
     return (
-      <Badge className="border border-amber-300 bg-amber-100 text-amber-800">
+      <Badge className="border-transparent bg-status-warn-bg text-status-warn">
         <Wand2 className="mr-1 size-3" />
         {violations.length} Auto-Replaced
       </Badge>
     );
   }
   return (
-    <Badge className="border border-yellow-300 bg-yellow-100 text-yellow-800">
+    <Badge className="border-transparent bg-status-warn-bg text-status-warn">
       <AlertTriangle className="mr-1 size-3" />
       Risk Factors
     </Badge>
@@ -124,14 +124,14 @@ function SafetyBadge({ score, violations }: { score: number; violations: SpamVio
 
 function AuthHealthBadge() {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-emerald-300 bg-emerald-50 p-3">
-      <div className="flex items-center gap-2 text-xs font-medium text-emerald-800">
+    <div className="flex flex-col gap-1 rounded-lg border border-transparent bg-status-live-bg p-4">
+      <div className="flex items-center gap-2 text-xs font-medium text-status-live">
         <Shield className="size-4" />
         Authentication Health: OK
       </div>
-      <div className="text-[11px] text-emerald-900">
+      <div className="text-xs text-status-live">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-mono">tanim.social</span>
+          <span className="font-code">tanim.social</span>
           <span>·</span>
           <span>SPF</span>
           <span>·</span>
@@ -145,7 +145,7 @@ function AuthHealthBadge() {
           <span>✓</span>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-mono">tanim.tech</span>
+          <span className="font-code">tanim.tech</span>
           <span>·</span>
           <span>SPF</span>
           <span>·</span>
@@ -166,20 +166,20 @@ function AuthHealthBadge() {
 function DeliverabilityMini({ report }: { report: DeliverabilityReport }) {
   const color =
     report.score >= 80
-      ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+      ? "border-transparent bg-status-live-bg text-status-live"
       : report.score >= 50
-        ? "border-amber-300 bg-amber-50 text-amber-800"
-        : "border-rose-300 bg-rose-50 text-rose-800";
+        ? "border-transparent bg-status-warn-bg text-status-warn"
+        : "border-transparent bg-status-danger-bg text-status-danger";
   return (
     <div className={`rounded-lg border p-2.5 text-xs ${color}`}>
       <div className="flex items-center justify-between">
         <span className="font-medium">Deliverability {report.score}/100</span>
-        <span className="text-[10px]">
+        <span className="text-xs">
           {report.spamWordCount} spam · {report.linkCount} links
         </span>
       </div>
       {report.issues.length > 0 && (
-        <ul className="mt-1.5 space-y-0.5 text-[10px]">
+        <ul className="mt-1.5 space-y-0.5 text-xs">
           {report.issues.slice(0, 3).map((iss, i) => (
             <li key={i} className="flex items-start gap-1">
               <AlertTriangle className="mt-0.5 size-2.5 shrink-0" />
@@ -187,7 +187,7 @@ function DeliverabilityMini({ report }: { report: DeliverabilityReport }) {
             </li>
           ))}
           {report.issues.length > 3 && (
-            <li className="text-[10px]">+{report.issues.length - 3} more</li>
+            <li className="text-xs">+{report.issues.length - 3} more</li>
           )}
         </ul>
       )}
@@ -600,16 +600,16 @@ export function CustomEmailPanel() {
                   active
                     ? "border-primary bg-primary/10 text-primary"
                     : done
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+                      ? "border-transparent bg-status-live-bg text-status-live"
                       : "border-foreground/10 text-muted-foreground"
                 }`}
               >
                 <span
-                  className={`flex size-4 items-center justify-center rounded-full text-[10px] ${
+                  className={`flex size-4 items-center justify-center rounded-full text-xs ${
                     active
                       ? "bg-primary text-primary-foreground"
                       : done
-                        ? "bg-emerald-500 text-white"
+                        ? "bg-status-live text-[var(--status-live-bg)]"
                         : "bg-foreground/10"
                   }`}
                 >
@@ -660,11 +660,11 @@ export function CustomEmailPanel() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-[10px]">Email</TableHead>
-                      <TableHead className="text-[10px]">First</TableHead>
-                      <TableHead className="text-[10px]">Last</TableHead>
-                      <TableHead className="text-[10px]">Company</TableHead>
-                      <TableHead className="text-[10px]">Position</TableHead>
+                      <TableHead className="text-xs">Email</TableHead>
+                      <TableHead className="text-xs">First</TableHead>
+                      <TableHead className="text-xs">Last</TableHead>
+                      <TableHead className="text-xs">Company</TableHead>
+                      <TableHead className="text-xs">Position</TableHead>
                       <TableHead className="w-8" />
                     </TableRow>
                   </TableHeader>
@@ -682,7 +682,7 @@ export function CustomEmailPanel() {
                             <Input
                               value={l.email}
                               onChange={(e) => updateLead(l.id, { email: e.target.value })}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                               placeholder="email@example.com"
                             />
                           </TableCell>
@@ -690,28 +690,28 @@ export function CustomEmailPanel() {
                             <Input
                               value={l.firstName}
                               onChange={(e) => updateLead(l.id, { firstName: e.target.value })}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                             />
                           </TableCell>
                           <TableCell className="py-1">
                             <Input
                               value={l.lastName}
                               onChange={(e) => updateLead(l.id, { lastName: e.target.value })}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                             />
                           </TableCell>
                           <TableCell className="py-1">
                             <Input
                               value={l.company}
                               onChange={(e) => updateLead(l.id, { company: e.target.value })}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                             />
                           </TableCell>
                           <TableCell className="py-1">
                             <Input
                               value={l.position}
                               onChange={(e) => updateLead(l.id, { position: e.target.value })}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                             />
                           </TableCell>
                           <TableCell className="py-1">
@@ -719,7 +719,7 @@ export function CustomEmailPanel() {
                               size="icon-xs"
                               variant="ghost"
                               onClick={() => removeLead(l.id)}
-                              className="size-6 text-rose-600"
+                              className="size-6 text-status-danger"
                             >
                               <Trash2 className="size-3" />
                             </Button>
@@ -731,7 +731,7 @@ export function CustomEmailPanel() {
                 </Table>
               </ScrollArea>
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {leads.length} recipient{leads.length === 1 ? "" : "s"}
                 </p>
                 <Button
@@ -763,9 +763,9 @@ export function CustomEmailPanel() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-[10px]">Email</TableHead>
-                      <TableHead className="text-[10px]">Name</TableHead>
-                      <TableHead className="text-[10px]">Status</TableHead>
+                      <TableHead className="text-xs">Email</TableHead>
+                      <TableHead className="text-xs">Name</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -780,15 +780,15 @@ export function CustomEmailPanel() {
                             selectedId === l.id ? "bg-primary/10" : "hover:bg-muted/40"
                           }`}
                         >
-                          <TableCell className="py-1 font-mono text-[11px]">{l.email}</TableCell>
-                          <TableCell className="py-1 text-[11px]">
+                          <TableCell className="py-1 font-code text-xs">{l.email}</TableCell>
+                          <TableCell className="py-1 text-xs">
                             {[l.firstName, l.lastName].filter(Boolean).join(" ") || "—"}
                           </TableCell>
                           <TableCell className="py-1">
                             {ready ? (
-                              <CheckCircle2 className="size-3.5 text-emerald-600" />
+                              <CheckCircle2 className="size-3.5 text-status-live" />
                             ) : (
-                              <span className="text-[10px] text-muted-foreground">draft</span>
+                              <span className="text-xs text-muted-foreground">draft</span>
                             )}
                           </TableCell>
                         </TableRow>
@@ -849,7 +849,7 @@ export function CustomEmailPanel() {
                       placeholder="quick question for you"
                     />
                     {autoSanitize && selectedSubjectSan.violationsFound.length > 0 && (
-                      <div className="text-[10px] text-amber-700">
+                      <div className="text-xs text-status-warn">
                         Replaced:{" "}
                         {selectedSubjectSan.violationsFound
                           .map((v) => `"${v.trigger}" → "${v.replacement}"`)
@@ -867,19 +867,19 @@ export function CustomEmailPanel() {
                             key={v}
                             type="button"
                             onClick={() => insertResolvedVariable(selectedLead, v)}
-                            className="rounded border border-foreground/10 bg-secondary px-1.5 py-0.5 text-[10px] hover:bg-secondary/70"
+                            className="rounded border border-foreground/10 bg-secondary px-1.5 py-0.5 text-xs hover:bg-secondary/70"
                             title={`Insert ${selectedLead[v.toLowerCase() as keyof Lead] || v}`}
                           >
                             {v}
                           </button>
                         ))}
-                        <span className="text-[10px] text-muted-foreground">|</span>
+                        <span className="text-xs text-muted-foreground">|</span>
                         {VARIABLE_KEYS.map((v) => (
                           <button
                             key={`tag-${v}`}
                             type="button"
                             onClick={() => insertMergeTag(v)}
-                            className="rounded border border-foreground/10 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] hover:bg-muted"
+                            className="rounded border border-foreground/10 bg-muted/40 px-1.5 py-0.5 font-code text-xs hover:bg-muted"
                             title={`Insert merge tag {{.${v}}}`}
                           >
                             {`{{.${v}}}`}
@@ -892,10 +892,10 @@ export function CustomEmailPanel() {
                       onChange={(e) => setMessage(selectedLead.id, { message: e.target.value })}
                       placeholder="{Hi|Hello|Hey} {{.FirstName}}, I noticed your recent work at {{.Company}}..."
                       rows={10}
-                      className="font-mono text-xs"
+                      className="font-code text-xs"
                     />
                     {autoSanitize && selectedBodySan.violationsFound.length > 0 && (
-                      <div className="text-[10px] text-amber-700">
+                      <div className="text-xs text-status-warn">
                         Auto-replaced:{" "}
                         {selectedBodySan.violationsFound
                           .slice(0, 6)
@@ -978,7 +978,7 @@ export function CustomEmailPanel() {
                     onChange={(e) => setMasterTemplate(e.target.value)}
                     rows={6}
                     placeholder="{Hi|Hello|Hey} {{.FirstName}}, I noticed your recent work at {{.Company}}..."
-                    className="font-mono text-xs"
+                    className="font-code text-xs"
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-3 border-t border-foreground/10 pt-3 text-xs">
@@ -1105,7 +1105,7 @@ export function CustomEmailPanel() {
                   onChange={(e) => setScheduleDate(e.target.value)}
                   className="text-xs"
                 />
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Leave empty to launch immediately.
                 </p>
               </div>
@@ -1178,10 +1178,10 @@ export function CustomEmailPanel() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-[10px]">Email</TableHead>
-                      <TableHead className="text-[10px]">Subject</TableHead>
-                      <TableHead className="text-[10px]">Body preview</TableHead>
-                      <TableHead className="text-[10px]">Safety</TableHead>
+                      <TableHead className="text-xs">Email</TableHead>
+                      <TableHead className="text-xs">Subject</TableHead>
+                      <TableHead className="text-xs">Body preview</TableHead>
+                      <TableHead className="text-xs">Safety</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1193,14 +1193,14 @@ export function CustomEmailPanel() {
                       const v = subjRes.violationsFound.length + bodyRes.violationsFound.length;
                       return (
                         <TableRow key={l.id}>
-                          <TableCell className="py-1 font-mono text-[11px]">{l.email}</TableCell>
-                          <TableCell className="py-1 text-[11px]">
-                            {m?.subject || <span className="text-rose-600">missing</span>}
+                          <TableCell className="py-1 font-code text-xs">{l.email}</TableCell>
+                          <TableCell className="py-1 text-xs">
+                            {m?.subject || <span className="text-status-danger">missing</span>}
                           </TableCell>
-                          <TableCell className="py-1 text-[11px]">
+                          <TableCell className="py-1 text-xs">
                             <span className="line-clamp-2 whitespace-pre-wrap">
                               {m?.message || (
-                                <span className="text-rose-600">missing</span>
+                                <span className="text-status-danger">missing</span>
                               )}
                             </span>
                           </TableCell>
@@ -1208,13 +1208,13 @@ export function CustomEmailPanel() {
                             {ready ? (
                               <SafetyBadge score={100} violations={[]} />
                             ) : (
-                              <Badge className="border border-rose-300 bg-rose-100 text-rose-800">
+                              <Badge className="border-transparent bg-status-danger-bg text-status-danger">
                                 <XCircle className="mr-1 size-3" />
                                 Incomplete
                               </Badge>
                             )}
                             {ready && v > 0 && (
-                              <div className="mt-1 text-[9px] text-amber-700">
+                              <div className="mt-1 text-xs text-status-warn">
                                 {v} will be auto-replaced
                               </div>
                             )}
@@ -1227,12 +1227,12 @@ export function CustomEmailPanel() {
               </ScrollArea>
               <div className="mt-3 flex flex-col gap-3 border-t border-foreground/10 pt-3">
                 {sendGate && !sendGate.enabled && (
-                  <div className="flex flex-col gap-1 rounded-lg border border-amber-300 bg-amber-50 p-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-amber-800">
+                  <div className="flex flex-col gap-1 rounded-lg border border-transparent bg-status-warn-bg p-4">
+                    <div className="flex items-center gap-2 text-xs font-medium text-status-warn">
                       <AlertTriangle className="size-4" />
                       Sending is disabled
                     </div>
-                    <p className="text-[11px] text-amber-900">
+                    <p className="text-xs text-status-warn">
                       Outbound email from this console is currently turned off. All real
                       sends must go through slidein-api, which supplies suppression and
                       compliance checks — and it is not reachable right now
@@ -1290,11 +1290,11 @@ export function CustomEmailPanel() {
               {results ? (
                 <>
                   <div className="mb-3 flex items-center gap-3 text-xs">
-                    <Badge className="border border-emerald-300 bg-emerald-100 text-emerald-800">
+                    <Badge className="border-transparent bg-status-live-bg text-status-live">
                       {results.succeeded} sent
                     </Badge>
                     {results.failed > 0 && (
-                      <Badge className="border border-rose-300 bg-rose-100 text-rose-800">
+                      <Badge className="border-transparent bg-status-danger-bg text-status-danger">
                         {results.failed} failed
                       </Badge>
                     )}
@@ -1306,34 +1306,34 @@ export function CustomEmailPanel() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-[10px]">Email</TableHead>
-                          <TableHead className="text-[10px]">Name</TableHead>
-                          <TableHead className="text-[10px]">Status</TableHead>
-                          <TableHead className="text-[10px]">Campaign</TableHead>
+                          <TableHead className="text-xs">Email</TableHead>
+                          <TableHead className="text-xs">Name</TableHead>
+                          <TableHead className="text-xs">Status</TableHead>
+                          <TableHead className="text-xs">Campaign</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {results.results.map((r, i) => (
                           <TableRow key={i}>
-                            <TableCell className="py-1 font-mono text-[11px]">{r.email}</TableCell>
-                            <TableCell className="py-1 text-[11px]">
+                            <TableCell className="py-1 font-code text-xs">{r.email}</TableCell>
+                            <TableCell className="py-1 text-xs">
                               {[r.firstName, r.lastName].filter(Boolean).join(" ") || "—"}
                             </TableCell>
                             <TableCell className="py-1">
                               {r.success ? (
-                                <Badge className="border border-emerald-300 bg-emerald-100 text-emerald-800">
+                                <Badge className="border-transparent bg-status-live-bg text-status-live">
                                   Sent
                                 </Badge>
                               ) : (
                                 <Badge
-                                  className="border border-rose-300 bg-rose-100 text-rose-800"
+                                  className="border-transparent bg-status-danger-bg text-status-danger"
                                   title={r.error}
                                 >
                                   Failed
                                 </Badge>
                               )}
                             </TableCell>
-                            <TableCell className="py-1 font-mono text-[10px] text-muted-foreground">
+                            <TableCell className="py-1 font-code text-xs text-muted-foreground">
                               {r.campaignId ?? r.error ?? "—"}
                             </TableCell>
                           </TableRow>
@@ -1357,7 +1357,7 @@ export function CustomEmailPanel() {
 
       {previewFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-foreground/10 bg-background p-5 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-xl border border-rule bg-surface p-8 shadow-float">
             <div className="flex items-center justify-between border-b border-foreground/10 pb-3">
               <h3 className="text-sm font-semibold">
                 Spintax preview ({previewFor.variations.length} variations)
@@ -1376,10 +1376,10 @@ export function CustomEmailPanel() {
                 ) : (
                   previewFor.variations.map((v, i) => (
                     <div key={i} className="rounded-lg border border-foreground/10 bg-muted/30 p-3">
-                      <div className="mb-1 text-[10px] font-medium uppercase text-muted-foreground">
+                      <div className="mb-1 font-label text-ink-muted">
                         Variation {i + 1}
                       </div>
-                      <pre className="whitespace-pre-wrap font-mono text-[11px]">{v}</pre>
+                      <pre className="whitespace-pre-wrap font-code text-xs">{v}</pre>
                     </div>
                   ))
                 )}

@@ -406,7 +406,7 @@ function VaultCard({
       )}
       <CardContent className="flex flex-1 flex-col gap-3">
         <div className="rounded-lg bg-muted/50 p-3">
-          <code className="whitespace-pre-wrap break-all font-mono text-xs leading-relaxed">
+          <code className="whitespace-pre-wrap break-all font-code text-xs leading-relaxed">
             {revealed && secretValue ? secretValue : "••••••••••••"}
           </code>
         </div>

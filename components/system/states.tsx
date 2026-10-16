@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { GlossTile, type GlossTileIcon } from "@/components/system/gloss-tile";
 
 /**
  * EmptyState: the disciplined empty surface. An icon (or a label eyebrow),
@@ -12,26 +13,29 @@ export function EmptyState({
   title,
   description,
   action,
+  icon = "inbox",
   className,
 }: {
   eyebrow?: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: { label: React.ReactNode; onClick: () => void };
+  icon?: GlossTileIcon;
   className?: string;
 }) {
   return (
     <div
       data-slot="empty-state"
-      className={cn("flex flex-col items-center justify-center gap-2 py-12 text-center", className)}
+      className={cn("flex flex-col items-center justify-center gap-2 px-4 py-12 text-center", className)}
     >
-      {eyebrow && <span className="font-label text-ink-faint">{eyebrow}</span>}
-      <p className="font-display-soft text-ink-strong">{title}</p>
+      <GlossTile icon={icon} size={88} className="mb-4" />
+      {eyebrow && <span className="font-label text-ink-muted">{eyebrow}</span>}
+      <p className="font-sans text-base leading-6 font-semibold text-ink-strong">{title}</p>
       {description && (
-        <p className="max-w-sm font-body text-sm text-ink-muted">{description}</p>
+        <p className="max-w-[360px] font-sans text-sm leading-[22px] text-ink-muted">{description}</p>
       )}
       {action && (
-        <Button size="sm" variant="outline" onClick={action.onClick} className="mt-2">
+        <Button size="sm" variant="outline" onClick={action.onClick} className="mt-3">
           {action.label}
         </Button>
       )}
@@ -54,15 +58,15 @@ export function LoadingState({
   return (
     <div
       data-slot="loading-state"
-      className={cn("flex flex-col divide-y divide-rule", className)}
+      className={cn("flex flex-col gap-3", className)}
       role="status"
       aria-live="polite"
     >
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 py-3">
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-4 w-16 shrink-0" />
-          <Skeleton className="ml-auto h-4 w-20 shrink-0" />
+        <div key={i} className="flex items-center gap-3">
+          <Skeleton className="h-3.5 w-2/3" />
+          <Skeleton className="h-3.5 w-16 shrink-0" />
+          <Skeleton className="ml-auto h-3.5 w-20 shrink-0" />
         </div>
       ))}
     </div>
@@ -90,7 +94,7 @@ export function ErrorState({
     <div
       data-slot="error-state"
       className={cn(
-        "flex flex-col gap-2 rounded-md border border-[color-mix(in_oklch,var(--status-danger)_30%,transparent)] bg-[color-mix(in_oklch,var(--status-danger)_6%,transparent)] px-4 py-3",
+        "flex flex-col gap-2 rounded-lg border border-rule bg-surface px-6 py-4 shadow-raised",
         className
       )}
       role="alert"

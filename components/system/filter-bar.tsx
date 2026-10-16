@@ -1,5 +1,8 @@
 "use client";
 
+import * as React from "react";
+import { motion, useReducedMotion } from "framer-motion";
+
 import { cn } from "@/lib/utils";
 
 /**
@@ -56,7 +59,7 @@ FilterBar.Search = function FilterBarSearch({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className={cn(
-        "h-8 w-full max-w-64 rounded-sm border border-rule-strong bg-[var(--surface)] px-3 font-body text-sm text-ink-default outline-none transition-colors placeholder:text-ink-faint focus:border-[var(--text-accent)]",
+        "h-11 w-full max-w-64 rounded-md border border-rule-strong bg-surface px-3.5 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] placeholder:text-ink-faint hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]",
         className
       )}
     />
@@ -82,7 +85,7 @@ FilterBar.Select = function FilterBarSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
-        "h-8 rounded-sm border border-rule-strong bg-[var(--surface)] pl-2 pr-6 font-body text-sm text-ink-default outline-none transition-colors focus:border-[var(--text-accent)]",
+        "h-11 rounded-md border border-rule-strong bg-surface pr-8 pl-3.5 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]",
         className
       )}
     >
@@ -112,7 +115,7 @@ FilterBar.Chips = function FilterBarChips({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={cn("flex flex-wrap gap-1 rounded-sm border border-rule p-0.5", className)}
+      className={cn("flex flex-wrap items-center gap-1 rounded-pill bg-status-neutral-bg p-1", className)}
     >
       {options.map((o) => {
         const active = value === o.value;
@@ -124,10 +127,10 @@ FilterBar.Chips = function FilterBarChips({
             aria-checked={active}
             onClick={() => onChange(active ? null : o.value)}
             className={cn(
-              "rounded-xs px-2 py-1 font-label normal-case transition-colors",
+              "flex h-8 items-center rounded-pill px-3.5 text-[13px] font-medium transition-all duration-[220ms",
               active
-                ? "bg-[var(--surface-2)] text-ink-strong"
-                : "text-ink-faint hover:text-ink-strong"
+                ? "bg-surface text-ink-strong shadow-raised"
+                : "text-ink-muted hover:text-ink-strong"
             )}
           >
             {o.label}
@@ -152,7 +155,7 @@ FilterBar.Clear = function FilterBarClear({
       type="button"
       onClick={onClick}
       className={cn(
-        "font-label normal-case text-ink-faint transition-colors hover:text-ink-strong",
+        "font-label text-ink-muted transition-colors hover:text-ink-strong",
         className
       )}
     >
@@ -181,10 +184,10 @@ FilterBar.Button = function FilterBarButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "h-8 px-3 font-body text-sm transition-colors",
+        "flex h-8 items-center rounded-pill px-4 text-[13px] font-medium transition-colors",
         active
-          ? "bg-[var(--accent-wash)] text-[var(--text-accent)]"
-          : "text-ink-muted hover:text-ink-strong",
+          ? "bg-flame-wash text-ink-strong"
+          : "text-ink-muted hover:bg-hover-tint hover:text-ink-strong",
         className
       )}
     >

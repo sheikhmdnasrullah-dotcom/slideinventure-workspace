@@ -95,7 +95,7 @@ function CenteredEditor({
     >
       <DialogContent
         showCloseButton={false}
-        className="!flex h-[88vh] w-[92vw] max-w-[1000px] flex-col !gap-0 overflow-hidden !rounded-lg !border !border-rule !bg-[var(--surface)] !p-0 shadow-2xl"
+        className="!flex h-[88vh] w-[92vw] max-w-[1000px] flex-col !gap-0 overflow-hidden !rounded-dialog !border !border-rule !bg-[var(--surface)] !p-0 shadow-float"
       >
         {children}
       </DialogContent>
@@ -503,7 +503,7 @@ export function NotepadView({
                         {n.title || "Untitled"}
                       </button>
                     )}
-                    <span className="shrink-0 text-[11px] text-muted-foreground/80">
+                    <span className="shrink-0 text-xs text-muted-foreground/80">
                       {n.updated_at
                         ? formatDistanceToNow(new Date(n.updated_at), { addSuffix: true })
                         : ""}
@@ -561,7 +561,7 @@ export function NotepadView({
                       persist(selectedId, content, e.target.value)
                     }}
                     placeholder="Untitled"
-                    className="w-full bg-transparent text-2xl lg:text-3xl font-bold outline-none placeholder:text-muted-foreground/40 text-foreground"
+                    className="font-display w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-ink-faint lg:text-[28px] lg:leading-[34px] text-ink-strong"
                   />
                   <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                     {status === "saving" && <Loader2 className="size-3 animate-spin" />}
@@ -588,7 +588,7 @@ export function NotepadView({
                       <span>Export &amp; Download</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-68">
-                      <div className="px-2.5 py-1.5 text-[11px] text-muted-foreground font-normal">
+                      <div className="px-2.5 py-1.5 text-xs text-muted-foreground font-normal">
                         Downloads file locally and saves to <span className="font-semibold text-foreground">AI Venture / Files</span> simultaneously:
                       </div>
                       <DropdownMenuSeparator />
@@ -597,12 +597,12 @@ export function NotepadView({
                         onClick={() => handleExport("txt")}
                         className="cursor-pointer gap-2.5 py-2 text-xs"
                       >
-                        <div className="flex size-7 items-center justify-center rounded-md bg-blue-500/10 text-blue-500 shrink-0">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-[10px] bg-surface-2 text-ink-strong shrink-0">
                           <FileText className="size-4" />
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
                           <span className="font-medium text-foreground">Plain Text (.txt)</span>
-                          <span className="text-[10px] text-muted-foreground">Clean formatted text file</span>
+                          <span className="text-xs text-muted-foreground">Clean formatted text file</span>
                         </div>
                       </DropdownMenuItem>
 
@@ -610,12 +610,12 @@ export function NotepadView({
                         onClick={() => handleExport("md")}
                         className="cursor-pointer gap-2.5 py-2 text-xs"
                       >
-                        <div className="flex size-7 items-center justify-center rounded-md bg-cyan-500/10 text-cyan-500 shrink-0">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-[10px] bg-surface-2 text-ink-strong shrink-0">
                           <FileCode2 className="size-4" />
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
                           <span className="font-medium text-foreground">Markdown (.md)</span>
-                          <span className="text-[10px] text-muted-foreground">With headings, lists &amp; links</span>
+                          <span className="text-xs text-muted-foreground">With headings, lists &amp; links</span>
                         </div>
                       </DropdownMenuItem>
 
@@ -623,12 +623,12 @@ export function NotepadView({
                         onClick={() => handleExport("pdf")}
                         className="cursor-pointer gap-2.5 py-2 text-xs"
                       >
-                        <div className="flex size-7 items-center justify-center rounded-md bg-rose-500/10 text-rose-500 shrink-0">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-[10px] bg-surface-2 text-ink-strong shrink-0">
                           <File className="size-4" />
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
                           <span className="font-medium text-foreground">PDF Document (.pdf)</span>
-                          <span className="text-[10px] text-muted-foreground">Print-ready paginated PDF</span>
+                          <span className="text-xs text-muted-foreground">Print-ready paginated PDF</span>
                         </div>
                       </DropdownMenuItem>
 
@@ -638,12 +638,12 @@ export function NotepadView({
                         onClick={() => handleExport("all")}
                         className="cursor-pointer gap-2.5 py-2 text-xs font-medium"
                       >
-                        <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 shrink-0">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-[10px] bg-surface-2 text-ink-strong shrink-0">
                           <Download className="size-4" />
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
                           <span className="text-foreground font-semibold">Export All Formats</span>
-                          <span className="text-[10px] text-muted-foreground">Download &amp; save .txt, .md, .pdf</span>
+                          <span className="text-xs text-muted-foreground">Download &amp; save .txt, .md, .pdf</span>
                         </div>
                       </DropdownMenuItem>
                     </DropdownMenuContent>

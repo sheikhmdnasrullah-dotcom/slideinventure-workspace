@@ -31,10 +31,10 @@ const NODE_META: Record<
 };
 
 const STATUS_RING: Record<StageStatus, string> = {
-  idle: "border-border",
-  running: "border-amber-400 shadow-[0_0_18px_rgba(251,191,36,0.5)]",
-  done: "border-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.45)]",
-  error: "border-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.45)]",
+  idle: "border-rule",
+  running: "border-status-warn",
+  done: "border-status-live",
+  error: "border-status-danger",
 };
 
 function StageNode({ data }: NodeProps) {
@@ -46,7 +46,7 @@ function StageNode({ data }: NodeProps) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className={`w-44 rounded-xl border bg-card/80 p-3 backdrop-blur ${
+      className={`w-44 rounded-lg border border-rule bg-surface p-3 shadow-raised ${
         STATUS_RING[status]
       }`}
     >
@@ -55,8 +55,8 @@ function StageNode({ data }: NodeProps) {
         <meta.icon className="size-4 text-ink-strong" />
         <span className="text-xs font-semibold">{meta.label}</span>
       </div>
-      <p className="mt-1 text-[10px] text-muted-foreground">{meta.sub}</p>
-      <span className="mt-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+      <p className="mt-1 text-xs text-muted-foreground">{meta.sub}</p>
+      <span className="mt-2 inline-block rounded-full bg-muted px-2 py-0.5 font-label text-ink-muted">
         {status}
       </span>
       <Handle type="source" position={Position.Right} className="!bg-primary" />
@@ -93,7 +93,7 @@ export function AgentFlowCanvas({
   }, [statuses]);
 
   return (
-    <div className="h-[560px] w-full rounded-xl border bg-background/40">
+    <div className="h-[560px] w-full overflow-hidden rounded-lg border border-rule bg-surface shadow-raised">
       <ReactFlow
         nodes={nodes}
         edges={edges}

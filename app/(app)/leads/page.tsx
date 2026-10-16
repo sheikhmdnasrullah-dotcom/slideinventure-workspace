@@ -9,7 +9,7 @@ export default async function LeadsPage() {
   return (
     <>
       <SiteHeader crumbs={[{ label: "Opportunities" }]} subtitle="Universal Acquisition Pipeline & 360° Dossiers" />
-      <div className="flex flex-1 flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-6 px-5 py-5 md:px-10 md:py-10">
         <PageHeader
           eyebrow="Universal Acquisition Engine"
           title="Opportunities & Pursuits"

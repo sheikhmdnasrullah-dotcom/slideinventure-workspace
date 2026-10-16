@@ -21,15 +21,12 @@ export function BentoCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card/60 p-5",
-        "transition-all duration-300 hover:-translate-y-0.5",
+        "group relative overflow-hidden rounded-lg border border-rule bg-surface p-6 shadow-raised",
+        "transition-[border-color] duration-[150ms] hover:border-rule-strong",
         className
       )}
       {...props}
     >
-      {glow && (
-        <div className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 [background:radial-gradient(400px_circle_at_var(--x,50%)_var(--y,50%),color-mix(in_oklab,var(--primary)_20%,transparent),transparent)]" />
-      )}
       {props.children}
     </div>
   );

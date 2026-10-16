@@ -166,7 +166,7 @@ export function LiveActivity() {
           <AnimatePresence initial={false}>
             {groups.map((group) => (
               <div key={group.header}>
-                <div className="sticky top-0 z-10 border-b border-rule bg-[var(--surface-2)]/90 px-4 py-1.5 font-label text-xs text-ink-faint backdrop-blur-sm">
+                <div className="sticky top-0 z-10 border-b border-rule bg-surface-2 px-4 py-1.5 font-label text-xs text-ink-muted">
                   {group.header}
                 </div>
                 <div className="flex flex-col divide-y divide-rule">
@@ -185,7 +185,7 @@ export function LiveActivity() {
                         transition={{ duration: Duration.fast, ease: Ease.expo }}
                         className="flex items-baseline gap-3 px-4 py-2 transition-colors hover:bg-[var(--surface-2)]"
                       >
-                        <span className="shrink-0 font-mono text-xs tabular-nums text-ink-faint">
+                        <span className="shrink-0 text-xs tabular-nums text-ink-muted">
                           {time}
                         </span>
                         <span className="min-w-0 flex-1">

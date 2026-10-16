@@ -4,14 +4,14 @@ import { useMemo, useState, type ReactNode } from "react";
 import {
   Table,
   TableHeader,
-  TableBody,
   TableHead,
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import { StaggerTbody } from "@/components/system/stagger";
 import { cn } from "@/lib/utils";
 import { ArrowUpDown } from "lucide-react";
-import { EmptyState } from "@/components/system/states";
+import { EmptyState, LoadingState } from "@/components/system/states";
 
 /**
  * DataTable: the generic typed table. Generalizes ActivityTable's sortable
@@ -96,21 +96,7 @@ export function DataTable<T extends Record<string, unknown>>({
   }
 
   if (loading) {
-    return (
-      <div className={cn("divide-y divide-rule", className)}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 py-2.5">
-            {columns.map((c, j) => (
-              <div
-                key={j}
-                className="h-4 flex-1 animate-pulse rounded bg-[var(--surface-2)]"
-                style={{ maxWidth: 200 }}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    );
+    return <LoadingState rows={6} className={className} />;
   }
 
   if (visible.length === 0) {
@@ -136,7 +122,6 @@ export function DataTable<T extends Record<string, unknown>>({
               <TableHead
                 key={key}
                 className={cn(
-                  "h-8 px-2 align-middle",
                   col.align === "right" && "text-right",
                   col.headerClassName
                 )}
@@ -146,18 +131,18 @@ export function DataTable<T extends Record<string, unknown>>({
                     type="button"
                     onClick={() => toggleSort(col)}
                     className={cn(
-                      "inline-flex items-center gap-1 font-label normal-case text-ink-faint transition-colors hover:text-ink-strong",
+                      "inline-flex items-center gap-1.5 font-label text-ink-muted transition-colors hover:text-ink-strong",
                       col.align === "right" && "flex-row-reverse",
                       active && "text-ink-strong"
                     )}
                   >
                     {col.header}
                     <ArrowUpDown
-                      className={cn("size-3", active && sortDir === "asc" && "rotate-180", "transition-transform")}
+                      className={cn("size-3.5", active && sortDir === "asc" && "rotate-180", "transition-transform")}
                     />
                   </button>
                 ) : (
-                  <span className="font-label normal-case text-ink-faint">
+                  <span className="font-label text-ink-muted">
                     {col.header}
                   </span>
                 )}
@@ -166,7 +151,7 @@ export function DataTable<T extends Record<string, unknown>>({
           })}
         </TableRow>
       </TableHeader>
-      <TableBody>
+      <StaggerTbody>
         {visible.map((row) => (
           <TableRow
             key={String(row[rowKey as keyof T])}
@@ -179,9 +164,9 @@ export function DataTable<T extends Record<string, unknown>>({
               return (
                 <TableCell
                   key={key}
+                  data-label={typeof col.header === "string" ? col.header : undefined}
                   className={cn(
-                    "px-2 py-2.5 align-middle",
-                    col.align === "right" && "text-right",
+                    col.align === "right" && "text-right font-value tabular-nums",
                     col.className
                   )}
                 >
@@ -191,7 +176,7 @@ export function DataTable<T extends Record<string, unknown>>({
             })}
           </TableRow>
         ))}
-      </TableBody>
+      </StaggerTbody>
     </Table>
   );
 }

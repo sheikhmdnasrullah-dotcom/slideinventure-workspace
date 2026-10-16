@@ -20,7 +20,7 @@ function Bar({ label, m }: { label: string; m: Metric }) {
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between text-sm">
         <span className="text-foreground/70">{label}</span>
-        <span className="font-mono tabular-nums">{pct}%</span>
+        <span className="font-code tabular-nums">{pct}%</span>
       </div>
       <div className="h-2 w-full rounded-full bg-[var(--surface-2)] overflow-hidden">
         <div className="h-full bg-[var(--text-accent)]" style={{ width: `${pct}%` }} />
@@ -94,7 +94,7 @@ export function EvalConsole() {
               <Bar label="Answer relevancy" m={result.answerRelevancy} />
               <Bar label="Context relevancy" m={result.contextRelevancy} />
               <div>
-                <p className="text-xs font-medium uppercase text-foreground/50">Generated answer</p>
+                <p className="font-label text-ink-muted">Generated answer</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm">{result.answer}</p>
               </div>
             </>

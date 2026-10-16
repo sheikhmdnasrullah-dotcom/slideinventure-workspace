@@ -67,10 +67,10 @@ export interface TodoistLabel {
 }
 
 const PRIORITY_COLORS = {
-  1: "bg-gray-100 text-gray-700 border-gray-200",
-  2: "bg-blue-50 text-blue-700 border-blue-200",
-  3: "bg-orange-50 text-orange-700 border-orange-200",
-  4: "bg-red-50 text-red-700 border-red-200",
+  1: "border-transparent bg-status-neutral-bg text-status-neutral",
+  2: "border-transparent bg-status-info-bg text-status-info",
+  3: "border-transparent bg-status-warn-bg text-status-warn",
+  4: "border-transparent bg-status-danger-bg text-status-danger",
 }
 
 const PRIORITY_LABELS = {
@@ -335,7 +335,7 @@ export function TodoistContent() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">Todoist</h1>
+        <h1 className="font-label text-ink-muted">Todoist</h1>
         <p className="text-xs text-foreground/40">
           {tasks.length} tasks · {completedCount} completed · {overdueCount} overdue
         </p>
@@ -460,11 +460,11 @@ export function TodoistContent() {
                       <span className={cn("text-sm font-medium", task.completed && "line-through")}>
                         {task.content}
                       </span>
-                      <Badge variant="outline" className={cn("text-[10px] uppercase", PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS[1])}>
+                      <Badge variant="outline" className={cn("text-xs", PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS] || PRIORITY_COLORS[1])}>
                         {PRIORITY_LABELS[task.priority as keyof typeof PRIORITY_LABELS] || "Normal"}
                       </Badge>
                       {task.due_date && (
-                        <Badge variant={new Date(task.due_date) < new Date() && !task.completed ? "destructive" : "secondary"} className="text-[10px]">
+                        <Badge variant={new Date(task.due_date) < new Date() && !task.completed ? "destructive" : "secondary"} className="text-xs">
                           {format(new Date(task.due_date), "MMM d, h:mm a")}
                         </Badge>
                       )}
@@ -474,13 +474,13 @@ export function TodoistContent() {
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {activeProject && (
-                        <Badge variant="outline" className="text-[10px]">{activeProject.name}</Badge>
+                        <Badge variant="outline" className="text-xs">{activeProject.name}</Badge>
                       )}
                       {(task.labels ?? (task.metadata?.labels as string[] | undefined))?.map((label) => (
-                        <Badge key={label} variant="secondary" className="text-[10px]">{label}</Badge>
+                        <Badge key={label} variant="secondary" className="text-xs">{label}</Badge>
                       ))}
                       {task.assignee && (
-                        <span className="text-[10px] text-muted-foreground">Assignee: {task.assignee}</span>
+                        <span className="text-xs text-muted-foreground">Assignee: {task.assignee}</span>
                       )}
                     </div>
                   </div>

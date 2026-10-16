@@ -122,7 +122,7 @@ export function AppsClient() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search apps..." 
-            className="pl-9 bg-background" 
+            className="bg-surface pl-9" 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -135,7 +135,7 @@ export function AppsClient() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1,2,3,4].map(i => (
-            <Card key={i} className="animate-pulse bg-muted/20 h-32" />
+            <Card key={i} className="skeleton-shimmer h-32 border-transparent bg-skeleton shadow-none" />
           ))}
         </div>
       ) : filteredApps.length === 0 ? (
@@ -152,13 +152,13 @@ export function AppsClient() {
             
             return (
               <div key={category} className="space-y-4">
-                <h3 className="text-sm font-medium text-foreground/60 uppercase tracking-wider">{category}</h3>
+                <h3 className="font-label text-ink-muted">{category}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {categoryApps.map(app => (
-                    <Card key={app.id} className="group relative overflow-hidden transition-all hover:shadow-md border-border/50 bg-background/50 backdrop-blur-sm flex flex-col h-full">
+                    <Card key={app.id} className="group relative flex h-full flex-col overflow-hidden transition-shadow duration-[150ms] hover:shadow-float">
                       <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary overflow-hidden">
+                          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[10px] bg-flame-wash text-flame">
                             {app.icon === "lucide:Mail" ? (
                               <Mail className="h-6 w-6" />
                             ) : app.icon ? (

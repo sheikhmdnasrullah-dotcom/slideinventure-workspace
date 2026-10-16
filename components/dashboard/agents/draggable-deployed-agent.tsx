@@ -510,8 +510,8 @@ export function DraggableDeployedAgent() {
 
           {/* Main Circle Icon Widget */}
           <div
-            className={`flex size-14 items-center justify-center rounded-full text-2xl shadow-xl backdrop-blur-xl border-2 transition-all ${
-              isHoveringDropzone ? "ring-4 ring-emerald-500/80 scale-115" : ""
+            className={`flex size-14 items-center justify-center rounded-full border-2 text-2xl shadow-float transition-transform ${
+              isHoveringDropzone ? "ring-4 ring-status-live" : ""
             }`}
             style={{
               backgroundColor: "rgba(18, 18, 24, 0.90)",
@@ -537,7 +537,7 @@ export function DraggableDeployedAgent() {
           </div>
 
           {/* Floating Tooltip Label */}
-          <div className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-background/95 px-2.5 py-0.5 text-[10px] font-medium text-foreground opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100 border border-border">
+          <div className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 rounded-pill border border-rule bg-surface px-2.5 py-0.5 text-xs font-medium whitespace-nowrap text-ink-strong opacity-0 shadow-float transition-opacity group-hover:opacity-100">
             {holdProgress > 0
               ? "Hold to dock to navbar…"
               : isHoveringDropzone && hoverTargetTitle
@@ -556,7 +556,7 @@ export function DraggableDeployedAgent() {
       style={{
         transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
       }}
-      className="fixed top-0 left-0 z-50 w-[385px] max-h-[580px] flex flex-col rounded-2xl border border-border/80 bg-background/95 shadow-2xl backdrop-blur-2xl overflow-hidden transition-shadow select-text"
+      className="fixed top-0 left-0 z-50 flex max-h-[580px] w-[385px] flex-col overflow-hidden rounded-popover border border-rule bg-surface shadow-float transition-shadow select-text"
     >
       {/* Draggable Card Header */}
       <div
@@ -577,7 +577,7 @@ export function DraggableDeployedAgent() {
             <span className="font-semibold text-xs text-foreground truncate">
               {agent.name}
             </span>
-            <span className="text-[10px] text-muted-foreground truncate">
+            <span className="text-xs text-muted-foreground truncate">
               {targetMeta.label}
             </span>
           </div>
@@ -642,19 +642,19 @@ export function DraggableDeployedAgent() {
       </div>
 
       {/* Target Context Banner */}
-      <div className="flex items-center justify-between px-4 py-1.5 bg-primary/10 border-b border-primary/20 text-[11px] text-primary">
+      <div className="flex items-center justify-between px-4 py-1.5 bg-primary/10 border-b border-primary/20 text-xs text-primary">
         <span className="truncate flex items-center gap-1.5 min-w-0">
           <TargetIcon className="size-3.5 shrink-0" />
           <span className="font-medium truncate">{targetMeta.label}</span>
         </span>
-        <span className="shrink-0 text-[9px] bg-primary/20 px-1.5 py-0.5 rounded font-medium ml-2">
+        <span className="ml-2 shrink-0 rounded-full bg-flame-wash px-2 py-0.5 text-xs font-medium text-flame">
           {target === "screen" ? "Floating" : "Attached"}
         </span>
       </div>
 
       {/* Quick Action Chips */}
       <div
-        className="flex items-center gap-1.5 px-4 py-2 border-b border-border/40 overflow-x-auto bg-muted/10 text-[11px]"
+        className="flex items-center gap-1.5 px-4 py-2 border-b border-border/40 overflow-x-auto bg-muted/10 text-xs"
         data-lenis-prevent
       >
         {actionChips.map((chip, idx) => (
@@ -693,14 +693,14 @@ export function DraggableDeployedAgent() {
 
             {/* Action buttons for assistant responses */}
             {msg.role === "assistant" && idx > 0 && (
-              <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                 {/* Copy */}
                 <button
                   type="button"
                   onClick={() => handleCopy(msg.content, idx)}
                   className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
                 >
-                  {copiedIdx === idx ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+                  {copiedIdx === idx ? <Check className="size-3.5 text-status-live" /> : <Copy className="size-3.5" />}
                   <span>{copiedIdx === idx ? "Copied" : "Copy"}</span>
                 </button>
 

@@ -23,31 +23,48 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-fraunces), var(--font-geist-sans), Georgia, serif;
+  --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+  --font-display: var(--font-sans);
   --font-heading: var(--font-sans);
 
   /* ── semantic surface + text contract (new components consume these) ── */
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-page: var(--page-fill);
+  --color-sidebar-fill: var(--sidebar-fill);
+  --color-table-header: var(--table-header-fill);
+  --color-hover-tint: var(--hover-tint);
+  --color-backdrop-soft: var(--backdrop-soft);
+  --color-skeleton: var(--skeleton);
   --color-on-surface: var(--on-surface);
   --color-ink-strong: var(--text-strong);
   --color-ink-muted: var(--text-muted);
   --color-ink-faint: var(--text-faint);
   --color-rule: var(--rule);
+  --color-rule-soft: var(--rule-soft);
   --color-rule-strong: var(--rule-strong);
   --color-flame: var(--text-accent);        /* orange that clears AA as text here */
   --color-flame-vivid: var(--accent-vivid); /* orange for fills/strokes */
   --color-flame-wash: var(--accent-wash);
+  --color-flame-highlight: var(--accent-highlight);
   --color-flame-ring: var(--accent-ring);
   --color-on-flame: var(--on-accent);
+  --color-button-primary: var(--button-primary);
+  --color-on-button-primary: var(--on-button-primary);
   --color-surface-glass: var(--surface-glass);
   --color-status-live: var(--status-live);
+  --color-status-live-bg: var(--status-live-bg);
   --color-status-info: var(--status-info);
+  --color-status-info-bg: var(--status-info-bg);
   --color-status-warn: var(--status-warn);
+  --color-status-warn-bg: var(--status-warn-bg);
   --color-status-danger: var(--status-danger);
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-bg: var(--status-neutral-bg);
   --color-scrim: var(--scrim);
 
   /* ── sidebar ───────────────────────────────────────────────────────── */
@@ -92,25 +109,30 @@
      Aliasing them here as `var(--color-brand)` self-references and resolves
      to nothing. Do not re-declare them here. ──────────────────────── */
 
-  /* ── radii (deliberate scale in tokens.css; collapse legacy names onto
-     it. `md`/`sm` are primitives there, don't re-alias them here) ──── */
-  --radius-lg: var(--radius-md);
-  --radius-xl: var(--radius-lg);
-  --radius-2xl: var(--radius-lg);
-  --radius-3xl: var(--radius-lg);
-  --radius-4xl: var(--radius-lg);
+  /* ── radii (deliberate scale in tokens.css: xs 4 / sm 10 / md 14 /
+     lg 20 / xl 28 / pill. Nothing re-aliased here.) ─────────────────── */
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
   html {
     @apply font-sans scroll-smooth;
   }
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Icons: one set, 1.5px stroke, round caps. Sizes stay on the call site. ─ */
+svg.lucide {
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ── Motion polish ───────────────────────────────────────────────────────────
@@ -119,64 +141,68 @@
    drawers and switches. Goal: one shared timing language, restrained density. */
 
 @layer components {
-  /* Clickable cards: subtle lift on hover, settle on press. GPU-friendly
-     transform only. Never animate layout properties. */
-  .motion-card {
-    transition:
-      transform var(--dur-fast) var(--ease-std),
-      box-shadow var(--dur-fast) var(--ease-std),
-      border-color var(--dur-fast) var(--ease-std);
-    will-change: transform;
-  }
-  .motion-card:hover {
-    transform: translateY(-2px);
-  }
-  .motion-card:active {
-    transform: translateY(0);
-  }
-
-  /* Sidebar nav items: the active background already toggles via data-active,
-     but it snapped in. Smooth the colour change and add a soft raised "glow"
-     on hover so the row reads as alive, not flat. The active-page rail itself
-     is now a real Framer Motion element (layoutId="sidebarActiveRail" in
-     app-sidebar.tsx) that slides between rows on navigation, so it is NOT
-     drawn here as a static ::before anymore — only the base transitions live
-     in CSS. */
+  /* Sidebar nav items: the selected wash is a real Framer Motion element
+     (layoutId="sidebarActiveWash" in app-sidebar.tsx) that slides between
+     rows on navigation; only the base transitions live in CSS. There is no
+     left rail anywhere: selection is the accent wash plus the 6px dot. */
   [data-slot="sidebar-menu-button"] {
     position: relative;
     transition:
-      background-color var(--dur-fast) var(--ease-std),
-      color var(--dur-fast) var(--ease-std),
-      box-shadow var(--dur-fast) var(--ease-std);
+      background-color var(--dur-base) var(--ease-std),
+      color var(--dur-base) var(--ease-std);
   }
-  [data-slot="sidebar-menu-button"]:hover {
-    box-shadow: var(--shadow-contact);
-  }
-  [data-slot="sidebar-menu-sub-button"][data-active] {
-    position: relative;
-  }
-  [data-slot="sidebar-menu-sub-button"][data-active]::before {
-    content: "";
-    position: absolute;
-    left: -4px;
-    top: 50%;
-    height: 14px;
-    width: 2px;
-    transform: translateY(-50%);
-    border-radius: 9999px;
-    background: var(--sidebar-primary, var(--primary));
-    animation: sidebar-active-in var(--dur-fast) var(--ease-std);
-  }
+}
 
-  @keyframes sidebar-active-in {
-    from {
-      opacity: 0;
-      transform: translateY(-50%) scaleY(0.35);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(-50%) scaleY(1);
-    }
+/* ── Tables below 768px: rows become stacked blocks inside the card. The
+   thead stays in the accessibility tree (clipped, not display:none) and each
+   cell shows its column label from data-label. No horizontal page scroll. ── */
+@media (max-width: 767px) {
+  [data-slot="table"] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  [data-slot="table"] tbody {
+    display: flex;
+    flex-direction: column;
+  }
+  [data-slot="table"] tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  [data-slot="table"] tbody tr:last-child {
+    border-bottom: 0;
+  }
+  [data-slot="table"] tbody td {
+    flex: 1 1 100%;
+    padding: 0;
+    border: 0;
+  }
+  [data-slot="table"] tbody td:nth-last-child(2),
+  [data-slot="table"] tbody td:last-child {
+    flex: 1 1 auto;
+    width: auto;
+  }
+  [data-slot="table"] tbody td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  [data-slot="table"] tbody td:first-child::before {
+    display: none;
   }
 }
 

@@ -42,12 +42,12 @@ export function AgentActivityIndicator() {
       transition={{ duration: Duration.fast, ease: Ease.expo }}
       aria-hidden={!show}
       className={cn(
-        "pointer-events-none fixed right-4 bottom-18 z-40 flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-md",
+        "pointer-events-none fixed right-4 bottom-18 z-40 flex items-center gap-2 rounded-pill border border-rule bg-card px-4 py-2 text-xs shadow-float",
         !show && "opacity-0"
       )}
     >
       {running && (
-        <span className="size-2 shrink-0 animate-pulse rounded-full bg-primary" />
+        <span className="size-2 shrink-0 animate-pulse rounded-full bg-status-live" />
       )}
       <span className="font-medium text-foreground">{agentName}</span>
       <span className="text-muted-foreground">{statusText}</span>

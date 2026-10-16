@@ -229,14 +229,14 @@ function BoardList() {
           ))}
         </div>
       ) : error ? (
-        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-3 py-6">
+        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-rule-strong bg-surface px-3 py-6">
           <p className="text-sm text-muted-foreground">Could not load boards.</p>
           <Button size="sm" variant="outline" onClick={() => void load()}>
             <Loader2 className="size-3" /> Retry
           </Button>
         </div>
       ) : boards.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-3 py-6">
+        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-rule-strong bg-surface px-3 py-6">
           <p className="text-sm text-muted-foreground">No boards yet.</p>
           <Button size="sm" onClick={newBoard}>
             <Plus className="size-3" /> New
@@ -439,14 +439,14 @@ function WorkspaceList() {
           ))}
         </div>
       ) : error ? (
-        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-3 py-6">
+        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-rule-strong bg-surface px-3 py-6">
           <p className="text-sm text-muted-foreground">Could not load workspaces.</p>
           <Button size="sm" variant="outline" onClick={() => void load()}>
             <Loader2 className="size-3" /> Retry
           </Button>
         </div>
       ) : workspaces.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-3 py-6">
+        <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-rule-strong bg-surface px-3 py-6">
           <p className="text-sm text-muted-foreground">No workspaces yet.</p>
           <Button size="sm" onClick={newWorkspace}>
             <Plus className="size-3" /> New

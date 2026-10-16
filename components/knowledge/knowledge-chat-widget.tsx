@@ -77,7 +77,7 @@ export function KnowledgeChatWidget() {
   return (
     <>
       {open && (
-        <div className="fixed right-6 bottom-24 z-50 flex h-[28rem] w-96 flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
+        <div className="fixed right-6 bottom-24 z-50 flex h-[28rem] w-96 flex-col overflow-hidden rounded-dialog border border-rule bg-surface shadow-float">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <span className="text-sm font-medium">Knowledge search</span>
             <Button
@@ -122,7 +122,7 @@ export function KnowledgeChatWidget() {
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{item.title}</span>
-                      <Badge variant="outline" className="border-brand/30 bg-brand-soft text-signal text-[10px]">
+                      <Badge variant="outline" className="border-brand/30 bg-brand-soft text-signal text-xs">
                         {item.type}
                       </Badge>
                     </div>
@@ -140,10 +140,11 @@ export function KnowledgeChatWidget() {
       <Button
         size="icon-lg"
         onClick={() => setOpen((v) => !v)}
-        className="fixed right-6 bottom-6 z-50 size-12 rounded-full shadow-lg"
+        className="fixed right-6 bottom-6 z-50 size-[52px] rounded-full shadow-float"
         aria-label={open ? "Close knowledge search" : "Open knowledge search"}
       >
         {open ? <X className="size-5" /> : <MessageCircle className="size-5" />}
+        <span className="absolute top-0.5 right-0.5 size-2 rounded-full bg-flame-vivid ring-2 ring-white" aria-hidden />
       </Button>
     </>
   );

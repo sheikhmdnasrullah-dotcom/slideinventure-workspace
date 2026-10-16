@@ -60,7 +60,7 @@ export function NotepadPdfPreview({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="!flex h-[94vh] w-[96vw] max-w-[1100px] flex-col !gap-0 overflow-hidden !rounded-lg !border !border-rule !bg-[var(--surface)] !p-0 shadow-2xl z-[60]"
+        className="!flex h-[94vh] w-[96vw] max-w-[1100px] flex-col !gap-0 overflow-hidden !rounded-xl !border !border-rule !bg-[var(--surface)] !p-0 shadow-float z-[60]"
       >
         <div className="flex items-center justify-between gap-3 border-b border-rule px-4 py-2.5">
           <DialogTitle className="truncate text-sm font-medium text-ink-strong">
@@ -134,7 +134,7 @@ export function NotepadPdfPreview({
                 <iframe
                   title="PDF preview"
                   src={`${url}#view=FitH&toolbar=1`}
-                  className="block h-full w-full border-0 bg-white shadow-xl"
+                  className="block h-full w-full border-0 bg-white"
                 />
               </div>
             </div>

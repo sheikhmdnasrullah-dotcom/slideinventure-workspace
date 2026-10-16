@@ -65,7 +65,7 @@ export function BentoDashboard() {
           <Text>Calls / Errors</Text>
           <Metric>
             {totalCalls}
-            <span className="ml-2 text-sm font-normal text-rose-400">err {totalErrors}</span>
+            <span className="ml-2 text-sm font-normal text-status-danger">err {totalErrors}</span>
           </Metric>
           <div ref={beamA} className="mt-3 h-1 w-full rounded bg-primary/30" />
         </BentoCard>
@@ -74,7 +74,7 @@ export function BentoDashboard() {
           <Title>Pipeline Stages</Title>
           <div ref={beamB} className="mt-3 flex flex-wrap gap-2">
             {AGENT_STAGES.map((s) => (
-              <span key={s} className="rounded-full border px-2 py-0.5 text-[10px] uppercase">
+              <span key={s} className="rounded-full border px-2 py-0.5 text-xs">
                 {s}
               </span>
             ))}
@@ -88,14 +88,14 @@ export function BentoDashboard() {
             data={chartData}
             index="provider"
             categories={["Input Tokens", "Output Tokens"]}
-            colors={["blue", "emerald"]}
+            colors={["orange", "neutral"]}
             yAxisWidth={48}
           />
         </BentoCard>
 
         <BentoCard>
           <Title>Calls per Provider</Title>
-          <BarList className="mt-4" data={providerList} color="blue" />
+          <BarList className="mt-4" data={providerList} color="orange" />
         </BentoCard>
       </BentoGrid>
 

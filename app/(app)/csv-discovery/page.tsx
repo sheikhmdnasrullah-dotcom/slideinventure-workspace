@@ -205,7 +205,7 @@ export default function CsvDiscoveryPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-rule bg-card/60 p-4">
+      <div className="rounded-lg border border-rule bg-surface p-6 shadow-raised">
         <label className="block text-xs font-medium text-ink-muted">Upload a CSV file</label>
 
         <input
@@ -221,8 +221,8 @@ export default function CsvDiscoveryPage() {
         />
 
         {file && parsed ? (
-          <div className="mt-2 flex flex-wrap items-center gap-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-3 py-2.5">
-            <FileSpreadsheet className="size-4 shrink-0 text-emerald-500" />
+          <div className="mt-2 flex flex-wrap items-center gap-3 rounded-lg border border-transparent bg-status-live-bg px-4 py-3">
+            <FileSpreadsheet className="size-[18px] shrink-0 text-status-live" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-ink-strong">{file.name}</p>
               <p className="text-xs text-ink-muted">
@@ -256,8 +256,8 @@ export default function CsvDiscoveryPage() {
             }}
             className={`mt-2 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed px-4 py-6 text-center transition-colors ${
               dragging
-                ? "border-primary bg-primary/5"
-                : "border-rule hover:border-ink-faint hover:bg-muted/40"
+                ? "border-flame-vivid bg-flame-wash"
+                : "border-rule-strong hover:border-ink-faint hover:bg-hover-tint"
             }`}
           >
             <UploadCloud className="size-6 text-ink-muted" />
@@ -275,7 +275,7 @@ export default function CsvDiscoveryPage() {
               {parsed.headers.map((header) => (
                 <span
                   key={header}
-                  className="rounded-sm border border-rule bg-background px-1.5 py-0.5 font-mono text-[11px] text-ink-muted"
+                  className="rounded-sm border border-rule bg-surface px-1.5 py-0.5 font-code text-xs text-ink-muted"
                 >
                   {header}
                 </span>
@@ -285,7 +285,7 @@ export default function CsvDiscoveryPage() {
             <div className="mt-3 overflow-x-auto rounded-md border border-rule">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-rule bg-card/60 text-left">
+                  <tr className="border-b border-rule bg-paper text-left">
                     {parsed.headers.map((header) => (
                       <th key={header} className="px-2.5 py-1.5 font-label text-ink-muted">
                         {header}
@@ -330,7 +330,7 @@ export default function CsvDiscoveryPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={"channel,company\nhttps://youtube.com/@handle,Acme Inc\n,Acme Inc,acme.com"}
               rows={8}
-              className="mt-2 w-full rounded-md border border-rule bg-background px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-primary"
+              className="mt-2 w-full rounded-md border border-rule-strong bg-surface px-3.5 py-3 font-code text-xs outline-none transition-[border-color,box-shadow] duration-[120ms] hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]"
             />
           </>
         )}
@@ -353,11 +353,11 @@ export default function CsvDiscoveryPage() {
               value={checkId}
               onChange={(e) => setCheckId(e.target.value)}
               placeholder="workflowId to check"
-              className="w-56 rounded-md border border-rule bg-background px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary"
+              className="h-11 w-56 rounded-md border border-rule-strong bg-surface px-3.5 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]"
             />
             <button
               onClick={checkExisting}
-              className="rounded-md border border-rule px-3 py-2 text-xs hover:bg-muted"
+              className="h-8 rounded-pill border border-rule-strong bg-surface px-4 text-[13px] font-medium transition-shadow hover:shadow-raised"
             >
               Check
             </button>
@@ -366,18 +366,18 @@ export default function CsvDiscoveryPage() {
 
         {workflowId && (
           <p className="mt-3 text-xs text-ink-muted">
-            Run ID: <code className="text-emerald-400">{workflowId}</code> · status:{" "}
+            Run ID: <code className="font-code text-ink-strong">{workflowId}</code> · status:{" "}
             <b className="text-ink-strong">{status}</b>
           </p>
         )}
-        {error && <p className="mt-2 text-sm text-rose-500">{error}</p>}
+        {error && <p className="mt-2 text-sm text-status-danger">{error}</p>}
       </div>
 
       {results.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-rule">
+        <div className="overflow-hidden rounded-lg border border-rule bg-surface shadow-raised">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-rule bg-card/60 text-left">
+              <tr className="border-b border-rule bg-paper text-left">
                 <th className="px-3 py-2 font-label text-ink-muted">Lead</th>
                 <th className="px-3 py-2 font-label text-ink-muted">Emails</th>
                 <th className="px-3 py-2 font-label text-ink-muted">Method</th>
@@ -386,7 +386,7 @@ export default function CsvDiscoveryPage() {
             </thead>
             <tbody className="divide-y divide-rule">
               {results.map((r, i) => (
-                <tr key={i} className="align-top hover:bg-card/40">
+                <tr key={i} className="align-top transition-colors duration-[150ms] hover:bg-hover-tint">
                   <td className="px-3 py-2 text-xs text-ink-muted">
                     {Object.entries(r.row)
                       .map(([k, v]) => `${k}: ${v}`)
@@ -396,7 +396,7 @@ export default function CsvDiscoveryPage() {
                     {r.emails.length ? (
                       <div className="space-y-1">
                         {r.emails.map((e) => (
-                          <div key={e} className="font-medium text-emerald-500">
+                          <div key={e} className="font-medium text-status-live">
                             {e}
                           </div>
                         ))}

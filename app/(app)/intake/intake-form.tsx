@@ -57,12 +57,12 @@ function ChipList({
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {values.map((v) => (
-            <Badge key={v} variant="secondary" className="gap-1 pr-1">
+            <Badge key={v} variant="secondary" className="h-8 gap-1.5 pr-1.5 pl-3.5 text-[13px]">
               <span className="max-w-64 truncate">{v}</span>
               <button
                 type="button"
                 aria-label={`Remove ${v}`}
-                className="hover:text-destructive rounded px-1"
+                className="flex size-5 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-hover-tint hover:text-ink-strong"
                 onClick={() => onChange(values.filter((x) => x !== v))}
               >
                 ×
@@ -71,7 +71,7 @@ function ChipList({
           ))}
         </div>
       )}
-      <div className="flex gap-2">
+      <div className="relative">
         <Input
           value={draft}
           placeholder={placeholder}
@@ -82,8 +82,15 @@ function ChipList({
               add();
             }
           }}
+          className="pr-24"
         />
-        <Button type="button" variant="outline" onClick={add}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={add}
+          className="absolute top-1/2 right-1.5 h-9 -translate-y-1/2"
+        >
           Add
         </Button>
       </div>
@@ -143,11 +150,11 @@ export function IntakeForm({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="mx-auto w-full max-w-[1120px] space-y-6 px-5 py-5 md:px-10 md:py-10">
+      <div className="flex items-start justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-2xl font-semibold">Business setup</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <h1 className="font-display text-[28px] leading-[34px]">Business setup</h1>
+          <p className="mt-1 max-w-[640px] text-sm text-ink-muted">
             Tell SlideIn about your business once. Research agents read this
             profile to find matching prospects and judge offer-fit.
           </p>
@@ -156,8 +163,8 @@ export function IntakeForm({
       </div>
 
       {errors.length > 0 && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
-          <p className="font-medium">Please fix these fields:</p>
+        <div className="rounded-lg border border-rule bg-status-danger-bg p-4 text-sm">
+          <p className="font-medium text-status-danger">Please fix these fields:</p>
           <ul className="mt-1 list-disc pl-5">
             {errors.map((e) => (
               <li key={e}>{e}</li>
@@ -171,9 +178,9 @@ export function IntakeForm({
           <CardTitle>Your business</CardTitle>
           <CardDescription>Identity and context agents use when writing about you.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="businessName">Business name *</Label>
               <Input
                 id="businessName"
@@ -182,7 +189,7 @@ export function IntakeForm({
                 placeholder="Acme Outreach Co."
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="contactEmail">Contact email</Label>
               <Input
                 id="contactEmail"
@@ -193,7 +200,7 @@ export function IntakeForm({
               />
             </div>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="website">Website</Label>
             <Input
               id="website"
@@ -202,7 +209,7 @@ export function IntakeForm({
               placeholder="https://company.com"
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="description">What does the business do?</Label>
             <Textarea
               id="description"
@@ -220,9 +227,9 @@ export function IntakeForm({
           <CardTitle>Offers</CardTitle>
           <CardDescription>What you sell. Agents match these against each prospect&apos;s needs.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent>
           {form.offers.map((offer, i) => (
-            <div key={i} className="space-y-3">
+            <div key={i} className="space-y-6">
               {i > 0 && <Separator />}
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">Offer {i + 1}</p>
@@ -237,7 +244,7 @@ export function IntakeForm({
                   </Button>
                 )}
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor={`offer-name-${i}`}>Name *</Label>
                 <Input
                   id={`offer-name-${i}`}
@@ -250,7 +257,7 @@ export function IntakeForm({
                   placeholder="Done-for-you cold email"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor={`offer-desc-${i}`}>Description</Label>
                 <Textarea
                   id={`offer-desc-${i}`}
@@ -264,7 +271,7 @@ export function IntakeForm({
                   placeholder="What the buyer gets, in plain terms."
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor={`offer-outcome-${i}`}>Ideal outcome for the buyer</Label>
                 <Input
                   id={`offer-outcome-${i}`}
@@ -298,9 +305,9 @@ export function IntakeForm({
           <CardTitle>Ideal customer</CardTitle>
           <CardDescription>Who to pursue — and who to skip. Used to focus prospect research.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent>
           {ICP_LISTS.map(({ key, label, placeholder }) => (
-            <div key={key} className="space-y-1.5">
+            <div key={key} className="space-y-2">
               <Label>{label}</Label>
               <ChipList
                 values={form.icp[key]}
@@ -309,7 +316,7 @@ export function IntakeForm({
               />
             </div>
           ))}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="notes">Anything else agents should know</Label>
             <Textarea
               id="notes"
@@ -323,10 +330,10 @@ export function IntakeForm({
       </Card>
 
       <div className="flex items-center gap-3">
-        <Button onClick={save} disabled={saving}>
+        <Button onClick={save} disabled={saving} dot loading={saving}>
           {saving ? "Saving…" : done ? "Save changes" : "Save and continue"}
         </Button>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-ink-muted">
           Stored on this server only — never sent anywhere until you run outreach.
         </p>
       </div>

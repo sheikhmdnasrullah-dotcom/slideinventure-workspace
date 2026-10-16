@@ -123,17 +123,17 @@ export function NotificationsBell() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label="Notifications"
-        className="relative inline-flex size-8 items-center justify-center rounded-md border border-border hover:bg-accent"
+        className="relative inline-flex size-9 items-center justify-center rounded-full border border-rule-strong bg-surface text-ink-muted transition-shadow hover:text-ink-strong hover:shadow-raised"
       >
         <Bell className="size-4" />
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground">
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-status-danger px-1 text-xs font-semibold text-destructive-foreground">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-80 rounded-md border border-border bg-popover text-popover-foreground shadow-lg z-50">
+        <div className="absolute right-0 z-50 mt-2 w-80 rounded-[16px] border border-rule bg-popover text-popover-foreground shadow-float">
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <span className="text-sm font-medium">Notifications</span>
             {unread > 0 && (

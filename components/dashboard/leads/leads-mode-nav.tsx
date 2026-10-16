@@ -44,34 +44,34 @@ export function LeadsModeNav() {
             key={opt.id}
             href={opt.href}
             className={cn(
-              "group relative flex flex-col justify-between rounded-xl border p-4 transition-all duration-200",
+              "group relative flex flex-col justify-between rounded-lg border p-6 shadow-raised transition-shadow duration-[150ms]",
               opt.active
-                ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm"
-                : "border-rule bg-[var(--surface)] hover:border-rule-strong hover:bg-[var(--surface-2)]/40 hover:-translate-y-0.5"
+                ? "border-transparent bg-flame-wash shadow-raised"
+                : "border-rule bg-surface hover:shadow-float"
             )}
           >
             <div>
               <div className="flex items-center justify-between">
                 <span
                   className={cn(
-                    "flex size-10 items-center justify-center rounded-lg transition-transform group-hover:scale-105",
+                    "flex size-10 items-center justify-center rounded-[10px]",
                     opt.active
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground"
+                      ? "bg-button-primary text-on-button-primary"
+                      : "bg-surface-2 text-ink-strong"
                   )}
                 >
                   <Icon className="size-5" />
                 </span>
                 {opt.active && (
-                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                  <span className="inline-flex h-[26px] items-center rounded-full bg-surface px-2.5 text-xs font-medium text-flame shadow-raised">
                     Active Mode
                   </span>
                 )}
               </div>
-              <h3 className="mt-3 font-label text-sm font-semibold text-ink-strong">
+              <h3 className="mt-3 text-[15px] font-semibold tracking-[-0.01em] text-ink-strong">
                 {opt.title}
               </h3>
-              <p className="mt-1 text-xs text-ink-muted leading-relaxed">
+              <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
                 {opt.description}
               </p>
             </div>

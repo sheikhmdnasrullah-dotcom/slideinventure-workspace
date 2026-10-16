@@ -136,7 +136,7 @@ export function WorkSessionsHistory({ sessions = [] }: WorkSessionsHistoryProps)
           <div key={group.date} className="flex flex-col">
             <div className="flex items-center justify-between border-b border-rule bg-[var(--surface-2)]/60 px-4 py-1.5">
               <span className="font-label text-xs text-ink-faint">{group.label}</span>
-              <span className="font-mono text-xs tabular-nums text-ink-muted">
+              <span className="font-value text-xs text-ink-muted">
                 {formatDurationHuman(group.totalSeconds)}
               </span>
             </div>
@@ -184,7 +184,7 @@ export function WorkSessionsHistory({ sessions = [] }: WorkSessionsHistoryProps)
                       </div>
                     ) : (
                       <div className="flex items-baseline gap-3">
-                        <span className="shrink-0 font-mono text-xs tabular-nums text-ink-muted">
+                        <span className="shrink-0 font-value text-xs text-ink-muted">
                           {timeRange}
                         </span>
 
@@ -195,7 +195,7 @@ export function WorkSessionsHistory({ sessions = [] }: WorkSessionsHistoryProps)
                           ) : null}
                         </span>
 
-                        <span className="shrink-0 font-mono text-xs tabular-nums text-ink-strong">
+                        <span className="shrink-0 font-value text-xs text-ink-strong">
                           {formatDurationHuman(session.duration)}
                         </span>
 

@@ -108,7 +108,7 @@ function TreeRow({
       <span className="w-3.5 shrink-0" />
       <KindIcon kind={node.kind} />
       <span className="truncate">{node.name}</span>
-      {dirty && <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-500" title="Unsaved changes" />}
+      {dirty && <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-status-warn" title="Unsaved changes" />}
     </button>
   );
 }

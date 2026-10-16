@@ -89,51 +89,51 @@ export function SettingsControlCenter() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Link
           href="/ui-kit"
-          className="group flex flex-col justify-between rounded-xl border border-rule bg-[var(--surface)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+          className="group flex flex-col justify-between rounded-lg border border-rule bg-surface p-6 shadow-raised transition-shadow duration-[150ms] hover:shadow-float"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="flex size-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 ring-1 ring-indigo-500/20">
+              <span className="flex size-10 items-center justify-center rounded-[10px] bg-surface-2 text-ink-strong">
                 <Component className="size-5" />
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Design System</span>
+              <span className="font-label text-ink-muted">Design System</span>
             </div>
-            <h3 className="mt-3 font-label text-sm font-semibold text-ink-strong group-hover:text-primary transition-colors flex items-center gap-1">
+            <h3 className="mt-3 flex items-center gap-1 text-[15px] font-semibold tracking-[-0.01em] text-ink-strong">
               UI Kit (shadcn/ui)
               <ArrowUpRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
             </h3>
-            <p className="mt-1 text-xs text-ink-muted leading-relaxed">
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
               Explore component primitives, design tokens, and interactive widgets.
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-[11px] text-ink-muted">
+          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-xs text-ink-muted">
             <span>Explore Components</span>
-            <span className="font-medium text-primary">Open →</span>
+            <span className="font-medium text-flame">Open →</span>
           </div>
         </Link>
 
         <Link
           href="/ai-chat"
-          className="group flex flex-col justify-between rounded-xl border border-rule bg-[var(--surface)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+          className="group flex flex-col justify-between rounded-lg border border-rule bg-surface p-6 shadow-raised transition-shadow duration-[150ms] hover:shadow-float"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20">
+              <span className="flex size-10 items-center justify-center rounded-[10px] bg-surface-2 text-ink-strong">
                 <MessageSquare className="size-5" />
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">AI Tool</span>
+              <span className="font-label text-ink-muted">AI Tool</span>
             </div>
-            <h3 className="mt-3 font-label text-sm font-semibold text-ink-strong group-hover:text-primary transition-colors flex items-center gap-1">
+            <h3 className="mt-3 flex items-center gap-1 text-[15px] font-semibold tracking-[-0.01em] text-ink-strong">
               AI SDK Chat
               <ArrowUpRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
             </h3>
-            <p className="mt-1 text-xs text-ink-muted leading-relaxed">
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">
               Real-time streaming chat powered by Vercel AI SDK and tool execution.
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-[11px] text-ink-muted">
+          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-xs text-ink-muted">
             <span>Launch Chat</span>
-            <span className="font-medium text-primary">Open →</span>
+            <span className="font-medium text-flame">Open →</span>
           </div>
         </Link>
       </div>

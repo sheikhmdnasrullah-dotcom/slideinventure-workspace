@@ -31,7 +31,7 @@ export function DocumentList() {
           <StaggerItem key={item.id}>
           <button
             className={cn(
-              "motion-card flex w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm hover:bg-accent",
+              "flex w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm hover:bg-accent",
               selected === item.id && "bg-muted"
             )}
             onClick={() => setSelected(item.id)}

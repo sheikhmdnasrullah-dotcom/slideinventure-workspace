@@ -132,7 +132,7 @@ export function VersionHistory({ projectId, path, workspace, onClose }: Props) {
                     by {v.createdBy} · {(v.sizeBytes / 1024).toFixed(1)} KB
                   </p>
                   {preview?.id === v.id && (
-                    <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-muted p-2 font-mono text-[11px]">
+                    <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-muted p-2 font-code text-xs">
                       {preview.content.slice(0, 2000)}
                       {preview.content.length > 2000 && "…"}
                     </pre>

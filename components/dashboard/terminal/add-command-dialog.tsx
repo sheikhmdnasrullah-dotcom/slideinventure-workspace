@@ -150,7 +150,7 @@ export function AddCommandDialog({ open, onOpenChange, onSaved, editingCommand }
               onChange={(e) => setForm({ ...form, command: e.target.value })}
               placeholder="nc -vz example.com 25"
               required
-              className="font-mono text-xs"
+              className="font-code text-xs"
               rows={3}
             />
           </div>
@@ -212,7 +212,7 @@ export function AddCommandDialog({ open, onOpenChange, onSaved, editingCommand }
                 }
               }}
               placeholder='{"host": "example.com", "port": "25"}'
-              className="font-mono text-xs"
+              className="font-code text-xs"
               rows={3}
             />
           </div>

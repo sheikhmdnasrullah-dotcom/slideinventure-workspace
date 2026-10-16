@@ -1,95 +1,87 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    SLIDEIN VENTURE OS: TOKEN LAYER. Single source of truth
    ---------------------------------------------------------------------------
-   Every value in a component comes from here. A raw hex, px or ms literal in
-   a .tsx file is a bug. OKLCH throughout. Perceptually uniform ramps read as
-   one material under different light. Contrast figures are measured against
-   WCAG 2 relative luminance, see scripts/verify-contrast.mjs (ported later).
+   Shared with the marketing site and the client workspace: verbatim copies of
+   the approved scaffold values (marketing-site/app/styles/assemble.css), plus
+   the dashboard spec (page #FAFAFA, sidebar #FDFDFD, semantic tints). The apps
+   live in separate repos/builds and cannot share one file, so the values are
+   copied here — see design-reference/INVENTORY.md. A raw hex, px or ms literal
+   in a .tsx file is a bug.
 
-   This is the CONSOLE token set. Denser and tighter than the marketing site.
-   Marketing (../app/styles/tokens.css) uses 18px card radius and a 1.26 type
-   ratio for editorial pages; the OS uses 8px cards and a smaller, denser type
-   ladder because an operator reads many rows, not one headline. Brand orange
-   and the warm-paper hue family are identical so the two apps share an identity.
+   This is the CONSOLE token set. Denser than the marketing site: the OS uses
+   the same 20px cards and pill buttons on a tighter type ladder because an
+   operator reads many rows, not one headline. Brand orange #FF6200 and the
+   neutral scaffold ramp are identical so the products share an identity.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── PAPER RAMP: day surfaces, ink type ─────────────────────────────────
-     Warm pulled grey. Never #FFFFFF (Rule 2): paper-25 is the lightest surface
-     in the app. paper-50 is the page; paper-25 is a raised card; paper-100 is
-     an inset well; paper-200 the deepest day ground (terminal/execution). */
-  --color-paper-25:     oklch(0.978 0.004 85);
-  --color-paper-50:     oklch(0.968 0.006 85);
-  --color-paper-100:    oklch(0.945 0.008 84);
-  --color-paper-200:    oklch(0.915 0.010 83);
-  --color-bone-300:     oklch(0.868 0.012 82);   /* hairlines */
-  --color-bone-400:     oklch(0.790 0.014 80);   /* disabled, placeholder */
+  /* ── NEUTRAL RAMP: day surfaces. No cream, no beige, no warm hue. ──────── */
+  --color-paper-25:     #ffffff;
+  --color-paper-50:     #fafafa;
+  --color-paper-100:    #f4f4f5;
+  --color-paper-200:    #e9e9eb;
+  --color-bone-300:     rgb(10 10 10 / 7%);    /* hairlines */
+  --color-bone-400:     rgb(10 10 10 / 38%);   /* disabled, placeholder */
 
-  /* ── INK RAMP: day text + dark surfaces ────────────────────────────────
-     Used for day-mode primary text AND as the dark-theme surface ramp (graphite
-     is ink read at higher lightness; ink-deep is the darkest value in the app). */
-  --color-slate-500:    oklch(0.545 0.016 75);   /* 4.52:1 on paper-50. AA */
-  --color-slate-600:    oklch(0.470 0.018 74);   /* body on light panels */
-  --color-graphite-700: oklch(0.290 0.013 72);   /* raised card on dark */
-  --color-graphite-800: oklch(0.235 0.012 70);   /* dark panel tint */
-  --color-graphite-900: oklch(0.185 0.011 68);   /* dark section base */
-  --color-ink:          oklch(0.155 0.010 66);   /* 17.83:1 on paper-50 */
-  --color-ink-deep:     oklch(0.115 0.009 64);   /* darkest in the app */
+  /* ── INK ───────────────────────────────────────────────────────────────── */
+  --color-slate-500:    rgb(10 10 10 / 58%);
+  --color-slate-600:    rgb(10 10 10 / 58%);
+  --color-graphite-700: #3f3f46;
+  --color-graphite-800: #27272a;
+  --color-graphite-900: #18181b;
+  --color-ink:          #0a0a0a;
+  --color-ink-deep:     #09090b;
 
   /* ── ASH RAMP: muted text on dark tones ──────────────────────────────── */
-  --color-ash-200:      oklch(0.850 0.010 80);   /* primary text on graphite */
-  --color-ash-300:      oklch(0.780 0.010 80);   /* 8.48:1 on graphite-900 */
-  --color-ash-400:      oklch(0.720 0.010 80);   /* 8.20:1 on ink-deep */
-  --color-ash-500:      oklch(0.620 0.012 80);   /* muted on dark */
+  --color-ash-200:      #e4e4e7;
+  --color-ash-300:      #d4d4d8;
+  --color-ash-400:      #a1a1aa;
+  --color-ash-500:      #71717a;
 
-  /* ── BRAND: hue 42.28 is held constant across every derived token ───────
-       #FF6200 -> oklch(0.6908 0.2074 42.28)
-     MEASURED CONTRAST. This is where orange brands fail:
-       brand    on paper-50      2.73:1  ✗ fails as text at any size
-       brand    on graphite-900  6.22:1  ✓
-       signal   on paper-50      4.50:1  ✓ AA at any size                  */
-  --color-brand:        oklch(0.691 0.207 42.28);  /* exact #FF6200 */
-  --color-brand-hi:     oklch(0.700 0.198 42.28);  /* orange text on dark */
-  --color-brand-soft:   oklch(0.691 0.207 42.28 / 8%);  /* legacy bg-brand-soft tint */
-  --color-signal:       oklch(0.563 0.168 42.28);  /* only orange for small text on light */
-  --color-signal-deep:  oklch(0.542 0.163 42.28);  /* one step down, AA on paper-100 */
-  --color-signal-deeper: oklch(0.522 0.158 42.28); /* AA on paper-200 */
-  --color-ember:        oklch(0.380 0.120 42.28);  /* fills/borders only, never text */
-  --color-brand-lift:   oklch(0.760 0.170 42.28);  /* gradient highlight */
-  --color-brand-pale:   oklch(0.855 0.098 42.28);  /* ramp far end */
+  /* ── BRAND: the SAME orange as the marketing site. #FF6200 exactly. ─────── */
+  --color-brand:        #ff6200;
+  --color-brand-hi:     #ff7a29;
+  --color-brand-soft:   rgb(255 98 0 / 8%);
+  --color-signal:       #b34a00;
+  --color-signal-deep:  #a54300;
+  --color-signal-deeper: #963c00;
+  --color-ember:        #7a3200;
+  --color-brand-lift:   #ff8a3d;
+  --color-brand-pale:   #ffc49c;
 
-  /* ── STATUS: desaturated to sit inside the warm palette ──────────────── */
-  --color-live:         oklch(0.530 0.148 149);   /* 4.50:1 on paper-50 */
-  --color-live-deep:    oklch(0.430 0.120 149);
-  --color-live-hi:      oklch(0.780 0.130 149);   /* on dark chips */
-  --color-info:         oklch(0.530 0.128 255);   /* 4.84:1 on paper-50 */
-  --color-info-deep:    oklch(0.460 0.110 255);
-  --color-info-hi:      oklch(0.790 0.085 255);
-  --color-warn:         oklch(0.610 0.150 70);    /* amber, AA on both */
-  --color-warn-deep:    oklch(0.500 0.120 70);
-  --color-danger:       oklch(0.577 0.245 27.325); /* shadcn destructive */
-  --color-danger-hi:    oklch(0.708 0.180 20);    /* on dark */
+  /* ── STATUS: semantic colors, separate from the brand accent. ──────────── */
+  --color-live:         #1f7a4d;
+  --color-live-deep:    #1f7a4d;
+  --color-live-hi:      #4ade80;
+  --color-live-tint:    #e8f4ec;
+  --color-info:         #0a0a0a;
+  --color-info-deep:    #0a0a0a;
+  --color-info-hi:      #e4e4e7;
+  --color-info-tint:    #f1f1f2;
+  --color-warn:         #a15c07;
+  --color-warn-deep:    #a15c07;
+  --color-warn-tint:    #fdf1dc;
+  --color-danger:       #b42318;
+  --color-danger-hi:    #f87171;
+  --color-danger-tint:  #fdecea;
+  --color-neutral-ink:  #52525b;
+  --color-neutral-tint: #f1f1f2;
 
-  /* ── RADII: four values. Tighter than marketing: a console is read in
-     rows, not in posters. 8px cards read as software, 18px reads as SaaS. ─ */
-  --radius-xs:          3px;     /* tags, tiny chips */
-  --radius-sm:          5px;     /* inputs, badges */
-  --radius-md:          8px;     /* cards, panels, media */
-  --radius-lg:          10px;    /* dialogs, sheets */
-  --radius-pill:        999px;   /* buttons, nav, status dots */
-  /* Legacy aliases. Collapse shadcn's lg/xl/2xl/3xl/4xl onto the deliberate
-     scale. Migrate call sites to xs/sm/md/lg/pill, then trim this block. */
-  --radius-xs-2:        var(--radius-xs);
-  --radius-lg-2:        var(--radius-md);
-  --radius-xl:          var(--radius-md);
+  /* ── RADII — 4 / 10 / 14 / 20 / 28 / pill ──────────────────────────────── */
+  --radius-xs:          4px;      /* checkbox, kbd, micro */
+  --radius-sm:          10px;     /* small inputs */
+  --radius-md:          14px;     /* inputs, squared buttons */
+  --radius-lg:          20px;     /* cards */
+  --radius-xl:          28px;     /* large panels, modals */
+  --radius-pill:        999px;    /* buttons, chips, avatars, tabs */
+  /* Legacy aliases. Collapse shadcn's 2xl/3xl/4xl onto the deliberate scale. */
   --radius-2xl:         var(--radius-lg);
-  --radius-3xl:         var(--radius-lg);
-  --radius-4xl:         var(--radius-lg);
+  --radius-3xl:         var(--radius-xl);
+  --radius-4xl:         var(--radius-xl);
 
-  /* ── TYPE SCALE: modular ratio 1.2, fluid but tighter than marketing.
-     Base is 14px (operator density), not 16px (editorial). ─────────────── */
-  --text-micro:         clamp(0.625rem, 0.605rem + 0.1vw, 0.6875rem);  /* 10-11px */
-  --text-xs:            clamp(0.6875rem, 0.675rem + 0.12vw, 0.75rem);   /* 11-12px */
+  /* ── TYPE SCALE. Base is 14px (operator density). Minimum size is 12px. ── */
+  --text-micro:         0.75rem;                              /* 12px */
+  --text-xs:            0.75rem;                              /* 12px */
   --text-sm:            clamp(0.8125rem, 0.80rem + 0.12vw, 0.875rem);    /* 13-14px */
   --text-base:          clamp(0.875rem, 0.86rem + 0.15vw, 0.9375rem);    /* 14-15px */
   --text-md:            clamp(1rem, 0.98rem + 0.2vw, 1.0625rem);         /* 16-17px */
@@ -101,12 +93,12 @@
   --text-3xl:           var(--text-display);
   --text-4xl:           var(--text-display);
 
-  /* ── TRACKING: inverse relationship: display tight, body open, labels wide */
-  --tracking-display:    -0.018em;
-  --tracking-display-tight: -0.024em;
-  --tracking-body:        0.002em;
-  --tracking-label:      0.12em;
-  --tracking-label-wide:  0.18em;
+  /* ── TRACKING: display tight, body neutral, labels near-zero ───────────── */
+  --tracking-display:    -0.02em;
+  --tracking-display-tight: -0.025em;
+  --tracking-body:        0;
+  --tracking-label:      0.01em;
+  --tracking-label-wide:  0.01em;
 
   /* ── LEADING ─────────────────────────────────────────────────────────── */
   --leading-display:    1.06;
@@ -114,7 +106,7 @@
   --leading-body:        1.55;
   --leading-relaxed:     1.65;
 
-  /* ── WEIGHT (Geist is variable; Fraunces opsz axes do not apply) ─────── */
+  /* ── WEIGHT ──────────────────────────────────────────────────────────── */
   --font-weight-bold:    600;
   --font-weight-medium:  500;
   --font-weight-label:   500;
@@ -132,8 +124,8 @@
   --spacing-12: 48px;
   --spacing-16: 64px;
 
-  /* ── MOTION: two easings, not five. Expo for reveals, std for hovers. ─ */
-  --ease-expo:          cubic-bezier(0.16, 1, 0.30, 1);
+  /* ── MOTION: the marketing scaffold ease, one timing language. ────────── */
+  --ease-expo:          cubic-bezier(0.22, 1, 0.36, 1);
   --ease-std:           cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring: linear(
     0, 0.0057 1.2%, 0.0225 2.5%, 0.0888 5%, 0.199 7.6%,
@@ -141,46 +133,46 @@
     1.0257 41.3%, 0.9903 50.5%, 1.0009 68.4%, 1
   );
   --dur-instant:        80ms;
-  --dur-fast:           140ms;
+  --dur-fast:           120ms;
   --dur-base:           220ms;
-  --dur-slow:           420ms;
+  --dur-slow:           320ms;
+  --dur-page:           240ms;
   --dur-reveal:         620ms;
 
-  /* ── ELEVATION: two-layer warm-tinted shadows; single-layer reads fake ─ */
-  --shadow-contact:     0 1px 2px -1px oklch(0.155 0.010 66 / 10%);
+  /* ── ELEVATION — verbatim marketing scaffold shadows ─────────────────── */
+  --shadow-contact:     0 1px 2px rgb(0 0 0 / 4%);
   --shadow-raised:
-    0 1px 2px -1px oklch(0.155 0.010 66 / 8%),
-    0 4px 12px -6px oklch(0.155 0.010 66 / 12%);
+    0 1px 2px rgb(0 0 0 / 4%),
+    0 8px 24px -8px rgb(0 0 0 / 8%);
   --shadow-float:
-    0 1px 2px -1px oklch(0.155 0.010 66 / 6%),
-    0 8px 20px -8px oklch(0.155 0.010 66 / 12%),
-    0 24px 48px -24px oklch(0.155 0.010 66 / 14%);
+    0 2px 4px rgb(0 0 0 / 4%),
+    0 18px 36px -12px rgb(0 0 0 / 16%);
   --shadow-overlay:
-    0 1px 2px oklch(0.115 0.009 64 / 10%),
-    0 16px 32px -12px oklch(0.115 0.009 64 / 24%),
-    0 48px 96px -32px oklch(0.115 0.009 64 / 32%);
+    0 2px 4px rgb(0 0 0 / 4%),
+    0 18px 36px -12px rgb(0 0 0 / 16%);
+  --shadow-tile:
+    0 2px 4px rgb(0 0 0 / 4%),
+    0 18px 36px -12px rgb(0 0 0 / 18%),
+    0 40px 60px -30px rgb(0 0 0 / 12%);
+  --shadow-button:
+    0 8px 16px -8px rgb(0 0 0 / 35%);
 }
 
 /* ── Non-namespaced tokens ───────────────────────────────────────────────
-   Tailwind v4's @theme only emits custom properties for known namespaces
-   (--color-*, --radius-*, --text-*, --shadow-*, --ease-*, --spacing-*).
-   --dur-* and ring widths are not Tailwind namespaces. Declare on :root too. */
+   Tailwind v4's @theme only emits custom properties for known namespaces.
+   Mirror durations and easings on :root as real custom properties. */
 :root {
   --dur-instant: 80ms;
-  --dur-fast:    140ms;
+  --dur-fast:    120ms;
   --dur-base:    220ms;
-  --dur-slow:    420ms;
+  --dur-slow:    320ms;
+  --dur-page:    240ms;
   --dur-reveal:  620ms;
   --ring-width:  2px;
 
-  /* Easings: --ease-* is a Tailwind namespace, but unused easings get tree-
-     shaken from :root, so any component that does `transition: var(--ease-expo)`
-     would get nothing back. Mirror them here as real custom properties. */
-  --ease-expo: cubic-bezier(0.16, 1, 0.30, 1);
+  --ease-expo: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-std:  cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* @theme won't expose the spring as a :root var because Tailwind doesn't
-     alias `--ease-spring` here automatically, mirror it for code use. */
   --ease-spring: linear(
     0, 0.0057 1.2%, 0.0225 2.5%, 0.0888 5%, 0.199 7.6%,
     0.6082 15.5%, 0.8602 21.1%, 1.0231 26.9%, 1.0684 31.2%,
@@ -188,23 +180,172 @@
   );
 }
 
-/* ── Focus ring: one visible treatment, everywhere ────────────────────── */
+/* ── Focus ring: 2px solid accent at 60%, 2px offset, keyboard only ─────── */
 @layer base {
   :focus-visible {
-    outline: var(--ring-width) solid var(--accent);
+    outline: var(--ring-width) solid var(--focus-ring);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
   }
 }
 
-/* ── Reduced motion: global backstop ──────────────────────────────────── */
+/* ── Page entrance: fade + 8px rise over 240ms, children stagger 40ms ───── */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-enter {
+  animation: page-enter var(--dur-page) var(--ease-expo) both;
+}
+.page-enter > * {
+  animation: page-enter var(--dur-page) var(--ease-expo) both;
+}
+.page-enter > *:nth-child(1) { animation-delay: 0ms; }
+.page-enter > *:nth-child(2) { animation-delay: 40ms; }
+.page-enter > *:nth-child(3) { animation-delay: 80ms; }
+.page-enter > *:nth-child(4) { animation-delay: 120ms; }
+.page-enter > *:nth-child(5) { animation-delay: 160ms; }
+.page-enter > *:nth-child(6) { animation-delay: 200ms; }
+
+/* page-enter-children: only the child stagger, for containers that already
+   fade via Framer Motion (PageTransition). Same 40ms ladder, max 6 items. */
+.page-enter-children > * {
+  animation: page-enter var(--dur-page) var(--ease-expo) both;
+}
+.page-enter-children > *:nth-child(1) { animation-delay: 0ms; }
+.page-enter-children > *:nth-child(2) { animation-delay: 40ms; }
+.page-enter-children > *:nth-child(3) { animation-delay: 80ms; }
+.page-enter-children > *:nth-child(4) { animation-delay: 120ms; }
+.page-enter-children > *:nth-child(5) { animation-delay: 160ms; }
+.page-enter-children > *:nth-child(6) { animation-delay: 200ms; }
+
+/* ── First-paint list stagger. The .is-live guard is added once after mount
+   so filtering, sorting, typing or polling never replays the entrance. ──── */
+@keyframes row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.stagger-group.is-live > *:nth-child(1) { animation: row-enter 220ms var(--ease-expo) both; }
+.stagger-group.is-live > *:nth-child(2) { animation: row-enter 220ms var(--ease-expo) 30ms both; }
+.stagger-group.is-live > *:nth-child(3) { animation: row-enter 220ms var(--ease-expo) 60ms both; }
+.stagger-group.is-live > *:nth-child(4) { animation: row-enter 220ms var(--ease-expo) 90ms both; }
+.stagger-group.is-live > *:nth-child(5) { animation: row-enter 220ms var(--ease-expo) 120ms both; }
+.stagger-group.is-live > *:nth-child(6) { animation: row-enter 220ms var(--ease-expo) 150ms both; }
+.stagger-group.is-live > *:nth-child(n + 7) { animation: row-enter 220ms var(--ease-expo) 180ms both; }
+
+/* ── Skeleton shimmer: slow 1.6s sweep of a 40% highlight. ───────────────── */
+@keyframes skeleton-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(10 10 10 / 8%), transparent);
+  animation: skeleton-sweep 1.6s var(--ease-std) infinite;
+}
+.dark .skeleton-shimmer::after {
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 10%), transparent);
+}
+
+/* ── Empty-state tile float: ±4px over 8s. Nothing else loops. ───────────── */
+@keyframes tile-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-6deg);
+  }
+}
+.tile-float {
+  animation: tile-float 8s ease-in-out infinite;
+}
+
+/* ── Dialog entrance: opacity + scale 0.98→1 over 200ms ──────────────────── */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.dialog-enter {
+  animation: dialog-fade 200ms var(--ease-expo) both;
+}
+.dialog-enter .dialog-panel {
+  animation: dialog-in 200ms var(--ease-expo) both;
+}
+@keyframes dialog-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Textarea: vertical resize only ─────────────────────────────────────── */
+textarea[data-slot="textarea"] {
+  resize: vertical;
+}
+
+/* ── Reduced motion: instant state changes, 100ms opacity fade at most ───── */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-instant: 0.001s;
     --dur-fast: 0.001s;
     --dur-base: 0.001s;
     --dur-slow: 0.001s;
+    --dur-page: 0.001s;
     --dur-reveal: 0.001s;
+  }
+  @keyframes still-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .page-enter,
+  .page-enter > *,
+  .page-enter-children > *,
+  .stagger-group.is-live > *,
+  .dialog-enter,
+  .dialog-enter .dialog-panel {
+    animation: still-fade 100ms linear both;
+  }
+  .tile-float {
+    animation: none;
+  }
+  .skeleton-shimmer::after {
+    animation: none;
+    display: none;
   }
   *,
   *::before,

@@ -74,7 +74,7 @@ export function WorkStopwatch() {
             )}
             aria-hidden
           />
-          <span className="font-mono text-3xl font-semibold tabular-nums tracking-tight text-ink-strong">
+          <span className="font-value text-3xl text-ink-strong">
             {formatTime(elapsed)}
           </span>
         </div>

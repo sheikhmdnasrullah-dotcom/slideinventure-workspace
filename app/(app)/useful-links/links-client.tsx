@@ -161,12 +161,12 @@ export function LinksClient({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={scope === "ai-venture" ? "Search AI Venture links..." : "Search links..."}
-            className="pl-9 bg-background"
+            className="bg-surface pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2 motion-card">
+        <Button onClick={() => handleOpenDialog()} className="gap-2">
           <Plus className="h-4 w-4" /> Add Link
         </Button>
       </Reveal>
@@ -174,7 +174,7 @@ export function LinksClient({
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1,2,3].map(i => (
-            <Card key={i} className="animate-pulse bg-muted/20 h-40" />
+            <Card key={i} className="skeleton-shimmer h-40 border-transparent bg-skeleton shadow-none" />
           ))}
         </div>
       ) : error ? (
@@ -202,7 +202,7 @@ export function LinksClient({
         <Stagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLinks.map(link => (
             <StaggerItem key={link.id}>
-            <Card className="motion-card group relative overflow-hidden border-border/50 bg-background/50 backdrop-blur-sm">
+            <Card className="group relative overflow-hidden">
               <CardHeader className="pb-3 flex flex-row items-start justify-between space-y-0">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">

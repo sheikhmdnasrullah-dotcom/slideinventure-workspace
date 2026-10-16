@@ -133,12 +133,12 @@ export function AssistantPanel({ projectId, workspace, onReviewProposal }: Props
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {workspace.activePath && (
-            <Badge variant="secondary" className="gap-1 text-[11px]">
+            <Badge variant="secondary" className="gap-1 text-xs">
               Open: {workspace.activePath}
             </Badge>
           )}
           {pinned.filter((p) => p !== workspace.activePath).map((p) => (
-            <Badge key={p} variant="outline" className="gap-1 text-[11px]">
+            <Badge key={p} variant="outline" className="gap-1 text-xs">
               <Pin className="h-3 w-3" />
               {p}
               <button

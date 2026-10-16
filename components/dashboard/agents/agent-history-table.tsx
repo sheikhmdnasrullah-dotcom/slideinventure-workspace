@@ -33,7 +33,7 @@ const columns: Column<AgentHistoryRow>[] = [
     key: "command",
     header: "Command",
     render: (row) => (
-      <span className="block max-w-xs truncate font-mono text-xs text-ink-muted">{row.command ?? ""}</span>
+      <span className="block max-w-xs truncate font-code text-xs text-ink-muted">{row.command ?? ""}</span>
     ),
   },
   {

@@ -124,7 +124,7 @@ export default async function AgentsPage() {
             {running.length === 0 ? (
               <p className="font-body text-sm text-ink-muted py-4">
                 No agents running. Start one from the command line:
-                <code className="ml-2 font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">npm run agent research --targets "Acme Corp"</code>
+                <code className="ml-2 font-code text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">npm run agent research --targets &quot;Acme Corp&quot;</code>
               </p>
             ) : (
               <div className="space-y-2">
@@ -133,11 +133,11 @@ export default async function AgentsPage() {
                   return (
                     <div
                       key={run.id}
-                      className="flex items-center gap-3 p-3 rounded-sm bg-[var(--surface-2)] ring-1 ring-rule"
+                      className="flex items-center gap-3 rounded-sm border border-rule bg-surface-2 p-3"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-ink-strong">{run.task_type}</span>
+                          <span className="font-code text-xs text-ink-strong">{run.task_type}</span>
                           <StatusBadge tone="live" dot label="Running" />
                         </div>
                         <p className="font-body text-sm text-ink-muted mt-1 truncate">{run.command ?? "Agent execution"}</p>
@@ -145,18 +145,18 @@ export default async function AgentsPage() {
                           <div className="mt-2 flex items-center gap-2">
                             <div className="flex-1 h-2 bg-[var(--surface)] rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-[var(--text-accent)] transition-all duration-300 ease-expo"
+                                className="h-full rounded-full bg-flame-vivid transition-[width] duration-300"
                                 style={{ width: `${Math.min(100, (prog.current / Math.max(1, prog.total)) * 100)}%` }}
                               />
                             </div>
-                            <span className="font-label text-[10px] text-ink-muted tabular-nums">
+                            <span className="font-label text-xs text-ink-muted tabular-nums">
                               {prog.current} / {prog.total}
                               {prog.current_item && ` · ${prog.current_item}`}
                             </span>
                           </div>
                         )}
                       </div>
-                      <div className="font-label text-[10px] text-ink-faint whitespace-nowrap">
+                      <div className="font-label text-xs text-ink-faint whitespace-nowrap">
                         {new Date(run.started_at).toLocaleTimeString()}
                       </div>
                     </div>

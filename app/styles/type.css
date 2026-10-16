@@ -2,12 +2,12 @@
    SLIDEIN VENTURE OS: TYPE LAYER
    ---------------------------------------------------------------------------
    Roles, not sizes. A component picks a role class; every number resolves to
-   a token in tokens.css. Geist Sans (body/UI) + Geist Mono (labels, figures).
-   Geist is a variable font with a `wght` axis only. No Fraunces opsz/SOFT/WONK
-   axes to dial here, so this is simpler than the marketing type.css.
+   a token in tokens.css. Inter Tight (body/UI/display), the same single
+   family as the marketing site. Sentence case everywhere: there is no
+   uppercase transform in the dashboards.
 
    The five things that separate print typography from web typography:
-     1. inverse tracking: negative at display, positive at body, wide at labels
+     1. inverse tracking: negative at display, neutral at body/labels
      2. text-wrap balance on headings, pretty on paragraphs
      3. tabular figures anywhere a number can change
      4. a deliberate leading ladder
@@ -16,7 +16,7 @@
 
 :root {
   font-optical-sizing: auto;
-  font-feature-settings: 'kern' 1, 'liga' 1, 'cv01' 1, 'cv11' 1;
+  font-feature-settings: 'kern' 1, 'liga' 1;
 }
 
 /* ── 1 · DISPLAY ──────────────────────────────────────────────────────────
@@ -38,8 +38,7 @@
 }
 
 /* ── 2 · BODY ─────────────────────────────────────────────────────────────
-   Positive tracking at small sizes. The opposite of display. Default UI
-   face for everything that isn't a label or a number. */
+   Default UI face for everything that isn't a label or a number. */
 .font-body {
   font-family: var(--font-sans);
   font-weight: var(--font-weight-body, 400);
@@ -58,55 +57,58 @@
 }
 
 /* ── 3 · LABEL ─────────────────────────────────────────────────────────────
-   Mono, uppercase, small, widely tracked. The ONE place wide tracking
-   belongs. This is the console's signature register: section eyebrows,
-   column headers, metadata coordinates, status legends. */
+   Sans, 12px, medium, near-zero tracking, sentence case. Table headers,
+   eyebrows, section labels, metadata. Never mono, never uppercase. */
 .font-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--text-micro);
   font-weight: var(--font-weight-label);
   letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  line-height: var(--heading-tight);
-  font-feature-settings: 'tnum' 1, 'zero' 1;   /* slashed zero */
+  line-height: 1rem;
 }
 
 .font-label-wide {
   letter-spacing: var(--tracking-label-wide);
 }
 
-/* A label kept in the sans face (sentence-case metadata that still reads as a
-   label because of weight + size, not because of the mono + caps treatment). */
+/* Sentence-case metadata that reads as a label through weight + size. */
 .font-eyebrow {
   font-family: var(--font-sans);
   font-size: var(--text-micro);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  line-height: var(--heading-tight);
+  line-height: 1rem;
 }
 
 /* ── 4 · FIGURES ──────────────────────────────────────────────────────────
-   Any number that can change: counts, durations, offsets, KPI values. Without
-   this the digits jitter in width and the panel reads unpolished. Geist Mono's
-   digits are tabular by default; belt-and-braces for the fallback stack. */
+   Any number that can change: counts, durations, offsets, KPI values. Tabular
+   sans — never mono. */
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
 
-/* Distinct value role for KPI/metric numbers: mono, semibold, tight tracking,
+/* Distinct value role for KPI/metric numbers: sans, semibold, tight tracking,
    tabular figures. This is the strongest typographic moment on any page. */
 .font-value {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--tracking-display-tight);
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1, 'zero' 1;
+  font-feature-settings: 'tnum' 1;
 }
 
-/* ── 5 · WIDOWS AND ORPHANS ─────────────────────────────────────────────── */
+/* ── 5 · CODE ─────────────────────────────────────────────────────────────
+   Literal code, IDs, API keys, credential values and log lines ONLY.
+   Never for labels, headings, chips, buttons or breadcrumbs. */
+.font-code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ── 6 · WIDOWS AND ORPHANS ─────────────────────────────────────────────── */
 h1, h2, h3, h4 {
   text-wrap: balance;
 }
@@ -115,7 +117,7 @@ p {
   text-wrap: pretty;
 }
 
-/* ── 6 · REDUCED MOTION (backstop lives in tokens.css; this scoping rule is
+/* ── 7 · REDUCED MOTION (backstop lives in tokens.css; this scoping rule is
    still needed so a role class never introduces motion it can't collapse) ─ */
 @media (prefers-reduced-motion: reduce) {
   .font-display, .font-body, .font-label {
@@ -123,8 +125,8 @@ p {
   }
 }
 
-/* ── 7 · THE WORDMARK (SlideIn Venture brand identity) ───────────────────
-   Live-text wordmark: Fraunces display serif + raised mono qualifier. */
+/* ── 8 · THE WORDMARK (SlideIn Venture brand identity) ───────────────────
+   Live-text wordmark: Inter Tight semibold + raised accent qualifier. */
 .wordmark {
   display: inline-flex;
   align-items: baseline;
@@ -136,37 +138,23 @@ p {
 }
 
 .wordmark-name {
-  font-family: var(--font-display);
-  --axis-opsz: 24;
-  --axis-soft: 6;
-  --axis-wonk: 0;
-  font-variation-settings:
-    'opsz' var(--axis-opsz),
-    'SOFT' var(--axis-soft),
-    'WONK' var(--axis-wonk);
+  font-family: var(--font-sans);
   font-size: 1em;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.022em;
   line-height: 1;
   color: var(--on-surface);
 }
 
 .wordmark-qualifier {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.5em;
   font-weight: var(--font-weight-label);
   letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
   line-height: 1;
   color: var(--text-accent);
   margin-left: 0.52em;
   transform: translateY(-0.34em);
-  transition: letter-spacing var(--dur-base) var(--ease-expo);
-}
-
-.group:hover .wordmark-qualifier,
-.wordmark:hover .wordmark-qualifier {
-  letter-spacing: var(--tracking-label-wide);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -174,4 +162,3 @@ p {
     transition: none;
   }
 }
-

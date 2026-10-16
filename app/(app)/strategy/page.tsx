@@ -41,7 +41,7 @@ export default async function StrategyPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">
+        <h1 className="font-label text-ink-muted">
           Strategy
         </h1>
         <span className="text-xs text-foreground/40 tabular-nums">

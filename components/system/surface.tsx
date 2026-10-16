@@ -18,8 +18,8 @@ export type SurfaceVariant = "flat" | "inset" | "raised";
 
 const VARIANT_CLASS: Record<SurfaceVariant, string> = {
   flat: "bg-transparent",
-  inset: "bg-[var(--surface-2)] ring-1 ring-rule rounded-md",
-  raised: "bg-[var(--surface)] ring-1 ring-rule-strong rounded-md shadow-raised",
+  inset: "rounded-md border border-rule bg-surface-2 p-4",
+  raised: "rounded-lg border border-rule bg-surface p-6 shadow-raised",
 };
 
 export function Surface({

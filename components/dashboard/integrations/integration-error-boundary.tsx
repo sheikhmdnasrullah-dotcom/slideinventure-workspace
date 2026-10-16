@@ -23,7 +23,7 @@ export class IntegrationErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-md border border-dashed border-rule bg-[var(--surface-2)] p-4 text-xs text-foreground/50">
+        <div className="rounded-md border border-danger-border bg-danger-wash p-4 text-xs text-danger">
           {this.props.label ?? "This integration"} hit a problem loading. Refresh the page to
           try again.
         </div>

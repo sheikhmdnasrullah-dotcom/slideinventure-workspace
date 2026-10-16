@@ -66,10 +66,10 @@ type SavedProspect = {
 };
 
 const VERDICT_STYLE: Record<Verdict, string> = {
-  valid: "!bg-emerald-500/10 !text-emerald-500 !border-emerald-500/20",
-  invalid: "!bg-red-500/10 !text-red-500 !border-red-500/20",
+  valid: "!bg-status-live-bg !text-status-live !border-transparent",
+  invalid: "!bg-status-danger-bg !text-status-danger !border-transparent",
   unknown: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20",
-  error: "!bg-amber-500/10 !text-amber-500 !border-amber-500/20",
+  error: "!bg-status-warn-bg !text-status-warn !border-transparent",
 };
 
 const STEP_ICON: Record<StepStatus, typeof CheckCircle2> = {
@@ -80,10 +80,10 @@ const STEP_ICON: Record<StepStatus, typeof CheckCircle2> = {
 };
 
 const STEP_STYLE: Record<StepStatus, string> = {
-  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-500",
+  success: "border-transparent bg-status-live-bg text-status-live",
   empty: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
-  error: "border-amber-500/30 bg-amber-500/10 text-amber-500",
-  skipped: "border-border/50 bg-background/40 text-foreground/30",
+  error: "border-transparent bg-status-warn-bg text-status-warn",
+  skipped: "border-rule bg-surface text-ink-faint",
 };
 
 function AgentPipeline({ trail }: { trail: TrailStep[] }) {
@@ -247,7 +247,7 @@ function BulkCsvImport() {
             type="file"
             accept=".csv"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="text-xs text-foreground/60 file:mr-3 file:rounded-md file:border file:border-border/50 file:bg-background/40 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground"
+            className="text-xs text-ink-muted file:mr-3 file:rounded-full file:border file:border-rule-strong file:bg-surface file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ink-strong"
           />
           <Button onClick={upload} disabled={uploading || !file} size="sm">
             {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
@@ -256,7 +256,7 @@ function BulkCsvImport() {
         </div>
 
         {batches.length > 0 && (
-          <div className="flex flex-col gap-3 rounded-md border border-border/50 bg-background/40 p-3">
+          <div className="flex flex-col gap-3 rounded-md border border-rule bg-surface p-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="font-medium">
                 {batches.length} background batch(es)
@@ -271,9 +271,9 @@ function BulkCsvImport() {
             </div>
             <Progress value={pct} />
             <div className="flex flex-wrap items-center gap-3 text-xs text-foreground/60">
-              <span className="text-emerald-500">{found} found</span>
+              <span className="text-status-live">{found} found</span>
               <span>{notFound} not found</span>
-              {errored > 0 && <span className="text-amber-500">{errored} errored</span>}
+              {errored > 0 && <span className="text-status-warn">{errored} errored</span>}
               <span>{Math.max(total - completed, 0)} pending</span>
             </div>
             <a
@@ -455,7 +455,7 @@ export function EmailCrawler() {
             >
               <FolderArchive className="size-3.5" />
               Files
-              <span className="rounded-full bg-primary/10 px-1.5 py-0.2 text-[11px] font-mono text-primary">
+              <span className="rounded-full bg-flame-wash px-2 py-0.5 text-xs font-medium tabular-nums text-flame">
                 {savedProspects.length}
               </span>
             </Button>
@@ -513,7 +513,7 @@ export function EmailCrawler() {
             {results.map((r) => (
               <div
                 key={r.email}
-                className="flex items-center justify-between rounded-md border border-border/50 bg-background/40 px-3 py-2"
+                className="flex items-center justify-between rounded-md border border-rule bg-surface px-3 py-2"
               >
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{r.email}</span>
@@ -554,7 +554,7 @@ export function EmailCrawler() {
                 <FolderArchive className="size-5 text-primary" />
                 <SheetTitle className="font-label text-base font-semibold">Saved Research</SheetTitle>
               </div>
-              <Badge variant="secondary" className="font-mono text-xs">
+              <Badge variant="secondary">
                 {savedProspects.length} channels
               </Badge>
             </div>
@@ -604,13 +604,13 @@ export function EmailCrawler() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-ink-strong">{p.channelName}</span>
-                          <span className="text-[10px] text-ink-faint">{p.researchedAt.slice(0, 10)}</span>
+                          <span className="text-xs text-ink-faint">{p.researchedAt.slice(0, 10)}</span>
                         </div>
                         <a
                           href={p.channel}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-0.5 inline-flex items-center gap-1 font-mono text-[11px] text-primary hover:underline"
+                          className="mt-0.5 inline-flex items-center gap-1 text-xs text-flame hover:underline"
                         >
                           {p.channel}
                           <ExternalLink className="size-2.5" />
@@ -626,19 +626,19 @@ export function EmailCrawler() {
                     </div>
 
                     <div className="mt-2.5 space-y-1 border-t border-rule/50 pt-2">
-                      <span className="text-[10px] font-medium text-ink-muted uppercase tracking-wider">Emails</span>
+                      <span className="font-label text-ink-muted">Emails</span>
                       {p.emails.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                           {p.emails.map((email) => (
                             <div
                               key={email}
-                              className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-2 py-1 font-mono text-emerald-500 ring-1 ring-emerald-500/20"
+                              className="inline-flex items-center gap-1.5 rounded-pill bg-status-live-bg px-2.5 py-1 text-xs font-medium text-status-live"
                             >
                               <Mail className="size-3" />
                               <span>{email}</span>
                               <button
                                 onClick={() => handleCopy(email, `${p.id}-${email}`)}
-                                className="ml-1 text-emerald-600 hover:text-emerald-400"
+                                className="ml-1 text-status-live"
                                 title="Copy"
                               >
                                 {copiedId === `${p.id}-${email}` ? (
@@ -651,13 +651,13 @@ export function EmailCrawler() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-ink-faint italic">No emails found</p>
+                        <p className="text-xs text-ink-faint italic">No emails found</p>
                       )}
                     </div>
 
                     {p.websites.length > 0 && (
                       <div className="mt-2 space-y-1">
-                        <span className="text-[10px] font-medium text-ink-muted uppercase tracking-wider">
+                        <span className="font-label text-ink-muted">
                           Links & Socials
                         </span>
                         <div className="flex flex-wrap gap-2">
@@ -667,7 +667,7 @@ export function EmailCrawler() {
                               href={w}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-sky-400 hover:underline"
+                              className="inline-flex items-center gap-1 text-xs text-flame hover:underline"
                             >
                               <Globe className="size-3" />
                               <span className="truncate max-w-[180px]">{w}</span>

@@ -28,17 +28,20 @@ const Toaster = ({ ...props }: ToasterProps) => {
           <Loader2Icon className="size-4 animate-spin" />
         ),
       }}
+      position="bottom-center"
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--normal-bg": "var(--button-primary)",
+          "--normal-text": "var(--on-button-primary)",
+          "--normal-border": "transparent",
+          "--border-radius": "999px",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
           toast: "cn-toast",
+          title: "!text-sm !font-medium",
+          description: "!opacity-70",
         },
       }}
       {...props}

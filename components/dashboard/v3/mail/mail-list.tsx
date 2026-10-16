@@ -76,7 +76,7 @@ export function MailList({ unreadOnly = false }: MailListProps) {
                 <div className="flex items-center gap-2">
                   <div className="font-semibold">{item.fromName || item.from}</div>
                   {!item.read && (
-                    <span className="flex h-2 w-2 rounded-full bg-blue-600" />
+                    <span className="flex h-2 w-2 rounded-full bg-flame-vivid" />
                   )}
                 </div>
                 <div

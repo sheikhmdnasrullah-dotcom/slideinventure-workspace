@@ -1007,7 +1007,7 @@ export function LeadsTable() {
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 placeholder="Notes"
-                className="min-h-[80px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50"
+                className="min-h-[88px] w-full rounded-md border border-rule-strong bg-surface px-3.5 py-3 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] placeholder:text-ink-faint hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40"
               />
             </div>
             {customFieldKeys.length > 0 && (

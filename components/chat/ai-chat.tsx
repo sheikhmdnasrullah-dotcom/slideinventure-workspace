@@ -28,7 +28,7 @@ export function AiChat() {
   }
 
   return (
-    <div className="flex h-[560px] flex-col rounded-xl border bg-card/60">
+    <div className="flex h-[560px] flex-col overflow-hidden rounded-lg border border-rule bg-surface shadow-raised">
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground">Ask a question.</p>

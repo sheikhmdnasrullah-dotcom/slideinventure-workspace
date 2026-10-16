@@ -143,8 +143,8 @@ export function ProposalReview({ projectId, proposal, workspace, onClose }: Prop
           )}
           {ops.length > 0 && (
             <span className="ml-auto text-xs text-muted-foreground">
-              <span className="text-green-700">+{summary.added}</span> /{" "}
-              <span className="text-red-700">−{summary.removed}</span> lines
+              <span className="font-medium text-status-live">+{summary.added}</span> /{" "}
+              <span className="font-medium text-status-danger">−{summary.removed}</span> lines
             </span>
           )}
         </div>
@@ -156,14 +156,14 @@ export function ProposalReview({ projectId, proposal, workspace, onClose }: Prop
         ) : (
           <>
             <ScrollArea className="max-h-[45vh] rounded-md border">
-              <div className="min-w-[560px] font-mono text-[12px] leading-relaxed">
+              <div className="min-w-[560px] font-code text-[12px] leading-relaxed">
                 {visibleOps.map(({ op, i, collapsed }) =>
                   collapsed > 0 ? (
                     <button
                       key={i}
                       type="button"
                       onClick={() => setFullView(true)}
-                      className="block w-full bg-muted/50 px-3 py-0.5 text-left text-[11px] text-muted-foreground hover:bg-muted"
+                      className="block w-full bg-surface-2 px-3 py-0.5 text-left text-xs text-ink-muted hover:bg-hover-tint hover:text-ink-strong"
                     >
                       … {collapsed} unchanged lines (show all)
                     </button>
@@ -172,8 +172,8 @@ export function ProposalReview({ projectId, proposal, workspace, onClose }: Prop
                       key={i}
                       className={cn(
                         "flex gap-3 whitespace-pre-wrap break-all px-3 py-0.5",
-                        op.type === "add" && "bg-green-50 text-green-900",
-                        op.type === "remove" && "bg-red-50 text-red-900"
+                        op.type === "add" && "bg-status-live-bg text-ink-strong",
+                        op.type === "remove" && "bg-status-danger-bg text-ink-strong"
                       )}
                     >
                       <span className="w-8 shrink-0 select-none text-right text-muted-foreground">

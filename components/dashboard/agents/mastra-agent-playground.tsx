@@ -12,8 +12,8 @@ type StepStatus = "idle" | "running" | "done";
 
 const STATUS_RING: Record<StepStatus, string> = {
   idle: "border-rule",
-  running: "border-amber-400 shadow-[0_0_18px_rgba(251,191,36,0.45)]",
-  done: "border-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.4)]",
+  running: "border-status-warn",
+  done: "border-status-live",
 };
 
 export function MastraAgentPlayground({ agent }: { agent: MastraCatalogAgent }) {
@@ -84,7 +84,7 @@ export function MastraAgentPlayground({ agent }: { agent: MastraCatalogAgent }) 
           }}
           placeholder={`Describe what you want ${agent.name} to do…  (⌘/Ctrl+Enter to run)`}
           rows={1}
-          className="min-w-[280px] flex-1 resize-none rounded-md border border-rule bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+          className="min-h-[88px] min-w-[280px] flex-1 resize-y rounded-md border border-rule-strong bg-surface px-3.5 py-3 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] placeholder:text-ink-faint hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]"
         />
         <Button onClick={run} disabled={running || !task.trim()}>
           {running ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
@@ -95,7 +95,7 @@ export function MastraAgentPlayground({ agent }: { agent: MastraCatalogAgent }) 
       <div className="grid flex-1 grid-cols-1 gap-4 overflow-auto p-4 lg:grid-cols-[1fr_320px]">
         {/* Workflow ground */}
         <div>
-          <div className="mb-2 font-label text-[11px] uppercase tracking-wide text-ink-muted">Workflow</div>
+          <div className="mb-2 font-label text-ink-muted">Workflow</div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {steps.map((s) => (
               <div key={s.key} className={cn("rounded-md border bg-[var(--surface-2)] p-3", STATUS_RING[status[s.key]])}>
@@ -106,8 +106,8 @@ export function MastraAgentPlayground({ agent }: { agent: MastraCatalogAgent }) 
           </div>
 
           {answer && (
-            <div className="mt-4 rounded-md border border-emerald-400/40 bg-emerald-400/5 p-3">
-              <div className="mb-1 font-label text-xs font-semibold text-emerald-300">Output</div>
+            <div className="mt-4 rounded-md border border-transparent bg-status-live-bg p-3">
+              <div className="mb-1 font-label text-ink-muted">Output</div>
               <p className="whitespace-pre-wrap font-body text-sm text-ink-strong">{answer}</p>
             </div>
           )}
@@ -116,11 +116,11 @@ export function MastraAgentPlayground({ agent }: { agent: MastraCatalogAgent }) 
         {/* Side: model + tools + tool calls */}
         <div className="space-y-3 text-xs">
           <div>
-            <div className="mb-1 font-label text-[11px] uppercase tracking-wide text-ink-muted">Runtime</div>
+            <div className="mb-1 font-label text-ink-muted">Runtime</div>
             <div className="flex flex-wrap items-center gap-1.5">
               <StatusBadge tone="live" label="Mastra · VPS" />
               {agent.modelId && (
-                <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 font-label text-[11px] text-ink-muted">
+                <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 font-label text-xs text-ink-muted">
                   {agent.modelId}
                 </span>
               )}
@@ -128,11 +128,11 @@ export function MastraAgentPlayground({ agent }: { agent: MastraCatalogAgent }) 
           </div>
 
           <div>
-            <div className="mb-1 font-label text-[11px] uppercase tracking-wide text-ink-muted">Tools</div>
+            <div className="mb-1 font-label text-ink-muted">Tools</div>
             <div className="flex flex-wrap gap-1.5">
               {(agent.tools ?? []).length ? (
                 agent.tools!.map((t) => (
-                  <span key={t} className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 font-label text-[11px] text-ink-muted">
+                  <span key={t} className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 font-label text-xs text-ink-muted">
                     {t.replace(/[_-]/g, " ")}
                   </span>
                 ))
@@ -144,12 +144,12 @@ export function MastraAgentPlayground({ agent }: { agent: MastraCatalogAgent }) 
 
           {toolCalls.length > 0 && (
             <div>
-              <div className="mb-1 flex items-center gap-1 font-label text-[11px] uppercase tracking-wide text-ink-muted">
+              <div className="mb-1 flex items-center gap-1 font-label text-ink-muted">
                 <Wrench className="size-3" /> Tool calls
               </div>
               <ul className="space-y-1">
                 {toolCalls.map((t, i) => (
-                  <li key={i} className="rounded bg-[var(--surface-2)] px-2 py-1 font-label text-[11px] text-ink-strong">
+                  <li key={i} className="rounded bg-[var(--surface-2)] px-2 py-1 font-label text-xs text-ink-strong">
                     {t}
                   </li>
                 ))}

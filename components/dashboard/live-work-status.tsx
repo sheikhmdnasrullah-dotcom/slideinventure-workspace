@@ -45,17 +45,17 @@ export function LiveWorkStatus() {
       <button
         type="button"
         onClick={() => start()}
-        className="hidden items-center gap-1.5 rounded-md border border-rule px-2 py-1 font-body text-xs text-ink-muted transition-colors hover:border-rule-strong hover:text-ink-strong sm:flex"
+        className="hidden h-8 items-center gap-1.5 rounded-pill border border-rule-strong px-3.5 text-[13px] font-medium whitespace-nowrap text-ink-muted transition-colors hover:text-ink-strong hover:shadow-raised sm:flex"
         title="Start work timer"
       >
-        <Timer className="size-3.5 text-ink-faint" />
+        <Timer className="size-4 text-ink-faint" />
         Track time
       </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-rule px-2 py-1">
+    <div className="flex h-8 items-center gap-2 rounded-pill border border-rule-strong bg-surface px-3.5">
       <span
         className={cn(
           "size-1.5 rounded-full",
@@ -64,7 +64,7 @@ export function LiveWorkStatus() {
         aria-hidden
       />
 
-      <span className="font-mono text-xs font-medium tabular-nums text-ink-strong">
+      <span className="font-value text-xs text-ink-strong">
         {formatTime(elapsed)}
       </span>
 
@@ -78,18 +78,18 @@ export function LiveWorkStatus() {
         <button
           type="button"
           onClick={isRunning ? pause : resume}
-          className="rounded p-0.5 text-ink-faint hover:text-ink-strong"
+          className="rounded-full p-1 text-ink-faint transition-colors hover:bg-hover-tint hover:text-ink-strong"
           aria-label={isRunning ? "Pause timer" : "Resume timer"}
         >
-          {isRunning ? <Pause className="size-3" /> : <Play className="size-3" />}
+          {isRunning ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
         </button>
         <button
           type="button"
           onClick={handleStop}
-          className="rounded p-0.5 text-ink-faint hover:text-ink-strong"
+          className="rounded-full p-1 text-ink-faint transition-colors hover:bg-hover-tint hover:text-ink-strong"
           aria-label="Stop timer and save session"
         >
-          <Square className="size-3" />
+          <Square className="size-3.5" />
         </button>
       </span>
     </div>

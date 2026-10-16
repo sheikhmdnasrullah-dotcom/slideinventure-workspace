@@ -48,7 +48,7 @@ export function StrategyBoard({ initialCards }: { initialCards: StrategyCard[] }
           className="flex flex-col gap-2 rounded-lg border border-foreground/10 p-3"
         >
           <div className="flex items-baseline justify-between">
-            <h2 className="text-xs font-medium tracking-wide text-foreground/60 uppercase">
+            <h2 className="font-label text-ink-muted">
               {col.label}
             </h2>
             <span className="text-xs text-foreground/30 tabular-nums">

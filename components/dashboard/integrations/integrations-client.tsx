@@ -138,7 +138,7 @@ export function IntegrationsClient() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">Integrations</h1>
+        <h1 className="font-label text-ink-muted">Integrations</h1>
         <p className="text-xs text-foreground/40">Connected services, sync states, and future workspace capabilities live here.</p>
       </div>
 
@@ -177,8 +177,8 @@ export function IntegrationsClient() {
             <Card key={integration.id} className="group relative">
               <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                 <div className="flex items-start gap-2.5">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted ring-1 ring-border">
-                    <Cable className="size-4.5 text-muted-foreground" />
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-flame-wash text-flame">
+                    <Cable className="size-4.5" strokeWidth={1.5} />
                   </div>
                   <div className="space-y-1">
                     <CardTitle className="text-base">{integration.name}</CardTitle>

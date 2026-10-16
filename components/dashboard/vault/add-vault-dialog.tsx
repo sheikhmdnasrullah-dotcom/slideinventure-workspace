@@ -222,7 +222,7 @@ export function AddVaultDialog({ open, onOpenChange, onSaved, editingEntry }: Ad
               onChange={(e) => setForm({ ...form, encryptedValue: e.target.value })}
               placeholder="Enter the secret value..."
               required
-              className="font-mono text-xs"
+              className="font-code text-xs"
               rows={3}
             />
           </div>

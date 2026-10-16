@@ -19,11 +19,12 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Bot, Rocket } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 
+import { GlossTile } from "@/components/system/gloss-tile"
 import { NavUser } from "@/components/dashboard/v3/nav-user"
 import { useDashboardPreferences } from "@/components/dashboard/preferences/preferences-provider"
 import {
@@ -116,19 +117,19 @@ export function AppSidebar({
               onMouseEnter={() => prefetch(homeRoute)}
               onFocus={() => prefetch(homeRoute)}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--rule)] shadow-xs">
-                <span className="font-mono text-[10px] font-bold tracking-wider text-[var(--text-accent)]">SI</span>
-              </div>
+              <GlossTile size={36} float={false}>
+                <span className="font-sans text-[13px] font-semibold text-ink-strong">SI</span>
+              </GlossTile>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <LogoWordmark size="15px" qualifier="OS" />
-                <span className="truncate text-[10px] text-[var(--text-muted)] font-mono tracking-wider uppercase mt-0.5">Acquisition Engine</span>
+                <span className="truncate text-xs text-ink-muted mt-0.5">Acquisition Engine</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="[mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-12px),transparent)]">
         <SidebarGroup>
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -149,20 +150,20 @@ export function AppSidebar({
           </SidebarGroupContent>
           </SidebarGroup>
           {docked && (
-            <div className="px-2 pb-2 pt-1">
+            <div className="px-3 pb-2 pt-1">
               <button
                 type="button"
                 onClick={() => undockAssistant()}
                 title="Bring the assistant back to the screen"
-                className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70"
+                className="flex h-10 w-full items-center gap-3 rounded-[12px] border border-rule bg-transparent px-3 text-sm font-medium text-ink-muted transition-colors hover:bg-hover-tint hover:text-ink-strong"
               >
-                <Bot className="size-4 text-primary" />
+                <Bot className="size-[18px] shrink-0" />
                 <span>Assistant</span>
-                <span className="ml-auto text-[10px] text-sidebar-foreground/50">tap to open</span>
+                <span className="ml-auto text-xs text-ink-faint">tap to open</span>
               </button>
             </div>
           )}
-          <div className="px-2 pb-2 pt-1">
+          <div className="px-3 pb-2 pt-1">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
@@ -174,20 +175,20 @@ export function AppSidebar({
                   }
                 }}
                 title={deployed.agent && !deployed.isOpen ? `Summon ${deployed.agent.name}` : "Deploy an agent as a floating circle"}
-                className="flex flex-1 items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 cursor-pointer min-w-0"
+                className="flex h-10 flex-1 items-center gap-3 rounded-[12px] border border-rule bg-transparent px-3 text-sm font-medium text-ink-muted transition-colors hover:bg-hover-tint hover:text-ink-strong cursor-pointer min-w-0"
               >
                 {deployed.agent ? (
                   <span
-                    className="flex size-5 shrink-0 items-center justify-center rounded-full text-xs shadow-xs"
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full text-xs"
                     style={{ backgroundColor: `${deployed.agent.color || "#6366f1"}25` }}
                   >
                     {deployed.agent.emoji || "🤖"}
                   </span>
                 ) : (
-                  <Rocket className="size-4 shrink-0 text-primary" />
+                  <Rocket className="size-[18px] shrink-0" />
                 )}
                 <span className="truncate">{deployed.agent && !deployed.isOpen ? `Summon ${deployed.agent.name}` : "Deploy Agent"}</span>
-                <span className="ml-auto shrink-0 text-[10px] text-sidebar-foreground/50">
+                <span className="ml-auto shrink-0 text-xs text-ink-faint">
                   {deployed.agent && !deployed.isOpen ? "docked" : "circle"}
                 </span>
               </button>
@@ -196,9 +197,9 @@ export function AppSidebar({
                   type="button"
                   onClick={() => setDeployOpen(true)}
                   title="Pick or deploy another agent"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-foreground/70 hover:text-foreground hover:bg-sidebar-accent/70 transition-colors cursor-pointer"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-full border border-rule bg-transparent text-ink-muted hover:text-ink-strong hover:bg-hover-tint transition-colors cursor-pointer"
                 >
-                  <Rocket className="size-3.5 text-primary" />
+                  <Rocket className="size-[18px]" />
                 </button>
               )}
             </div>
@@ -206,7 +207,7 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="px-2 text-[11px] text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
+        <div className="border-t border-rule px-2 pt-3 text-xs text-ink-faint group-data-[collapsible=icon]:hidden">
           {saveState === "saving" ? "Saving workspace" : saveState === "saved" ? "Workspace saved" : saveState === "error" ? (
             <button type="button" onClick={retrySave} className="underline underline-offset-2 hover:text-sidebar-foreground">
               Couldn’t save workspace. Retry.
@@ -253,13 +254,13 @@ function SortableSidebarItem({
 
   return (
     <SidebarMenuItem ref={setNodeRef} style={style} className={cn(isDragging && "z-20 opacity-80")}>
-      <div className={cn("rounded-lg", isDragging && "bg-sidebar-accent/60 shadow-sm")}>
-        <div className="flex items-start gap-1">
+      <div className={cn("rounded-[12px]", isDragging && "bg-hover-tint shadow-contact")}>
+        <div className="flex items-center gap-1">
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="mt-1 shrink-0 cursor-grab text-sidebar-foreground/50 hover:text-sidebar-foreground group-data-[collapsible=icon]:hidden"
+            className="shrink-0 cursor-grab text-ink-faint opacity-0 transition-opacity duration-[120ms] hover:text-ink-strong hover:opacity-100! group-hover/menu-item:opacity-40 focus-visible:opacity-100 group-data-[collapsible=icon]:hidden"
             aria-label={`Drag ${section.label}`}
             title={`Drag ${section.label}`}
             data-testid="sidebar-drag-handle"
@@ -277,9 +278,12 @@ function SortableSidebarItem({
               onMouseEnter={() => onPrefetch(section.route)}
               onFocus={() => onPrefetch(section.route)}
             >
-              <ActiveRail active={isActive} />
-              <section.icon />
-              <span>{section.label}</span>
+              <ActiveSelection active={isActive} />
+              <section.icon className="relative" />
+              <span className="relative">{section.label}</span>
+              {isActive && (
+                <span aria-hidden className="relative ml-auto size-1.5 shrink-0 rounded-full bg-sidebar-primary" />
+              )}
             </SidebarMenuButton>
           </div>
         </div>
@@ -289,18 +293,29 @@ function SortableSidebarItem({
 }
 
 /**
- * The active-page indicator: one shared element (layoutId) that slides
- * between rows on navigation instead of fading in fresh at each new spot.
- * Renders only inside the currently-active row; Framer Motion animates the
- * position delta whenever it remounts at a different row.
+ * The active-page indicator: one shared wash element (layoutId) that slides
+ * between rows on navigation over 220ms, plus the 6px dot rendered by the
+ * row itself. Renders only inside the currently-active row; Framer Motion
+ * animates the position delta whenever it remounts at a different row.
+ * Static under reduced motion.
  */
-function ActiveRail({ active }: { active: boolean }) {
+function ActiveSelection({ active }: { active: boolean }) {
+  const reduce = useReducedMotion()
   if (!active) return null
+  if (reduce) {
+    return (
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[12px] bg-sidebar-accent"
+      />
+    )
+  }
   return (
     <motion.span
-      layoutId="sidebarActiveRail"
-      className="pointer-events-none absolute left-0 top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-full bg-[var(--sidebar-primary,var(--primary))]"
-      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.6 }}
+      layoutId="sidebarActiveWash"
+      aria-hidden
+      className="pointer-events-none absolute inset-0 rounded-[12px] bg-sidebar-accent"
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
     />
   )
 }

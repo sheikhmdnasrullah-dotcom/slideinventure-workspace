@@ -104,11 +104,11 @@ export function DeployAgentPalette({ open, onOpenChange, noteContext }: DeployAg
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden border border-border/80 bg-background/95 backdrop-blur-xl shadow-2xl rounded-2xl">
+      <DialogContent className="max-w-2xl overflow-hidden p-0">
         <DialogHeader className="p-6 pb-4 border-b border-border/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-xs">
+              <div className="flex size-9 items-center justify-center rounded-[10px] bg-flame-wash text-flame">
                 <Sparkles className="size-4.5" />
               </div>
               <div>
@@ -150,18 +150,18 @@ export function DeployAgentPalette({ open, onOpenChange, noteContext }: DeployAg
               <button
                 key={c.id}
                 onClick={() => setSelectedCategory(c.id)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all ${
                   selectedCategory === c.id
-                    ? "bg-primary text-primary-foreground shadow-xs"
+                    ? "bg-button-primary text-on-button-primary shadow-button"
                     : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
                 <span>{c.label}</span>
                 <span
-                  className={`text-[9px] px-1.5 py-0.2 rounded-full ${
+                  className={`rounded-full px-1.5 py-0.5 text-xs tabular-nums ${
                     selectedCategory === c.id
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-background text-muted-foreground"
+                      ? "bg-on-button-primary/20 text-on-button-primary"
+                      : "bg-surface text-ink-muted"
                   }`}
                 >
                   {c.count}
@@ -200,11 +200,11 @@ export function DeployAgentPalette({ open, onOpenChange, noteContext }: DeployAg
                     key={agent.slug}
                     type="button"
                     onClick={() => handleSelectAgent(agent)}
-                    className="group relative flex flex-col items-center gap-2 p-2.5 rounded-2xl border border-transparent hover:border-border/80 hover:bg-muted/40 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="group relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-transparent p-2.5 transition-colors duration-[120ms] hover:border-rule hover:bg-hover-tint"
                   >
                     {/* Circle Icon */}
                     <div
-                      className="relative flex size-15 items-center justify-center rounded-full text-2xl shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:ring-4"
+                      className="relative flex size-15 items-center justify-center rounded-full text-2xl transition-transform duration-200"
                       style={{
                         backgroundColor: `${color}16`,
                         borderColor: color,
@@ -224,7 +224,7 @@ export function DeployAgentPalette({ open, onOpenChange, noteContext }: DeployAg
                       <span className="font-semibold text-xs text-foreground group-hover:text-primary transition-colors line-clamp-1">
                         {agent.name}
                       </span>
-                      <span className="text-[10px] text-muted-foreground line-clamp-1 pt-0.5 px-1">
+                      <span className="text-xs text-muted-foreground line-clamp-1 pt-0.5 px-1">
                         {agent.strategy || agent.description}
                       </span>
                     </div>

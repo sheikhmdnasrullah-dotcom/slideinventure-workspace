@@ -126,7 +126,7 @@ export default function ExcalidrawPopup() {
   return (
     <div className="flex h-screen w-screen flex-col bg-background">
       <header className="flex items-center gap-3 border-b border-border px-4 py-2">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">Excel Draw</span>
+        <span className="font-label text-ink-muted">Excel Draw</span>
         <Input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}

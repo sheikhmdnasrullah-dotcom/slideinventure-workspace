@@ -122,7 +122,7 @@ export function LeadResearchAssistantPanel() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center gap-2 rounded-md border border-dashed border-rule-strong p-6 text-center transition-colors hover:bg-[var(--surface-2)]/50"
+            className="flex flex-col items-center gap-2 rounded-md border border-dashed border-rule-strong bg-surface p-6 text-center transition-colors hover:bg-hover-tint"
           >
             <Upload className="size-5 text-ink-faint" />
             <span className="font-body-tight text-sm text-ink-strong">

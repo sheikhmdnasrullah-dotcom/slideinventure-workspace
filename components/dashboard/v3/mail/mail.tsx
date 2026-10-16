@@ -169,7 +169,7 @@ export function Mail({
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Folders</span>
                 </Button>
-                <h1 className="flex-1 truncate text-xl font-bold capitalize">
+                <h1 className="font-display flex-1 truncate text-lg font-semibold capitalize">
                   {Object.entries(FOLDER_MAP).find(([, v]) => v === folder)?.[0] ?? folder}
                 </h1>
                 <Button variant="ghost" size="icon" className="p-1" onClick={refresh} disabled={loading} title="Refresh">
@@ -181,7 +181,7 @@ export function Mail({
                 </Button>
               </div>
               <Separator />
-              <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="bg-surface p-4">
                 <form onSubmit={(e) => e.preventDefault()}>
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -358,14 +358,14 @@ export function Mail({
         <ResizablePanel id="list" defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold capitalize">
+              <h1 className="font-display text-lg font-semibold capitalize">
                 {Object.entries(FOLDER_MAP).find(([, v]) => v === folder)?.[0] ?? folder}
               </h1>
               <TabsList className="ml-auto">
-                <TabsTrigger value="all" className="text-zinc-600 dark:text-zinc-200">
+                <TabsTrigger value="all">
                   All mail
                 </TabsTrigger>
-                <TabsTrigger value="unread" className="text-zinc-600 dark:text-zinc-200">
+                <TabsTrigger value="unread">
                   Unread
                 </TabsTrigger>
               </TabsList>
@@ -381,7 +381,7 @@ export function Mail({
               </Button>
             </div>
             <Separator />
-            <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="bg-surface p-4">
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />

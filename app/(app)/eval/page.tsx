@@ -6,7 +6,7 @@ export default async function EvalPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">Eval</h1>
+        <h1 className="font-label text-ink-muted">Eval</h1>
         <p className="text-xs text-foreground/40">
           Internal RAG evaluation (Ragas-style, LLM-as-judge): faithfulness, answer relevancy,
           context relevancy. Not user-facing.

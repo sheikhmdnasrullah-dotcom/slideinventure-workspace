@@ -78,57 +78,57 @@ export function OpportunityDossierModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         {/* Header Ribbon */}
-        <div className="relative border-b border-border/60 p-6 bg-muted/20">
+        <div className="relative rounded-t-xl border-b border-rule bg-surface-2 p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <Avatar className="size-14 border border-border/80 shadow-md">
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+              <Avatar className="size-14">
+                <AvatarFallback className="bg-flame-wash font-semibold text-flame text-lg">
                   {prospect.name.split(" ").map((n) => n[0]).join("")}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xl font-bold tracking-tight text-foreground">{prospect.name}</h2>
-                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-xs font-semibold">
+                  <h2 className="font-display-soft text-lg text-ink-strong">{prospect.name}</h2>
+                  <Badge variant="outline">
                     {account.industry}
                   </Badge>
                   <Badge
                     variant="outline"
-                    className={`text-xs font-semibold ${
+                    className={`border-transparent ${
                       opportunity.stage === "booked"
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                        ? "bg-status-live-bg text-status-live"
                         : opportunity.stage === "high_intent"
-                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                        : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                        ? "bg-status-warn-bg text-status-warn"
+                        : "bg-status-neutral-bg text-status-neutral"
                     }`}
                   >
                     {opportunity.stage.toUpperCase().replace("_", " ")}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {prospect.title} at <span className="text-foreground font-medium">{account.name}</span>
+                <p className="mt-0.5 text-sm text-ink-muted">
+                  {prospect.title} at <span className="font-medium text-ink-strong">{account.name}</span>
                 </p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2 flex-wrap">
-                  <span className="flex items-center gap-1"><Mail className="size-3.5 text-primary/70" /> {prospect.email}</span>
+                  <span className="flex items-center gap-1"><Mail className="size-3.5 text-ink-faint" /> {prospect.email}</span>
                   {prospect.location && (
-                    <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {prospect.location}</span>
+                    <span className="flex items-center gap-1"><MapPin className="size-3.5 text-ink-faint" /> {prospect.location}</span>
                   )}
-                  <span className="flex items-center gap-1"><Building className="size-3.5" /> {account.size}</span>
+                  <span className="flex items-center gap-1"><Building className="size-3.5 text-ink-faint" /> {account.size}</span>
                 </div>
               </div>
             </div>
 
             {/* Fit Score Gauge */}
-            <div className="flex items-center gap-3 self-start md:self-auto bg-card/60 border border-border/60 rounded-xl px-4 py-2.5 shadow-xs">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-mono text-base font-bold">
+            <div className="flex items-center gap-3 self-start rounded-lg border border-rule bg-surface-2 px-4 py-2.5 md:self-auto">
+              <div className="flex size-10 items-center justify-center rounded-[10px] bg-flame-wash font-value text-base text-flame">
                 {opportunity.fit_score}%
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ICP Fit Score</div>
-                <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                  <Flame className="size-3" /> High Buying Fit
+                <div className="font-label text-ink-muted">ICP Fit Score</div>
+                <div className="flex items-center gap-1 text-xs font-semibold text-status-live">
+                  <Flame className="size-3.5" /> High Buying Fit
                 </div>
               </div>
             </div>
@@ -136,26 +136,28 @@ export function OpportunityDossierModal({
         </div>
 
         {/* Action Callout Hero (Next Best Action) */}
-        <div className="mx-6 mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
+        <div className="mx-6 mt-6 rounded-lg border border-transparent bg-flame-highlight p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
-                <Zap className="size-4.5" />
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-button-primary text-on-button-primary">
+                <Zap className="size-[18px]" />
               </div>
               <div>
-                <div className="text-xs font-semibold text-primary uppercase tracking-wider">AI Recommended Next Best Action</div>
-                <div className="text-sm font-semibold text-foreground mt-0.5">{next_best_action.action}</div>
-                <div className="text-xs text-muted-foreground mt-1">{next_best_action.reason}</div>
+                <div className="font-label text-flame">AI Recommended Next Best Action</div>
+                <div className="mt-0.5 text-[15px] font-semibold text-ink-strong">{next_best_action.action}</div>
+                <div className="mt-1 text-[13px] text-ink-muted">{next_best_action.reason}</div>
               </div>
             </div>
             <Button
               size="sm"
-              className="shrink-0 bg-primary text-primary-foreground font-semibold shadow-md hover:bg-primary/90"
+              dot
+              loading={executingAction}
+              className="shrink-0"
               onClick={handleExecuteAction}
               disabled={executingAction}
             >
               {executingAction ? "Executing..." : "Execute 1-Click Action"}
-              <ArrowRight className="size-3.5 ml-1.5" />
+              <ArrowRight className="size-4" />
             </Button>
           </div>
         </div>
@@ -163,42 +165,42 @@ export function OpportunityDossierModal({
         {/* Content Tabs */}
         <div className="p-6">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="grid grid-cols-4 mb-6 bg-muted/40">
-              <TabsTrigger value="dossier" className="text-xs font-medium">Why This Prospect</TabsTrigger>
-              <TabsTrigger value="conversation" className="text-xs font-medium">Conversation ({conversation.messages_count})</TabsTrigger>
-              <TabsTrigger value="research" className="text-xs font-medium">AI Research Brief</TabsTrigger>
-              <TabsTrigger value="signals" className="text-xs font-medium">Buying Signals ({opportunity.buying_signals.length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="dossier">Why This Prospect</TabsTrigger>
+              <TabsTrigger value="conversation">Conversation ({conversation.messages_count})</TabsTrigger>
+              <TabsTrigger value="research">AI Research Brief</TabsTrigger>
+              <TabsTrigger value="signals">Buying Signals ({opportunity.buying_signals.length})</TabsTrigger>
             </TabsList>
 
             {/* TAB 1: WHY THIS PROSPECT */}
             <TabsContent value="dossier" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-xl border border-border/60 bg-card/40 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Target className="size-4 text-primary" />
+                <div className="rounded-md border border-rule bg-surface-2 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-[15px] font-semibold text-ink-strong">
+                    <Target className="size-[18px] text-ink-strong" />
                     ICP Match Rationale
                   </div>
-                  <ul className="space-y-2 text-xs text-muted-foreground">
+                  <ul className="space-y-2 text-[13px] text-ink-muted">
                     {opportunity.fit_reasons.map((reason, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-status-live" />
                         <span>{reason}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-border/60 bg-card/40 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Sparkles className="size-4 text-amber-400" />
+                <div className="rounded-md border border-rule bg-surface-2 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-[15px] font-semibold text-ink-strong">
+                    <Sparkles className="size-[18px] text-status-warn" />
                     Observed Need &amp; Problem
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-[13px] leading-relaxed text-ink-muted">
                     {opportunity.need}
                   </p>
-                  <div className="pt-2 border-t border-border/40 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Detected Intent:</span>
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[11px]">
+                  <div className="flex items-center justify-between border-t border-rule pt-3 text-xs">
+                    <span className="text-ink-muted">Detected Intent:</span>
+                    <Badge variant="outline" className="border-transparent bg-status-warn-bg text-status-warn">
                       {intent.detected_intent} ({Math.round(intent.confidence * 100)}%)
                     </Badge>
                   </div>
@@ -207,15 +209,15 @@ export function OpportunityDossierModal({
 
               {/* Vertical Attributes */}
               {opportunity.vertical_attributes && Object.keys(opportunity.vertical_attributes).length > 0 && (
-                <div className="rounded-xl border border-border/60 bg-card/30 p-4">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                <div className="rounded-md border border-rule bg-surface-2 p-4">
+                  <div className="font-label mb-3 text-ink-muted">
                     Configurable Vertical Attributes ({account.industry})
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {Object.entries(opportunity.vertical_attributes).map(([k, v]) => (
-                      <div key={k} className="bg-background/60 border border-border/40 rounded-lg p-2.5">
-                        <div className="text-[11px] text-muted-foreground capitalize">{k.replace(/_/g, " ")}</div>
-                        <div className="text-sm font-semibold text-foreground mt-0.5">{String(v)}</div>
+                      <div key={k} className="rounded-sm border border-rule bg-surface p-2.5">
+                        <div className="text-xs text-ink-muted capitalize">{k.replace(/_/g, " ")}</div>
+                        <div className="mt-0.5 text-sm font-semibold text-ink-strong">{String(v)}</div>
                       </div>
                     ))}
                   </div>
@@ -225,29 +227,29 @@ export function OpportunityDossierModal({
 
             {/* TAB 2: CONVERSATION THREAD */}
             <TabsContent value="conversation" className="space-y-4">
-              <div className="rounded-xl border border-border/60 bg-card/40 divide-y divide-border/40 overflow-hidden">
+              <div className="rounded-md border border-rule bg-surface-2 divide-y divide-rule-soft overflow-hidden">
                 {conversation.thread.map((msg) => (
                   <div key={msg.id} className="p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                        <span className={`inline-flex h-[26px] items-center rounded-pill px-2.5 text-xs font-medium ${
                           msg.direction === "outbound"
-                            ? "bg-primary/10 text-primary border border-primary/20"
-                            : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "bg-flame-wash text-flame"
+                            : "bg-status-live-bg text-status-live"
                         }`}>
                           {msg.direction === "outbound" ? "OUTBOUND VIA KUMOMTA" : "INBOUND REPLY"}
                         </span>
-                        <span className="text-xs font-medium text-foreground">{msg.from}</span>
+                        <span className="text-[13px] font-medium text-ink-strong">{msg.from}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground font-mono">{msg.timestamp}</span>
+                      <span className="text-xs tabular-nums text-ink-muted">{msg.timestamp}</span>
                     </div>
-                    <div className="text-xs text-muted-foreground font-semibold">{msg.subject}</div>
-                    <div className="text-xs text-foreground/90 whitespace-pre-line bg-background/50 p-3 rounded-lg border border-border/30 font-mono">
+                    <div className="text-xs font-semibold text-ink-muted">{msg.subject}</div>
+                    <div className="rounded-md border border-rule bg-surface p-3 text-[13px] whitespace-pre-line text-ink-strong">
                       {msg.body}
                     </div>
                     {msg.deliverability_grade && (
-                      <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-mono">
-                        <ShieldCheck className="size-3.5" /> DKIM Verified • Deliverability Grade: {msg.deliverability_grade}
+                      <div className="flex items-center gap-2 text-xs text-status-live">
+                        <ShieldCheck className="size-4" /> DKIM Verified • Deliverability Grade: {msg.deliverability_grade}
                       </div>
                     )}
                   </div>
@@ -257,17 +259,17 @@ export function OpportunityDossierModal({
 
             {/* TAB 3: AI RESEARCH DOSSIER */}
             <TabsContent value="research" className="space-y-4">
-              <div className="rounded-xl border border-border/60 bg-card/40 p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Bot className="size-4 text-primary" />
+              <div className="rounded-md border border-rule bg-surface-2 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-[15px] font-semibold text-ink-strong">
+                  <Bot className="size-[18px] text-ink-strong" />
                   AI Synthesis &amp; Strategic Summary
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-[13px] leading-relaxed text-ink-muted">
                   {research_dossier.summary}
                 </p>
                 <div className="pt-3 border-t border-border/40">
-                  <div className="text-xs font-semibold text-foreground mb-1.5">Recommended Engagement Angle:</div>
-                  <div className="text-xs text-primary/90 bg-primary/5 p-2.5 rounded-lg border border-primary/20">
+                  <div className="mb-1.5 text-xs font-semibold text-ink-strong">Recommended Engagement Angle:</div>
+                  <div className="rounded-md border border-transparent bg-flame-wash p-2.5 text-[13px] text-ink-strong">
                     {research_dossier.recommended_angle}
                   </div>
                 </div>
@@ -277,17 +279,17 @@ export function OpportunityDossierModal({
             {/* TAB 4: BUYING SIGNALS */}
             <TabsContent value="signals" className="space-y-3">
               {opportunity.buying_signals.map((sig) => (
-                <div key={sig.id} className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-card/40 p-4">
+                <div key={sig.id} className="flex items-start justify-between gap-4 rounded-md border border-rule bg-surface-2 p-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-status-warn-bg text-status-warn">
                       <Flame className="size-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-foreground">{sig.signal}</div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">Source: {sig.source}</div>
+                      <div className="text-[13px] font-medium text-ink-strong">{sig.signal}</div>
+                      <div className="mt-0.5 text-xs text-ink-muted">Source: {sig.source}</div>
                     </div>
                   </div>
-                  <span className="text-[11px] text-muted-foreground font-mono shrink-0">{sig.timestamp}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-ink-muted">{sig.timestamp}</span>
                 </div>
               ))}
             </TabsContent>

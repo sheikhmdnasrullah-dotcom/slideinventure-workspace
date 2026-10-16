@@ -53,10 +53,21 @@ export function SiteHeader({
   }, [crumbs, pathname])
 
   const lastIndex = resolvedCrumbs.length - 1
+  const [scrolled, setScrolled] = React.useState(false)
+  React.useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 0)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   return (
-    <header className="sticky top-0 z-10 flex h-(--header-height) shrink-0 items-center gap-2 border-b bg-background/90 transition-[width,height] ease-linear backdrop-blur-sm group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+    <header
+      data-slot="site-header"
+      data-scrolled={scrolled || undefined}
+      className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-transparent bg-background transition-[border-color] ease-linear data-[scrolled]:border-rule"
+    >
+      <div className="flex w-full items-center gap-1 px-5 md:gap-2 md:px-10">
         <SidebarTrigger className="-ml-1" />
         <Separator
           orientation="vertical"
@@ -70,7 +81,7 @@ export function SiteHeader({
                 <React.Fragment key={`${crumb.label}-${i}`}>
                   <BreadcrumbItem>
                     {isLast || !crumb.href ? (
-                      <BreadcrumbPage className="text-base font-medium">{crumb.label}</BreadcrumbPage>
+                      <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                     ) : (
                       <BreadcrumbLink render={<Link href={crumb.href} />}>{crumb.label}</BreadcrumbLink>
                     )}
@@ -82,7 +93,7 @@ export function SiteHeader({
          </BreadcrumbList>
        </Breadcrumb>
         {subtitle && (
-          <span className="hidden truncate font-label text-ink-faint sm:inline">{subtitle}</span>
+          <span className="hidden truncate font-label text-ink-muted sm:inline">{subtitle}</span>
         )}
         <div className="ml-auto flex items-center gap-2">
           <LiveWorkStatus />
@@ -91,12 +102,12 @@ export function SiteHeader({
             size="sm"
             variant="outline"
             onClick={() => commandMenuStore.open()}
-            className="gap-2 text-muted-foreground hidden sm:flex"
+            className="gap-2 text-ink-muted hidden sm:flex"
             aria-label="Open command menu"
           >
-            <Search className="size-3.5" />
+            <Search className="size-4" />
             <span className="hidden sm:inline">Ask · Search</span>
-            <kbd className="hidden h-5 items-center rounded-xs border border-border bg-muted px-1 font-mono text-[10px] text-muted-foreground md:inline-flex">
+            <kbd className="hidden h-6 items-center rounded-xs border border-rule bg-surface-2 px-1.5 font-sans text-xs text-ink-muted lg:inline-flex">
               ⌘K
            </kbd>
          </Button>
@@ -107,7 +118,7 @@ export function SiteHeader({
                 animate={syncing ? { rotate: 360 } : { rotate: 0 }}
                 transition={syncing ? { repeat: Infinity, duration: 0.8, ease: "linear" } : {}}
               >
-                <RefreshCw className="size-3.5" />
+                <RefreshCw className="size-4" />
              </motion.span>
               Sync now
            </Button>
@@ -115,7 +126,7 @@ export function SiteHeader({
           {primaryAction && (
             <Button
               size="sm"
-              className="hidden h-7 sm:flex"
+              className="hidden sm:flex"
               render={
                 primaryAction.href ? (
                   <Link href={primaryAction.href} />

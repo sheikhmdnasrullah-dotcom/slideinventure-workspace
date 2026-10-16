@@ -232,7 +232,7 @@ export function IntegrationsHub({ statuses }: { statuses: IntegrationStatus[] })
                       <IntegrationIcon id={item.id} />
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">{item.name}</span>
-                        <span className="font-mono text-[10px] text-foreground/40">{item.repo}</span>
+                        <span className="font-code text-xs text-foreground/40">{item.repo}</span>
                       </div>
                     </div>
                     <StatusBadge tone={toneFor(item.enabled)} label={item.enabled ? "live" : "off"} />

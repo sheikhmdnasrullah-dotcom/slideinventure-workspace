@@ -65,7 +65,7 @@ export function Timeline({
                 <div className="flex shrink-0 items-center gap-2">
                   {item.tone && <StatusBadge tone={item.tone} />}
                   {timeLabel && (
-                    <span className="font-label tabular-nums text-ink-faint">
+                    <span className="font-label tabular-nums text-ink-muted">
                       {timeLabel}
                     </span>
                   )}

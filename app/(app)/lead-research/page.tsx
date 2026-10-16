@@ -7,7 +7,7 @@ export default async function LeadResearchPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
-        <h1 className="text-sm font-medium uppercase tracking-wide text-foreground/60">
+        <h1 className="font-label text-ink-muted">
           Lead Research
         </h1>
         <p className="mt-1 text-2xl font-semibold tracking-tight">

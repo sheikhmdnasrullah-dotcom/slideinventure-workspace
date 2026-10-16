@@ -18,10 +18,10 @@ import { Textarea } from "@/components/ui/textarea";
 type Verdict = "valid" | "invalid" | "unknown" | "error";
 
 const VERDICT_STYLE: Record<Verdict, string> = {
-  valid: "!bg-emerald-500/10 !text-emerald-500 !border-emerald-500/20",
-  invalid: "!bg-red-500/10 !text-red-500 !border-red-500/20",
+  valid: "!bg-status-live-bg !text-status-live !border-transparent",
+  invalid: "!bg-status-danger-bg !text-status-danger !border-transparent",
   unknown: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20",
-  error: "!bg-amber-500/10 !text-amber-500 !border-amber-500/20",
+  error: "!bg-status-warn-bg !text-status-warn !border-transparent",
 };
 
 export function ReacherPanel() {

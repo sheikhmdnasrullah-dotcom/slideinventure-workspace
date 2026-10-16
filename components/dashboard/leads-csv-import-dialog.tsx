@@ -160,25 +160,25 @@ export function CsvImportDialog({ open, onOpenChange, onImported }: CsvImportDia
               />
               <Label
                 htmlFor="csv-file-input"
-                className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-all cursor-pointer ${
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors duration-[120ms] ${
                   file
-                    ? "border-green-500 bg-green-50"
-                    : "border-muted-foreground/25 hover:border-muted-foreground/40 hover:bg-muted/50"
+                    ? "border-status-live bg-status-live-bg"
+                    : "border-rule-strong hover:border-ink-faint hover:bg-hover-tint"
                 }`}
               >
                 <div className="text-center space-y-3">
-                  <div className="mx-auto rounded-full bg-muted p-3">
+                  <div className="mx-auto rounded-full bg-flame-wash p-3 text-flame">
                     {file ? (
-                      <FileSpreadsheet className="h-6 w-6 text-green-600" />
+                      <FileSpreadsheet className="h-6 w-6" />
                     ) : (
-                      <UploadCloud className="h-6 w-6 text-muted-foreground" />
+                      <UploadCloud className="h-6 w-6" />
                     )}
                   </div>
                   <div>
                     <p className="text-sm font-medium">
                       {file ? (
                         <span className="flex items-center gap-2">
-                          <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                          <FileSpreadsheet className="h-4 w-4 text-status-live" />
                           {file.name}
                         </span>
                       ) : (

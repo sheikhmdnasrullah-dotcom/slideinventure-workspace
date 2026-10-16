@@ -8,7 +8,7 @@ import {
 } from "framer-motion";
 import { useMemo } from "react";
 
-const EASE_EXPO = [0.16, 1, 0.3, 1] as const;
+const EASE_EXPO = [0.22, 1, 0.36, 1] as const;
 const EASE_STD = [0.4, 0, 0.2, 1] as const;
 
 const EASE_MAP = { expo: EASE_EXPO, std: EASE_STD } as const;
@@ -17,9 +17,10 @@ export const Ease = EASE_MAP;
 
 export const Duration = {
   instant: 0.08,
-  fast: 0.14,
+  fast: 0.12,
   base: 0.22,
-  slow: 0.42,
+  slow: 0.32,
+  page: 0.24,
   reveal: 0.62,
 } as const;
 
@@ -52,7 +53,7 @@ export const fadeUp: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.22, ease: EASE_EXPO },
+    transition: { duration: 0.24, ease: EASE_EXPO },
   },
 };
 

@@ -75,7 +75,7 @@ export function ConnectionStatus() {
   if (connected) {
     return (
       <div className="flex items-center gap-3">
-        <FileText className="size-4 text-green-500" />
+        <FileText className="size-4 text-status-live" />
         <span className="font-medium text-foreground">{workspaceName}</span>
         <Button
           variant="ghost"

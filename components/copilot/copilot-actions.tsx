@@ -269,7 +269,7 @@ export function CopilotActions() {
       const canRespond = typeof respond === "function";
 
       return (
-        <div className="w-72 rounded-lg border bg-card p-3 text-sm shadow-xl">
+        <div className="w-72 rounded-[16px] border border-rule bg-card p-3 text-sm shadow-float">
           <p className="font-medium text-foreground">Run agent</p>
           <p className="mt-1 text-muted-foreground">
             <span className="text-foreground">{args.slug}</span> will run with this message:

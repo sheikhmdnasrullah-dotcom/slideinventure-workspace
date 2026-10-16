@@ -60,7 +60,7 @@ export function Stat({
   const inner = (
     <>
       <span className="font-label text-xs text-ink-faint">{label}</span>
-      <span className="font-mono text-xl font-semibold tabular-nums text-ink-strong">
+      <span className="font-value text-xl text-ink-strong">
         {value}
       </span>
       {hint ? <span className="font-body text-xs text-ink-muted">{hint}</span> : null}

@@ -117,7 +117,7 @@ export function AgentCanvasWorkspace() {
       </div>
 
       {selected === "lead-research-assistant" ? (
-        <div className="max-w-lg rounded-xl border bg-card/60 p-4">
+        <div className="max-w-lg rounded-lg border border-rule bg-surface p-6 shadow-raised">
           <h3 className="text-sm font-semibold">Lead Research Assistant</h3>
           <p className="mt-1 mb-4 text-xs text-muted-foreground">
             No required fields. Describe who to find, add one lead you have partial info on, or upload a CSV.
@@ -126,7 +126,7 @@ export function AgentCanvasWorkspace() {
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-      <div className="rounded-xl border bg-card/60 p-4">
+      <div className="rounded-lg border border-rule bg-surface p-6 shadow-raised">
         <h3 className="text-sm font-semibold">Launch Pipeline</h3>
         <p className="mt-1 text-xs text-muted-foreground">
           Feed a prospect link or details. The canvas runs each pipeline stage and emits
@@ -137,7 +137,7 @@ export function AgentCanvasWorkspace() {
           value={link}
           onChange={(e) => setLink(e.target.value)}
           placeholder="https://youtube.com/@channel"
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+          className="mt-1 h-11 w-full rounded-md border border-rule-strong bg-surface px-3.5 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]"
         />
         <label className="mt-3 block text-xs font-medium">Prospect details</label>
         <textarea
@@ -145,7 +145,7 @@ export function AgentCanvasWorkspace() {
           onChange={(e) => setDetails(e.target.value)}
           placeholder="Company, domain, location"
           rows={3}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+          className="mt-1 min-h-[88px] w-full rounded-md border border-rule-strong bg-surface px-3.5 py-3 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] placeholder:text-ink-faint hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]"
         />
         <div className="mt-4">
           <ShimmerButton onClick={run} disabled={running}>
@@ -154,14 +154,14 @@ export function AgentCanvasWorkspace() {
         </div>
 
         {result && (
-          <div className="mt-4 rounded-md border bg-background/60 p-3 text-xs">
+          <div className="mt-4 rounded-md border border-rule bg-surface p-3 text-xs text-ink-muted">
             {result.error ? (
-              <p className="text-rose-500">{result.error}</p>
+              <p className="text-status-danger">{result.error}</p>
             ) : (
               <>
                 <p className="font-medium">Emails found: {result.emails?.length ?? 0}</p>
                 {result.emails?.map((e) => (
-                  <p key={e} className="text-emerald-500">{e}</p>
+                  <p key={e} className="text-status-live">{e}</p>
                 ))}
                 {!result.emails?.length && (
                   <p className="text-muted-foreground">No public email on visited pages.</p>

@@ -43,7 +43,7 @@ export function Metric({
       className={cn("flex flex-col gap-1.5 py-2", className)}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="font-label text-ink-faint">{label}</span>
+        <span className="font-label text-ink-muted">{label}</span>
         {direction && delta && (
           <TrendBadge direction={direction} label={delta} />
         )}

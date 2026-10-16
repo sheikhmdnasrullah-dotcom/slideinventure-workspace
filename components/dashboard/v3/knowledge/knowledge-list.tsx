@@ -19,7 +19,7 @@ export function KnowledgeList() {
           <StaggerItem key={item.id}>
           <button
             className={cn(
-              "motion-card flex w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm hover:bg-accent/20",
+              "flex w-full flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm hover:bg-accent/20",
               selected === item.id && "bg-muted"
             )}
             onClick={() => setSelected(item.id)}
@@ -40,7 +40,7 @@ export function KnowledgeList() {
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-[10px]">
+                <Badge variant="secondary" className="text-xs">
                   {item.type}
                 </Badge>
                 <span className="text-xs text-muted-foreground capitalize">

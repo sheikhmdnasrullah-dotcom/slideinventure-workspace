@@ -68,7 +68,7 @@ export function AgentRosterTable({
       header: "Division",
       sortable: true,
       render: (a) => (
-        <Badge variant="outline" className="text-[10px] whitespace-nowrap">
+        <Badge variant="outline" className="text-xs whitespace-nowrap">
           {DIVISION_LABELS[a.division] ?? a.division}
           {a.team ? ` · ${a.team}` : ""}
         </Badge>

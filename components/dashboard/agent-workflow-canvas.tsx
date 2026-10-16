@@ -49,10 +49,10 @@ const KIND_META: Record<NodeKind, { icon: LucideIcon }> = {
 };
 
 const STATUS_RING: Record<Status, string> = {
-  idle: "border-border",
-  running: "border-amber-400 shadow-[0_0_18px_rgba(251,191,36,0.5)]",
-  done: "border-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.45)]",
-  error: "border-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.45)]",
+  idle: "border-rule",
+  running: "border-status-warn",
+  done: "border-status-live",
+  error: "border-status-danger",
 };
 
 function AgentNode({ id, data }: NodeProps) {
@@ -68,7 +68,7 @@ function AgentNode({ id, data }: NodeProps) {
   };
   return (
     <div
-      className={`group relative w-52 rounded-xl border bg-card/80 p-3 backdrop-blur ${STATUS_RING[d.status]}`}
+      className={`group relative w-52 rounded-lg border bg-surface p-3 shadow-raised ${STATUS_RING[d.status]}`}
     >
       <Handle type="target" position={Position.Left} className="!bg-primary" />
       <button
@@ -83,14 +83,14 @@ function AgentNode({ id, data }: NodeProps) {
         <span className="text-xs font-semibold">{d.label}</span>
       </div>
       {d.instruction && (
-        <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">{d.instruction}</p>
+        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{d.instruction}</p>
       )}
       {d.result && (
-        <p className="mt-2 max-h-16 overflow-auto rounded bg-muted/60 p-1.5 text-[10px] text-emerald-300">
+        <p className="mt-2 max-h-16 overflow-auto rounded bg-surface-2 p-1.5 font-code text-xs text-status-live">
           {d.result}
         </p>
       )}
-      <span className="mt-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+      <span className="mt-2 inline-block rounded-full bg-muted px-2 py-0.5 font-label text-ink-muted">
         {d.status}
       </span>
       <Handle type="source" position={Position.Right} className="!bg-primary" />
@@ -291,7 +291,7 @@ export function AgentWorkflowCanvas({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && buildGraph()}
           placeholder={`Describe what you want ${name} to do...`}
-          className="min-w-[260px] flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+          className="h-11 min-w-[260px] flex-1 rounded-md border border-rule-strong bg-surface px-3.5 text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] placeholder:text-ink-faint hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]"
         />
         <ShimmerButton onClick={buildGraph} disabled={planning || !input.trim()}>
           {planning ? "Building" : "Build graph"}
@@ -354,7 +354,7 @@ export function AgentWorkflowCanvas({
             </div>
           )}
           {output && (
-            <div className="mt-3 rounded border border-emerald-400/40 bg-emerald-400/5 p-2 text-emerald-200">
+            <div className="mt-3 rounded border border-transparent bg-status-live-bg p-2 font-code text-xs text-status-live">
               <p className="mb-1 font-semibold">Output</p>
               <p className="whitespace-pre-wrap">{output.slice(0, 1200)}</p>
             </div>

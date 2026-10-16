@@ -62,7 +62,7 @@ export function MemoryConsole() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 rounded-md border border-rule bg-surface p-4">
-        <label className="text-xs font-medium text-foreground/60 uppercase">New memory</label>
+        <label className="font-label text-ink-muted">New memory</label>
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}

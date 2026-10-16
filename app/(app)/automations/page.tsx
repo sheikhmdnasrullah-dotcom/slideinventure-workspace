@@ -105,7 +105,7 @@ export default async function AutomationsPage() {
           {running.length === 0 ? (
             <p className="font-body text-sm text-ink-muted py-4">
               No automations running. Trigger one from the command line:
-              <code className="ml-2 font-mono text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">
+              <code className="ml-2 font-code text-xs bg-[var(--surface-2)] px-1.5 py-0.5 rounded">
                 npm run task -- --type automation -- "your task"
               </code>
             </p>
@@ -116,11 +116,11 @@ export default async function AutomationsPage() {
                 return (
                   <div
                     key={run.id}
-                    className="flex items-center gap-3 p-3 rounded-sm bg-[var(--surface-2)] ring-1 ring-rule"
+                    className="flex items-center gap-3 rounded-sm border border-rule bg-surface-2 p-3"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-ink-strong">
+                        <span className="font-code text-xs text-ink-strong">
                           {run.metadata?.label ? String(run.metadata.label) : run.task_type}
                         </span>
                         <Badge
@@ -137,20 +137,20 @@ export default async function AutomationsPage() {
                         <div className="mt-2 flex items-center gap-2">
                           <div className="flex-1 h-2 bg-[var(--surface)] rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-[var(--text-accent)] transition-all duration-300 ease-expo"
+                              className="h-full rounded-full bg-flame-vivid transition-[width] duration-300"
                               style={{
                                 width: `${Math.min(100, (prog.current / Math.max(1, prog.total)) * 100)}%`,
                               }}
                             />
                           </div>
-                          <span className="font-label text-[10px] text-ink-muted tabular-nums">
+                          <span className="font-label text-xs text-ink-muted tabular-nums">
                             {prog.current} / {prog.total}
                             {prog.current_item && ` · ${prog.current_item}`}
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="font-label text-[10px] text-ink-faint whitespace-nowrap">
+                    <div className="font-label text-xs text-ink-faint whitespace-nowrap">
                       {new Date(run.started_at).toLocaleTimeString()}
                     </div>
                   </div>
@@ -190,14 +190,14 @@ export default async function AutomationsPage() {
                             {run.metadata?.label ? String(run.metadata.label) : run.task_type}
                           </Badge>
                         </td>
-                        <td className="py-2 px-3 font-mono text-xs text-ink-muted truncate max-w-xs">
+                        <td className="py-2 px-3 font-code text-xs text-ink-muted truncate max-w-xs">
                           {run.command ?? ""}
                         </td>
                         <td className="text-center py-2 px-3">
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[10px]",
+                              "text-xs",
                               run.status === "completed" &&
                                 "border-[var(--status-live)]/30 bg-[color-mix(in_oklch,var(--status-live)_10%,transparent)] text-[var(--status-live)]",
                               run.status === "failed" &&
@@ -207,10 +207,10 @@ export default async function AutomationsPage() {
                             {run.status}
                           </Badge>
                         </td>
-                        <td className="text-right py-2 px-3 font-label text-[10px] text-ink-muted">
+                        <td className="text-right py-2 px-3 font-label text-xs text-ink-muted">
                           {started.toLocaleTimeString()}
                         </td>
-                        <td className="text-right py-2 px-3 font-label text-[10px] text-ink-muted tabular-nums">
+                        <td className="text-right py-2 px-3 font-label text-xs text-ink-muted tabular-nums">
                           {duration !== null ? `${duration}s` : ""}
                         </td>
                       </tr>

@@ -8,7 +8,7 @@ export default async function EmailCrawlerPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-sm font-medium tracking-wide text-foreground/60 uppercase">
+        <h1 className="font-label text-ink-muted">
           Email Crawler
         </h1>
         <p className="text-xs text-foreground/40">

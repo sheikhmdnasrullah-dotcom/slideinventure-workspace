@@ -56,7 +56,7 @@ export function Highlight({
         part && lowerTerms.includes(part.toLowerCase()) ? (
           <mark
             key={i}
-            className="rounded-sm bg-yellow-300/60 px-0.5 text-inherit dark:bg-yellow-500/40"
+            className="rounded-sm bg-flame-highlight px-0.5 text-inherit"
           >
             {part}
           </mark>

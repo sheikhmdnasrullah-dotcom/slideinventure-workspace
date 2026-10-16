@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { GlossTile } from "@/components/system/gloss-tile";
 
 export function SignupForm({
   className,
@@ -45,19 +46,20 @@ export function SignupForm({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="bg-white dark:bg-gray-900">
+    <div className={cn("flex flex-col items-center gap-6", className)} {...props}>
+      <GlossTile size={64} float={false} />
+      <Card className="w-full text-center">
         <CardHeader>
-          <CardTitle className="text-gray-900 dark:text-white">Create an account</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardTitle className="text-ink-strong">Create an account</CardTitle>
+          <CardDescription className="text-ink-muted">
             Create your account
           </CardDescription>
         </CardHeader>
-        <CardContent className="bg-white dark:bg-gray-900">
-          <form onSubmit={handleSubmit}>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="w-full text-left">
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="name" className="text-gray-700 dark:text-gray-300">
+                <FieldLabel htmlFor="name" >
                   Name
                 </FieldLabel>
                 <Input
@@ -66,11 +68,11 @@ export function SignupForm({
                   placeholder="Your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500"
+                  
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="email" className="text-gray-700 dark:text-gray-300">
+                <FieldLabel htmlFor="email" >
                   Email
                 </FieldLabel>
                 <Input
@@ -80,11 +82,11 @@ export function SignupForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500"
+                  
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="password" className="text-gray-700 dark:text-gray-300">
+                <FieldLabel htmlFor="password" >
                   Password
                 </FieldLabel>
                 <Input
@@ -93,11 +95,11 @@ export function SignupForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500"
+                  
                 />
               </Field>
               {error && (
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm text-status-danger">{error}</p>
               )}
               <Field>
                 <Button type="submit" disabled={loading} className="w-full">

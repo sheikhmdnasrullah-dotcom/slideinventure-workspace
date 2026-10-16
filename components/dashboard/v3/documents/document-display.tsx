@@ -47,8 +47,8 @@ export function DocumentDisplay() {
       <Separator />
       <div className="flex items-center p-4">
         <div className="flex items-center gap-2">
-          <a  href={selectedDocument.url} target="_blank" rel="noopener noreferrer" title="Open in new tab" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><ExternalLink className="h-4 w-4" /></a>
-          <a  href={selectedDocument.url} download={selectedDocument.filename} title="Download" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><Download className="h-4 w-4" /></a>
+          <a  href={selectedDocument.url} target="_blank" rel="noopener noreferrer" title="Open in new tab" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium text-ink-muted transition-colors hover:bg-hover-tint hover:text-ink-strong"><ExternalLink className="h-4 w-4" /></a>
+          <a  href={selectedDocument.url} download={selectedDocument.filename} title="Download" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium text-ink-muted transition-colors hover:bg-hover-tint hover:text-ink-strong"><Download className="h-4 w-4" /></a>
           {selectedDocument.mime_type === "application/pdf" && (
             <>
               <button
@@ -71,11 +71,11 @@ export function DocumentDisplay() {
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <div className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"><MoreVertical className="h-4 w-4" /><span className="sr-only">More</span></div>
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium text-ink-muted transition-colors hover:bg-hover-tint hover:text-ink-strong"><MoreVertical className="h-4 w-4" /><span className="sr-only">More</span></div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                className="text-red-600 focus:text-red-600"
+                className="text-status-danger focus:text-status-danger"
                 onClick={() => deleteDocument(selectedDocument.id)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />

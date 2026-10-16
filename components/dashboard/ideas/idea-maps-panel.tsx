@@ -22,7 +22,7 @@ const IdeaMapCanvas = dynamic(
   () => import("./idea-map-canvas").then((m) => m.IdeaMapCanvas),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-full w-full rounded-xl" />,
+    loading: () => <Skeleton className="h-full w-full rounded-lg" />,
   }
 );
 
@@ -186,7 +186,7 @@ export function IdeaMapsPanel({
         ))}
 
         {maps.length === 0 && (
-          <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-3 py-6">
+          <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-rule-strong bg-surface px-3 py-6">
             <p className="text-sm text-muted-foreground">No idea maps yet.</p>
             <Button size="sm" onClick={newMap}>
               <Plus className="size-3" /> New map

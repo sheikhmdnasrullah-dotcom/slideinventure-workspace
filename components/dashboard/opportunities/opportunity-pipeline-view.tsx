@@ -1,29 +1,20 @@
 "use client"
 
 import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
+import { ActiveTabIndicator } from "@/components/system/motion"
 import {
   Search,
-  Filter,
-  Sparkles,
   Building2,
-  Calendar,
-  Clock,
-  TrendingUp,
-  Mail,
-  CheckCircle2,
   ChevronRight,
-  ShieldCheck,
-  Zap,
-  ArrowUpRight,
   FileSpreadsheet,
   Plus,
-  RefreshCw,
-  SlidersHorizontal,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { EmptyState } from "@/components/system/states"
 import {
   Select,
   SelectContent,
@@ -64,6 +55,11 @@ export function OpportunityPipelineView() {
   const [selectedStage, setSelectedStage] = React.useState<OpportunityStage | "all">("all")
   const [activeOpportunity, setActiveOpportunity] = React.useState<UniversalOpportunity | null>(null)
   const [isDossierOpen, setIsDossierOpen] = React.useState(false)
+  const [firstPaint, setFirstPaint] = React.useState(true)
+  React.useEffect(() => {
+    const id = requestAnimationFrame(() => setFirstPaint(false))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   const filteredOpportunities = React.useMemo(() => {
     return MOCK_OPPORTUNITIES.filter((opp) => {
@@ -97,15 +93,15 @@ export function OpportunityPipelineView() {
   return (
     <div className="flex flex-col gap-6 w-full">
       {/* Top Controls */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card/60 backdrop-blur-sm">
+      <div className="flex flex-col items-start justify-between gap-4 rounded-lg border border-rule bg-surface p-4 shadow-raised lg:flex-row lg:items-center">
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           <div className="relative min-w-[280px] flex-1 lg:flex-initial">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-[18px] text-ink-faint" />
             <Input
               placeholder="Search by prospect, company, ICP signal, need..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-background/80"
+              className="pl-10"
             />
           </div>
 
@@ -113,8 +109,8 @@ export function OpportunityPipelineView() {
             value={selectedVertical}
             onValueChange={(val) => setSelectedVertical(val as OpportunityVertical | "all")}
           >
-            <SelectTrigger className="w-[180px] bg-background/80">
-              <Building2 className="mr-2 size-3.5 text-muted-foreground" />
+            <SelectTrigger className="w-[180px]">
+              <Building2 className="mr-2 size-4 text-ink-faint" />
               <SelectValue placeholder="Vertical" />
             </SelectTrigger>
             <SelectContent>
@@ -128,22 +124,22 @@ export function OpportunityPipelineView() {
         </div>
 
         <div className="flex items-center gap-2 self-end lg:self-auto">
-          <Badge variant="outline" className="px-3 py-1 font-mono text-xs border-primary/20 bg-primary/5 text-primary">
+          <Badge variant="outline" className="tabular-nums">
             {filteredOpportunities.length} Active Pursuits
           </Badge>
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <FileSpreadsheet className="size-3.5" />
+          <Button variant="outline" size="sm">
+            <FileSpreadsheet className="size-4" />
             Export
           </Button>
-          <Button size="sm" className="gap-1.5 shadow-sm">
-            <Plus className="size-3.5" />
+          <Button size="sm">
+            <Plus className="size-4" />
             New Pursuit
           </Button>
         </div>
       </div>
 
       {/* Stage Navigation Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-sm scrollbar-none">
+      <div className="flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-pill bg-surface-2 p-1 text-sm scrollbar-none">
         {STAGES.map((s) => {
           const count = stageCounts[s.id] || 0
           const isActive = selectedStage === s.id
@@ -151,16 +147,15 @@ export function OpportunityPipelineView() {
             <button
               key={s.id}
               onClick={() => setSelectedStage(s.id)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap ${
-                isActive
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card/50 text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+              className={`relative flex h-8 shrink-0 items-center gap-2 rounded-pill px-4 text-[13px] font-medium whitespace-nowrap transition-colors duration-[220ms] ${
+                isActive ? "text-ink-strong" : "text-ink-muted hover:text-ink-strong"
               }`}
             >
-              <span>{s.label}</span>
+              {isActive && <ActiveTabIndicator />}
+              <span className="relative z-10">{s.label}</span>
               <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                className={`relative z-10 rounded-pill px-1.5 py-0.5 text-xs tabular-nums ${
+                  isActive ? "bg-surface-2 text-ink-strong" : "text-ink-faint"
                 }`}
               >
                 {count}
@@ -172,43 +167,45 @@ export function OpportunityPipelineView() {
 
       {/* Opportunities List */}
       <div className="grid grid-cols-1 gap-3">
-        <AnimatePresence mode="popLayout">
-          {filteredOpportunities.map((opp) => {
+          {filteredOpportunities.map((opp, index) => {
             const hasReply = opp.thread?.messages?.some((m) => m.direction === "inbound") ?? false
             const isBooked = opp.stage === "meeting_booked"
 
             return (
               <motion.div
                 key={opp.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
+                initial={firstPaint ? { opacity: 0, y: 8 } : false}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{
+                  duration: 0.24,
+                  ease: [0.22, 1, 0.36, 1],
+                  delay: firstPaint ? Math.min(index, 5) * 0.03 : 0,
+                }}
                 onClick={() => handleOpenDossier(opp)}
-                className="group relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4.5 rounded-xl border border-border bg-card/70 hover:bg-card hover:border-primary/40 transition-all cursor-pointer shadow-xs hover:shadow-md"
+                className="group relative flex cursor-pointer flex-col items-start justify-between gap-4 rounded-lg border border-rule bg-surface p-6 shadow-raised transition-[box-shadow] duration-[150ms] hover:shadow-float md:flex-row md:items-center"
               >
                 {/* Left: Contact, Company, Vertical */}
                 <div className="flex items-start gap-3.5 min-w-[280px]">
-                  <div className="relative size-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary shrink-0">
+                  <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-status-neutral-bg font-semibold text-status-neutral">
                     {(opp.prospect?.first_name?.[0] ?? "P").toUpperCase()}
                     {(opp.prospect?.last_name?.[0] ?? "").toUpperCase()}
                     {hasReply && (
-                      <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-emerald-500 ring-2 ring-background animate-pulse" />
+                      <span className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full bg-status-live ring-2 ring-surface animate-pulse" />
                     )}
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                      <span className="text-sm font-medium text-ink-strong">
                         {[opp.prospect?.first_name, opp.prospect?.last_name].filter(Boolean).join(" ") || "Prospect"}
                       </span>
-                      <Badge variant="outline" className="text-[10px] uppercase font-mono px-1.5 py-0">
+                      <Badge variant="outline">
                         {(opp.vertical || "general").replace("_", " ")}
                       </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[13px] text-ink-muted">
                       <span>{opp.prospect?.job_title || "Lead"}</span>
                       <span>•</span>
-                      <span className="font-medium text-foreground/80">{opp.account?.company_name || "Company"}</span>
+                      <span className="font-medium text-ink-strong">{opp.account?.company_name || "Company"}</span>
                     </div>
                   </div>
                 </div>
@@ -218,48 +215,47 @@ export function OpportunityPipelineView() {
                   <div className="flex items-center gap-2">
                     <Badge
                       variant="secondary"
-                      className={`text-[10px] font-mono px-1.5 py-0 ${
+                      className={`border-transparent ${
                         (opp.intent?.level || "medium") === "high"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                          ? "bg-status-live-bg text-status-live"
+                          : "bg-status-neutral-bg text-status-neutral"
                       }`}
                     >
-                      <Zap className="mr-1 size-2.5 inline" />
+                      <span className="mr-1.5 inline-block size-1.5 rounded-full bg-current" aria-hidden />
                       {(opp.intent?.level || "HIGH").toUpperCase()} INTENT ({opp.fit?.score ?? opp.fit_score ?? 90}% FIT)
                     </Badge>
-                    <span className="text-[11px] text-muted-foreground line-clamp-1">
+                    <span className="text-xs text-ink-muted line-clamp-1">
                       {opp.intent?.signal_summary || "Active buying signal detected"}
                     </span>
                   </div>
-                  <div className="text-muted-foreground line-clamp-1 italic text-[11px]">
+                  <div className="text-ink-muted line-clamp-1 italic text-xs">
                     "{opp.need?.core_problem || (typeof opp.need === "string" ? opp.need : "Pipeline acceleration")}"
                   </div>
                 </div>
 
                 {/* Right: Stage, Value, Action */}
-                <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border">
+                <div className="flex w-full shrink-0 items-center justify-between gap-3 border-t border-rule pt-4 md:w-auto md:justify-end md:border-t-0 md:pt-0">
                   <div className="text-right flex flex-col items-end">
-                    <div className="text-xs font-mono font-semibold text-foreground">
+                    <div className="font-value text-sm text-ink-strong">
                       ${(opp.estimated_deal_value ?? 24000).toLocaleString()}
                     </div>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] font-mono mt-0.5 ${
-                        isBooked
-                          ? "bg-purple-500/10 text-purple-400 border-purple-500/30 font-bold"
-                          : hasReply
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-bold"
-                          : "bg-muted text-muted-foreground"
+                      className={`mt-0.5 border-transparent ${
+                        isBooked || hasReply
+                          ? "bg-status-live-bg text-status-live"
+                          : "bg-status-neutral-bg text-status-neutral"
                       }`}
                     >
+                      <span className="mr-1.5 inline-block size-1.5 rounded-full bg-current" aria-hidden />
                       {(opp.stage || "prospecting").replace("_", " ").toUpperCase()}
                     </Badge>
                   </div>
 
                   <Button
-                    size="sm"
+                    size="icon-sm"
                     variant="ghost"
-                    className="size-8 p-0 rounded-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                    className="rounded-full"
                   >
                     <ChevronRight className="size-4" />
                   </Button>
@@ -267,16 +263,15 @@ export function OpportunityPipelineView() {
               </motion.div>
             )
           })}
-        </AnimatePresence>
 
         {filteredOpportunities.length === 0 && (
-          <div className="p-12 text-center rounded-xl border border-dashed border-border bg-card/30">
-            <Sparkles className="size-8 mx-auto text-muted-foreground/50 mb-3" />
-            <div className="text-sm font-medium text-foreground">No matching opportunities</div>
-            <div className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-              Try changing your search keywords or switching vertical filters to explore other active pursuits.
-            </div>
-          </div>
+          <Card>
+            <EmptyState
+              icon="search"
+              title="No matching opportunities"
+              description="Try changing your search keywords or switching vertical filters to explore other active pursuits."
+            />
+          </Card>
         )}
       </div>
 

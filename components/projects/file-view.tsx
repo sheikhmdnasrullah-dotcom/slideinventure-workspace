@@ -40,10 +40,10 @@ const markdownComponents = {
     <a className="text-primary underline" {...props} />
   ),
   code: (props: React.HTMLAttributes<HTMLElement>) => (
-    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[12px]" {...props} />
+    <code className="rounded bg-muted px-1 py-0.5 font-code text-[12px]" {...props} />
   ),
   pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
-    <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-[12px]" {...props} />
+    <pre className="overflow-x-auto rounded-md bg-muted p-3 font-code text-[12px]" {...props} />
   ),
   table: (props: React.HTMLAttributes<HTMLTableElement>) => (
     <div className="overflow-x-auto">
@@ -155,7 +155,7 @@ export function FileView({ projectId, tab, workspace, onShowHistory }: Props) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium" title={file.path}>
             {file.name}
-            {dirty && <span className="ml-2 text-xs font-normal text-amber-600">● Unsaved changes</span>}
+            {dirty && <span className="ml-2 text-xs font-normal text-status-warn">● Unsaved changes</span>}
           </p>
           <p className="truncate text-xs text-muted-foreground">
             {file.path} · {formatBytes(file.sizeBytes)} · Updated{" "}
@@ -216,7 +216,7 @@ export function FileView({ projectId, tab, workspace, onShowHistory }: Props) {
             value={text}
             onChange={(e) => workspace.setDraft(tab.path, e.target.value)}
             spellCheck={file.kind === "markdown" || file.kind === "text"}
-            className="h-full w-full resize-none bg-transparent p-4 font-mono text-[13px] leading-relaxed outline-none"
+            className="h-full w-full resize-none bg-transparent p-4 font-code text-[13px] leading-relaxed outline-none"
             aria-label={`Edit ${file.name}`}
           />
         ) : showImage ? (
@@ -263,7 +263,7 @@ export function FileView({ projectId, tab, workspace, onShowHistory }: Props) {
           </div>
         ) : (
           <ScrollArea className="h-full">
-            <pre className="whitespace-pre-wrap p-4 font-mono text-[13px] leading-relaxed">{text}</pre>
+            <pre className="whitespace-pre-wrap p-4 font-code text-[13px] leading-relaxed">{text}</pre>
           </ScrollArea>
         )}
       </div>

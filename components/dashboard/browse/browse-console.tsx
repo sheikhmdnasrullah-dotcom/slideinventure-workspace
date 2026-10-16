@@ -41,7 +41,7 @@ export function BrowseConsole() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-foreground/60 uppercase">Task</label>
+        <label className="font-label text-ink-muted">Task</label>
         <textarea
           value={task}
           onChange={(e) => setTask(e.target.value)}
@@ -49,7 +49,7 @@ export function BrowseConsole() {
           placeholder="e.g. Find the contact email on example.com"
           className="rounded-md border border-rule bg-surface px-3 py-2 text-sm"
         />
-        <label className="text-xs font-medium text-foreground/60 uppercase">Start URL (optional)</label>
+        <label className="font-label text-ink-muted">Start URL (optional)</label>
         <input
           value={startUrl}
           onChange={(e) => setStartUrl(e.target.value)}
@@ -67,11 +67,11 @@ export function BrowseConsole() {
 
       {steps.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-medium text-foreground/60 uppercase">Steps</h2>
+          <h2 className="font-label text-ink-muted">Steps</h2>
           <ol className="space-y-1">
             {steps.map((s) => (
               <li key={s.step} className="rounded-md bg-[var(--surface-2)] px-3 py-2 text-sm">
-                <span className="font-mono text-xs text-[var(--text-accent)]">{s.action}</span>
+                <span className="font-code text-xs text-[var(--text-accent)]">{s.action}</span>
                 {s.detail && <span className="ml-2 text-foreground/60">{s.detail}</span>}
               </li>
             ))}
@@ -81,7 +81,7 @@ export function BrowseConsole() {
 
       {result && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-medium text-foreground/60 uppercase">Result</h2>
+          <h2 className="font-label text-ink-muted">Result</h2>
           <div className="whitespace-pre-wrap rounded-md bg-[var(--surface-2)] px-3 py-3 text-sm">{result}</div>
         </div>
       )}

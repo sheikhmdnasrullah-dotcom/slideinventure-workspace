@@ -211,7 +211,7 @@ export function ResearchLabWorkspace() {
                   value={active.title}
                   onChange={(e) => setActive({ ...active, title: e.target.value })}
                   onBlur={() => patch({ title: active.title })}
-                  className="h-auto border-none bg-transparent px-0 font-display text-2xl text-ink-strong shadow-none focus-visible:ring-0"
+                  className="h-auto border-none bg-transparent px-0 font-display text-2xl text-ink-strong shadow-none"
                 />
                 <p className="font-body text-sm text-ink-muted">
                   Notes autosave. Sketch ideas in a tool without leaving this project.
@@ -249,7 +249,7 @@ export function ResearchLabWorkspace() {
                   <button
                     onClick={openExcel}
                     disabled={busy}
-                    className="motion-card flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
+                    className="flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
                   >
                     <PenTool className="size-4 text-ink-muted" />
                     <span className="font-body-tight text-sm text-ink-strong">Sketch board</span>
@@ -257,7 +257,7 @@ export function ResearchLabWorkspace() {
                   <button
                     onClick={openAffine}
                     disabled={busy}
-                    className="motion-card flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
+                    className="flex items-center gap-2.5 rounded-md border border-rule bg-[var(--surface)] px-4 py-3 disabled:opacity-60"
                   >
                     <LayoutGrid className="size-4 text-ink-muted" />
                     <span className="font-body-tight text-sm text-ink-strong">Whiteboard</span>

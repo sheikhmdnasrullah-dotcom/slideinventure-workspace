@@ -1,4 +1,5 @@
 "use client";
+import { GlossTile } from "@/components/system/gloss-tile";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import * as React from "react";
@@ -108,21 +109,23 @@ function ProjectsListInner() {
       </div>
 
       {projects.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center">
-          <FolderOpen className="h-8 w-8 text-muted-foreground" />
-          <p className="font-medium">No projects yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
+        <div className="mt-8 flex flex-col items-center rounded-lg border border-rule bg-surface p-12 text-center shadow-raised">
+          <GlossTile size={88} className="-rotate-6">
+            <FolderOpen className="size-9" strokeWidth={1.5} />
+          </GlossTile>
+          <p className="mt-6 text-base font-semibold text-ink-strong">No projects yet</p>
+          <p className="mt-2 max-w-[360px] text-sm text-ink-muted">
             Create a project, add your documents and notes, then ask the assistant to analyze,
             compare, or revise them — every change is proposed for your review first.
           </p>
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => setDialogOpen(true)} className="mt-6">
             <Plus className="mr-1.5 h-4 w-4" /> Create your first project
           </Button>
         </div>
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {projects.map((p) => (
-            <Card key={p.id} className="transition-colors hover:border-primary/40">
+            <Card key={p.id} className="transition-[border-color] duration-[150ms] hover:border-rule-strong">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Link href={`/projects/${p.id}`} className="truncate hover:underline">
@@ -141,7 +144,7 @@ function ProjectsListInner() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="ml-auto h-7 w-7 text-muted-foreground hover:text-red-600"
+                  className="ml-auto h-7 w-7 text-ink-muted hover:text-status-danger"
                   onClick={() => remove(p.id, p.name)}
                   disabled={deleting === p.id}
                   title={`Delete ${p.name}`}

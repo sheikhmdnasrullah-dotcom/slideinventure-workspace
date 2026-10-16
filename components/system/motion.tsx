@@ -40,10 +40,10 @@ export function PageTransition({ children }: { children: ReactNode }) {
     <MotionConfig reducedMotion="user">
       <motion.div
         key={pathname}
-        className="flex min-h-0 min-w-0 flex-1 flex-col"
-        initial={{ opacity: 0, y: 6 }}
+        className="page-enter-children flex min-h-0 min-w-0 flex-1 flex-col"
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: Duration.base, ease: Ease.expo }}
+        transition={{ duration: Duration.page, ease: Ease.expo }}
       >
         {children}
       </motion.div>
@@ -95,20 +95,29 @@ export function TabTransition({
  * every instance shares one `layoutId`.
  */
 export function ActiveTabIndicator({ className }: { className?: string }) {
+  const reduce = useReducedMotion();
+  if (reduce) {
+    return (
+      <span
+        aria-hidden
+        className={cn("pointer-events-none absolute inset-0 rounded-pill bg-surface shadow-raised", className)}
+      />
+    );
+  }
   return (
     <motion.span
+      aria-hidden
       layoutId={ACTIVE_TAB_LAYOUT_ID}
       className={cn(
-        "pointer-events-none absolute inset-0 -z-10 rounded-sm bg-[var(--surface-2)]",
+        "pointer-events-none absolute inset-0 rounded-pill bg-surface shadow-raised",
         className
       )}
-      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.6 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
     />
   );
 }
 
-/** A card that lifts subtly on hover and settles on press. Pair with the
- *  `.motion-card` utility class for the CSS hover elevation. */
+/** A card with a quiet fade-up entrance. No hover lift: cards stay calm. */
 export function MotionCard({
   children,
   className,
@@ -120,7 +129,7 @@ export function MotionCard({
 }) {
   return (
     <MotionDiv
-      className={cn("motion-card", className)}
+      className={className}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: Duration.fast, ease: Ease.expo, delay }}

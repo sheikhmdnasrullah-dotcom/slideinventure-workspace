@@ -79,7 +79,7 @@ function ProposalsSheet({
               {p.op === "create" ? "New file" : "Change"}: {p.path}
             </p>
             <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{p.summary}</p>
-            <p className="mt-1 text-[11px] text-amber-700">
+            <p className="mt-1 text-xs text-status-warn">
               {p.status === "stale" ? "Stale — the file changed since" : "Awaiting review"}
             </p>
           </button>
@@ -92,7 +92,7 @@ function ProposalsSheet({
                 key={p.id}
                 type="button"
                 onClick={() => onReview(p)}
-                className="block w-full rounded-md border border-dashed p-2 text-left text-xs text-muted-foreground hover:bg-muted"
+                className="block w-full rounded-md border border-dashed border-rule-strong p-2 text-left text-xs text-muted-foreground hover:bg-hover-tint"
               >
                 <span className="capitalize">{p.status}</span>: {p.op} {p.path}
               </button>
@@ -291,7 +291,7 @@ function WorkspaceInner({ projectId }: Props) {
             <ResizablePanel defaultSize="22" minSize="15" maxSize="35">
               <div className="flex h-full flex-col border-r">
                 <div className="flex items-center justify-between border-b px-3 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <p className="font-label text-ink-muted">
                     Project files
                   </p>
                   <DropdownMenu>
@@ -315,7 +315,7 @@ function WorkspaceInner({ projectId }: Props) {
                       <DropdownMenuItem
                         disabled={!activeTab}
                         onClick={() => activeTab && setDeleteTarget(activeTab.path)}
-                        className="text-red-600"
+                        className="text-status-danger"
                       >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete open file
                       </DropdownMenuItem>
@@ -359,13 +359,13 @@ function WorkspaceInner({ projectId }: Props) {
                         active ? "bg-muted font-medium" : "text-muted-foreground"
                       )}
                     >
-                      {dirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+                      {dirty && <span className="h-1.5 w-1.5 rounded-full bg-status-warn" />}
                       {name}
                       <span
                         role="button"
                         tabIndex={0}
                         aria-label={`Close ${name}`}
-                        className="rounded p-0.5 hover:bg-background"
+                        className="rounded-md p-0.5 hover:bg-hover-tint"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (dirty && !window.confirm("Discard unsaved changes?")) return;

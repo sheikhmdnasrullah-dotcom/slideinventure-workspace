@@ -130,7 +130,7 @@ export function ResearchPanel({ noteId, onClose }: { noteId: string; onClose: ()
   };
 
   return (
-    <div className="flex h-full w-80 shrink-0 flex-col border-l bg-card/40">
+    <div className="flex h-full w-80 shrink-0 flex-col border-l border-rule bg-surface">
       <div className="flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Sparkles className="size-4 text-primary" /> Research Agents

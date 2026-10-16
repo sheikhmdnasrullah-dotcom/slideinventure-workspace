@@ -184,7 +184,7 @@ export function AgentRunSheet({
                       <p
                         key={i}
                         className={cn(
-                          "flex items-center gap-1.5 font-label text-[10px]",
+                          "flex items-center gap-1.5 font-label text-xs",
                           e.level === "error" ? "text-destructive" : "text-ink-faint",
                         )}
                       >

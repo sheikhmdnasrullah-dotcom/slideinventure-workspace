@@ -140,7 +140,7 @@ function AnalogDial({
                 y={ly}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-muted-foreground text-[10px] font-medium tabular-nums"
+                className="fill-muted-foreground text-xs font-medium tabular-nums"
               >
                 {label}
               </text>
@@ -231,7 +231,7 @@ export function DeadlinePicker({ value, onChange, id, className }: DeadlinePicke
             type="button"
             id={id}
             className={cn(
-              "flex h-9 w-full items-center gap-2 rounded-md border border-input bg-transparent px-3 text-left text-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+              "flex h-11 w-full items-center gap-2 rounded-md border border-rule-strong bg-surface px-3.5 text-left text-sm text-ink-strong outline-none transition-[border-color,box-shadow] duration-[120ms] hover:border-[var(--input-focus-border)] focus-visible:border-[var(--input-focus-border)] focus-visible:shadow-[0_0_0_4px_var(--input-focus-ring)]",
               !displayDate && "text-muted-foreground",
               className
             )}

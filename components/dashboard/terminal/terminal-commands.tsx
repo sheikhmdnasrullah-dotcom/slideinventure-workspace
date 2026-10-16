@@ -313,7 +313,7 @@ function CommandRow({
       data-favorite={command.favorite}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 shrink-0 font-mono text-sm text-ink-faint select-none" aria-hidden>
+        <span className="mt-0.5 shrink-0 font-code text-sm text-ink-faint select-none" aria-hidden>
           &gt;
         </span>
         <div className="min-w-0 flex-1">
@@ -328,8 +328,8 @@ function CommandRow({
             <p className="mt-0.5 line-clamp-2 font-body text-xs text-ink-muted">{command.description}</p>
           )}
 
-          <div className="mt-2 flex items-center gap-2 rounded-sm bg-[var(--surface-2)] px-3 py-2 ring-1 ring-rule">
-            <code className="min-w-0 flex-1 truncate font-mono text-xs text-ink-strong">
+          <div className="mt-2 flex items-center gap-2 rounded-sm border border-rule bg-surface-2 px-3 py-2">
+            <code className="min-w-0 flex-1 truncate font-code text-xs text-ink-strong">
               {command.command}
             </code>
             <button
@@ -364,7 +364,7 @@ function CommandRow({
             </button>
           )}
           {expanded && hasOutput && (
-            <div className="mt-2 flex flex-col gap-1 rounded-sm bg-[var(--surface-2)] px-3 py-2 font-mono text-xs ring-1 ring-rule">
+            <div className="mt-2 flex flex-col gap-1 rounded-sm bg-[var(--surface-2)] px-3 py-2 border border-rule font-code text-xs">
               {command.stdout && (
                 <pre className="whitespace-pre-wrap break-all text-ink-muted">{command.stdout}</pre>
               )}
@@ -403,7 +403,7 @@ function CommandRow({
             <Beaker className="size-3.5" />
           </Button>
           <Button variant="ghost" size="icon-xs" onClick={() => onEdit(command)} aria-label="Edit command">
-            <span className="font-label text-[10px]">Edit</span>
+            <span className="font-label text-xs">Edit</span>
           </Button>
           <Button
             variant="ghost"

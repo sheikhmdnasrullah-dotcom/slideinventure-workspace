@@ -58,18 +58,18 @@ export function AcquisitionCommandCenter() {
         subtitle="Universal Acquisition Operating System"
       />
 
-      <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-6 px-5 py-5 md:px-10 md:py-10">
         {/* Workspace Top Banner & Vertical Switcher */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-5">
+        <div className="flex flex-col justify-between gap-4 border-b border-rule pb-8 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Acquisition Command Center</h1>
-              <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <h1 className="font-display text-[28px] leading-[34px] text-ink-strong">Acquisition Command Center</h1>
+              <span className="flex h-[26px] items-center gap-1.5 rounded-full bg-status-live-bg px-2.5 text-xs font-medium text-status-live">
+                <span className="size-1.5 rounded-full bg-status-live animate-pulse" />
                 Autonomous Engine Active
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="mt-1 max-w-[640px] text-sm text-ink-muted">
               Your AI-powered acquisition department. Researching prospects, generating context-aware messaging, and booking meetings.
             </p>
           </div>
@@ -112,52 +112,52 @@ export function AcquisitionCommandCenter() {
 
         {/* 1. TODAY'S PULSE METRICS BAR */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <Card className="border-border/60 bg-card/50 shadow-xs">
+          <Card>
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">New Opportunities</CardDescription>
-              <CardTitle className="text-2xl font-bold text-foreground">14</CardTitle>
+              <CardDescription className="font-label text-ink-muted">New Opportunities</CardDescription>
+              <CardTitle className="font-value text-2xl text-ink-strong">14</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-emerald-400 font-medium">+4 qualified today</CardContent>
+            <CardContent className="p-4 pt-0 text-xs text-status-live font-medium">+4 qualified today</CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/50 shadow-xs">
+          <Card>
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Active Threads</CardDescription>
-              <CardTitle className="text-2xl font-bold text-foreground">8</CardTitle>
+              <CardDescription className="font-label text-ink-muted">Active Threads</CardDescription>
+              <CardTitle className="font-value text-2xl text-ink-strong">8</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-primary font-medium">Two-way conversational AI</CardContent>
+            <CardContent className="p-4 pt-0 text-xs text-primary font-medium">Two-way conversational AI</CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/50 shadow-xs">
+          <Card>
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">High-Intent Leads</CardDescription>
-              <CardTitle className="text-2xl font-bold text-amber-400">3</CardTitle>
+              <CardDescription className="font-label text-ink-muted">High-Intent Leads</CardDescription>
+              <CardTitle className="font-value text-2xl text-status-warn">3</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-amber-400/90 font-medium">Ready to book</CardContent>
+            <CardContent className="p-4 pt-0 text-xs text-status-warn/90 font-medium">Ready to book</CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/50 shadow-xs">
+          <Card>
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Meetings Scheduled</CardDescription>
-              <CardTitle className="text-2xl font-bold text-emerald-400">5</CardTitle>
+              <CardDescription className="font-label text-ink-muted">Meetings Scheduled</CardDescription>
+              <CardTitle className="font-value text-2xl text-status-live">5</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-emerald-400 font-medium">2 calls today</CardContent>
+            <CardContent className="p-4 pt-0 text-xs text-status-live font-medium">2 calls today</CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/50 shadow-xs">
+          <Card>
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Deliverability Score</CardDescription>
-              <CardTitle className="text-2xl font-bold text-foreground">100 / 100</CardTitle>
+              <CardDescription className="font-label text-ink-muted">Deliverability Score</CardDescription>
+              <CardTitle className="font-value text-2xl text-ink-strong">100 / 100</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-emerald-400 font-medium">100% Primary Inbox</CardContent>
+            <CardContent className="p-4 pt-0 text-xs text-status-live font-medium">100% Primary Inbox</CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/50 shadow-xs">
+          <Card>
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">AI Workforce</CardDescription>
-              <CardTitle className="text-2xl font-bold text-primary">8 Agents</CardTitle>
+              <CardDescription className="font-label text-ink-muted">AI Workforce</CardDescription>
+              <CardTitle className="font-value text-2xl text-flame">8 Agents</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 pt-0 text-[11px] text-muted-foreground font-medium">124 jobs completed</CardContent>
+            <CardContent className="p-4 pt-0 text-xs text-muted-foreground font-medium">124 jobs completed</CardContent>
           </Card>
         </div>
 
@@ -187,10 +187,10 @@ export function AcquisitionCommandCenter() {
                   whileHover={{ y: -2 }}
                   transition={{ duration: 0.15 }}
                   onClick={() => handleOpenDossier(opp)}
-                  className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:border-primary/40 hover:bg-card/90 shadow-xs cursor-pointer"
+                  className="group relative flex cursor-pointer flex-col justify-between gap-4 rounded-lg border border-rule bg-surface p-6 shadow-raised transition-shadow duration-[150ms] hover:shadow-float sm:flex-row sm:items-center"
                 >
                   <div className="flex items-start gap-3.5">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm border border-primary/20 shadow-xs">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-[10px] border border-transparent bg-flame-wash text-sm font-semibold text-flame">
                       {opp.fit_score}%
                     </div>
                     <div>
@@ -201,12 +201,12 @@ export function AcquisitionCommandCenter() {
                         <span className="text-xs text-muted-foreground">• {opp.prospect.title} at <strong className="text-foreground">{opp.account.name}</strong></span>
                         <Badge
                           variant="outline"
-                          className={`text-[10px] font-semibold ${
+                          className={`text-xs font-semibold ${
                             opp.stage === "booked"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                              ? "bg-status-live-bg text-status-live border-status-live-border"
                               : opp.stage === "high_intent"
-                              ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                              : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                              ? "bg-amber-500/10 text-status-warn border-amber-500/30"
+                              : "border-transparent bg-status-info-bg text-status-info"
                           }`}
                         >
                           {opp.stage.toUpperCase().replace("_", " ")}
@@ -217,7 +217,7 @@ export function AcquisitionCommandCenter() {
                         {opp.need}
                       </p>
 
-                      <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1 text-primary">
                           <Zap className="size-3" /> Next: {opp.next_best_action.action}
                         </span>
@@ -226,7 +226,7 @@ export function AcquisitionCommandCenter() {
                   </div>
 
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-border/40">
-                    <span className="text-[11px] text-muted-foreground font-mono">{opp.conversation.latest_message.timestamp}</span>
+                    <span className="text-xs tabular-nums text-ink-muted">{opp.conversation.latest_message.timestamp}</span>
                     <Button size="xs" variant="ghost" className="text-xs text-primary group-hover:translate-x-0.5 transition-transform">
                       Inspect Dossier &rarr;
                     </Button>
@@ -236,38 +236,38 @@ export function AcquisitionCommandCenter() {
             </div>
 
             {/* LIVE AI ACTIVITY STREAM */}
-            <div className="rounded-xl border border-border/60 bg-card/40 p-5 mt-6 space-y-4">
+            <div className="mt-6 rounded-lg border border-rule bg-surface p-6 shadow-raised space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Activity className="size-4 text-emerald-400" />
+                  <Activity className="size-4 text-status-live" />
                   Live AI Workforce Execution Stream
                 </h3>
-                <span className="text-[11px] text-muted-foreground font-mono">Real-time KumoMTA &amp; LLM Mesh</span>
+                <span className="text-xs text-ink-muted">Real-time KumoMTA &amp; LLM Mesh</span>
               </div>
 
-              <div className="space-y-3 font-mono text-xs">
-                <div className="flex items-start gap-3 p-2.5 rounded-lg bg-background/50 border border-border/40">
-                  <span className="text-emerald-400 font-bold shrink-0">[10:09 AM]</span>
+              <div className="space-y-3 font-code text-xs">
+                <div className="flex items-start gap-3 rounded-md border border-rule bg-surface-2 p-2.5">
+                  <span className="shrink-0 font-bold text-status-live">[10:09 AM]</span>
                   <div className="flex-1">
-                    <span className="text-primary font-semibold">Booking Agent:</span> Dispatched live Cal.com confirmation link to <span className="text-foreground font-medium">borrower.austin.miller@gmail.com</span> (RFC Message-ID verified).
+                    <span className="font-semibold text-ink-strong">Booking Agent:</span> Dispatched live Cal.com confirmation link to <span className="text-foreground font-medium">borrower.austin.miller@gmail.com</span> (RFC Message-ID verified).
                   </div>
-                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Success</Badge>
+                  <Badge variant="outline" className="text-xs bg-status-live-bg text-status-live border-status-live-border">Success</Badge>
                 </div>
 
-                <div className="flex items-start gap-3 p-2.5 rounded-lg bg-background/50 border border-border/40">
-                  <span className="text-emerald-400 font-bold shrink-0">[10:08 AM]</span>
+                <div className="flex items-start gap-3 rounded-md border border-rule bg-surface-2 p-2.5">
+                  <span className="text-status-live font-bold shrink-0">[10:08 AM]</span>
                   <div className="flex-1">
-                    <span className="text-primary font-semibold">Conversation Agent:</span> Ingested reply from Austin Miller; intent classified as <span className="text-amber-400 font-medium">READY_TO_BOOK</span> (Confidence: 96%).
+                    <span className="text-primary font-semibold">Conversation Agent:</span> Ingested reply from Austin Miller; intent classified as <span className="text-status-warn font-medium">READY_TO_BOOK</span> (Confidence: 96%).
                   </div>
-                  <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/20">Intent 0.96</Badge>
+                  <Badge variant="outline" className="border-transparent bg-status-info-bg text-status-info">Intent 0.96</Badge>
                 </div>
 
-                <div className="flex items-start gap-3 p-2.5 rounded-lg bg-background/50 border border-border/40">
+                <div className="flex items-start gap-3 rounded-md border border-rule bg-surface-2 p-2.5">
                   <span className="text-muted-foreground font-bold shrink-0">[09:45 AM]</span>
                   <div className="flex-1">
-                    <span className="text-primary font-semibold">Deliverability Agent:</span> Pre-send safety gate passed for Marcus Vance draft (<span className="text-emerald-400 font-medium">Grade A, 100/100, 0 spam triggers</span>).
+                    <span className="text-primary font-semibold">Deliverability Agent:</span> Pre-send safety gate passed for Marcus Vance draft (<span className="text-status-live font-medium">Grade A, 100/100, 0 spam triggers</span>).
                   </div>
-                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Grade A</Badge>
+                  <Badge variant="outline" className="text-xs bg-status-live-bg text-status-live border-status-live-border">Grade A</Badge>
                 </div>
               </div>
             </div>
@@ -276,94 +276,94 @@ export function AcquisitionCommandCenter() {
           {/* Right Col: NEEDS ATTENTION & ACQUISITION HEALTH */}
           <div className="space-y-6">
             {/* Needs Attention Widget */}
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-3.5">
+            <div className="rounded-lg border border-transparent bg-status-warn-bg p-6 space-y-3.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Flame className="size-4 text-amber-400" />
+                  <Flame className="size-4 text-status-warn" />
                   Requires Attention (3)
                 </h3>
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px]">Action Required</Badge>
+                <Badge variant="outline" className="bg-amber-500/10 text-status-warn border-amber-500/20 text-xs">Action Required</Badge>
               </div>
 
               <div className="space-y-2.5 text-xs">
-                <div className="p-3 rounded-lg bg-card/80 border border-border/60 flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 rounded-lg border border-rule bg-surface p-3">
                   <div>
                     <div className="font-semibold text-foreground">Marcus Vance requested 15-min call</div>
-                    <div className="text-muted-foreground text-[11px] mt-0.5">High-intent SaaS buyer waiting for booking link.</div>
+                    <div className="text-muted-foreground text-xs mt-0.5">High-intent SaaS buyer waiting for booking link.</div>
                   </div>
                   <Button size="xs" variant="default" className="shrink-0 text-xs" onClick={() => handleOpenDossier(MOCK_OPPORTUNITIES[0])}>
                     Approve
                   </Button>
                 </div>
 
-                <div className="p-3 rounded-lg bg-card/80 border border-border/60 flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 rounded-lg border border-rule bg-surface p-3">
                   <div>
                     <div className="font-semibold text-foreground">Elena Rostova evaluated pricing</div>
-                    <div className="text-muted-foreground text-[11px] mt-0.5">Agency partner asked about 10-workspace provisioning.</div>
+                    <div className="text-muted-foreground text-xs mt-0.5">Agency partner asked about 10-workspace provisioning.</div>
                   </div>
                   <Button size="xs" variant="outline" className="shrink-0 text-xs" onClick={() => handleOpenDossier(MOCK_OPPORTUNITIES[1])}>
                     Review
                   </Button>
                 </div>
 
-                <div className="p-3 rounded-lg bg-card/80 border border-border/60 flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 rounded-lg border border-rule bg-surface p-3">
                   <div>
                     <div className="font-semibold text-foreground">Cloudflare DNS Verification</div>
-                    <div className="text-muted-foreground text-[11px] mt-0.5">DMARC policy strictness verified across all 3 domains.</div>
+                    <div className="text-muted-foreground text-xs mt-0.5">DMARC policy strictness verified across all 3 domains.</div>
                   </div>
-                  <Badge variant="outline" className="text-[10px] text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shrink-0">Pass</Badge>
+                  <Badge variant="outline" className="text-xs text-status-live bg-status-live-bg border-status-live-border shrink-0">Pass</Badge>
                 </div>
               </div>
             </div>
 
             {/* Universal Acquisition Health Index */}
-            <div className="rounded-xl border border-border/60 bg-card/50 p-5 space-y-4">
+            <div className="rounded-lg border border-rule bg-surface p-6 shadow-raised space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Acquisition Health Index</h3>
-                  <p className="text-[11px] text-muted-foreground">Universal 10-point system audit</p>
+                  <p className="text-xs text-muted-foreground">Universal 10-point system audit</p>
                 </div>
-                <div className="text-2xl font-bold text-emerald-400">94 <span className="text-xs text-muted-foreground font-normal">/ 100</span></div>
+                <div className="font-value text-2xl text-status-live">94 <span className="text-xs text-muted-foreground font-normal">/ 100</span></div>
               </div>
 
               <div className="space-y-2.5 text-xs">
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between text-xs mb-1">
                     <span className="text-muted-foreground">Discovery &amp; Research Health</span>
                     <span className="text-foreground font-semibold">96%</span>
                   </div>
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-400 rounded-full" style={{ width: "96%" }} />
+                    <div className="h-full bg-status-live rounded-full" style={{ width: "96%" }} />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between text-xs mb-1">
                     <span className="text-muted-foreground">Deliverability &amp; DKIM Placement</span>
                     <span className="text-foreground font-semibold">100%</span>
                   </div>
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-400 rounded-full" style={{ width: "100%" }} />
+                    <div className="h-full bg-status-live rounded-full" style={{ width: "100%" }} />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between text-xs mb-1">
                     <span className="text-muted-foreground">Conversational Intent Velocity</span>
                     <span className="text-foreground font-semibold">91%</span>
                   </div>
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-400 rounded-full" style={{ width: "91%" }} />
+                    <div className="h-full bg-status-live rounded-full" style={{ width: "91%" }} />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1">
+                  <div className="flex justify-between text-xs mb-1">
                     <span className="text-muted-foreground">Automations &amp; Webhook Health</span>
                     <span className="text-foreground font-semibold">98%</span>
                   </div>
                   <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-400 rounded-full" style={{ width: "98%" }} />
+                    <div className="h-full bg-status-live rounded-full" style={{ width: "98%" }} />
                   </div>
                 </div>
               </div>
@@ -376,26 +376,26 @@ export function AcquisitionCommandCenter() {
                   <Calendar className="size-4 text-primary" />
                   Upcoming Meetings
                 </h3>
-                <span className="text-[11px] text-muted-foreground">Cal.com Sync</span>
+                <span className="text-xs text-muted-foreground">Cal.com Sync</span>
               </div>
 
               <div className="space-y-2.5 text-xs">
-                <div className="p-3 rounded-lg bg-background/60 border border-border/40">
+                <div className="rounded-lg border border-rule bg-surface p-3">
                   <div className="flex items-center justify-between font-semibold text-foreground">
                     <span>Austin Miller</span>
-                    <span className="text-primary font-mono text-[11px]">Thursday 11:00 AM</span>
+                    <span className="text-xs font-medium tabular-nums text-flame">Thursday 11:00 AM</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Pre-Call Dossier: $620k purchase scenario, 760 credit score, pre-approval comparison.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-background/60 border border-border/40">
+                <div className="rounded-lg border border-rule bg-surface p-3">
                   <div className="flex items-center justify-between font-semibold text-foreground">
                     <span>Marcus Vance</span>
-                    <span className="text-primary font-mono text-[11px]">Tomorrow 2:30 PM</span>
+                    <span className="text-xs font-medium tabular-nums text-flame">Tomorrow 2:30 PM</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Pre-Call Dossier: DataBridge Enterprise MTA migration &amp; KumoMTA shaping.
                   </p>
                 </div>

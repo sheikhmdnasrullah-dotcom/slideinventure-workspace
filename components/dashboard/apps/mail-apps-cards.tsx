@@ -35,7 +35,7 @@ export function MailAppsCards() {
           href={app.href}
           target="_blank"
           rel="noreferrer noopener"
-          className="group flex flex-col justify-between rounded-xl border border-rule bg-[var(--surface)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+          className="group flex flex-col justify-between rounded-lg border border-rule bg-[var(--surface)] p-6 shadow-raised transition-[border-color] duration-[150ms] hover:border-rule-strong"
         >
           <div>
             <div className="flex items-center justify-between">
@@ -48,7 +48,7 @@ export function MailAppsCards() {
               >
                 <Mail className="size-5" />
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                 External <ExternalLink className="size-2.5" />
               </span>
             </div>
@@ -59,7 +59,7 @@ export function MailAppsCards() {
               {app.description}
             </p>
           </div>
-          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-[11px] text-ink-muted">
+          <div className="mt-4 pt-2.5 border-t border-rule/60 flex items-center justify-between text-xs text-ink-muted">
             <span>Launch Web App</span>
             <span className="font-medium text-primary">Open →</span>
           </div>

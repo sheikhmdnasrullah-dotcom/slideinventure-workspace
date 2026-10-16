@@ -8,19 +8,19 @@ import { cn } from "@/lib/utils";
 export function AgentCard({ agent }: { agent: NormalizedAgent }) {
   const badgeTone =
     agent.framework === "Mastra"
-      ? "bg-emerald-500/10 text-emerald-500"
-      : "bg-sky-500/10 text-sky-500";
+      ? "bg-status-live-bg text-status-live"
+      : "bg-status-neutral-bg text-status-neutral";
 
   return (
     <Link
       href={`/agents/${agent.slug}`}
-      className="group flex flex-col items-center gap-2 rounded-md border border-rule bg-[var(--surface)] p-4 text-center transition-all duration-base ease-std hover:-translate-y-0.5 hover:border-[var(--text-accent)] hover:shadow-[var(--shadow-float)]"
+      className="group flex flex-col items-center gap-2 rounded-lg border border-rule bg-surface p-6 text-center shadow-raised transition-shadow duration-[150ms] hover:shadow-float"
     >
-      <span className="flex size-14 items-center justify-center rounded-xl bg-[var(--surface-2)] text-ink-strong">
+      <span className="flex size-14 items-center justify-center rounded-md bg-surface-2 text-ink-strong">
         {agentIcon(agent, "size-7")}
       </span>
-      <span className="font-label text-sm font-medium text-ink-strong leading-tight">{agent.name}</span>
-      <span className={cn("rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide", badgeTone)}>
+      <span className="text-[15px] font-semibold leading-tight tracking-[-0.01em] text-ink-strong">{agent.name}</span>
+      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", badgeTone)}>
         {agent.framework}
       </span>
     </Link>

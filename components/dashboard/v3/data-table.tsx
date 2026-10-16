@@ -21,16 +21,13 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
-  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  CircleDashed,
   Columns2,
   GripVertical,
-  Loader,
   MoreHorizontal,
 } from "lucide-react"
 import {
@@ -117,9 +114,9 @@ function DragHandle({ id }: { id: string }) {
       {...listeners}
       variant="ghost"
       size="icon"
-      className="size-7 text-muted-foreground hover:bg-transparent cursor-grab active:cursor-grabbing"
+      className="size-7 text-ink-faint opacity-0 transition-opacity duration-[120ms] hover:bg-transparent hover:text-ink-strong hover:opacity-100 group-hover:opacity-40 focus-visible:opacity-100 cursor-grab active:cursor-grabbing"
     >
-      <GripVertical className="size-3 text-muted-foreground" />
+      <GripVertical className="size-3.5" />
       <span className="sr-only">Drag to reorder</span>
    </Button>
   )
@@ -164,7 +161,7 @@ const columns = columnHelper.columns([
     header: "Type",
     cell: ({ row }) => (
       <div className="w-32">
-        <Badge variant="outline" className="px-1.5 text-muted-foreground">
+        <Badge variant="outline">
           {row.original.type}
        </Badge>
      </div>
@@ -173,16 +170,32 @@ const columns = columnHelper.columns([
   columnHelper.accessor("status", {
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant="outline" className="px-1.5 text-muted-foreground">
-        {row.original.status === "Done" ? (
-          <CheckCircle2 className="fill-emerald-500 text-white dark:fill-emerald-400" />
-        ) : row.original.status === "In Progress" ? (
-          <Loader />
-        ) : row.original.status === "Failed" ? (
-          <CircleDashed className="text-rose-500" />
-        ) : (
-          <CircleDashed />
+      <Badge
+        variant="outline"
+        className={cn(
+          "border-transparent",
+          row.original.status === "Done" && "bg-status-live-bg text-status-live",
+          row.original.status === "In Progress" && "bg-flame-wash text-flame",
+          row.original.status === "Failed" && "bg-status-danger-bg text-status-danger",
+          row.original.status !== "Done" &&
+            row.original.status !== "In Progress" &&
+            row.original.status !== "Failed" &&
+            "bg-status-neutral-bg text-status-neutral"
         )}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "size-1.5 shrink-0 rounded-full",
+            row.original.status === "Done" && "bg-status-live",
+            row.original.status === "In Progress" && "bg-flame-vivid",
+            row.original.status === "Failed" && "bg-status-danger",
+            row.original.status !== "Done" &&
+              row.original.status !== "In Progress" &&
+              row.original.status !== "Failed" &&
+              "bg-status-neutral"
+          )}
+        />
         {row.original.status}
      </Badge>
     ),
@@ -199,7 +212,7 @@ const columns = columnHelper.columns([
           Target
        </Label>
         <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background dark:bg-transparent dark:hover:bg-input/30 dark:focus-visible:bg-input/30"
+          className="h-8 w-16 rounded-sm border border-transparent bg-transparent px-2 text-right tabular-nums outline-none transition-[border-color,background-color] hover:bg-hover-tint focus-visible:border-rule-strong focus-visible:bg-surface"
           defaultValue={row.original.target}
           id={`${row.original.id}-target`}
         />
@@ -218,7 +231,7 @@ const columns = columnHelper.columns([
           Limit
        </Label>
         <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background dark:bg-transparent dark:hover:bg-input/30 dark:focus-visible:bg-input/30"
+          className="h-8 w-16 rounded-sm border border-transparent bg-transparent px-2 text-right tabular-nums outline-none transition-[border-color,background-color] hover:bg-hover-tint focus-visible:border-rule-strong focus-visible:bg-surface"
           defaultValue={row.original.limit}
           id={`${row.original.id}-limit`}
         />
@@ -237,7 +250,7 @@ const columns = columnHelper.columns([
           render={
             <Button
               variant="ghost"
-              className="flex size-8 text-muted-foreground data-[popup-open]:bg-muted"
+              className="flex size-8 rounded-full text-ink-muted hover:bg-hover-tint hover:text-ink-strong data-[popup-open]:bg-hover-tint"
               size="icon"
             />
           }
@@ -266,7 +279,7 @@ function Input({
     <input
       type={type}
       className={cn(
-        "flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-xs",
+        "flex h-8 w-full rounded-sm border border-transparent bg-transparent px-2.5 py-1 text-sm text-ink-strong tabular-nums transition-[border-color,background-color] outline-none placeholder:text-ink-faint hover:bg-hover-tint focus-visible:border-rule-strong focus-visible:bg-surface disabled:cursor-not-allowed disabled:opacity-50 md:text-[13px]",
         className
       )}
       {...props}
@@ -284,7 +297,7 @@ function DraggableRow({ row }: { row: Row<typeof features, ActivityItem> }) {
       data-state={row.getIsSelected() && "selected"}
       data-dragging={isDragging}
       ref={setNodeRef}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      className="group relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
       style={{
         transform: CSS.Transform.toString(transform),
         transition: transition,
@@ -355,7 +368,7 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="flex items-center justify-end px-4 pt-4 lg:px-6">
+      <div className="flex items-center justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -392,8 +405,8 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
          </DropdownMenuContent>
        </DropdownMenu>
      </div>
-      <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <div className="overflow-hidden rounded-md border border-rule">
+      <div className="relative flex flex-col gap-4">
+        <div className="overflow-hidden rounded-lg border border-rule bg-surface shadow-raised">
           <DndContext
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
@@ -402,7 +415,7 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
             id={sortableId}
           >
             <Table>
-              <TableHeader className="sticky top-0 z-10 bg-muted">
+              <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
@@ -441,8 +454,8 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
            </Table>
          </DndContext>
        </div>
-        <div className="flex items-center justify-between px-4">
-          <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
+        <div className="flex items-center justify-between">
+          <div className="hidden flex-1 text-[13px] text-ink-muted lg:flex">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
          </div>
@@ -454,7 +467,7 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
               <select
                 value={`${table.state.pagination.pageSize}`}
                 onChange={(e) => table.setPageSize(Number(e.target.value))}
-                className="w-20 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                className="h-9 rounded-pill border border-rule-strong bg-surface px-3 text-[13px] text-ink-strong outline-none"
                 id="rows-per-page"
               >
                 {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -464,14 +477,15 @@ export function DataTable({ data: initialData }: { data: ActivityItem[] }) {
                 ))}
               </select>
            </div>
-            <div className="flex w-fit items-center justify-center text-sm font-medium">
+            <div className="flex w-fit items-center justify-center text-sm font-medium tabular-nums">
               Page {table.state.pagination.pageIndex + 1} of{" "}
               {table.getPageCount()}
            </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
               <Button
                 variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
+                size="icon-sm"
+                className="hidden lg:flex rounded-full"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
               >
@@ -547,11 +561,11 @@ function SheetItemViewer({ item }: { item: ActivityItem }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <Label className="text-xs text-muted-foreground">Target</Label>
-                <span className="font-mono">{item.target}</span>
+                <span className="font-value text-sm">{item.target}</span>
              </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-xs text-muted-foreground">Limit</Label>
-                <span className="font-mono">{item.limit}</span>
+                <span className="font-value text-sm">{item.limit}</span>
              </div>
            </div>
             <div className="flex flex-col gap-1">

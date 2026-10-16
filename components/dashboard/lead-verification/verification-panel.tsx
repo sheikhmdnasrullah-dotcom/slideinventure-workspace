@@ -53,10 +53,10 @@ const STORAGE_KEY = "lv_job_id"
 // ─── Verdict styling (semantic colors matching the dashboard) ─────────────────
 
 const VERDICT_STYLE: Record<string, { label: string; className: string }> = {
-  safe: { label: "Safe", className: "!bg-emerald-500/10 !text-emerald-500 !border-emerald-500/20" },
-  risky: { label: "Risky", className: "!bg-amber-500/10 !text-amber-500 !border-amber-500/20" },
-  invalid: { label: "Invalid", className: "!bg-red-500/10 !text-red-500 !border-red-500/20" },
-  INVALID_FORMAT: { label: "Bad Format", className: "!bg-purple-500/10 !text-purple-500 !border-purple-500/20" },
+  safe: { label: "Safe", className: "!bg-status-live-bg !text-status-live !border-transparent" },
+  risky: { label: "Risky", className: "!bg-status-warn-bg !text-status-warn !border-transparent" },
+  invalid: { label: "Invalid", className: "!bg-status-danger-bg !text-status-danger !border-transparent" },
+  INVALID_FORMAT: { label: "Bad Format", className: "!bg-status-neutral-bg !text-status-neutral !border-transparent" },
   error: { label: "Error", className: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20" },
   ERROR: { label: "Error", className: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20" },
   unknown: { label: "Unknown", className: "!bg-zinc-500/10 !text-zinc-400 !border-zinc-500/20" },
@@ -290,8 +290,8 @@ export function VerificationPanel() {
                 if (f) setSelectedFile(f)
               }}
               className={cn(
-                "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-10 text-center transition-colors hover:border-primary/40 hover:bg-muted/50",
-                drag && "border-primary/60 bg-primary/5",
+                "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-rule-strong bg-surface p-10 text-center transition-colors duration-[120ms] hover:border-ink-faint hover:bg-hover-tint",
+                drag && "border-flame-vivid bg-flame-wash",
                 phase === "uploading" && "cursor-default"
               )}
             >
@@ -348,8 +348,8 @@ export function VerificationPanel() {
               {jobId ? `job ${jobId.slice(0, 8)}` : ""} · checking leads against Reacher
             </CardDescription>
             <CardAction>
-              <Badge variant="outline" className="gap-1.5 !border-emerald-500/30 !text-emerald-500">
-                <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" /> LIVE
+              <Badge variant="outline" className="gap-1.5 !border-transparent !bg-status-live-bg !text-status-live">
+                <span className="size-1.5 animate-pulse rounded-full bg-status-live" /> LIVE
               </Badge>
             </CardAction>
           </CardHeader>
@@ -365,9 +365,9 @@ export function VerificationPanel() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Safe" value={counts.safe} className="text-emerald-500" />
-              <Stat label="Risky" value={counts.risky} className="text-amber-500" />
-              <Stat label="Invalid" value={counts.invalid} className="text-red-500" />
+              <Stat label="Safe" value={counts.safe} className="text-status-live" />
+              <Stat label="Risky" value={counts.risky} className="text-status-warn" />
+              <Stat label="Invalid" value={counts.invalid} className="text-status-danger" />
               <Stat label="Error" value={counts.error} className="text-zinc-400" />
             </div>
 
@@ -396,17 +396,17 @@ export function VerificationPanel() {
       {/* Completed */}
       {phase === "completed" && (
         <>
-          <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <Card className="border-transparent bg-status-live-bg">
             <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="size-5 text-emerald-500" />
+                <CheckCircle2 className="size-5 text-status-live" />
                 <div>
-                  <p className="text-sm font-medium text-emerald-500">Verification Complete</p>
+                  <p className="text-[15px] font-semibold tracking-[-0.01em] text-status-live">Verification Complete</p>
                   <p className="text-xs text-muted-foreground">
                     {total} leads ·{" "}
-                    <span className="text-emerald-500">{counts.safe}</span> safe ·{" "}
-                    <span className="text-amber-500">{counts.risky}</span> risky ·{" "}
-                    <span className="text-red-500">{counts.invalid}</span> invalid ·{" "}
+                    <span className="text-status-live">{counts.safe}</span> safe ·{" "}
+                    <span className="text-status-warn">{counts.risky}</span> risky ·{" "}
+                    <span className="text-status-danger">{counts.invalid}</span> invalid ·{" "}
                     <span className="text-zinc-400">{counts.error}</span> error
                   </p>
                 </div>
@@ -482,10 +482,10 @@ export function VerificationPanel() {
                           const s = verdictStyle(r.verdict)
                           return (
                             <TableRow key={r.index}>
-                              <TableCell className="font-mono text-xs text-muted-foreground">
+                              <TableCell className="font-code text-xs text-muted-foreground">
                                 {r.index}
                               </TableCell>
-                              <TableCell className="font-mono text-sm">{r.email}</TableCell>
+                              <TableCell className="font-code text-sm">{r.email}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={cn("border", s.className)}>
                                   {s.label}
@@ -573,8 +573,8 @@ function LiveTable({ rows, total }: { rows: ResultRow[]; total: number }) {
               const s = verdictStyle(r.verdict)
               return (
                 <TableRow key={r.index}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{r.index}</TableCell>
-                  <TableCell className="font-mono text-sm">{r.email}</TableCell>
+                  <TableCell className="text-xs tabular-nums text-ink-muted">{r.index}</TableCell>
+                  <TableCell className="font-code text-sm">{r.email}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={cn("border", s.className)}>
                       {s.label}
@@ -641,10 +641,10 @@ function HistoryCard({ jobs, onChanged }: { jobs: HistoryJob[]; onChanged?: () =
                         className={cn(
                           "border",
                           j.status === "done"
-                            ? "!bg-emerald-500/10 !text-emerald-500 !border-emerald-500/20"
+                            ? "!bg-status-live-bg !text-status-live !border-transparent"
                             : j.status === "failed"
-                              ? "!bg-red-500/10 !text-red-500 !border-red-500/20"
-                              : "!bg-amber-500/10 !text-amber-500 !border-amber-500/20"
+                              ? "!bg-status-danger-bg !text-status-danger !border-transparent"
+                              : "!bg-status-warn-bg !text-status-warn !border-transparent"
                         )}
                       >
                         {j.status}
@@ -653,10 +653,10 @@ function HistoryCard({ jobs, onChanged }: { jobs: HistoryJob[]; onChanged?: () =
                     <TableCell className="text-right text-xs text-muted-foreground">
                       {j.checked_count ?? 0}
                       {summary ? (
-                        <span className="ml-2 text-emerald-500">{summary.safe}</span>
+                        <span className="ml-2 text-status-live">{summary.safe}</span>
                       ) : null}
-                      {summary ? <span className="ml-1 text-amber-500">{summary.risky}</span> : null}
-                      {summary ? <span className="ml-1 text-red-500">{summary.invalid}</span> : null}
+                      {summary ? <span className="ml-1 text-status-warn">{summary.risky}</span> : null}
+                      {summary ? <span className="ml-1 text-status-danger">{summary.invalid}</span> : null}
                       {summary ? <span className="ml-1 text-zinc-400">{summary.error}</span> : null}
                     </TableCell>
                     <TableCell className="text-right">

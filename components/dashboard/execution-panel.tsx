@@ -79,7 +79,7 @@ export function ExecutionPanel() {
   const latestRun = runs[0];
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-foreground/10 bg-background/60 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-rule bg-surface p-6 shadow-raised">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Terminal className="size-4" />
@@ -95,7 +95,7 @@ export function ExecutionPanel() {
           value={command}
           onChange={(e) => setCommand(e.target.value)}
           placeholder="Enter command to run..."
-          className="min-h-[60px] font-mono text-xs"
+          className="min-h-[60px] font-code text-xs"
           disabled={running}
         />
         <Button onClick={execute} disabled={running || !command.trim()} className="self-end">
@@ -107,14 +107,14 @@ export function ExecutionPanel() {
       {latestRun && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-xs text-foreground/60">
-            <span className="font-mono">{latestRun.command}</span>
+            <span className="font-code">{latestRun.command}</span>
             <span className="tabular-nums">{new Date(latestRun.started_at).toLocaleTimeString()}</span>
             <StatusBadge status={latestRun.status} />
           </div>
           {latestRun.output && (
             <div
               ref={outputRef}
-              className="max-h-48 overflow-auto rounded-md border border-foreground/10 bg-black/80 p-3 font-mono text-xs text-green-400"
+              className="max-h-48 overflow-auto rounded-md border border-rule bg-black/80 p-3 font-code text-xs text-live-hi"
             >
               <pre className="whitespace-pre-wrap">{latestRun.output}</pre>
             </div>
@@ -127,9 +127,9 @@ export function ExecutionPanel() {
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    running: "border-brand/30 bg-brand-soft text-signal",
-    completed: "border-signal/30 bg-signal/10 text-signal",
-    failed: "border-red-500/30 bg-red-500/10 text-red-500",
+    running: "border-transparent bg-flame-wash text-flame",
+    completed: "border-transparent bg-status-live-bg text-status-live",
+    failed: "border-transparent bg-status-danger-bg text-status-danger",
   };
   return (
     <Badge variant="outline" className={styles[status] ?? ""}>

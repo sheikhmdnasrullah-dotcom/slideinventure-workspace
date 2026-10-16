@@ -25,7 +25,7 @@ export function KpiCard({ data }: { data: KpiCardData }) {
             {data.trend.label}
           </Badge>
         </div>
-        <span className="font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+        <span className="font-value text-3xl font-semibold tabular-nums tracking-tight text-ink-strong">
           {data.value}
         </span>
         <div className="flex flex-col gap-0.5">

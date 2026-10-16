@@ -42,12 +42,12 @@ export function AgentModesGrid() {
           <Link
             key={mode.id}
             href={mode.href}
-            className="group relative flex flex-col justify-between rounded-xl border border-rule bg-[var(--surface)] p-4 transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:shadow-md"
+            className="group relative flex flex-col justify-between rounded-lg border border-rule bg-surface p-6 shadow-raised transition-shadow duration-[150ms] hover:shadow-float"
           >
             <div>
               <div className="flex items-center justify-between">
                 <span
-                  className="flex size-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                  className="flex size-11 items-center justify-center rounded-[10px]"
                   style={{
                     background: `color-mix(in oklch, ${mode.color} 14%, transparent)`,
                     color: mode.color,
@@ -56,7 +56,7 @@ export function AgentModesGrid() {
                   <Icon className="size-5" />
                 </span>
                 <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase"
+                  className="rounded-full px-2.5 py-0.5 text-xs font-medium"
                   style={{
                     background: `color-mix(in oklch, ${mode.color} 10%, transparent)`,
                     color: mode.color,
@@ -65,7 +65,7 @@ export function AgentModesGrid() {
                   {mode.tag}
                 </span>
               </div>
-              <h3 className="mt-3.5 font-label text-sm font-semibold text-ink-strong group-hover:text-primary transition-colors flex items-center gap-1">
+              <h3 className="mt-3.5 flex items-center gap-1 text-[15px] font-semibold tracking-[-0.01em] text-ink-strong">
                 {mode.title}
                 <ArrowUpRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
               </h3>
@@ -73,7 +73,7 @@ export function AgentModesGrid() {
                 {mode.description}
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-rule/60 flex items-center justify-between text-[11px] text-ink-muted">
+            <div className="mt-4 pt-3 border-t border-rule/60 flex items-center justify-between text-xs text-ink-muted">
               <span>Dedicated Agent</span>
               <span className="font-medium text-primary">Open →</span>
             </div>

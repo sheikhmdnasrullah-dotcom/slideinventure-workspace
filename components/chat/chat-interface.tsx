@@ -445,7 +445,7 @@ export function ChatInterface() {
               messageGroups.map((group) => (
                 <div key={group.date}>
                   <div className="flex items-center justify-center py-2">
-                    <div className="rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground">
+                    <div className="rounded-full border border-rule bg-surface px-3 py-1 text-xs text-ink-muted">
                       {formatDateHeader(group.date)}
                     </div>
                   </div>
@@ -476,12 +476,12 @@ export function ChatInterface() {
                           </div>
 
                           {msg.retrievalSources && (
-                            <Card className="motion-card mt-2 min-w-0 w-full overflow-hidden">
+                            <Card className="mt-2 min-w-0 w-full overflow-hidden">
                               <div className="border-b bg-muted/30 px-3 py-2">
                                 <p className="text-xs font-medium text-muted-foreground">
                                   From your data
                                   {msg.retrievalElapsedMs !== undefined && (
-                                    <span className="ml-2 text-[10px] text-muted-foreground/70">
+                                    <span className="ml-2 text-xs text-muted-foreground/70">
                                       ({msg.retrievalElapsedMs}ms)
                                     </span>
                                   )}
@@ -493,7 +493,7 @@ export function ChatInterface() {
                                     <div className="flex items-center gap-2">
                                        <span className="text-muted-foreground">{(() => { const Icon = SOURCE_ICONS[group.source] ?? FileText; return <Icon className="size-4" />; })()}</span>
                                       <span className="text-xs font-medium">{group.label}</span>
-                                      <Badge variant="secondary" className="text-[10px]">
+                                      <Badge variant="secondary" className="text-xs">
                                         {group.matchCount} match{group.matchCount !== 1 ? "es" : ""}
                                       </Badge>
                                     </div>
@@ -502,7 +502,7 @@ export function ChatInterface() {
                                     ) : (
                                       <div className="mt-2 space-y-2">
                                         {group.results.map((result, idx) => (
-                                          <div key={idx} className="min-w-0 overflow-hidden rounded-md border bg-background p-2">
+                                          <div key={idx} className="min-w-0 overflow-hidden rounded-md border border-rule bg-surface p-2">
                                             <div className="flex items-center gap-2">
                                               <span className="min-w-0 truncate text-xs font-medium">{result.title}</span>
                                             </div>
@@ -577,7 +577,7 @@ export function ChatInterface() {
               disabled={streaming}
               placeholder={streaming ? "Sending" : "Ask about knowledge, research, or SOPs"}
               rows={1}
-              className="max-h-40 min-h-[36px] flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+              className="max-h-40 min-h-[36px] flex-1 resize-none border-0 bg-transparent shadow-none"
             />
             <Button size="icon" onClick={sendMessage} disabled={!input.trim() || streaming}>
               {streaming ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
