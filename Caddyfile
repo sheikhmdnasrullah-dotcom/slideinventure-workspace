@@ -14,8 +14,9 @@
 }
 
 # NOTE: www stays on Vercel (marketing site) — never point it here.
+# The bare domain redirects to www so visitors always land on the marketing site.
 slideinventure.com {
-	reverse_proxy localhost:3001
+	redir https://www.slideinventure.com{uri} 308
 }
 
 app.slideinventure.com {
