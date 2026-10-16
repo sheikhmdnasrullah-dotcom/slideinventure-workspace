@@ -1,9 +1,11 @@
 # Caddyfile for the SlideIn production VPS.
 #
 # - www/app: the workspace-app dashboard (Next.js on :3001)
-# - track: GoPhish landing + click-tracking server (:8080), the public
-#   URL baked into campaigns via GOPHISH_CAMPAIGN_URL
-# - GoPhish admin (:8333) is intentionally NOT exposed; use ssh -L.
+# - workspace: the slidein-app client workspace (Next.js on :3201)
+# - api: the slidein-api agent workflow backend (FastAPI on :8100)
+# - track: GoPhish landing + click-tracking server (:8080)
+# - console: GoPhish admin (:8333) — loopback only from this file's view,
+#   Caddy terminates public TLS.
 #
 # Place at /etc/caddy/Caddyfile and run: caddy reload --config /etc/caddy/Caddyfile
 
@@ -18,6 +20,16 @@ slideinventure.com {
 
 app.slideinventure.com {
 	reverse_proxy localhost:3001
+}
+
+# Client workspace UI (slidein-app) — connects to api.slideinventure.com server-side.
+workspace.slideinventure.com {
+	reverse_proxy localhost:3201
+}
+
+# Agent workflow API (slidein-api). Loopback-bound; public via Caddy TLS.
+api.slideinventure.com {
+	reverse_proxy localhost:8100
 }
 
 track.slideinventure.com {
