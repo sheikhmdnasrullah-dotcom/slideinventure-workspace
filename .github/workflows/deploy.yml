@@ -43,13 +43,13 @@ jobs:
 
       - name: Install prod deps, build on VPS, reload services
         uses: appleboy/ssh-action@v1.0.3
-        envs: ENV_LOCAL
+        env:
+          ENV_LOCAL: ${{ secrets.ENV_LOCAL }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          env:
-            ENV_LOCAL: ${{ secrets.ENV_LOCAL }}
+          envs: ENV_LOCAL
           script: |
             set -e
             cd /var/www/workspace-app
