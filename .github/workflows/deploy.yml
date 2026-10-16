@@ -64,7 +64,7 @@ jobs:
               echo "wrote .env.local from ENV_LOCAL secret"
             fi
             bash deploy/setup-vps.sh || true
-            npm ci --omit=dev
+            npm ci
             npm run build
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
             pm2 save
