@@ -11,6 +11,7 @@ import {
   ensureTrackingLink,
   GophishError,
 } from "@/lib/gophish";
+import { assertSendAllowed, SendGateError } from "@/lib/send-gate";
 
 const SEND_DELAY_MS = 4000;
 
@@ -55,6 +56,30 @@ export async function POST(request: NextRequest) {
     launchDate = validated.data.launchDate;
   } catch (error) {
     return toJson(error);
+  }
+
+  try {
+    await assertSendAllowed();
+  } catch (error) {
+    if (error instanceof SendGateError) {
+      return Response.json(
+        {
+          error: error.message,
+          total: recipients.length,
+          succeeded: 0,
+          failed: recipients.length,
+          results: recipients.map((r) => ({
+            email: r.email,
+            firstName: r.firstName,
+            lastName: r.lastName,
+            success: false,
+            error: error.message,
+          })),
+        },
+        { status: 503 }
+      );
+    }
+    throw error;
   }
 
   const campaignUrl = process.env.GOPHISH_CAMPAIGN_URL;

@@ -2,6 +2,7 @@ import 'server-only'
 import nodemailer from 'nodemailer'
 import type { SendMailInput } from './types'
 import { getAccount } from './accounts'
+import { assertSendAllowed } from '@/lib/send-gate'
 
 async function createTransport(email: string) {
   const account = await getAccount(email)

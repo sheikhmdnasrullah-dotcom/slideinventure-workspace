@@ -32,6 +32,19 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!env.example
+
+# appwrite / supabase config with real secrets — never commit
+appwrite.config.json
+
+# prospect leads, evaluation data, and logs — private
+Efa.csv
+efa-results.json
+efa-run.log
+.data/
+
+# vscode mcp auth tokens — never commit
+.vscode/mcp.json
 
 # vercel
 .vercel
@@ -45,3 +58,7 @@ next-env.d.ts
 /test-results
 /playwright-report
 .aider*
+
+# project workspace files (user content; may be sensitive — never commit)
+# Overridable at runtime via PROJECT_WORKSPACE_DIR.
+/data

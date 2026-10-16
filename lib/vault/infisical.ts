@@ -10,15 +10,17 @@ export function infisicalEnabled(): boolean {
 export async function loadInfisicalSecrets(): Promise<void> {
   if (!infisicalEnabled()) return;
   try {
-    const { InfisicalClient } = await import("@infisical/sdk");
-    const client = new InfisicalClient({
+    const infisicalModule = (await import("@infisical/sdk")) as any;
+    const ClientClass = infisicalModule.InfisicalClient || infisicalModule.InfisicalSDK;
+    if (!ClientClass) return;
+    const client = new ClientClass({
       token: process.env.INFISICAL_TOKEN as string,
     });
     const secrets = await client.listSecrets({
       environment: process.env.INFISICAL_ENV || "production",
       projectId: process.env.INFISICAL_PROJECT_ID as string,
     });
-    for (const s of secrets as any[]) {
+    for (const s of (secrets as any[]) || []) {
       if (s.key && process.env[s.key] === undefined) {
         process.env[s.key] = s.value;
       }

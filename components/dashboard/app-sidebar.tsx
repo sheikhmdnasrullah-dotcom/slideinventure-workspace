@@ -38,6 +38,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { LogoWordmark } from "@/components/system"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getOrderedSections, NAVIGATION_HANDLE_ICON } from "@/lib/dashboard/navigation"
@@ -115,12 +116,12 @@ export function AppSidebar({
               onMouseEnter={() => prefetch(homeRoute)}
               onFocus={() => prefetch(homeRoute)}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary font-mono text-xs font-semibold text-primary-foreground shadow-sm">
-                OS
+              <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--rule)] shadow-xs">
+                <span className="font-mono text-[10px] font-bold tracking-wider text-[var(--text-accent)]">SI</span>
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold tracking-tight">SlideIn OS</span>
-                <span className="truncate text-[11px] text-muted-foreground font-mono">Acquisition Engine</span>
+                <LogoWordmark size="15px" qualifier="OS" />
+                <span className="truncate text-[10px] text-[var(--text-muted)] font-mono tracking-wider uppercase mt-0.5">Acquisition Engine</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -573,20 +573,19 @@ export function NotepadView({
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Export & Save Menu */}
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!selectedId || exporting}
-                        className="gap-1.5 cursor-pointer text-xs font-medium h-8 shadow-xs hover:border-primary/50"
-                      >
-                        {exporting ? (
-                          <Loader2 className="size-3.5 animate-spin text-primary" />
-                        ) : (
-                          <Download className="size-3.5 text-primary" />
-                        )}
-                        <span>Export &amp; Download</span>
-                      </Button>
+                    <DropdownMenuTrigger
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "gap-1.5 cursor-pointer text-xs font-medium h-8 shadow-xs hover:border-primary/50"
+                      )}
+                      disabled={!selectedId || exporting}
+                    >
+                      {exporting ? (
+                        <Loader2 className="size-3.5 animate-spin text-primary" />
+                      ) : (
+                        <Download className="size-3.5 text-primary" />
+                      )}
+                      <span>Export &amp; Download</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-68">
                       <div className="px-2.5 py-1.5 text-[11px] text-muted-foreground font-normal">

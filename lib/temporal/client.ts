@@ -20,9 +20,11 @@ async function getClient(): Promise<WorkflowClient | null> {
       try {
         const conn = await Connection.connect({
           address: process.env.TEMPORAL_ADDRESS as string,
+        });
+        return new WorkflowClient({
+          connection: conn,
           namespace: process.env.TEMPORAL_NAMESPACE || "default",
         });
-        return new WorkflowClient({ connection: conn });
       } catch (e) {
         clientPromise = null;
         throw e;

@@ -1,4 +1,5 @@
 import "server-only";
+import { assertSendAllowed } from "@/lib/send-gate";
 
 const TRACKING_PLACEHOLDER = "{{.TrackingURL}}";
 
@@ -147,6 +148,7 @@ export async function createTemplate(
 export async function createAndLaunchCampaign(
   input: GophishCreateCampaignInput
 ): Promise<GophishCampaign> {
+  await assertSendAllowed();
   const body: Record<string, unknown> = {
     name: input.name,
     template: { name: input.templateName },

@@ -8,4 +8,7 @@ export { DataTable, type Column } from "./data-table";
 export { FilterBar } from "./filter-bar";
 export { Timeline, type TimelineItem } from "./timeline";
 export { SourceCitation, EvidenceBlock } from "./evidence";
+export { CornerBrackets, Ticks } from "./primitives";
+export { LogoWordmark } from "../brand/logo";
 export { Badge } from "../ui/badge";
+

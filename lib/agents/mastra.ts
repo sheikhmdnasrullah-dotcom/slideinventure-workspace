@@ -155,6 +155,7 @@ export async function runMastraAgent(opts: {
   const composioTools = await getComposioSessionTools().catch(() => ({}));
 
   const agent = new Agent({
+    id: persona.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     name: persona.name,
     instructions: persona.prompt,
     model: getModel(),
@@ -178,7 +179,7 @@ export async function runMastraAgent(opts: {
   ];
 
   try {
-    const result = await agent.generate(messages);
+    const result = await agent.generate(messages as any);
     return {
       ok: true,
       answer: result.text ?? "",

@@ -219,6 +219,7 @@ export function CustomEmailPanel() {
   const [personalizingId, setPersonalizingId] = useState<string | null>(null);
   const [personalizingAll, setPersonalizingAll] = useState(false);
   const [confirmSend, setConfirmSend] = useState(false);
+  const [sendGate, setSendGate] = useState<{ enabled: boolean; reason: string | null } | null>(null);
   const [previewFor, setPreviewFor] = useState<{ leadId: string; variations: string[] } | null>(null);
 
   const setMessage = useCallback((id: string, patch: Partial<RecipientMessage>) => {
@@ -247,6 +248,19 @@ export function CustomEmailPanel() {
         if (active) setOptionsLoading(false);
       }
     })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/send-gate", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data) setSendGate({ enabled: data.enabled, reason: data.reason });
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -510,6 +524,10 @@ export function CustomEmailPanel() {
   );
 
   const send = async () => {
+    if (sendGate && !sendGate.enabled) {
+      toast.error(sendGate.reason ?? "Outbound sending is currently disabled.");
+      return;
+    }
     if (!selectedProfile || !selectedPage) {
       toast.error("Select a sending profile and landing page");
       return;
@@ -1208,6 +1226,23 @@ export function CustomEmailPanel() {
                 </Table>
               </ScrollArea>
               <div className="mt-3 flex flex-col gap-3 border-t border-foreground/10 pt-3">
+                {sendGate && !sendGate.enabled && (
+                  <div className="flex flex-col gap-1 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                    <div className="flex items-center gap-2 text-xs font-medium text-amber-800">
+                      <AlertTriangle className="size-4" />
+                      Sending is disabled
+                    </div>
+                    <p className="text-[11px] text-amber-900">
+                      Outbound email from this console is currently turned off. All real
+                      sends must go through slidein-api, which supplies suppression and
+                      compliance checks — and it is not reachable right now
+                      {sendGate.reason ? `: ${sendGate.reason}` : "."} Nothing will be
+                      sent until an administrator configures SLIDEIN_API_URL and
+                      SLIDEIN_API_KEY on the server and slidein-api is healthy. You can
+                      still compose, sanitize, and preview messages below.
+                    </p>
+                  </div>
+                )}
                 <AuthHealthBadge />
                 <label className="flex items-center gap-2 text-xs">
                   <input
@@ -1228,7 +1263,7 @@ export function CustomEmailPanel() {
                   <Button
                     size="sm"
                     onClick={send}
-                    disabled={!allComposed || !confirmSend || sending}
+                    disabled={!allComposed || !confirmSend || sending || (sendGate !== null && !sendGate.enabled)}
                     className="text-xs"
                   >
                     {sending ? (

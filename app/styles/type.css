@@ -122,3 +122,56 @@ p {
     transition: none;
   }
 }
+
+/* ── 7 · THE WORDMARK (SlideIn Venture brand identity) ───────────────────
+   Live-text wordmark: Fraunces display serif + raised mono qualifier. */
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  margin-left: -0.02em;              /* optical overhang on the round S */
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.wordmark-name {
+  font-family: var(--font-display);
+  --axis-opsz: 24;
+  --axis-soft: 6;
+  --axis-wonk: 0;
+  font-variation-settings:
+    'opsz' var(--axis-opsz),
+    'SOFT' var(--axis-soft),
+    'WONK' var(--axis-wonk);
+  font-size: 1em;
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  line-height: 1;
+  color: var(--on-surface);
+}
+
+.wordmark-qualifier {
+  font-family: var(--font-mono);
+  font-size: 0.5em;
+  font-weight: var(--font-weight-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--text-accent);
+  margin-left: 0.52em;
+  transform: translateY(-0.34em);
+  transition: letter-spacing var(--dur-base) var(--ease-expo);
+}
+
+.group:hover .wordmark-qualifier,
+.wordmark:hover .wordmark-qualifier {
+  letter-spacing: var(--tracking-label-wide);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark-qualifier {
+    transition: none;
+  }
+}
+

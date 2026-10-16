@@ -1,10 +1,10 @@
-import { workflow, proxyActivities } from "@temporalio/workflow";
+import { proxyActivities } from "@temporalio/workflow";
 import type * as acts from "./activities";
 
 const { executeViaApi } = proxyActivities<typeof acts>({
   startToCloseTimeout: "10 minutes",
 });
 
-export const runAgentTask = workflow.execute(async (input: unknown) => {
+export async function runAgentTask(input: unknown): Promise<void> {
   await executeViaApi(input as { task: string; startUrl?: string; userEmail?: string });
-});
+}

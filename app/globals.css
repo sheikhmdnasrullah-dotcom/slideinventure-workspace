@@ -25,6 +25,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces), var(--font-geist-sans), Georgia, serif;
   --font-heading: var(--font-sans);
 
   /* ── semantic surface + text contract (new components consume these) ── */

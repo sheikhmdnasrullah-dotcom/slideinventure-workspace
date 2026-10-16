@@ -33,7 +33,7 @@ const JUDGE = (system: string, user: string) =>
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    { temperature: 0.1, json: true }
+    { temperature: 0.1 }
   );
 
 /**

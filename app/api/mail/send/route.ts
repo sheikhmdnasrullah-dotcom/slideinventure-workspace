@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { validate } from "@/lib/api/validation";
 import { z } from "zod";
 import { sendMail } from "@/lib/mail/smtp";
+import { assertSendAllowed, SendGateError } from "@/lib/send-gate";
 import { recordAudit } from "@/lib/api/audit";
 
 const SendSchema = z.object({
@@ -27,6 +28,15 @@ export async function POST(request: NextRequest) {
   if (!body) return ApiError.badRequest("INVALID_BODY", "Invalid JSON body").toResponse();
 
   const validated = validate(SendSchema, body);
+
+  try {
+    await assertSendAllowed();
+  } catch (err) {
+    if (err instanceof SendGateError) {
+      return new ApiError(503, "SEND_GATE_DISABLED", err.message).toResponse();
+    }
+    return ApiError.internal("SEND_GATE_ERROR", err instanceof Error ? err.message : "Send gate check failed").toResponse();
+  }
 
   try {
     const result = await sendMail(validated.data.account, {

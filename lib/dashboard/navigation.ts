@@ -6,6 +6,7 @@ import {
   Cable,
   ClipboardList,
   FileText,
+  FolderOpen,
   GripVertical,
   Network,
   LayoutDashboard,
@@ -47,6 +48,7 @@ export type DashboardSectionId =
   | "terminal"
   | "vault"
   | "useful-links"
+  | "projects"
 
 export type DashboardSectionChild = {
   id: string
@@ -79,6 +81,7 @@ export const DASHBOARD_SECTIONS: DashboardSection[] = [
   { id: "lead-research", label: "Prospect Research", route: "/lead-research", icon: FileSearch, category: "workforce" },
 
   { id: "knowledge", label: "Company Memory", route: "/knowledge", icon: BookOpen, category: "knowledge" },
+  { id: "projects", label: "Projects", route: "/projects", icon: FolderOpen, category: "knowledge" },
   { id: "documents", label: "Documents", route: "/documents", icon: FileText, category: "knowledge" },
   { id: "notepad", label: "Scratchpad & Notes", route: "/notepad", icon: BookOpen, category: "knowledge" },
   { id: "vault", label: "Credentials Vault", route: "/vault", icon: Vault, category: "knowledge" },
